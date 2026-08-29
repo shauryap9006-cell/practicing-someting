@@ -7,53 +7,22 @@
     22,
     33
   ],
-  "split_info": {
-    "train_start": "2026-07-01",
-    "train_end": "2026-08-18",
-    "val_start": "2026-08-19",
-    "val_end": "2026-08-22",
-    "bench_start": "2026-08-23",
-    "bench_end": "2026-08-29"
+  "hyperparameters": {
+    "batch_size": 512,
+    "lr": 0.002,
+    "max_epochs": 18,
+    "patience": 5,
+    "cosine_scheduler": true,
+    "ema_enabled": false
   },
-  "features": [
-    "current_delay",
-    "hops_remaining",
-    "km_remaining",
-    "hour_of_day",
-    "day_type",
-    "train_priority",
-    "target_is_junction",
-    "target_is_terminus",
-    "hist_avg_delay_train_target",
-    "hist_p90_delay_train_target",
-    "sched_halt_target_min",
-    "sched_congestion_target",
-    "fog_flag_target",
-    "rain_mm_target",
-    "active_corridor_trains",
-    "delay_velocity",
-    "chronic_baseline",
-    "trains_ahead_30k",
-    "trains_behind_30k",
-    "opposing_trains_30k",
-    "min_predicted_headway_next_station",
-    "sum_delay_trains_ahead_30k",
-    "section_occupancy_pct",
-    "rake_incoming_delay",
-    "crew_duty_pressure",
-    "upstream_rake_delay_min",
-    "upstream_rake_buffer_remaining_min",
-    "rake_linked",
-    "tsr_active_ahead_count",
-    "tsr_max_slowdown_pct",
-    "festival_load_multiplier",
-    "position_belief_entropy",
-    "position_p_mode",
-    "minutes_since_last_obs"
-  ],
+  "dataset_sizes": {
+    "train_sequences": 206363,
+    "val_sequences": 24134,
+    "train_val_ratio": 8.55
+  },
   "metrics": {
-    "mae_p50": 5.626953125,
-    "crps_pure_49pt": 4.332099807848408,
-    "cov80_raw_static": 75.07142857142857
+    "mae_p50": 16.118240356445312,
+    "crps_pure_49pt": 12.280745607519183,
+    "cov80_raw_static": 74.7741775089086
   }
 }

@@ -15,30 +15,31 @@
     0.9,
     0.95
   ],
-  "split": {
-    "train_start": "2026-07-01",
-    "train_end": "2026-08-18",
-    "val_start": "2026-08-19",
-    "val_end": "2026-08-22",
-    "bench_start": "2026-08-23",
-    "bench_end": "2026-08-29"
+  "hyperparameters": {
+    "batch_size": 512,
+    "lr": 0.002,
+    "max_epochs": 18,
+    "patience": 5,
+    "cosine_scheduler": true,
+    "ema_enabled": false
   },
-  "val_mae_p50": 5.626953125,
-  "val_crps_pure_49pt": 4.332099807848408,
-  "val_crps_per_member_mean": 4.353966703034466,
-  "ensemble_gain_pct": 0.5022292699394764,
-  "val_cov80_raw_static": 75.07142857142857,
-  "predictive_width_mean": 23.555055618286133,
-  "predictive_width_median": 25.87498664855957,
-  "true_epistemic_q50_std": 0.3730400800704956,
-  "bugs_remediated": [
-    "A",
-    "B",
-    "C",
-    "D",
-    "E",
-    "F",
-    "G"
-  ],
-  "trained_at": "2026-08-29T09:56:51.952065+00:00"
+  "dataset_sizes": {
+    "train_sequences": 206363,
+    "val_sequences": 24134,
+    "train_val_ratio": 8.55
+  },
+  "split": {
+    "train_days": 250,
+    "val_days": 44,
+    "bench_fog_days": 100
+  },
+  "val_mae_p50": 16.118240356445312,
+  "val_crps_pure_49pt": 12.280745607519183,
+  "val_crps_per_member_mean": 12.807639419323522,
+  "ensemble_gain_pct": 4.113902605732231,
+  "val_cov80_raw_static": 74.7741775089086,
+  "predictive_width_mean": 58.085594177246094,
+  "predictive_width_median": 51.19002914428711,
+  "true_epistemic_q50_std": 4.111561298370361,
+  "trained_at": "2026-08-29T17:11:05.276213+00:00"
 }

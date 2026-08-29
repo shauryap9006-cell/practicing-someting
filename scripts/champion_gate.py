@@ -194,7 +194,7 @@ def run_champion_promotion_gate(db: Optional[Database] = None) -> Dict[str, Any]
                 seq_8 = b["seq"][:, -8:, :]
                 ctx_25 = b["ctx"][:, :25]
                 mask_8 = b["seq_mask"][:, -8:]
-                stn_idx = b["station_ids"][:, -1]
+                stn_idx = b["station_ids"][:, -1] % champion_model.num_stations
                 q10_c, q50_c, q90_c = champion_model(seq_8, ctx_25, mask_8, stn_idx)
                 champ_q = torch.stack([q10_c.squeeze(-1), q50_c.squeeze(-1), q90_c.squeeze(-1)], dim=-1)
                 all_champion_qs.append(champ_q.numpy())
