@@ -30,6 +30,16 @@ class Database:
     def __init__(self, db_path: Optional[Path | str] = None):
         self.db_path = Path(db_path) if db_path else DEFAULT_DB_PATH
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        if not self.db_path.exists():
+            gz_path = self.db_path.with_name(self.db_path.name + ".gz")
+            if gz_path.exists():
+                import gzip
+                import shutil
+                print(f"[DB] Extracting compressed dataset {gz_path.name} -> {self.db_path.name}...", flush=True)
+                with gzip.open(gz_path, "rb") as f_in:
+                    with open(self.db_path, "wb") as f_out:
+                        shutil.copyfileobj(f_in, f_out)
+                print("[DB] Dataset extracted successfully.", flush=True)
 
     def get_connection(self) -> sqlite3.Connection:
         """Returns a new sqlite3 connection configured with foreign keys and row factory."""
