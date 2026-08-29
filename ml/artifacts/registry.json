@@ -23,8 +23,8 @@
     "model_name": "RailTwinGRUv2_DeepEnsemble",
     "status": "gated",
     "artifacts_path": "ml/artifacts_v2/",
-    "val_mae": 5.626953125,
-    "val_crps_pure_49pt": 4.332099807848408,
-    "registered_at": "2026-08-29T09:56:51.953716+00:00"
+    "val_mae": 16.118240356445312,
+    "val_crps_pure_49pt": 12.280745607519183,
+    "registered_at": "2026-08-29T17:11:05.281960+00:00"
   }
 }

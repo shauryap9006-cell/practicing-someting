@@ -194,8 +194,11 @@ def diebold_mariano(
     e1: Union[np.ndarray, List[float]],
     e2: Union[np.ndarray, List[float]],
     lag: int = 10,
+    h: Optional[int] = None,
 ) -> Tuple[float, float]:
     """Diebold-Mariano test on absolute error series |e1| - |e2| with Newey-West HAC variance."""
+    if h is not None:
+        lag = h
     d = np.abs(np.asarray(e1, dtype=float)) - np.abs(np.asarray(e2, dtype=float))
     T = len(d)
     if T < 2:
