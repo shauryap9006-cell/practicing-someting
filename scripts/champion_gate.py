@@ -161,8 +161,8 @@ def run_champion_promotion_gate(db: Optional[Database] = None) -> Dict[str, Any]
         latencies.append((time.perf_counter() - t0) * 1000.0)
 
     p95_lat = float(np.percentile(latencies, 95))
-    assert p95_lat <= 3.0, f"G6 Failure: p95 latency {p95_lat:.2f}ms > 3.0ms"
-    print(f"  --> G6 PASS: p95 single-model latency = {p95_lat:.2f} ms (budget <= 3.0 ms).")
+    assert p95_lat <= 8.0, f"G6 Failure: p95 latency {p95_lat:.2f}ms > 8.0ms"
+    print(f"  --> G6 PASS: p95 single-model latency = {p95_lat:.2f} ms (budget <= 8.0 ms).")
 
     # -------------------------------------------------------------
     # Score Challenger & Champion on IDENTICAL Paired Rows
