@@ -1,0 +1,145 @@
+[
+  {
+    "prefix": "1230",
+    "name_base": "Howrah Rajdhani",
+    "class": "rajdhani",
+    "priority": 1,
+    "count": 6
+  },
+  {
+    "prefix": "1231",
+    "name_base": "Sealdah Rajdhani",
+    "class": "rajdhani",
+    "priority": 1,
+    "count": 6
+  },
+  {
+    "prefix": "1242",
+    "name_base": "Dibrugarh Rajdhani",
+    "class": "rajdhani",
+    "priority": 1,
+    "count": 6
+  },
+  {
+    "prefix": "2243",
+    "name_base": "Vande Bharat Express",
+    "class": "rajdhani",
+    "priority": 1,
+    "count": 12
+  },
+  {
+    "prefix": "1200",
+    "name_base": "Lucknow Swarna Shatabdi",
+    "class": "shatabdi",
+    "priority": 1,
+    "count": 8
+  },
+  {
+    "prefix": "1203",
+    "name_base": "Kanpur Shatabdi",
+    "class": "shatabdi",
+    "priority": 1,
+    "count": 12
+  },
+  {
+    "prefix": "1241",
+    "name_base": "Gomti Superfast",
+    "class": "superfast",
+    "priority": 2,
+    "count": 14
+  },
+  {
+    "prefix": "1255",
+    "name_base": "Vaishali Superfast",
+    "class": "superfast",
+    "priority": 2,
+    "count": 16
+  },
+  {
+    "prefix": "1256",
+    "name_base": "Bihar Sampark Kranti",
+    "class": "superfast",
+    "priority": 2,
+    "count": 14
+  },
+  {
+    "prefix": "1280",
+    "name_base": "Purushottam Superfast",
+    "class": "superfast",
+    "priority": 2,
+    "count": 14
+  },
+  {
+    "prefix": "1239",
+    "name_base": "Mahabodhi Superfast",
+    "class": "superfast",
+    "priority": 2,
+    "count": 12
+  },
+  {
+    "prefix": "1421",
+    "name_base": "Unchahar Express",
+    "class": "mail",
+    "priority": 3,
+    "count": 15
+  },
+  {
+    "prefix": "1400",
+    "name_base": "Lichchavi Express",
+    "class": "mail",
+    "priority": 3,
+    "count": 15
+  },
+  {
+    "prefix": "5437",
+    "name_base": "Kanpur-Delhi Passenger",
+    "class": "passenger",
+    "priority": 4,
+    "count": 10
+  },
+  {
+    "prefix": "9001",
+    "name_base": "CONTR Container Express",
+    "class": "container",
+    "priority": 2,
+    "count": 12,
+    "trailing_tonnage": 3500.0,
+    "is_freight": 1
+  },
+  {
+    "prefix": "9002",
+    "name_base": "BOXN Coal Heavy Haul",
+    "class": "coal_rake",
+    "priority": 3,
+    "count": 16,
+    "trailing_tonnage": 5200.0,
+    "is_freight": 1
+  },
+  {
+    "prefix": "9003",
+    "name_base": "NMG Auto Car Rake",
+    "class": "auto_rake",
+    "priority": 3,
+    "count": 8,
+    "trailing_tonnage": 2200.0,
+    "is_freight": 1
+  },
+  {
+    "prefix": "9004",
+    "name_base": "BRNA Steel Coil Express",
+    "class": "steel_rake",
+    "priority": 3,
+    "count": 8,
+    "trailing_tonnage": 4500.0,
+    "is_freight": 1
+  },
+  {
+    "prefix": "9005",
+    "name_base": "EMPTY Rake Return Flow",
+    "class": "empty_freight",
+    "priority": 5,
+    "count": 16,
+    "trailing_tonnage": 1100.0,
+    "is_freight": 1
+  }
+]

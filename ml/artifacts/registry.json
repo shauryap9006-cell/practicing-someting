@@ -1,0 +1,30 @@
+{
+  "champion": "PyTorch_GRU_Quantile",
+  "decided_at": "2026-08-29T12:31:48.073791",
+  "test_window": "2026-08-23 to 2026-08-29",
+  "mae": {
+    "gru_mae": 5.9021,
+    "lgbm_mae": 8.4827,
+    "test_type": "mannwhitney_unpaired",
+    "p_value": 1.336939107881666e-134,
+    "stat": 40245275.0,
+    "n_gru": 6302,
+    "n_lgbm": 16201
+  },
+  "feature_gain_pct": {
+    "trains_ahead_30k": 0.9137,
+    "opposing_trains_30k": 0.0,
+    "sum_delay_trains_ahead_30k": 3.3843,
+    "section_occupancy_pct": 0.1715
+  },
+  "combined_spatial_gain_pct": 4.4695,
+  "protocol": "purged_rolling_origin_same_as_13_VERIFY",
+  "challenger_v2": {
+    "model_name": "RailTwinGRUv2_DeepEnsemble",
+    "status": "gated",
+    "artifacts_path": "ml/artifacts_v2/",
+    "val_mae": 5.626953125,
+    "val_crps_pure_49pt": 4.332099807848408,
+    "registered_at": "2026-08-29T09:56:51.953716+00:00"
+  }
+}

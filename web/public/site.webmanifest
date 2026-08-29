@@ -1,0 +1,16 @@
+{
+  "name": "RailTwin-X",
+  "short_name": "RailTwin-X",
+  "description": "Decision-support digital twin for Indian Railways station operations",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0E0F11",
+  "theme_color": "#0E0F11",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

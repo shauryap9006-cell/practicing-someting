@@ -1,0 +1,9 @@
+[
+  {"from_code": "NDLS", "to_code": "GZB", "distance_km": 25.0, "single_line": 0, "max_speed_kmph": 110},
+  {"from_code": "GZB", "to_code": "ALJN", "distance_km": 106.0, "single_line": 0, "max_speed_kmph": 130},
+  {"from_code": "ALJN", "to_code": "TDL", "distance_km": 78.0, "single_line": 0, "max_speed_kmph": 130},
+  {"from_code": "TDL", "to_code": "ETW", "distance_km": 92.0, "single_line": 0, "max_speed_kmph": 130},
+  {"from_code": "ETW", "to_code": "CNB", "distance_km": 139.0, "single_line": 0, "max_speed_kmph": 130},
+  {"from_code": "CNB", "to_code": "ON", "distance_km": 18.0, "single_line": 1, "max_speed_kmph": 100},
+  {"from_code": "ON", "to_code": "LKO", "distance_km": 54.0, "single_line": 0, "max_speed_kmph": 110}
+]

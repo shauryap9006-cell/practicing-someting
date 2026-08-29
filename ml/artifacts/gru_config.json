@@ -1,0 +1,18 @@
+{
+  "model_type": "PyTorch_GRU_Quantile",
+  "input_dim": 8,
+  "context_dim": 25,
+  "hidden_dim": 128,
+  "num_layers": 2,
+  "dropout": 0.2,
+  "quantiles": [
+    0.1,
+    0.5,
+    0.9
+  ],
+  "test_mae": 5.902063369750977,
+  "coverage_80_pct": 86.29006664550937,
+  "quantile_crossing_violations": 0,
+  "train_samples": 22050,
+  "test_samples": 6302
+}

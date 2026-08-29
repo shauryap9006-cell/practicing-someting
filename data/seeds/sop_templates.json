@@ -1,0 +1,134 @@
+[
+  {
+    "id": "SOP-SIG-01",
+    "title": "Automatic / Semi-Automatic Signal Failure Protocol",
+    "category": "signalling",
+    "trigger_conditions": [
+      "Signal red light aspect failure",
+      "Track circuit false drop",
+      "Point machine detection failure"
+    ],
+    "steps": [
+      {
+        "step": 1,
+        "action": "Station Master issues Authority Form T/369(3b) or T/A 912 to Loco Pilot.",
+        "role": "Station Master"
+      },
+      {
+        "step": 2,
+        "action": "Verify clear route and crank locking on affected point.",
+        "role": "Pointsman"
+      },
+      {
+        "step": 3,
+        "action": "Speed restricted to 15 km/h over affected turnouts / 25 km/h in block.",
+        "role": "Loco Pilot"
+      },
+      {
+        "step": 4,
+        "action": "Log failure in Signal Failure Register and alert S&T ESR team.",
+        "role": "Traffic Controller"
+      }
+    ],
+    "estimated_clearance_min": 45
+  },
+  {
+    "id": "SOP-OHE-02",
+    "title": "OHE Breakdown / Power Tripping Protocol",
+    "category": "traction",
+    "trigger_conditions": [
+      "CB tripping at Traction Substation",
+      "Catenary wire snap",
+      "Pantograph entanglement"
+    ],
+    "steps": [
+      {
+        "step": 1,
+        "action": "TPC (Traction Power Controller) isolates faulty sector and applies emergency dead block.",
+        "role": "TPC"
+      },
+      {
+        "step": 2,
+        "action": "Coasting order issued to following electric trains.",
+        "role": "Section Controller"
+      },
+      {
+        "step": 3,
+        "action": "Dispatch Tower Wagon / OHE breakdown crew from nearest depot.",
+        "role": "Depot Incharge"
+      },
+      {
+        "step": 4,
+        "action": "Grant Power Block and Permit-to-Work (PTW) for repair.",
+        "role": "Station Master & TPC"
+      }
+    ],
+    "estimated_clearance_min": 120
+  },
+  {
+    "id": "SOP-LC-03",
+    "title": "Manned / Interlocked Level Crossing Gate Failure",
+    "category": "engineering",
+    "trigger_conditions": [
+      "Gate boom broken by road vehicle",
+      "Interlocking release failure",
+      "Gateman no-response"
+    ],
+    "steps": [
+      {
+        "step": 1,
+        "action": "Gateman displays Red hand signal / Banner flag towards approaching trains.",
+        "role": "Gateman"
+      },
+      {
+        "step": 2,
+        "action": "Secure gate with emergency chains and padlocks.",
+        "role": "Gateman"
+      },
+      {
+        "step": 3,
+        "action": "Issue Caution Order (Stop & Proceed at 10 km/h whistling continuously).",
+        "role": "Station Master"
+      },
+      {
+        "step": 4,
+        "action": "Inform RPF and local police for road traffic control.",
+        "role": "Section Controller"
+      }
+    ],
+    "estimated_clearance_min": 30
+  },
+  {
+    "id": "SOP-OBST-04",
+    "title": "Track Obstruction / Derailment Emergency Protocol",
+    "category": "safety",
+    "trigger_conditions": [
+      "Derailment",
+      "Fallen tree/boulder",
+      "Brake binding / hot axle detection"
+    ],
+    "steps": [
+      {
+        "step": 1,
+        "action": "Flash Red emergency flasher light on Loco immediately.",
+        "role": "Loco Pilot"
+      },
+      {
+        "step": 2,
+        "action": "Protect track on both ends with detonators (at 600m and 1200m).",
+        "role": "Assistant Loco Pilot & Guard"
+      },
+      {
+        "step": 3,
+        "action": "Order Accident Relief Train (ART) and Medical Relief Van (ARMV).",
+        "role": "Chief Controller"
+      },
+      {
+        "step": 4,
+        "action": "Impose immediate traffic block on both Up and Down lines.",
+        "role": "Section Controller"
+      }
+    ],
+    "estimated_clearance_min": 240
+  }
+]

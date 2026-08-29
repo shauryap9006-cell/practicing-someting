@@ -1,0 +1,16 @@
+[
+  {
+    "from_code": "CNB",
+    "to_code": "ON",
+    "speed_limit_kmph": 60,
+    "cause": "Ganga bridge track repair",
+    "is_active": 1
+  },
+  {
+    "from_code": "TDL",
+    "to_code": "ETW",
+    "speed_limit_kmph": 80,
+    "cause": "Overhead traction maintenance",
+    "is_active": 1
+  }
+]

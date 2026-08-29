@@ -1,0 +1,173 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Dark Default Tokens */
+  --color-bg: #0E0F11;
+  --color-panel: #15171A;
+  --color-panel-2: #1B1D21;
+  --color-hairline: #26282C;
+  --color-text: #E8E8E6;
+  --color-text-dim: #9A9DA3;
+  --color-accent: #FFB224;
+  --color-ok: #3ECF8E;
+  --color-warn: #FFB224;
+  --color-danger: #F0533A;
+}
+
+html.light {
+  /* Light Tokens */
+  --color-bg: #FAFAF8;
+  --color-panel: #FFFFFF;
+  --color-panel-2: #F4F4F1;
+  --color-hairline: #E4E4E0;
+  --color-text: #16181A;
+  --color-text-dim: #6B6E74;
+  --color-accent: #B47509;
+  --color-ok: #1F9D66;
+  --color-warn: #B47509;
+  --color-danger: #C93A24;
+}
+
+* {
+  box-sizing: border-box;
+  border-color: var(--color-hairline);
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-feature-settings: 'tnum' 1, 'cv02' 1, 'cv03' 1, 'cv04' 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Monospace & Tabular numbers rules */
+.font-mono,
+code,
+kbd,
+samp,
+.tabular-nums {
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Focus styles: 2px accent outline, 2px offset */
+*:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Status Badge Utilities - Square 2px radius, tinted bg, 1px border */
+.badge-ok {
+  background-color: rgba(62, 207, 142, 0.12);
+  border: 1px solid var(--color-ok);
+  color: var(--color-ok);
+  border-radius: 2px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge-warn {
+  background-color: rgba(255, 178, 36, 0.12);
+  border: 1px solid var(--color-warn);
+  color: var(--color-warn);
+  border-radius: 2px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge-danger {
+  background-color: rgba(240, 83, 58, 0.12);
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
+  border-radius: 2px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge-neutral {
+  background-color: rgba(154, 157, 163, 0.12);
+  border: 1px solid var(--color-hairline);
+  color: var(--color-text-dim);
+  border-radius: 2px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-hairline);
+  border-radius: 0px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-dim);
+}
+
+/* Departure Board amber flash on data refresh */
+@keyframes data-amber-flash {
+  0% {
+    background-color: rgba(255, 178, 36, 0.3);
+    color: var(--color-accent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.flash-updated {
+  animation: data-amber-flash 400ms ease-out;
+}
+
+/* Accessible reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

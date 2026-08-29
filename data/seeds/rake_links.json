@@ -1,0 +1,16 @@
+[
+  {"incoming_train": "12034", "outgoing_train": "12033", "station_code": "NDLS", "turnaround_min": 240},
+  {"incoming_train": "12004", "outgoing_train": "12003", "station_code": "LKO", "turnaround_min": 360},
+  {"incoming_train": "22436", "outgoing_train": "22435", "station_code": "NDLS", "turnaround_min": 180},
+  {"incoming_train": "12420", "outgoing_train": "12419", "station_code": "LKO", "turnaround_min": 300},
+  {"incoming_train": "12554", "outgoing_train": "12553", "station_code": "NDLS", "turnaround_min": 420},
+  {"incoming_train": "12802", "outgoing_train": "12801", "station_code": "NDLS", "turnaround_min": 360},
+  {"incoming_train": "14218", "outgoing_train": "14217", "station_code": "NDLS", "turnaround_min": 300},
+  {"incoming_train": "12398", "outgoing_train": "12397", "station_code": "NDLS", "turnaround_min": 300},
+  {"incoming_train": "12566", "outgoing_train": "12565", "station_code": "NDLS", "turnaround_min": 360},
+  {"incoming_train": "14006", "outgoing_train": "14005", "station_code": "NDLS", "turnaround_min": 240},
+  {"incoming_train": "12302", "outgoing_train": "12301", "station_code": "NDLS", "turnaround_min": 480},
+  {"incoming_train": "12314", "outgoing_train": "12313", "station_code": "NDLS", "turnaround_min": 480},
+  {"incoming_train": "12424", "outgoing_train": "12423", "station_code": "NDLS", "turnaround_min": 420},
+  {"incoming_train": "54378", "outgoing_train": "54377", "station_code": "NDLS", "turnaround_min": 180}
+]

@@ -1,0 +1,1102 @@
+[
+  {
+    "code": "NDLS",
+    "name": "New Delhi",
+    "lat": 28.6143,
+    "lon": 77.2188,
+    "zone": "NR",
+    "category": "NSG-1",
+    "platforms": 16,
+    "is_junction": 1
+  },
+  {
+    "code": "GZB",
+    "name": "Ghaziabad Junction",
+    "lat": 28.6679,
+    "lon": 77.4326,
+    "zone": "NR",
+    "category": "NSG-2",
+    "platforms": 6,
+    "is_junction": 1
+  },
+  {
+    "code": "ALJN",
+    "name": "Aligarh Junction",
+    "lat": 27.8974,
+    "lon": 78.088,
+    "zone": "NCR",
+    "category": "NSG-2",
+    "platforms": 7,
+    "is_junction": 1
+  },
+  {
+    "code": "TDL",
+    "name": "Tundla Junction",
+    "lat": 27.2069,
+    "lon": 78.2415,
+    "zone": "NCR",
+    "category": "NSG-3",
+    "platforms": 5,
+    "is_junction": 1
+  },
+  {
+    "code": "ETW",
+    "name": "Etawah Junction",
+    "lat": 26.7769,
+    "lon": 79.0238,
+    "zone": "NCR",
+    "category": "NSG-3",
+    "platforms": 5,
+    "is_junction": 1
+  },
+  {
+    "code": "CNB",
+    "name": "Kanpur Central",
+    "lat": 26.4547,
+    "lon": 80.3507,
+    "zone": "NCR",
+    "category": "NSG-1",
+    "platforms": 10,
+    "is_junction": 1
+  },
+  {
+    "code": "ON",
+    "name": "Unnao Junction",
+    "lat": 26.5494,
+    "lon": 80.4905,
+    "zone": "NR",
+    "category": "NSG-4",
+    "platforms": 5,
+    "is_junction": 1
+  },
+  {
+    "code": "LKO",
+    "name": "Lucknow Charbagh",
+    "lat": 26.8315,
+    "lon": 80.9234,
+    "zone": "NR",
+    "category": "NSG-1",
+    "platforms": 9,
+    "is_junction": 1
+  },
+  {
+    "code": "HWH",
+    "name": "Howrah Junction",
+    "lat": 22.5838,
+    "lon": 88.3426,
+    "zone": "ER",
+    "category": "NSG-1",
+    "platforms": 23,
+    "is_junction": 1
+  },
+  {
+    "code": "CSMT",
+    "name": "Mumbai Chhatrapati Shivaji Maharaj Terminus",
+    "lat": 18.9402,
+    "lon": 72.8356,
+    "zone": "CR",
+    "category": "NSG-1",
+    "platforms": 18,
+    "is_junction": 1
+  },
+  {
+    "code": "MMCT",
+    "name": "Mumbai Central",
+    "lat": 18.9696,
+    "lon": 72.8193,
+    "zone": "WR",
+    "category": "NSG-1",
+    "platforms": 8,
+    "is_junction": 1
+  },
+  {
+    "code": "MAS",
+    "name": "Chennai Central (MGR Chennai)",
+    "lat": 13.0827,
+    "lon": 80.2755,
+    "zone": "SR",
+    "category": "NSG-1",
+    "platforms": 17,
+    "is_junction": 1
+  },
+  {
+    "code": "SBC",
+    "name": "KSR Bengaluru City",
+    "lat": 12.9784,
+    "lon": 77.5683,
+    "zone": "SWR",
+    "category": "NSG-1",
+    "platforms": 10,
+    "is_junction": 1
+  },
+  {
+    "code": "SC",
+    "name": "Secunderabad Junction",
+    "lat": 17.4344,
+    "lon": 78.5011,
+    "zone": "SCR",
+    "category": "NSG-1",
+    "platforms": 10,
+    "is_junction": 1
+  },
+  {
+    "code": "HYB",
+    "name": "Hyderabad Deccan (Nampally)",
+    "lat": 17.3924,
+    "lon": 78.4682,
+    "zone": "SCR",
+    "category": "NSG-2",
+    "platforms": 6,
+    "is_junction": 0
+  },
+  {
+    "code": "ADI",
+    "name": "Ahmedabad Junction",
+    "lat": 23.0232,
+    "lon": 72.6009,
+    "zone": "WR",
+    "category": "NSG-1",
+    "platforms": 12,
+    "is_junction": 1
+  },
+  {
+    "code": "PUNE",
+    "name": "Pune Junction",
+    "lat": 18.5284,
+    "lon": 73.8739,
+    "zone": "CR",
+    "category": "NSG-1",
+    "platforms": 6,
+    "is_junction": 1
+  },
+  {
+    "code": "PNBE",
+    "name": "Patna Junction",
+    "lat": 25.6022,
+    "lon": 85.1376,
+    "zone": "ECR",
+    "category": "NSG-1",
+    "platforms": 10,
+    "is_junction": 1
+  },
+  {
+    "code": "BSB",
+    "name": "Varanasi Junction",
+    "lat": 25.3283,
+    "lon": 82.9868,
+    "zone": "NR",
+    "category": "NSG-1",
+    "platforms": 9,
+    "is_junction": 1
+  },
+  {
+    "code": "PRYJ",
+    "name": "Prayagraj Junction",
+    "lat": 25.4439,
+    "lon": 81.8252,
+    "zone": "NCR",
+    "category": "NSG-1",
+    "platforms": 10,
+    "is_junction": 1
+  },
+  {
+    "code": "DDU",
+    "name": "Pt. Deen Dayal Upadhyaya Junction",
+    "lat": 25.2818,
+    "lon": 83.1166,
+    "zone": "ECR",
+    "category": "NSG-1",
+    "platforms": 8,
+    "is_junction": 1
+  },
+  {
+    "code": "GKP",
+    "name": "Gorakhpur Junction",
+    "lat": 26.7588,
+    "lon": 83.3855,
+    "zone": "NER",
+    "category": "NSG-1",
+    "platforms": 10,
+    "is_junction": 1
+  },
+  {
+    "code": "AGC",
+    "name": "Agra Cantt",
+    "lat": 27.1585,
+    "lon": 77.9908,
+    "zone": "NCR",
+    "category": "NSG-1",
+    "platforms": 6,
+    "is_junction": 1
+  },
+  {
+    "code": "MTJ",
+    "name": "Mathura Junction",
+    "lat": 27.4924,
+    "lon": 77.6737,
+    "zone": "NCR",
+    "category": "NSG-2",
+    "platforms": 10,
+    "is_junction": 1
+  },
+  {
+    "code": "GWL",
+    "name": "Gwalior Junction",
+    "lat": 26.2124,
+    "lon": 78.1772,
+    "zone": "NCR",
+    "category": "NSG-2",
+    "platforms": 5,
+    "is_junction": 1
+  },
+  {
+    "code": "VGLJ",
+    "name": "Virangana Lakshmibai Jhansi",
+    "lat": 25.4484,
+    "lon": 78.5685,
+    "zone": "NCR",
+    "category": "NSG-2",
+    "platforms": 8,
+    "is_junction": 1
+  },
+  {
+    "code": "BPL",
+    "name": "Bhopal Junction",
+    "lat": 23.2662,
+    "lon": 77.4144,
+    "zone": "WCR",
+    "category": "NSG-1",
+    "platforms": 6,
+    "is_junction": 1
+  },
+  {
+    "code": "RKMP",
+    "name": "Rani Kamlapati (Habibganj)",
+    "lat": 23.2057,
+    "lon": 77.4394,
+    "zone": "WCR",
+    "category": "NSG-2",
+    "platforms": 5,
+    "is_junction": 0
+  },
+  {
+    "code": "NGP",
+    "name": "Nagpur Junction",
+    "lat": 21.1524,
+    "lon": 79.0882,
+    "zone": "CR",
+    "category": "NSG-1",
+    "platforms": 8,
+    "is_junction": 1
+  },
+  {
+    "code": "KOTA",
+    "name": "Kota Junction",
+    "lat": 25.2188,
+    "lon": 75.8648,
+    "zone": "WCR",
+    "category": "NSG-2",
+    "platforms": 6,
+    "is_junction": 1
+  },
+  {
+    "code": "JP",
+    "name": "Jaipur Junction",
+    "lat": 26.92,
+    "lon": 75.7878,
+    "zone": "NWR",
+    "category": "NSG-1",
+    "platforms": 8,
+    "is_junction": 1
+  },
+  {
+    "code": "JU",
+    "name": "Jodhpur Junction",
+    "lat": 26.2842,
+    "lon": 73.02,
+    "zone": "NWR",
+    "category": "NSG-2",
+    "platforms": 5,
+    "is_junction": 1
+  },
+  {
+    "code": "BKN",
+    "name": "Bikaner Junction",
+    "lat": 28.0167,
+    "lon": 73.3119,
+    "zone": "NWR",
+    "category": "NSG-2",
+    "platforms": 6,
+    "is_junction": 1
+  },
+  {
+    "code": "AII",
+    "name": "Ajmer Junction",
+    "lat": 26.4528,
+    "lon": 74.6389,
+    "zone": "NWR",
+    "category": "NSG-2",
+    "platforms": 5,
+    "is_junction": 1
+  },
+  {
+    "code": "BRC",
+    "name": "Vadodara Junction",
+    "lat": 22.3107,
+    "lon": 73.1812,
+    "zone": "WR",
+    "category": "NSG-1",
+    "platforms": 7,
+    "is_junction": 1
+  },
+  {
+    "code": "ST",
+    "name": "Surat",
+    "lat": 21.2049,
+    "lon": 72.8406,
+    "zone": "WR",
+    "category": "NSG-1",
+    "platforms": 4,
+    "is_junction": 1
+  },
+  {
+    "code": "RTM",
+    "name": "Ratlam Junction",
+    "lat": 23.3441,
+    "lon": 75.0378,
+    "zone": "WR",
+    "category": "NSG-2",
+    "platforms": 7,
+    "is_junction": 1
+  },
+  {
+    "code": "BSL",
+    "name": "Bhusaval Junction",
+    "lat": 21.0456,
+    "lon": 75.7889,
+    "zone": "CR",
+    "category": "NSG-2",
+    "platforms": 8,
+    "is_junction": 1
+  },
+  {
+    "code": "BZA",
+    "name": "Vijayawada Junction",
+    "lat": 16.5186,
+    "lon": 80.62,
+    "zone": "SCR",
+    "category": "NSG-1",
+    "platforms": 10,
+    "is_junction": 1
+  },
+  {
+    "code": "VSKP",
+    "name": "Visakhapatnam Junction",
+    "lat": 17.7215,
+    "lon": 83.2876,
+    "zone": "ECoR",
+    "category": "NSG-1",
+    "platforms": 8,
+    "is_junction": 1
+  },
+  {
+    "code": "BBS",
+    "name": "Bhubaneswar",
+    "lat": 20.2666,
+    "lon": 85.8436,
+    "zone": "ECoR",
+    "category": "NSG-1",
+    "platforms": 6,
+    "is_junction": 1
+  },
+  {
+    "code": "CTC",
+    "name": "Cuttack Junction",
+    "lat": 20.4632,
+    "lon": 85.8928,
+    "zone": "ECoR",
+    "category": "NSG-2",
+    "platforms": 5,
+    "is_junction": 1
+  },
+  {
+    "code": "KUR",
+    "name": "Khurda Road Junction",
+    "lat": 20.1582,
+    "lon": 85.7381,
+    "zone": "ECoR",
+    "category": "NSG-3",
+    "platforms": 7,
+    "is_junction": 1
+  },
+  {
+    "code": "PURI",
+    "name": "Puri",
+    "lat": 19.8135,
+    "lon": 85.8312,
+    "zone": "ECoR",
+    "category": "NSG-2",
+    "platforms": 8,
+    "is_junction": 0
+  },
+  {
+    "code": "R",
+    "name": "Raipur Junction",
+    "lat": 21.2567,
+    "lon": 81.6296,
+    "zone": "SECR",
+    "category": "NSG-1",
+    "platforms": 7,
+    "is_junction": 1
+  },
+  {
+    "code": "BSP",
+    "name": "Bilaspur Junction",
+    "lat": 22.0797,
+    "lon": 82.1409,
+    "zone": "SECR",
+    "category": "NSG-1",
+    "platforms": 8,
+    "is_junction": 1
+  },
+  {
+    "code": "DURG",
+    "name": "Durg Junction",
+    "lat": 21.1904,
+    "lon": 81.2849,
+    "zone": "SECR",
+    "category": "NSG-2",
+    "platforms": 6,
+    "is_junction": 1
+  },
+  {
+    "code": "TATA",
+    "name": "Tatanagar Junction",
+    "lat": 22.7667,
+    "lon": 86.2,
+    "zone": "SER",
+    "category": "NSG-2",
+    "platforms": 6,
+    "is_junction": 1
+  },
+  {
+    "code": "ROU",
+    "name": "Rourkela Junction",
+    "lat": 22.2258,
+    "lon": 84.8624,
+    "zone": "SER",
+    "category": "NSG-2",
+    "platforms": 5,
+    "is_junction": 1
+  },
+  {
+    "code": "KGP",
+    "name": "Kharagpur Junction",
+    "lat": 22.3304,
+    "lon": 87.3228,
+    "zone": "SER",
+    "category": "NSG-1",
+    "platforms": 12,
+    "is_junction": 1
+  },
+  {
+    "code": "SDAH",
+    "name": "Sealdah",
+    "lat": 22.5675,
+    "lon": 88.3711,
+    "zone": "ER",
+    "category": "NSG-1",
+    "platforms": 21,
+    "is_junction": 1
+  },
+  {
+    "code": "ASN",
+    "name": "Asansol Junction",
+    "lat": 23.6871,
+    "lon": 86.9746,
+    "zone": "ER",
+    "category": "NSG-2",
+    "platforms": 8,
+    "is_junction": 1
+  },
+  {
+    "code": "DHN",
+    "name": "Dhanbad Junction",
+    "lat": 23.7957,
+    "lon": 86.4304,
+    "zone": "ECR",
+    "category": "NSG-2",
+    "platforms": 8,
+    "is_junction": 1
+  },
+  {
+    "code": "GAYA",
+    "name": "Gaya Junction",
+    "lat": 24.8055,
+    "lon": 84.9994,
+    "zone": "ECR",
+    "category": "NSG-2",
+    "platforms": 9,
+    "is_junction": 1
+  },
+  {
+    "code": "DNR",
+    "name": "Danapur",
+    "lat": 25.6267,
+    "lon": 85.0447,
+    "zone": "ECR",
+    "category": "NSG-2",
+    "platforms": 6,
+    "is_junction": 1
+  },
+  {
+    "code": "BJU",
+    "name": "Barauni Junction",
+    "lat": 25.4746,
+    "lon": 85.9723,
+    "zone": "ECR",
+    "category": "NSG-3",
+    "platforms": 9,
+    "is_junction": 1
+  },
+  {
+    "code": "SPJ",
+    "name": "Samastipur Junction",
+    "lat": 25.8629,
+    "lon": 85.7811,
+    "zone": "ECR",
+    "category": "NSG-3",
+    "platforms": 7,
+    "is_junction": 1
+  },
+  {
+    "code": "MFP",
+    "name": "Muzaffarpur Junction",
+    "lat": 26.1209,
+    "lon": 85.3906,
+    "zone": "ECR",
+    "category": "NSG-2",
+    "platforms": 8,
+    "is_junction": 1
+  },
+  {
+    "code": "DBG",
+    "name": "Darbhanga Junction",
+    "lat": 26.1542,
+    "lon": 85.8918,
+    "zone": "ECR",
+    "category": "NSG-3",
+    "platforms": 5,
+    "is_junction": 1
+  },
+  {
+    "code": "CPR",
+    "name": "Chhapra Junction",
+    "lat": 25.7796,
+    "lon": 84.7499,
+    "zone": "NER",
+    "category": "NSG-2",
+    "platforms": 5,
+    "is_junction": 1
+  },
+  {
+    "code": "GHY",
+    "name": "Guwahati",
+    "lat": 26.1818,
+    "lon": 91.7533,
+    "zone": "NFR",
+    "category": "NSG-1",
+    "platforms": 7,
+    "is_junction": 1
+  },
+  {
+    "code": "NJP",
+    "name": "New Jalpaiguri Junction",
+    "lat": 26.6853,
+    "lon": 88.4419,
+    "zone": "NFR",
+    "category": "NSG-2",
+    "platforms": 8,
+    "is_junction": 1
+  },
+  {
+    "code": "DBRG",
+    "name": "Dibrugarh",
+    "lat": 27.4728,
+    "lon": 94.912,
+    "zone": "NFR",
+    "category": "NSG-3",
+    "platforms": 5,
+    "is_junction": 0
+  },
+  {
+    "code": "TPJ",
+    "name": "Tiruchchirappalli Junction",
+    "lat": 10.7937,
+    "lon": 78.6856,
+    "zone": "SR",
+    "category": "NSG-2",
+    "platforms": 8,
+    "is_junction": 1
+  },
+  {
+    "code": "MDU",
+    "name": "Madurai Junction",
+    "lat": 9.9197,
+    "lon": 78.1105,
+    "zone": "SR",
+    "category": "NSG-2",
+    "platforms": 8,
+    "is_junction": 1
+  },
+  {
+    "code": "CBE",
+    "name": "Coimbatore Junction",
+    "lat": 11.0016,
+    "lon": 76.9629,
+    "zone": "SR",
+    "category": "NSG-2",
+    "platforms": 6,
+    "is_junction": 1
+  },
+  {
+    "code": "SA",
+    "name": "Salem Junction",
+    "lat": 11.6643,
+    "lon": 78.1252,
+    "zone": "SR",
+    "category": "NSG-2",
+    "platforms": 6,
+    "is_junction": 1
+  },
+  {
+    "code": "ED",
+    "name": "Erode Junction",
+    "lat": 11.3396,
+    "lon": 77.7281,
+    "zone": "SR",
+    "category": "NSG-2",
+    "platforms": 5,
+    "is_junction": 1
+  },
+  {
+    "code": "TVC",
+    "name": "Thiruvananthapuram Central",
+    "lat": 8.4875,
+    "lon": 76.9525,
+    "zone": "SR",
+    "category": "NSG-1",
+    "platforms": 5,
+    "is_junction": 0
+  },
+  {
+    "code": "ERS",
+    "name": "Ernakulam Junction (South)",
+    "lat": 9.9678,
+    "lon": 76.2891,
+    "zone": "SR",
+    "category": "NSG-1",
+    "platforms": 6,
+    "is_junction": 1
+  },
+  {
+    "code": "CLT",
+    "name": "Kozhikode Main (Calicut)",
+    "lat": 11.2483,
+    "lon": 75.7839,
+    "zone": "SR",
+    "category": "NSG-2",
+    "platforms": 4,
+    "is_junction": 0
+  },
+  {
+    "code": "CAN",
+    "name": "Kannur Main",
+    "lat": 11.8745,
+    "lon": 75.3704,
+    "zone": "SR",
+    "category": "NSG-2",
+    "platforms": 4,
+    "is_junction": 0
+  },
+  {
+    "code": "PGT",
+    "name": "Palakkad Junction (Olavakkod)",
+    "lat": 10.7867,
+    "lon": 76.6548,
+    "zone": "SR",
+    "category": "NSG-3",
+    "platforms": 5,
+    "is_junction": 1
+  },
+  {
+    "code": "TCR",
+    "name": "Thrissur",
+    "lat": 10.5186,
+    "lon": 76.2088,
+    "zone": "SR",
+    "category": "NSG-2",
+    "platforms": 4,
+    "is_junction": 0
+  },
+  {
+    "code": "QLN",
+    "name": "Kollam Junction",
+    "lat": 8.8872,
+    "lon": 76.5956,
+    "zone": "SR",
+    "category": "NSG-2",
+    "platforms": 6,
+    "is_junction": 1
+  },
+  {
+    "code": "UBL",
+    "name": "SSS Hubballi Junction",
+    "lat": 15.3469,
+    "lon": 75.1472,
+    "zone": "SWR",
+    "category": "NSG-2",
+    "platforms": 8,
+    "is_junction": 1
+  },
+  {
+    "code": "MYS",
+    "name": "Mysuru Junction",
+    "lat": 12.3168,
+    "lon": 76.6472,
+    "zone": "SWR",
+    "category": "NSG-2",
+    "platforms": 6,
+    "is_junction": 1
+  },
+  {
+    "code": "YPR",
+    "name": "Sir M. Visvesvaraya Terminal (SMVT) / Yesvantpur",
+    "lat": 13.0238,
+    "lon": 77.5503,
+    "zone": "SWR",
+    "category": "NSG-1",
+    "platforms": 8,
+    "is_junction": 1
+  },
+  {
+    "code": "TPTY",
+    "name": "Tirupati",
+    "lat": 13.6288,
+    "lon": 79.4192,
+    "zone": "SCR",
+    "category": "NSG-2",
+    "platforms": 6,
+    "is_junction": 1
+  },
+  {
+    "code": "RU",
+    "name": "Renigunta Junction",
+    "lat": 13.65,
+    "lon": 79.5167,
+    "zone": "SCR",
+    "category": "NSG-3",
+    "platforms": 6,
+    "is_junction": 1
+  },
+  {
+    "code": "GTL",
+    "name": "Guntakal Junction",
+    "lat": 15.1667,
+    "lon": 77.3667,
+    "zone": "SCR",
+    "category": "NSG-3",
+    "platforms": 7,
+    "is_junction": 1
+  },
+  {
+    "code": "KZJ",
+    "name": "Kazipet Junction",
+    "lat": 17.9781,
+    "lon": 79.5186,
+    "zone": "SCR",
+    "category": "NSG-3",
+    "platforms": 4,
+    "is_junction": 1
+  },
+  {
+    "code": "RJY",
+    "name": "Rajahmundry",
+    "lat": 17.0005,
+    "lon": 81.78,
+    "zone": "SCR",
+    "category": "NSG-2",
+    "platforms": 3,
+    "is_junction": 0
+  },
+  {
+    "code": "SUR",
+    "name": "Solapur",
+    "lat": 17.6599,
+    "lon": 75.9064,
+    "zone": "CR",
+    "category": "NSG-2",
+    "platforms": 5,
+    "is_junction": 1
+  },
+  {
+    "code": "MMR",
+    "name": "Manmad Junction",
+    "lat": 20.2524,
+    "lon": 74.4372,
+    "zone": "CR",
+    "category": "NSG-3",
+    "platforms": 6,
+    "is_junction": 1
+  },
+  {
+    "code": "NK",
+    "name": "Nashik Road",
+    "lat": 19.9575,
+    "lon": 73.8344,
+    "zone": "CR",
+    "category": "NSG-2",
+    "platforms": 4,
+    "is_junction": 0
+  },
+  {
+    "code": "IGP",
+    "name": "Igatpuri",
+    "lat": 19.6978,
+    "lon": 73.5606,
+    "zone": "CR",
+    "category": "NSG-4",
+    "platforms": 4,
+    "is_junction": 0
+  },
+  {
+    "code": "ASR",
+    "name": "Amritsar Junction",
+    "lat": 31.634,
+    "lon": 74.8723,
+    "zone": "NR",
+    "category": "NSG-2",
+    "platforms": 8,
+    "is_junction": 1
+  },
+  {
+    "code": "LDH",
+    "name": "Ludhiana Junction",
+    "lat": 30.901,
+    "lon": 75.8573,
+    "zone": "NR",
+    "category": "NSG-2",
+    "platforms": 7,
+    "is_junction": 1
+  },
+  {
+    "code": "JUC",
+    "name": "Jalandhar City Junction",
+    "lat": 31.326,
+    "lon": 75.5762,
+    "zone": "NR",
+    "category": "NSG-2",
+    "platforms": 5,
+    "is_junction": 1
+  },
+  {
+    "code": "UMB",
+    "name": "Ambala Cantt Junction",
+    "lat": 30.3304,
+    "lon": 76.8286,
+    "zone": "NR",
+    "category": "NSG-2",
+    "platforms": 8,
+    "is_junction": 1
+  },
+  {
+    "code": "CDG",
+    "name": "Chandigarh Junction",
+    "lat": 30.7046,
+    "lon": 76.8213,
+    "zone": "NR",
+    "category": "NSG-2",
+    "platforms": 6,
+    "is_junction": 1
+  },
+  {
+    "code": "HW",
+    "name": "Haridwar",
+    "lat": 29.9457,
+    "lon": 78.1642,
+    "zone": "NR",
+    "category": "NSG-2",
+    "platforms": 9,
+    "is_junction": 1
+  },
+  {
+    "code": "DDN",
+    "name": "Dehradun",
+    "lat": 30.315,
+    "lon": 78.0322,
+    "zone": "NR",
+    "category": "NSG-2",
+    "platforms": 4,
+    "is_junction": 0
+  },
+  {
+    "code": "BE",
+    "name": "Bareilly Junction",
+    "lat": 28.34,
+    "lon": 79.42,
+    "zone": "NR",
+    "category": "NSG-2",
+    "platforms": 6,
+    "is_junction": 1
+  },
+  {
+    "code": "MB",
+    "name": "Moradabad Junction",
+    "lat": 28.8386,
+    "lon": 78.7733,
+    "zone": "NR",
+    "category": "NSG-2",
+    "platforms": 7,
+    "is_junction": 1
+  },
+  {
+    "code": "SRE",
+    "name": "Saharanpur Junction",
+    "lat": 29.964,
+    "lon": 77.546,
+    "zone": "NR",
+    "category": "NSG-2",
+    "platforms": 6,
+    "is_junction": 1
+  },
+  {
+    "code": "MTC",
+    "name": "Meerut City Junction",
+    "lat": 28.98,
+    "lon": 77.7,
+    "zone": "NR",
+    "category": "NSG-3",
+    "platforms": 6,
+    "is_junction": 1
+  },
+  {
+    "code": "JAT",
+    "name": "Jammu Tawi",
+    "lat": 32.706,
+    "lon": 74.8797,
+    "zone": "NR",
+    "category": "NSG-2",
+    "platforms": 4,
+    "is_junction": 1
+  },
+  {
+    "code": "SVDK",
+    "name": "Shri Mata Vaishno Devi Katra",
+    "lat": 32.9935,
+    "lon": 74.9317,
+    "zone": "NR",
+    "category": "NSG-2",
+    "platforms": 5,
+    "is_junction": 0
+  },
+  {
+    "code": "DADRI",
+    "name": "Dadri DFC Terminal",
+    "lat": 28.55,
+    "lon": 77.56,
+    "zone": "NCR",
+    "category": "DFC",
+    "platforms": 4,
+    "is_junction": 1
+  },
+  {
+    "code": "REWARI",
+    "name": "Rewari DFC Yard",
+    "lat": 28.18,
+    "lon": 76.62,
+    "zone": "NWR",
+    "category": "DFC",
+    "platforms": 4,
+    "is_junction": 1
+  },
+  {
+    "code": "FL",
+    "name": "Phulera Junction DFC",
+    "lat": 26.87,
+    "lon": 75.24,
+    "zone": "NWR",
+    "category": "DFC",
+    "platforms": 4,
+    "is_junction": 1
+  },
+  {
+    "code": "ABR",
+    "name": "Abu Road DFC",
+    "lat": 24.48,
+    "lon": 72.78,
+    "zone": "NWR",
+    "category": "DFC",
+    "platforms": 4,
+    "is_junction": 1
+  },
+  {
+    "code": "PNU",
+    "name": "Palanpur DFC",
+    "lat": 24.17,
+    "lon": 72.43,
+    "zone": "WR",
+    "category": "DFC",
+    "platforms": 4,
+    "is_junction": 1
+  },
+  {
+    "code": "MSH",
+    "name": "Mehsana DFC",
+    "lat": 23.59,
+    "lon": 72.39,
+    "zone": "WR",
+    "category": "DFC",
+    "platforms": 4,
+    "is_junction": 1
+  },
+  {
+    "code": "JNPT",
+    "name": "Jawaharlal Nehru Port DFC",
+    "lat": 18.95,
+    "lon": 72.95,
+    "zone": "CR",
+    "category": "DFC",
+    "platforms": 6,
+    "is_junction": 1
+  },
+  {
+    "code": "SEB",
+    "name": "Sonnagar DFC",
+    "lat": 24.95,
+    "lon": 84.18,
+    "zone": "ECR",
+    "category": "DFC",
+    "platforms": 4,
+    "is_junction": 1
+  },
+  {
+    "code": "GMO",
+    "name": "Gomoh DFC Junction",
+    "lat": 23.87,
+    "lon": 86.15,
+    "zone": "ECR",
+    "category": "DFC",
+    "platforms": 4,
+    "is_junction": 1
+  },
+  {
+    "code": "DKAE",
+    "name": "Dankuni Freight Terminal",
+    "lat": 22.68,
+    "lon": 88.29,
+    "zone": "ER",
+    "category": "DFC",
+    "platforms": 6,
+    "is_junction": 1
+  }
+]

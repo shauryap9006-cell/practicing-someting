@@ -1,0 +1,45 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: railtwin-x:v4
+    container_name: railtwin_api
+    ports:
+      - "8000:8000"
+    environment:
+      - RAILTWIN_DB_PATH=/app/data/railtwin.db
+      - RAILTWIN_ARTIFACTS_DIR=/app/artifacts
+      - RAILTWIN_API_HOST=0.0.0.0
+      - RAILTWIN_API_PORT=8000
+    volumes:
+      # Persist database and ML artifacts between restarts
+      - railtwin_db:/app/data
+      - railtwin_artifacts:/app/artifacts
+      - railtwin_cache:/app/data/cache
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Nightly pipeline cron runner (optional — runs on host via Makefile instead)
+  # Uncomment to run nightly pipeline inside Docker
+  # nightly:
+  #   image: railtwin-x:v4
+  #   container_name: railtwin_nightly
+  #   volumes:
+  #     - railtwin_db:/app/data
+  #     - railtwin_artifacts:/app/artifacts
+  #     - railtwin_cache:/app/data/cache
+  #   command: ["python", "-m", "scripts.nightly_pipeline", "--network=mixed"]
+  #   profiles: ["nightly"]
+
+volumes:
+  railtwin_db:
+  railtwin_artifacts:
+  railtwin_cache:

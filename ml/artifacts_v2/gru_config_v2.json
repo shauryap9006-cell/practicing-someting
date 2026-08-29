@@ -1,0 +1,44 @@
+{
+  "model_type": "RailTwinGRUv2_Ensemble",
+  "seeds": [
+    11,
+    22,
+    33
+  ],
+  "vocab_size": 2048,
+  "alphas": [
+    0.05,
+    0.1,
+    0.25,
+    0.5,
+    0.75,
+    0.9,
+    0.95
+  ],
+  "split": {
+    "train_start": "2026-07-01",
+    "train_end": "2026-08-18",
+    "val_start": "2026-08-19",
+    "val_end": "2026-08-22",
+    "bench_start": "2026-08-23",
+    "bench_end": "2026-08-29"
+  },
+  "val_mae_p50": 5.626953125,
+  "val_crps_pure_49pt": 4.332099807848408,
+  "val_crps_per_member_mean": 4.353966703034466,
+  "ensemble_gain_pct": 0.5022292699394764,
+  "val_cov80_raw_static": 75.07142857142857,
+  "predictive_width_mean": 23.555055618286133,
+  "predictive_width_median": 25.87498664855957,
+  "true_epistemic_q50_std": 0.3730400800704956,
+  "bugs_remediated": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G"
+  ],
+  "trained_at": "2026-08-29T09:56:51.952065+00:00"
+}

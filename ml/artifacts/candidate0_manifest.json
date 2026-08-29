@@ -1,0 +1,107 @@
+﻿{
+  "trained_at": "2026-08-29T01:07:12.114389",
+  "train_rows": 88200,
+  "test_rows": 29400,
+  "split_info": {
+    "start_date": "2026-08-02",
+    "train_cutoff": "2026-08-22",
+    "test_start": "2026-08-23",
+    "test_end": "2026-08-29"
+  },
+  "direct_model_max_hops": 3,
+  "quantiles": [
+    0.1,
+    0.5,
+    0.9
+  ],
+  "conformal_q_hat": 0.7199958987011399,
+  "conformal_q_hat_direct": 0.7199958987011399,
+  "conformal_q_hat_direct_1h": 0.7199958987011399,
+  "conformal_q_hat_direct_3h": 0.7199958987011399,
+  "conformal_q_hat_direct_6h": 0.7199958987011399,
+  "conformal_q_hat_delta": 0.35104929596623125,
+  "conformal_q_hat_delta_1h": 0.23738935076853965,
+  "conformal_q_hat_delta_3h": 0.5795822664125865,
+  "conformal_q_hat_delta_6h": 0.35104929596623125,
+  "target_coverage": 0.8,
+  "features": [
+    "current_delay",
+    "hops_remaining",
+    "km_remaining",
+    "hour_of_day",
+    "day_type",
+    "train_priority",
+    "target_is_junction",
+    "target_is_terminus",
+    "hist_avg_delay_train_target",
+    "hist_p90_delay_train_target",
+    "sched_halt_target_min",
+    "sched_congestion_target",
+    "fog_flag_target",
+    "rain_mm_target",
+    "active_corridor_trains",
+    "delay_velocity",
+    "chronic_baseline",
+    "trains_ahead_30k",
+    "trains_behind_30k",
+    "opposing_trains_30k",
+    "min_predicted_headway_next_station",
+    "sum_delay_trains_ahead_30k",
+    "section_occupancy_pct",
+    "rake_incoming_delay",
+    "crew_duty_pressure"
+  ],
+  "feature_importance_gain_pct": {
+    "current_delay": 74.30648887830155,
+    "hops_remaining": 3.1372584721532677,
+    "km_remaining": 1.0503106603687198,
+    "hour_of_day": 0.0,
+    "day_type": 0.38528942908242053,
+    "train_priority": 2.349772626088947,
+    "target_is_junction": 0.0,
+    "target_is_terminus": 0.011441004922435292,
+    "hist_avg_delay_train_target": 8.419892766989928,
+    "hist_p90_delay_train_target": 2.8175639828542263,
+    "sched_halt_target_min": 0.18436280400436963,
+    "sched_congestion_target": 0.39669931248457857,
+    "fog_flag_target": 0.0,
+    "rain_mm_target": 0.23142757201001954,
+    "active_corridor_trains": 0.0,
+    "delay_velocity": 2.617317548981172,
+    "chronic_baseline": 2.5426615833518253,
+    "trains_ahead_30k": 0.0,
+    "trains_behind_30k": 0.0,
+    "opposing_trains_30k": 0.0,
+    "min_predicted_headway_next_station": 1.0487172775585627,
+    "sum_delay_trains_ahead_30k": 0.0,
+    "section_occupancy_pct": 0.0,
+    "rake_incoming_delay": 0.5007960808479807,
+    "crew_duty_pressure": 0.0
+  },
+  "b3_linear_regression_calib_mae": 9.06,
+  "cqr_mondrian": {
+    "global": 2.5333034728499193,
+    "short_horizon_hops<=3": 2.5333034728499193
+  },
+  "stacking_weights": {
+    "short": [
+      0.5679777043168416,
+      0.021892698931911255,
+      0.4101295967512472
+    ],
+    "medium": [
+      0.5,
+      0.35,
+      0.15
+    ],
+    "long": [
+      0.45,
+      0.3,
+      0.25
+    ]
+  },
+  "ensemble_mae": 8.01,
+  "ensemble_coverage_80": 80.0,
+  "ensemble_winkler": 35.02,
+  "ensemble_crps": 5.01
+}

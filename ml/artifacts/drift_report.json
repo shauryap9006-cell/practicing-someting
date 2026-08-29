@@ -1,0 +1,75 @@
+{
+  "generated_at": "2026-08-29T01:16:40.541386",
+  "reference_window_days": 21,
+  "live_window_days": 3,
+  "total_features": 7,
+  "red_features": 0,
+  "amber_features": 0,
+  "green_features": 7,
+  "overall_status": "GREEN",
+  "features": [
+    {
+      "feature": "current_delay",
+      "psi": 0.0015,
+      "status": "GREEN",
+      "expected_mean": 32.034,
+      "actual_mean": 32.379,
+      "expected_std": 24.481,
+      "actual_std": 24.651
+    },
+    {
+      "feature": "hops_remaining",
+      "psi": 0.0,
+      "status": "GREEN",
+      "expected_mean": 5.0,
+      "actual_mean": 5.0,
+      "expected_std": 2.0,
+      "actual_std": 2.001
+    },
+    {
+      "feature": "km_remaining",
+      "psi": 0.0,
+      "status": "GREEN",
+      "expected_mean": 257.857,
+      "actual_mean": 257.927,
+      "expected_std": 126.854,
+      "actual_std": 127.007
+    },
+    {
+      "feature": "hour_of_day",
+      "psi": 0.0,
+      "status": "GREEN",
+      "expected_mean": 11.537,
+      "actual_mean": 11.539,
+      "expected_std": 6.951,
+      "actual_std": 6.95
+    },
+    {
+      "feature": "train_priority",
+      "psi": 0.0,
+      "status": "GREEN",
+      "expected_mean": 2.453,
+      "actual_mean": 2.453,
+      "expected_std": 1.049,
+      "actual_std": 1.049
+    },
+    {
+      "feature": "fog_flag_target",
+      "psi": 0.0,
+      "status": "GREEN",
+      "expected_mean": 0.019,
+      "actual_mean": 0.095,
+      "expected_std": 0.138,
+      "actual_std": 0.294
+    },
+    {
+      "feature": "rain_mm_target",
+      "psi": 0.0003,
+      "status": "GREEN",
+      "expected_mean": 0.437,
+      "actual_mean": 0.481,
+      "expected_std": 1.116,
+      "actual_std": 1.408
+    }
+  ]
+}

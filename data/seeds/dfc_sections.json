@@ -1,0 +1,83 @@
+[
+  {
+    "from_code": "DADRI",
+    "to_code": "REWARI",
+    "distance_km": 127.0,
+    "single_line": 0,
+    "max_speed_kmph": 100,
+    "is_dfc": 1,
+    "loop_length_m": 1500
+  },
+  {
+    "from_code": "REWARI",
+    "to_code": "FL",
+    "distance_km": 215.0,
+    "single_line": 0,
+    "max_speed_kmph": 100,
+    "is_dfc": 1,
+    "loop_length_m": 1500
+  },
+  {
+    "from_code": "FL",
+    "to_code": "ABR",
+    "distance_km": 308.0,
+    "single_line": 0,
+    "max_speed_kmph": 100,
+    "is_dfc": 1,
+    "loop_length_m": 1500
+  },
+  {
+    "from_code": "ABR",
+    "to_code": "PNU",
+    "distance_km": 52.0,
+    "single_line": 0,
+    "max_speed_kmph": 100,
+    "is_dfc": 1,
+    "loop_length_m": 1500
+  },
+  {
+    "from_code": "PNU",
+    "to_code": "MSH",
+    "distance_km": 65.0,
+    "single_line": 0,
+    "max_speed_kmph": 100,
+    "is_dfc": 1,
+    "loop_length_m": 1500
+  },
+  {
+    "from_code": "MSH",
+    "to_code": "JNPT",
+    "distance_km": 512.0,
+    "single_line": 0,
+    "max_speed_kmph": 100,
+    "is_dfc": 1,
+    "loop_length_m": 1500
+  },
+  {
+    "from_code": "DDU",
+    "to_code": "SEB",
+    "distance_km": 118.0,
+    "single_line": 0,
+    "max_speed_kmph": 100,
+    "is_dfc": 1,
+    "loop_length_m": 1500
+  },
+  {
+    "from_code": "SEB",
+    "to_code": "GMO",
+    "distance_km": 182.0,
+    "single_line": 0,
+    "max_speed_kmph": 100,
+    "is_dfc": 1,
+    "loop_length_m": 1500
+  },
+  {
+    "from_code": "GMO",
+    "to_code": "DKAE",
+    "distance_km": 248.0,
+    "single_line": 0,
+    "max_speed_kmph": 100,
+    "is_dfc": 1,
+    "loop_length_m": 1500
+  }
+]

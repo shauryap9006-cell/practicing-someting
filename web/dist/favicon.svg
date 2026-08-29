@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Signal Post & Base -->
+  <rect x="0" y="0" width="32" height="32" rx="2" fill="#0E0F11"/>
+  <rect x="14" y="24" width="4" height="7" fill="#26282C"/>
+  <rect x="10" y="30" width="12" height="2" fill="#26282C"/>
+  <!-- Signal Housing Head -->
+  <rect x="9" y="3" width="14" height="21" rx="2" fill="#15171A" stroke="#26282C" stroke-width="1"/>
+  <!-- Signal Visors / Hoods -->
+  <path d="M 11 8 C 11 6 21 6 21 8" stroke="#26282C" stroke-width="1.5" fill="none"/>
+  <path d="M 11 17 C 11 15 21 15 21 17" stroke="#26282C" stroke-width="1.5" fill="none"/>
+  <!-- Upper Aspect (Red/Off) -->
+  <circle cx="16" cy="9.5" r="3.2" fill="#26282C" stroke="#1B1D21" stroke-width="0.8"/>
+  <!-- Lower Aspect (Lit Amber #FFB224) -->
+  <circle cx="16" cy="18.5" r="3.2" fill="#FFB224"/>
+  <circle cx="16" cy="18.5" r="1.6" fill="#FFF2CC" opacity="0.8"/>
+</svg>

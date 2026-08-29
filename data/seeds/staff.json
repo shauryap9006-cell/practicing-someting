@@ -1,0 +1,92 @@
+[
+  {
+    "staff_id": "STF-CNB-01",
+    "name": "Section Controller",
+    "role": "controller",
+    "phone": "9580873724",
+    "station_code": "CNB",
+    "pin_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "on_duty": 1
+  },
+  {
+    "staff_id": "STF-CNB-02",
+    "name": "Station Controller",
+    "role": "controller",
+    "phone": "9569890921",
+    "station_code": "CNB",
+    "pin_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "on_duty": 1
+  },
+  {
+    "staff_id": "STF-CNB-03",
+    "name": "Pointsman Cabin East",
+    "role": "pointsman",
+    "phone": "9569890921",
+    "station_code": "CNB",
+    "pin_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "on_duty": 1
+  },
+  {
+    "staff_id": "STF-CNB-04",
+    "name": "Pointsman Cabin West",
+    "role": "pointsman",
+    "phone": "9580873724",
+    "station_code": "CNB",
+    "pin_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "on_duty": 1
+  },
+  {
+    "staff_id": "STF-CNB-05",
+    "name": "Loco Pilot Lead",
+    "role": "loco_pilot",
+    "phone": "9569890921",
+    "station_code": "CNB",
+    "pin_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "on_duty": 1
+  },
+  {
+    "staff_id": "STF-CNB-06",
+    "name": "Loco Pilot Relief",
+    "role": "loco_pilot",
+    "phone": "9580873724",
+    "station_code": "CNB",
+    "pin_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "on_duty": 1
+  },
+  {
+    "staff_id": "STF-CNB-07",
+    "name": "Train Guard 1",
+    "role": "guard",
+    "phone": "9569890921",
+    "station_code": "CNB",
+    "pin_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "on_duty": 1
+  },
+  {
+    "staff_id": "STF-CNB-08",
+    "name": "Train Guard 2",
+    "role": "guard",
+    "phone": "9580873724",
+    "station_code": "CNB",
+    "pin_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "on_duty": 1
+  },
+  {
+    "staff_id": "STF-CNB-09",
+    "name": "Station Master CNB",
+    "role": "station_master",
+    "phone": "9580873724",
+    "station_code": "CNB",
+    "pin_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "on_duty": 1
+  },
+  {
+    "staff_id": "STF-CNB-10",
+    "name": "Yard Shunter",
+    "role": "shunter",
+    "phone": "9569890921",
+    "station_code": "CNB",
+    "pin_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "on_duty": 1
+  }
+]

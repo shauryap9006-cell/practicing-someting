@@ -1,0 +1,23 @@
+{
+  "board_live": {
+    "p50": null,
+    "p95": null,
+    "p99": null,
+    "n": 0,
+    "url": "/api/board/NDLS"
+  },
+  "journey_2421": {
+    "p50": 104.41,
+    "p95": 137.24,
+    "p99": 175.58,
+    "n": 50,
+    "url": "/v1/trains/2421/journey"
+  },
+  "eta_2421": {
+    "p50": null,
+    "p95": null,
+    "p99": null,
+    "n": 0,
+    "url": "/v1/trains/2421/eta?target_station=CNB"
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "scenario_name": "delhi_kanpur_cascade",
+  "description": "3-Minute Hackathon Demo Replay: +120m shock at Kanpur cascading into same-rake doom on 12033, crossing holds, and NDLS platform explosion.",
+  "injected_shock": {
+    "train_no": "12034",
+    "station_code": "CNB",
+    "injected_delay_min": 120,
+    "cause": "Overhead traction wire breakdown at Kanpur Outer"
+  },
+  "affected_trains": [
+    {
+      "train_no": "12034",
+      "train_name": "Kanpur Central - New Delhi Shatabdi",
+      "inherited_delay_min": 120,
+      "mechanism": "Primary disturbance shock"
+    },
+    {
+      "train_no": "12033",
+      "train_name": "New Delhi - Kanpur Central Shatabdi",
+      "inherited_delay_min": 90,
+      "mechanism": "Same-rake turnaround constraint at NDLS (Physical coach unarrived)",
+      "official_ntes_status": "ON TIME",
+      "railtwin_status": "DOOMED (+90m departure delay)"
+    },
+    {
+      "train_no": "12420",
+      "train_name": "New Delhi - Lucknow Gomti Express",
+      "inherited_delay_min": 25,
+      "mechanism": "Single-line crossing hold at Ganga Bridge bottleneck (CNB-ON)"
+    },
+    {
+      "train_no": "12554",
+      "train_name": "New Delhi - Saharsa Vaishali Superfast",
+      "inherited_delay_min": 15,
+      "mechanism": "Platform occupancy wait at NDLS Platform 4"
+    }
+  ],
+  "platform_reoptimization": {
+    "station_code": "NDLS",
+    "conflicts_before": 5,
+    "conflicts_after": 0,
+    "resolved_conflicts": 5,
+    "execution_time_seconds": 0.042,
+    "swaps": [
+      {"train_no": "12033", "from_platform": 4, "to_platform": 9},
+      {"train_no": "12554", "from_platform": 4, "to_platform": 12}
+    ]
+  },
+  "autopsy_breakdown_12034": {
+    "total_delay_min": 145,
+    "causes": [
+      {"minutes": 120, "event_type": "EXT_DWELL", "station": "CNB", "cause": "Overhead traction wire breakdown"},
+      {"minutes": 15, "event_type": "TSR", "station": "TDL-ETW", "cause": "Track maintenance 60km/h restriction"},
+      {"minutes": 10, "event_type": "CROSSING_HOLD", "station": "ALJN", "cause": "Yield to higher-priority Howrah Rajdhani"}
+    ],
+    "is_exact_accounting": true
+  }
+}

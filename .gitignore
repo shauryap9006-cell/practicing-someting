@@ -1,0 +1,11 @@
+﻿data/*.db
+data/backups/
+data/cache/
+data/kaggle_downloads/
+data/weather/*.json
+web/node_modules/
+.venv/
+__pycache__/
+*.pyc
+.coverage
+graphify-out/

@@ -1,0 +1,128 @@
+{
+  "corridor": "NDLS-CNB-LKO",
+  "total_distance_km": 512,
+  "stations": [
+    {
+      "code": "NDLS",
+      "name": "New Delhi",
+      "lat": 28.6149,
+      "lon": 77.2195,
+      "km": 0,
+      "elevation_m": 215.0
+    },
+    {
+      "code": "GZB",
+      "name": "Ghaziabad",
+      "lat": 28.6678,
+      "lon": 77.4498,
+      "km": 25,
+      "elevation_m": 213.0
+    },
+    {
+      "code": "ALJN",
+      "name": "Aligarh Junction",
+      "lat": 27.8974,
+      "lon": 78.088,
+      "km": 131,
+      "elevation_m": 190.0
+    },
+    {
+      "code": "TDL",
+      "name": "Tundla Junction",
+      "lat": 27.2081,
+      "lon": 78.2393,
+      "km": 209,
+      "elevation_m": 170.0
+    },
+    {
+      "code": "ETW",
+      "name": "Etawah Junction",
+      "lat": 26.7768,
+      "lon": 79.0305,
+      "km": 300,
+      "elevation_m": 154.0
+    },
+    {
+      "code": "CNB",
+      "name": "Kanpur Central",
+      "lat": 26.4547,
+      "lon": 80.3499,
+      "km": 440,
+      "elevation_m": 128.0
+    },
+    {
+      "code": "ON",
+      "name": "Unnao Junction",
+      "lat": 26.5458,
+      "lon": 80.4907,
+      "km": 458,
+      "elevation_m": 133.0
+    },
+    {
+      "code": "LKO",
+      "name": "Lucknow Charbagh",
+      "lat": 26.831,
+      "lon": 80.92,
+      "km": 512,
+      "elevation_m": 122.0
+    }
+  ],
+  "segments": [
+    {
+      "from_station": "NDLS",
+      "to_station": "GZB",
+      "distance_km": 25,
+      "elev_diff_m": -2.0,
+      "gradient_percent": -0.008,
+      "gradient_ratio": "1 in 12500"
+    },
+    {
+      "from_station": "GZB",
+      "to_station": "ALJN",
+      "distance_km": 106,
+      "elev_diff_m": -23.0,
+      "gradient_percent": -0.0217,
+      "gradient_ratio": "1 in 4609"
+    },
+    {
+      "from_station": "ALJN",
+      "to_station": "TDL",
+      "distance_km": 78,
+      "elev_diff_m": -20.0,
+      "gradient_percent": -0.0256,
+      "gradient_ratio": "1 in 3900"
+    },
+    {
+      "from_station": "TDL",
+      "to_station": "ETW",
+      "distance_km": 91,
+      "elev_diff_m": -16.0,
+      "gradient_percent": -0.0176,
+      "gradient_ratio": "1 in 5688"
+    },
+    {
+      "from_station": "ETW",
+      "to_station": "CNB",
+      "distance_km": 140,
+      "elev_diff_m": -26.0,
+      "gradient_percent": -0.0186,
+      "gradient_ratio": "1 in 5385"
+    },
+    {
+      "from_station": "CNB",
+      "to_station": "ON",
+      "distance_km": 18,
+      "elev_diff_m": 5.0,
+      "gradient_percent": 0.0278,
+      "gradient_ratio": "1 in 3600"
+    },
+    {
+      "from_station": "ON",
+      "to_station": "LKO",
+      "distance_km": 54,
+      "elev_diff_m": -11.0,
+      "gradient_percent": -0.0204,
+      "gradient_ratio": "1 in 4909"
+    }
+  ]
+}

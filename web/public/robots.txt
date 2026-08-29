@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /thanks
+
+# Swap this line for the deploy URL when one exists:
+# Sitemap: https://YOUR-DEPLOY-URL/sitemap.xml
