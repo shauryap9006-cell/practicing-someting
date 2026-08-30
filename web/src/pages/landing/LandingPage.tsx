@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { SEO } from '@/lib/seo';
 import { SITE } from '@/config/site';
-import { mockStore } from '@/mock/store';
+import { F14_PROOF_METRICS } from '@/mock/model';
 import { F14Metric } from '@/mock/types';
 import {
   ArrowRight,
@@ -38,7 +38,7 @@ export function LandingPage() {
   const [org, setOrg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const proofMetrics = mockStore.getModelProof().f14Metrics;
+  const proofMetrics = F14_PROOF_METRICS;
 
   useEffect(() => {
     const handleScroll = () => {
