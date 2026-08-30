@@ -85,247 +85,360 @@ function CloudLayer() {
 
 
 // ----------------------------------------------------
-// 1. HIGH-CONTRAST VANDE BHARAT & RAJDHANI TRAIN RAKES
+// 1. HIGH-FIDELITY INTERCITY EXPRESS TRAIN (RED/YELLOW/WHITE LIVERY)
 // ----------------------------------------------------
-function TrainCoach({
+function IntercityTrainCoach({
   position,
   isLocomotive = false,
   isReverse = false,
-  theme = 'vande_bharat',
+  isTailCoach = false,
 }: {
   position: [number, number, number];
   isLocomotive?: boolean;
   isReverse?: boolean;
-  theme?: 'vande_bharat' | 'rajdhani';
+  isTailCoach?: boolean;
 }) {
-  const coachLength = isLocomotive ? 8.2 : 7.6;
-  const coachWidth = 1.1;
-  const coachHeight = 1.15;
+  const coachLength = isLocomotive ? 8.6 : 7.8;
+  const coachWidth = 1.14;
+  const coachHeight = 1.18;
 
-  const isVande = theme === 'vande_bharat';
-  const bodyColor = isVande ? '#E6E9F0' : '#8B1E1E'; // Crisp Silver/White or Deep Crimson Red
-  const stripeColor = isVande ? '#152E66' : '#FFB224'; // Deep Royal Blue or Golden Amber
-  const speedStripeColor = '#FF9900'; // Bright Indian Railways safety orange
+  // Exact Intercity Express Color Palette
+  const bodyLowerColor = '#E2E5EB'; // Crisp light grey/white lower body
+  const windowBandColor = '#BA1B23'; // Rich Intercity Crimson Red window band
+  const yellowAccentColor = '#FFB800'; // Golden-Yellow accent stripes
+  const roofColor = '#30343D'; // Industrial dark graphite roof
+  const skirtColor = '#181A1F'; // Matte black undercarriage skirt
 
   return (
     <group position={position} rotation={[0, isReverse ? Math.PI : 0, 0]}>
-      {/* Main Coach Body */}
-      <mesh position={[0, coachHeight / 2 + 0.25, 0]}>
-        <boxGeometry args={[coachWidth, coachHeight, coachLength]} />
+      {/* 1. Main Coach Body Structure */}
+      {/* 1A. Lower White/Silver Body */}
+      <mesh position={[0, coachHeight * 0.32 + 0.22, 0]}>
+        <boxGeometry args={[coachWidth, coachHeight * 0.44, coachLength]} />
         <meshStandardMaterial
-          color={bodyColor}
-          metalness={0.5}
+          color={bodyLowerColor}
+          metalness={0.4}
           roughness={0.25}
         />
       </mesh>
 
-      {/* Aerodynamic Primary Livery Stripe */}
-      <mesh position={[0, coachHeight / 2 + 0.15, 0]}>
-        <boxGeometry args={[coachWidth + 0.03, 0.28, coachLength + 0.02]} />
+      {/* 1B. Dark Skirt & Underframe Base */}
+      <mesh position={[0, 0.16, 0]}>
+        <boxGeometry args={[coachWidth * 0.96, 0.22, coachLength * 0.98]} />
+        <meshStandardMaterial color={skirtColor} metalness={0.8} roughness={0.4} />
+      </mesh>
+
+      {/* 1C. Lower Golden-Yellow Accent Stripe */}
+      <mesh position={[0, coachHeight * 0.54 + 0.22, 0]}>
+        <boxGeometry args={[coachWidth + 0.03, 0.05, coachLength + 0.02]} />
         <meshStandardMaterial
-          color={stripeColor}
-          metalness={0.4}
-          roughness={0.3}
+          color={yellowAccentColor}
+          emissive={yellowAccentColor}
+          emissiveIntensity={0.6}
         />
       </mesh>
 
-      {/* Thin Gold/Amber Speed Stripe */}
-      <mesh position={[0, coachHeight / 2 + 0.35, 0]}>
-        <boxGeometry args={[coachWidth + 0.04, 0.06, coachLength + 0.02]} />
+      {/* 1D. Signature Crimson Red Window Band */}
+      <mesh position={[0, coachHeight * 0.74 + 0.22, 0]}>
+        <boxGeometry args={[coachWidth + 0.015, 0.38, coachLength + 0.015]} />
         <meshStandardMaterial
-          color={speedStripeColor}
-          emissive={speedStripeColor}
-          emissiveIntensity={0.8}
+          color={windowBandColor}
+          metalness={0.45}
+          roughness={0.28}
         />
       </mesh>
 
-      {/* Aerodynamic Bullet/Locomotive Nose */}
+      {/* 1E. Upper Golden-Yellow Roofline Stripe */}
+      <mesh position={[0, coachHeight * 0.93 + 0.22, 0]}>
+        <boxGeometry args={[coachWidth + 0.03, 0.06, coachLength + 0.02]} />
+        <meshStandardMaterial
+          color={yellowAccentColor}
+          emissive={yellowAccentColor}
+          emissiveIntensity={0.6}
+        />
+      </mesh>
+
+      {/* 1F. Dark Slate Aerodynamic Roof */}
+      <mesh position={[0, coachHeight + 0.26, 0]}>
+        <boxGeometry args={[coachWidth * 0.96, 0.22, coachLength]} />
+        <meshStandardMaterial color={roofColor} metalness={0.5} roughness={0.45} />
+      </mesh>
+
+      {/* 2. LOCOMOTIVE: Aerodynamic Intercity Wedge Nose & Cab */}
       {isLocomotive && (
         <group position={[0, coachHeight / 2 + 0.25, coachLength / 2]}>
-          {/* Sloped front nose wedge */}
-          <mesh position={[0, -0.05, 1.1]} rotation={[0.4, 0, 0]}>
-            <boxGeometry args={[coachWidth * 0.96, coachHeight * 0.85, 2.2]} />
-            <meshStandardMaterial color={bodyColor} metalness={0.6} roughness={0.2} />
+          {/* Main Angled Wedge Nose */}
+          <mesh position={[0, -0.06, 1.25]} rotation={[0.42, 0, 0]}>
+            <boxGeometry args={[coachWidth * 0.96, coachHeight * 0.88, 2.4]} />
+            <meshStandardMaterial color={bodyLowerColor} metalness={0.5} roughness={0.25} />
           </mesh>
 
-          {/* Front Blue / Red Livery Wrap on Nose */}
-          <mesh position={[0, -0.12, 1.3]} rotation={[0.4, 0, 0]}>
-            <boxGeometry args={[coachWidth * 0.98, 0.45, 1.9]} />
-            <meshStandardMaterial color={stripeColor} metalness={0.5} roughness={0.2} />
-          </mesh>
-
-          {/* Driver Cockpit Windshield (Glossy Tinted Glass) */}
-          <mesh position={[0, 0.32, 0.8]} rotation={[0.5, 0, 0]}>
-            <boxGeometry args={[coachWidth * 0.88, 0.42, 0.8]} />
+          {/* High-Visibility Yellow Safety Face Panel on Nose */}
+          <mesh position={[0, -0.16, 1.45]} rotation={[0.42, 0, 0]}>
+            <boxGeometry args={[coachWidth * 0.92, 0.55, 1.95]} />
             <meshStandardMaterial
-              color="#0A1118"
-              metalness={0.9}
-              roughness={0.1}
+              color={yellowAccentColor}
+              metalness={0.3}
+              roughness={0.3}
             />
           </mesh>
 
-          {/* High-Intensity Dual LED Projector Headlights */}
-          <mesh position={[-0.35, -0.15, 2.0]}>
-            <sphereGeometry args={[0.09, 16, 16]} />
+          {/* Crimson Red Nose Side Wings & Surround */}
+          <mesh position={[0, 0.06, 1.35]} rotation={[0.42, 0, 0]}>
+            <boxGeometry args={[coachWidth * 0.98, 0.24, 2.05]} />
+            <meshStandardMaterial color={windowBandColor} metalness={0.45} roughness={0.3} />
+          </mesh>
+
+          {/* Driver Cockpit Windshield (High-Gloss Tinted Glass) */}
+          <mesh position={[0, 0.36, 0.9]} rotation={[0.54, 0, 0]}>
+            <boxGeometry args={[coachWidth * 0.88, 0.44, 0.85]} />
+            <meshStandardMaterial
+              color="#070E18"
+              metalness={0.95}
+              roughness={0.08}
+            />
+          </mesh>
+          {/* Windshield Center Wiper Divider */}
+          <mesh position={[0, 0.36, 0.91]} rotation={[0.54, 0, 0]}>
+            <boxGeometry args={[0.04, 0.46, 0.86]} />
+            <meshStandardMaterial color="#111317" roughness={0.8} />
+          </mesh>
+
+          {/* High-Intensity Dual LED Headlights with Yellow Halo */}
+          <mesh position={[-0.36, -0.22, 2.2]}>
+            <sphereGeometry args={[0.1, 16, 16]} />
             <meshBasicMaterial color="#FFFFFF" />
           </mesh>
-          <mesh position={[0.35, -0.15, 2.0]}>
-            <sphereGeometry args={[0.09, 16, 16]} />
+          <mesh position={[0.36, -0.22, 2.2]}>
+            <sphereGeometry args={[0.1, 16, 16]} />
             <meshBasicMaterial color="#FFFFFF" />
           </mesh>
 
-          {/* Forward Track Lighting Cones */}
-          <pointLight color="#FFF8E0" intensity={12} distance={35} position={[0, 0.3, 3.5]} />
+          {/* High-Beam Upper Brow Light */}
+          <mesh position={[0, 0.46, 1.3]}>
+            <sphereGeometry args={[0.07, 14, 14]} />
+            <meshBasicMaterial color="#FFF8E0" />
+          </mesh>
+
+          {/* Aerodynamic Front Cowcatcher / Deflector Plow */}
+          <mesh position={[0, -0.42, 1.95]} rotation={[-0.15, 0, 0]}>
+            <boxGeometry args={[coachWidth * 0.92, 0.18, 0.6]} />
+            <meshStandardMaterial color={windowBandColor} metalness={0.6} roughness={0.4} />
+          </mesh>
+
+          {/* Powerful Forward Headlight Track Lighting */}
+          <pointLight color="#FFF8E0" intensity={15} distance={42} position={[0, 0.2, 4.0]} />
           <spotLight
             color="#FFF4D0"
-            intensity={16}
-            distance={50}
-            angle={0.45}
-            penumbra={0.5}
-            position={[0, 0.5, 2.0]}
-            target-position={[0, -0.5, 35]}
+            intensity={22}
+            distance={65}
+            angle={0.5}
+            penumbra={0.45}
+            position={[0, 0.6, 2.5]}
+            target-position={[0, -0.6, 45]}
           />
         </group>
       )}
 
-      {/* Bright Glowing Passenger Windows along Coaches */}
+      {/* 3. ROOF PANTOGRAPH (Locomotive Electric Traction) */}
+      {isLocomotive && (
+        <group position={[0, coachHeight + 0.36, -2.2]}>
+          {/* Insulators & Base Mount */}
+          <mesh position={[0, 0.06, 0]}>
+            <boxGeometry args={[0.72, 0.08, 1.1]} />
+            <meshStandardMaterial color="#22252C" />
+          </mesh>
+          <mesh position={[-0.24, 0.04, -0.3]}>
+            <cylinderGeometry args={[0.035, 0.035, 0.14, 8]} />
+            <meshStandardMaterial color="#8B4513" roughness={0.3} />
+          </mesh>
+          <mesh position={[0.24, 0.04, -0.3]}>
+            <cylinderGeometry args={[0.035, 0.035, 0.14, 8]} />
+            <meshStandardMaterial color="#8B4513" roughness={0.3} />
+          </mesh>
+          <mesh position={[-0.24, 0.04, 0.3]}>
+            <cylinderGeometry args={[0.035, 0.035, 0.14, 8]} />
+            <meshStandardMaterial color="#8B4513" roughness={0.3} />
+          </mesh>
+          <mesh position={[0.24, 0.04, 0.3]}>
+            <cylinderGeometry args={[0.035, 0.035, 0.14, 8]} />
+            <meshStandardMaterial color="#8B4513" roughness={0.3} />
+          </mesh>
+
+          {/* Lower Articulated Arm */}
+          <mesh position={[0, 0.52, -0.28]} rotation={[-0.62, 0, 0]}>
+            <cylinderGeometry args={[0.024, 0.024, 1.05, 8]} />
+            <meshStandardMaterial color="#A0A5B2" metalness={0.9} />
+          </mesh>
+          {/* Upper Reach Arm */}
+          <mesh position={[0, 1.1, 0.22]} rotation={[0.62, 0, 0]}>
+            <cylinderGeometry args={[0.02, 0.02, 1.05, 8]} />
+            <meshStandardMaterial color="#A0A5B2" metalness={0.9} />
+          </mesh>
+          {/* Dual Carbon Contact Shoes */}
+          <mesh position={[0, 1.54, 0.58]}>
+            <boxGeometry args={[1.05, 0.04, 0.22]} />
+            <meshStandardMaterial color="#FFB800" emissive="#FFB800" emissiveIntensity={0.9} />
+          </mesh>
+          {/* Electric Contact Arc Spark at Overhead Wire */}
+          <pointLight color="#70C5FF" intensity={3.5} distance={5} position={[0, 1.56, 0.58]} />
+        </group>
+      )}
+
+      {/* 4. PASSENGER COACH WINDOWS (Warm Glowing Interior) */}
       {!isLocomotive && (
-        <group position={[0, coachHeight / 2 + 0.32, 0]}>
-          {[-2.6, -1.7, -0.8, 0.1, 1.0, 1.9, 2.8].map((z, wIdx) => (
+        <group position={[0, coachHeight * 0.74 + 0.22, 0]}>
+          {[-2.7, -1.8, -0.9, 0.0, 0.9, 1.8, 2.7].map((z, wIdx) => (
             <React.Fragment key={wIdx}>
               {/* Left Window */}
               <mesh position={[-coachWidth / 2 - 0.02, 0, z]}>
-                <boxGeometry args={[0.04, 0.36, 0.65]} />
+                <boxGeometry args={[0.04, 0.32, 0.62]} />
                 <meshStandardMaterial
-                  color="#FFE8A0"
-                  emissive="#FFB224"
-                  emissiveIntensity={1.8}
+                  color="#FFF3C4"
+                  emissive="#FFAE00"
+                  emissiveIntensity={2.1}
                   roughness={0.1}
                 />
               </mesh>
               {/* Right Window */}
               <mesh position={[coachWidth / 2 + 0.02, 0, z]}>
-                <boxGeometry args={[0.04, 0.36, 0.65]} />
+                <boxGeometry args={[0.04, 0.32, 0.62]} />
                 <meshStandardMaterial
-                  color="#FFE8A0"
-                  emissive="#FFB224"
-                  emissiveIntensity={1.8}
+                  color="#FFF3C4"
+                  emissive="#FFAE00"
+                  emissiveIntensity={2.1}
                   roughness={0.1}
                 />
               </mesh>
             </React.Fragment>
           ))}
-          {/* Warm Interior Ambient Glow casting outside */}
-          <pointLight color="#FFB224" intensity={2.5} distance={7} position={[0, 0, 0]} />
+          {/* Warm Interior Ambient Glow Spill */}
+          <pointLight color="#FFB224" intensity={2.8} distance={8} position={[0, 0, 0]} />
         </group>
       )}
 
-      {/* Roof AC Units & Aerodynamic Modules */}
-      <mesh position={[0, coachHeight + 0.32, -1.8]}>
-        <boxGeometry args={[0.75, 0.16, 2.2]} />
-        <meshStandardMaterial color="#4A4E58" roughness={0.5} />
-      </mesh>
-      <mesh position={[0, coachHeight + 0.32, 1.8]}>
-        <boxGeometry args={[0.75, 0.16, 2.2]} />
-        <meshStandardMaterial color="#4A4E58" roughness={0.5} />
-      </mesh>
-
-      {/* Roof Pantograph on Locomotive */}
-      {isLocomotive && (
-        <group position={[0, coachHeight + 0.35, -2.0]}>
-          {/* Base */}
-          <mesh position={[0, 0.06, 0]}>
-            <boxGeometry args={[0.7, 0.08, 1.0]} />
-            <meshStandardMaterial color="#30333A" />
+      {/* 5. TAIL COACH RED LED MARKERS */}
+      {isTailCoach && (
+        <group position={[0, coachHeight * 0.72 + 0.22, -coachLength / 2 - 0.05]}>
+          <mesh position={[-0.38, 0, 0]}>
+            <sphereGeometry args={[0.09, 14, 14]} />
+            <meshBasicMaterial color="#FF1A00" />
           </mesh>
-          {/* Articulated Lower Arm */}
-          <mesh position={[0, 0.5, -0.25]} rotation={[-0.6, 0, 0]}>
-            <cylinderGeometry args={[0.025, 0.025, 1.0, 8]} />
-            <meshStandardMaterial color="#6A6F7C" metalness={0.9} />
+          <mesh position={[0.38, 0, 0]}>
+            <sphereGeometry args={[0.09, 14, 14]} />
+            <meshBasicMaterial color="#FF1A00" />
           </mesh>
-          {/* Upper Reach Arm */}
-          <mesh position={[0, 1.05, 0.2]} rotation={[0.6, 0, 0]}>
-            <cylinderGeometry args={[0.02, 0.02, 1.0, 8]} />
-            <meshStandardMaterial color="#6A6F7C" metalness={0.9} />
-          </mesh>
-          {/* Catenary Contact Strip */}
-          <mesh position={[0, 1.48, 0.55]}>
-            <boxGeometry args={[1.0, 0.04, 0.2]} />
-            <meshStandardMaterial color="#FFB224" emissive="#FFB224" emissiveIntensity={0.8} />
-          </mesh>
-          {/* Subtle Electric Spark at Catenary Contact */}
-          <pointLight color="#88D4FF" intensity={3} distance={4} position={[0, 1.5, 0.55]} />
+          <pointLight color="#FF1A00" intensity={8} distance={18} position={[0, 0, -0.8]} />
         </group>
       )}
 
-      {/* Wheel Bogies (Underbody) */}
-      <group position={[0, 0.14, -coachLength / 2 + 1.4]}>
+      {/* 6. Roof AC Units & Ventilation Pods */}
+      <mesh position={[0, coachHeight + 0.34, -1.9]}>
+        <boxGeometry args={[0.8, 0.17, 2.3]} />
+        <meshStandardMaterial color="#444852" roughness={0.6} />
+      </mesh>
+      <mesh position={[0, coachHeight + 0.34, 1.9]}>
+        <boxGeometry args={[0.8, 0.17, 2.3]} />
+        <meshStandardMaterial color="#444852" roughness={0.6} />
+      </mesh>
+
+      {/* 7. Flexible Gangway Diaphragms (Vestibule Bellows between coaches) */}
+      {!isLocomotive && (
+        <mesh position={[0, coachHeight / 2 + 0.24, -coachLength / 2 - 0.25]}>
+          <boxGeometry args={[coachWidth * 0.88, coachHeight * 0.88, 0.5]} />
+          <meshStandardMaterial color="#111317" roughness={0.9} />
+        </mesh>
+      )}
+
+      {/* 8. Detailed Wheel Bogies (Front & Rear Dual-Axle Sets) */}
+      <group position={[0, 0.14, -coachLength / 2 + 1.45]}>
         <mesh position={[0, 0, 0]}>
-          <boxGeometry args={[coachWidth * 0.9, 0.15, 1.7]} />
-          <meshStandardMaterial color="#181B20" metalness={0.8} />
+          <boxGeometry args={[coachWidth * 0.9, 0.16, 1.75]} />
+          <meshStandardMaterial color="#16181D" metalness={0.85} roughness={0.35} />
         </mesh>
-        <mesh position={[-coachWidth / 2 + 0.05, 0, -0.5]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.24, 0.24, 0.1, 14]} />
-          <meshStandardMaterial color="#555A66" metalness={0.9} />
+        {/* Axle 1 Wheels */}
+        <mesh position={[-coachWidth / 2 + 0.05, 0, -0.52]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.24, 0.24, 0.1, 16]} />
+          <meshStandardMaterial color="#6B7280" metalness={0.95} roughness={0.15} />
         </mesh>
-        <mesh position={[coachWidth / 2 - 0.05, 0, -0.5]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.24, 0.24, 0.1, 14]} />
-          <meshStandardMaterial color="#555A66" metalness={0.9} />
+        <mesh position={[coachWidth / 2 - 0.05, 0, -0.52]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.24, 0.24, 0.1, 16]} />
+          <meshStandardMaterial color="#6B7280" metalness={0.95} roughness={0.15} />
         </mesh>
-        <mesh position={[-coachWidth / 2 + 0.05, 0, 0.5]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.24, 0.24, 0.1, 14]} />
-          <meshStandardMaterial color="#555A66" metalness={0.9} />
+        {/* Axle 2 Wheels */}
+        <mesh position={[-coachWidth / 2 + 0.05, 0, 0.52]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.24, 0.24, 0.1, 16]} />
+          <meshStandardMaterial color="#6B7280" metalness={0.95} roughness={0.15} />
         </mesh>
-        <mesh position={[coachWidth / 2 - 0.05, 0, 0.5]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.24, 0.24, 0.1, 14]} />
-          <meshStandardMaterial color="#555A66" metalness={0.9} />
+        <mesh position={[coachWidth / 2 - 0.05, 0, 0.52]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.24, 0.24, 0.1, 16]} />
+          <meshStandardMaterial color="#6B7280" metalness={0.95} roughness={0.15} />
         </mesh>
       </group>
 
-      <group position={[0, 0.14, coachLength / 2 - 1.4]}>
+      <group position={[0, 0.14, coachLength / 2 - 1.45]}>
         <mesh position={[0, 0, 0]}>
-          <boxGeometry args={[coachWidth * 0.9, 0.15, 1.7]} />
-          <meshStandardMaterial color="#181B20" metalness={0.8} />
+          <boxGeometry args={[coachWidth * 0.9, 0.16, 1.75]} />
+          <meshStandardMaterial color="#16181D" metalness={0.85} roughness={0.35} />
         </mesh>
-        <mesh position={[-coachWidth / 2 + 0.05, 0, -0.5]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.24, 0.24, 0.1, 14]} />
-          <meshStandardMaterial color="#555A66" metalness={0.9} />
+        {/* Axle 1 Wheels */}
+        <mesh position={[-coachWidth / 2 + 0.05, 0, -0.52]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.24, 0.24, 0.1, 16]} />
+          <meshStandardMaterial color="#6B7280" metalness={0.95} roughness={0.15} />
         </mesh>
-        <mesh position={[coachWidth / 2 - 0.05, 0, -0.5]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.24, 0.24, 0.1, 14]} />
-          <meshStandardMaterial color="#555A66" metalness={0.9} />
+        <mesh position={[coachWidth / 2 - 0.05, 0, -0.52]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.24, 0.24, 0.1, 16]} />
+          <meshStandardMaterial color="#6B7280" metalness={0.95} roughness={0.15} />
         </mesh>
-        <mesh position={[-coachWidth / 2 + 0.05, 0, 0.5]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.24, 0.24, 0.1, 14]} />
-          <meshStandardMaterial color="#555A66" metalness={0.9} />
+        {/* Axle 2 Wheels */}
+        <mesh position={[-coachWidth / 2 + 0.05, 0, 0.52]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.24, 0.24, 0.1, 16]} />
+          <meshStandardMaterial color="#6B7280" metalness={0.95} roughness={0.15} />
         </mesh>
-        <mesh position={[coachWidth / 2 - 0.05, 0, 0.5]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.24, 0.24, 0.1, 14]} />
-          <meshStandardMaterial color="#555A66" metalness={0.9} />
+        <mesh position={[coachWidth / 2 - 0.05, 0, 0.52]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.24, 0.24, 0.1, 16]} />
+          <meshStandardMaterial color="#6B7280" metalness={0.95} roughness={0.15} />
         </mesh>
       </group>
     </group>
   );
 }
 
-// Multi-Coach Train Rake
-function FullTrainRake({
+// Complete Intercity Express Rake Consist
+function FullIntercityTrainRake({
   isReverse = false,
-  theme = 'vande_bharat',
 }: {
   isReverse?: boolean;
-  theme?: 'vande_bharat' | 'rajdhani';
 }) {
   return (
     <group>
-      {/* Coach 0: Front Bullet Locomotive */}
-      <TrainCoach position={[0, 0, 0]} isLocomotive={true} isReverse={isReverse} theme={theme} />
-      {/* Coach 1: AC Executive Car */}
-      <TrainCoach position={[0, 0, isReverse ? 8.4 : -8.4]} isReverse={isReverse} theme={theme} />
-      {/* Coach 2: AC Chair Car */}
-      <TrainCoach position={[0, 0, isReverse ? 16.4 : -16.4]} isReverse={isReverse} theme={theme} />
-      {/* Coach 3: AC Chair Car */}
-      <TrainCoach position={[0, 0, isReverse ? 24.4 : -24.4]} isReverse={isReverse} theme={theme} />
+      {/* Lead Intercity Power Locomotive */}
+      <IntercityTrainCoach
+        position={[0, 0, 0]}
+        isLocomotive={true}
+        isReverse={isReverse}
+      />
+      {/* Coach 1: 1st Class Intercity Coach */}
+      <IntercityTrainCoach
+        position={[0, 0, isReverse ? 8.6 : -8.6]}
+        isReverse={isReverse}
+      />
+      {/* Coach 2: Standard Intercity Coach */}
+      <IntercityTrainCoach
+        position={[0, 0, isReverse ? 16.8 : -16.8]}
+        isReverse={isReverse}
+      />
+      {/* Coach 3: Standard Intercity Coach */}
+      <IntercityTrainCoach
+        position={[0, 0, isReverse ? 25.0 : -25.0]}
+        isReverse={isReverse}
+      />
+      {/* Coach 4: Intercity Tail Coach with Red Marker Lights */}
+      <IntercityTrainCoach
+        position={[0, 0, isReverse ? 33.2 : -33.2]}
+        isReverse={isReverse}
+        isTailCoach={true}
+      />
     </group>
   );
 }
@@ -586,15 +699,15 @@ function CorridorSceneContent({ mousePos }: { mousePos: { x: number; y: number }
         {/* 3. Overhead 25kV Electrification */}
         <CatenaryOverhead />
 
-        {/* 4. Moving Trains */}
+        {/* 4. Moving Trains: High-Fidelity Intercity Express Rakes on the Corridor */}
         <group ref={train1Ref} position={[-0.9, -0.4, -30]}>
-          <FullTrainRake theme="vande_bharat" />
+          <FullIntercityTrainRake />
         </group>
 
         <group ref={train2Ref} position={[0.9, -0.4, 10]}>
-          <FullTrainRake isReverse={true} theme="rajdhani" />
+          <FullIntercityTrainRake isReverse={true} />
           {/* Red Rear Marker Lights */}
-          <pointLight color="#FF2200" intensity={8} distance={20} position={[0, 0.6, 2.5]} />
+          <pointLight color="#FF1A00" intensity={9} distance={22} position={[0, 0.6, 2.5]} />
         </group>
 
         {/* 5. Block Signals & Lamps */}

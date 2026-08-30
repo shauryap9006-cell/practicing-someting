@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { SEO } from '@/lib/seo';
 import { SITE } from '@/config/site';
-import { F14_PROOF_METRICS } from '@/mock/model';
+import { mockStore } from '@/mock/store';
 import { F14Metric } from '@/mock/types';
 import {
   ArrowRight,
@@ -38,7 +38,7 @@ export function LandingPage() {
   const [org, setOrg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const proofMetrics = F14_PROOF_METRICS;
+  const proofMetrics = mockStore.getModelProof().f14Metrics;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -113,9 +113,9 @@ export function LandingPage() {
         </nav>
       </header>
 
-      {/* Scene 1: Hero Section (Full Viewport with 3D Night Corridor) */}
+      {/* Scene 1: Hero Section (Full Viewport with 3D Night Corridor & Intercity Train on Tracks) */}
       <section className="relative min-h-screen pt-28 pb-16 flex flex-col justify-between px-4 sm:px-8 max-w-7xl mx-auto z-10">
-        {/* 3D Rail Corridor Background */}
+        {/* 3D Rail Corridor Background with Intercity Train Running on Tracks */}
         <ThreeCorridor />
 
         {/* Hero Overlay Content */}
@@ -130,8 +130,8 @@ export function LandingPage() {
           </h1>
 
           <p className="text-base sm:text-lg text-[#9A9DA3] leading-relaxed max-w-2xl font-sans">
-            Calibrated ETA confidence bands with an <strong className="text-[#E8E8E6]">81.4% 10-minute hit rate</strong>, 
-            instant MILP platform conflict re-optimization, and 10-hour crew duty statutory warnings — 
+            Calibrated ETA confidence bands with an <strong className="text-[#E8E8E6]">81.4% 10-minute hit rate</strong>,
+            instant MILP platform conflict re-optimization, and 10-hour crew duty statutory warnings —
             <span className="text-[#3ECF8E] font-semibold"> 38.7% lower error</span> than NTES constant velocity.
           </p>
 
