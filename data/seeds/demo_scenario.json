@@ -1,0 +1,94 @@
+{
+  "scenario_metadata": {
+    "name": "RailTwin-X Live Intelligence & Demo Excellence 3-Minute Replay",
+    "corridor": "NDLS-CNB-PRYJ-DDU",
+    "base_date": "2026-01-15",
+    "duration_seconds": 180,
+    "description": "Deterministic 3-minute offline replay scenario executing the complete RailTwin-X operational closed-loop: dense fog at CNB -> delay jump +16m on #12301 -> live causal attribution -> brain advisory + WhatsApp ACK -> platform conflict at CNB -> sub-50ms greedy re-optimizer -> cascade what-if simulation."
+  },
+  "events": [
+    {
+      "offset_seconds": 30,
+      "event_type": "WEATHER_FOG_ACTIVATION",
+      "station_code": "CNB",
+      "payload": {
+        "temperature_celsius": 14.0,
+        "relative_humidity_percent": 92.0,
+        "precipitation_mm": 0.0,
+        "visibility_km": 0.35,
+        "fog_flag": 1,
+        "wind_speed_kmh": 4.5
+      },
+      "narration": "T+30s: Atmospheric cold-wave condensation triggers dense fog alert at Kanpur Central (CNB). Visibility drops to 350m."
+    },
+    {
+      "offset_seconds": 60,
+      "event_type": "TRAIN_DELAY_JUMP",
+      "train_no": "12301",
+      "station_code": "CNB",
+      "payload": {
+        "previous_delay_min": 5.0,
+        "current_delay_min": 21.0,
+        "delay_delta_min": 16.0,
+        "seq": 4,
+        "sched_arr": "08:14",
+        "actual_arr": "08:35",
+        "sched_dep": "08:24",
+        "actual_dep": "08:45"
+      },
+      "narration": "T+60s: Train #12301 (Howrah Rajdhani Express) encounters fog caution and signal hold outside CNB. Delay jumps by +16 minutes."
+    },
+    {
+      "offset_seconds": 90,
+      "event_type": "ADVISORY_AND_WHATSAPP_ACK",
+      "train_no": "12301",
+      "station_code": "CNB",
+      "payload": {
+        "action_code": "PRIORITY_HOLD",
+        "target_train": "12301",
+        "opposing_train": "12004",
+        "staff_id": "SC_CNB_01",
+        "channel": "whatsapp",
+        "ack_response": "CONFIRMED"
+      },
+      "narration": "T+90s: Neural Brain perceives section headway compression. Advisory auto-dispatched via WhatsApp to Kanpur Section Controller with cryptographic ACK."
+    },
+    {
+      "offset_seconds": 120,
+      "event_type": "PLATFORM_CONFLICT_EMERGENCE",
+      "station_code": "CNB",
+      "payload": {
+        "platform": 1,
+        "conflicting_trains": ["12301", "12004"],
+        "overlap_window_start": "08:35",
+        "overlap_window_end": "08:45",
+        "overlap_minutes": 10.0
+      },
+      "narration": "T+120s: Delayed arrival of #12301 creates berthing clash on Platform 1 with scheduled Vande Bharat #12004."
+    },
+    {
+      "offset_seconds": 150,
+      "event_type": "PLATFORM_REOPTIMIZE_TRIGGER",
+      "station_code": "CNB",
+      "payload": {
+        "solver": "greedy_local_search",
+        "target_platform": 3,
+        "swapped_train": "12301",
+        "resolved_conflicts": 1
+      },
+      "narration": "T+150s: Station Controller activates 1-Click Platform Re-Optimizer. Greedy solver computes conflict-free swap (#12301 -> PF3) in under 50ms."
+    },
+    {
+      "offset_seconds": 170,
+      "event_type": "CASCADE_WHAT_IF_SIMULATION",
+      "train_no": "12301",
+      "station_code": "CNB",
+      "payload": {
+        "horizon_hours": 12,
+        "simulated_knock_on_trains": 3,
+        "total_absorbed_delay_min": 11.5
+      },
+      "narration": "T+170s: SimPy discrete-event cascade simulator projects downstream network ripple across PRYJ and DDU, confirming 100% causal minute accounting."
+    }
+  ]
+}
