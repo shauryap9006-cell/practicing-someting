@@ -1,0 +1,112 @@
+[
+  {
+    "section_id": "NDLS-GZB",
+    "start_date": "2025-02-15",
+    "end_date": "2025-04-30",
+    "tsr_speed_kmh": 60,
+    "normal_speed_kmh": 110,
+    "span_km": 12.5,
+    "source": "seeded",
+    "reason": "GZB yard remodeling and interlocking upgrade"
+  },
+  {
+    "section_id": "GZB-ALJN",
+    "start_date": "2025-03-01",
+    "end_date": "2025-05-15",
+    "tsr_speed_kmh": 80,
+    "normal_speed_kmh": 130,
+    "span_km": 25.0,
+    "source": "seeded",
+    "reason": "Track deep screening and ballast profiling"
+  },
+  {
+    "section_id": "ALJN-TDL",
+    "start_date": "2025-06-01",
+    "end_date": "2025-08-15",
+    "tsr_speed_kmh": 75,
+    "normal_speed_kmh": 130,
+    "span_km": 18.0,
+    "source": "seeded",
+    "reason": "Overhead equipment rehabilitation"
+  },
+  {
+    "section_id": "TDL-ETW",
+    "start_date": "2025-08-10",
+    "end_date": "2025-10-25",
+    "tsr_speed_kmh": 75,
+    "normal_speed_kmh": 130,
+    "span_km": 30.0,
+    "source": "seeded",
+    "reason": "Rail renewal and bridge approach strengthening"
+  },
+  {
+    "section_id": "ETW-CNB",
+    "start_date": "2025-10-01",
+    "end_date": "2025-12-15",
+    "tsr_speed_kmh": 80,
+    "normal_speed_kmh": 130,
+    "span_km": 40.0,
+    "source": "seeded",
+    "reason": "Automatic signalling installation and trials"
+  },
+  {
+    "section_id": "CNB-ON",
+    "start_date": "2025-01-10",
+    "end_date": "2025-03-25",
+    "tsr_speed_kmh": 50,
+    "normal_speed_kmh": 100,
+    "span_km": 8.0,
+    "source": "seeded",
+    "reason": "Ganga bridge girder works and track repair"
+  },
+  {
+    "section_id": "CNB-ON",
+    "start_date": "2025-11-01",
+    "end_date": "2026-01-15",
+    "tsr_speed_kmh": 55,
+    "normal_speed_kmh": 100,
+    "span_km": 10.0,
+    "source": "seeded",
+    "reason": "CNB yard approach track renewal"
+  },
+  {
+    "section_id": "ON-LKO",
+    "start_date": "2025-04-15",
+    "end_date": "2025-06-30",
+    "tsr_speed_kmh": 65,
+    "normal_speed_kmh": 110,
+    "span_km": 15.0,
+    "source": "seeded",
+    "reason": "Substation maintenance and curve realignment"
+  },
+  {
+    "section_id": "FTP-PRYJ",
+    "start_date": "2025-01-05",
+    "end_date": "2025-02-28",
+    "tsr_speed_kmh": 75,
+    "normal_speed_kmh": 130,
+    "span_km": 22.0,
+    "source": "seeded",
+    "reason": "Maha Kumbh passenger holding line construction"
+  },
+  {
+    "section_id": "PRYJ-MZP",
+    "start_date": "2025-07-01",
+    "end_date": "2025-09-15",
+    "tsr_speed_kmh": 80,
+    "normal_speed_kmh": 130,
+    "span_km": 28.0,
+    "source": "seeded",
+    "reason": "Monsoon culvert strengthening and drainage"
+  },
+  {
+    "section_id": "MZP-DDU",
+    "start_date": "2025-09-20",
+    "end_date": "2025-12-05",
+    "tsr_speed_kmh": 70,
+    "normal_speed_kmh": 130,
+    "span_km": 20.0,
+    "source": "seeded",
+    "reason": "DDU yard approach interlocking and loop expansion"
+  }
+]

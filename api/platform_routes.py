@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 from api.auth import get_current_user, require_role
 from data.audit import record_audit
 from data.db import Database, get_db
+from engine.ops import PlatformManager
 from notifications.dispatcher import notify
 
 router = APIRouter(prefix="/api/platform", tags=["Platform Allocation Console (A3)"])
@@ -270,3 +271,35 @@ def toggle_assignment_lock(
         )
 
     return {"id": assign_id, "is_locked": req.is_locked, "locked_by": current_user["id"] if req.is_locked else None}
+
+
+class ReoptimizeRequest(BaseModel):
+    station_code: Optional[str] = "CNB"
+    target_date: Optional[str] = None
+
+
+@router.post("/reoptimize", response_model=Dict[str, Any])
+def reoptimize_station_platforms(
+    payload: Optional[ReoptimizeRequest] = None,
+    current_user: Dict[str, Any] = Depends(get_current_user),
+    db: Database = Depends(get_db),
+):
+    """Executes AI platform conflict resolution & Gantt re-optimization."""
+    stn = (payload.station_code if payload and payload.station_code else "CNB").upper()
+    target_date = payload.target_date if payload else None
+    pm = PlatformManager(db)
+    blocks, _ = pm.get_station_gantt(stn, target_date=target_date)
+    reopt_blocks, diff = pm.reoptimize_platforms(stn, blocks)
+    swaps_count = len(diff.swaps_performed) if isinstance(diff.swaps_performed, list) else int(diff.swaps_performed)
+    return {
+        "status": "success",
+        "station_code": stn,
+        "conflicts_before": diff.conflicts_before,
+        "conflicts_after": diff.conflicts_after,
+        "resolvedCount": diff.resolved_conflicts,
+        "swapsCount": swaps_count,
+        "swaps_performed": diff.swaps_performed,
+        "execution_time_seconds": diff.execution_time_seconds,
+        "message": f"Platform plan re-optimized: resolved {diff.resolved_conflicts} conflicts via {swaps_count} swaps.",
+        "blocks": [b.to_dict() for b in reopt_blocks],
+    }

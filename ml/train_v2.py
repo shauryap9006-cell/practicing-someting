@@ -41,7 +41,7 @@ from ml.features import FEATURE_NAMES_V2
 from ml.model_v2 import ALPHAS_V2, PinballCRPSLoss, RailTwinGRUv2
 from ml.vocab import StationVocab
 
-COMMON_GRID = np.round(np.arange(0.02, 0.98, 0.02), 4)  # 49 points
+COMMON_GRID = np.round(np.linspace(0.02, 0.98, 49), 4)  # 49 points (mean 0.50)
 IDX_Q10 = 1
 IDX_Q90 = 5
 

@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Command } from 'cmdk';
 import { useNavigate } from 'react-router-dom';
-import { mockStore } from '@/mock/store';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api';
+import { queryKeys } from '@/lib/queryKeys';
 import { StationCode } from '@/mock/types';
 import {
   Activity,
@@ -37,23 +39,26 @@ interface CommandPaletteProps {
 
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const navigate = useNavigate();
-  const [trains, setTrains] = useState(() => mockStore.getTrains());
-  const activeStation = mockStore.getActiveStation();
+  const [activeStation, setActiveStation] = useState<StationCode>('CNB');
 
-  useEffect(() => {
-    const unsub = mockStore.subscribe(() => {
-      setTrains(mockStore.getTrains());
-    });
-    return unsub;
-  }, []);
+  const { data: trains = [] } = useQuery({
+    queryKey: queryKeys.board(activeStation),
+    queryFn: () => api.getTrains(),
+    enabled: open,
+  });
 
   const handleSelectRoute = (path: string) => {
     navigate(path);
     onOpenChange(false);
   };
 
-  const handleSelectStation = (code: StationCode) => {
-    mockStore.setActiveStation(code, 'CMD_PALETTE');
+  const handleSelectStation = async (code: StationCode) => {
+    setActiveStation(code);
+    try {
+      await api.switchStation(code, 'CMD_PALETTE');
+    } catch {
+      // ignore
+    }
     onOpenChange(false);
   };
 

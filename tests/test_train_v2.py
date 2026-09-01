@@ -7,7 +7,7 @@ import pytest
 import torch
 
 from ml.model_v2 import ALPHAS_V2, RailTwinGRUv2
-from ml.train_v2 import EMA, GRUv2Ensemble, decay_sample_weights
+from ml.train_v2 import GRUv2Ensemble, decay_sample_weights
 
 
 def test_decay_sample_weights_half_life():
@@ -22,27 +22,6 @@ def test_decay_sample_weights_half_life():
     # Ratio should be approximately 2.0
     ratio = w[1] / w[0]
     assert 1.8 <= ratio <= 2.2
-
-
-def test_ema_updates_and_copy():
-    """EMA tracks model parameters with exponential moving average."""
-    torch.manual_seed(42)
-    model = torch.nn.Linear(10, 2)
-    ema = EMA(model, decay=0.9)
-
-    # Initial weights should match
-    for k, v in model.state_dict().items():
-        assert torch.equal(ema.shadow[k], v)
-
-    # Change weights
-    with torch.no_grad():
-        model.weight.add_(1.0)
-    ema.update(model)
-
-    # Shadow should be 0.9 * old + 0.1 * new
-    eval_model = torch.nn.Linear(10, 2)
-    ema.copy_into(eval_model)
-    assert not torch.equal(eval_model.weight, model.weight)
 
 
 def test_gru_v2_ensemble_monotonicity_and_spread():

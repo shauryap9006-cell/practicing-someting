@@ -19,7 +19,7 @@ from data.audit import record_audit
 from data.db import Database, get_db
 from notifications.dispatcher import notify
 
-router = APIRouter(prefix="/api/infrastructure", tags=["Maintenance & Infrastructure (Phase 5)"])
+router = APIRouter(tags=["Maintenance & Infrastructure (Phase 5)"])
 
 
 # ----------------------------------------------------

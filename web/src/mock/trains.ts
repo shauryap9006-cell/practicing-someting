@@ -528,36 +528,67 @@ function generateJourney(trainNo: string, schedArr: string, delay: number): Jour
 }
 
 export function buildInitialTrains(): Train[] {
-  const trains: Train[] = RAW_TRAINS.map(t => ({
-    number: t.number,
-    name: t.name,
-    type: t.type,
-    origin: t.origin,
-    destination: t.destination,
-    currentStation: t.currentStation,
-    nextStation: t.nextStation,
-    routePosition: t.routePosition,
-    scheduledArrival: t.schedArr,
-    scheduledDeparture: t.schedDep,
-    predictedArrival: t.predArr,
-    predictedDeparture: t.predDep,
-    speedKmph: t.speed,
-    priority: t.priority,
-    rakeId: t.rakeId,
-    status: t.status,
-    delayMinutes: t.delayMins,
-    platform: t.platform,
-    assignedPlatform: t.platform,
-    etaBand: {
-      p10: t.p10,
-      p50: t.p50,
-      p90: t.p90,
-      spreadMinutes: 8,
-    },
-    journey: generateJourney(t.number, t.schedArr, t.delayMins),
-    delayAutopsy: createAutopsy(t.delayMins, t.type),
-    updatedAt: new Date().toISOString(),
-  }));
+  const trains: Train[] = RAW_TRAINS.map(t => {
+    const isFoggy = t.currentStation === 'Aligarh Jn (ALJN)' || t.currentStation === 'Tundla Jn (TDL)';
+    const isCongested = t.delayMins > 15 || t.type === 'DFC Freight';
+    const clearWeight = isFoggy ? 0.15 : isCongested ? 0.25 : 0.85;
+    const congWeight = isCongested ? 0.60 : isFoggy ? 0.25 : 0.10;
+    const fogWeight = Math.max(0.0, 1.0 - clearWeight - congWeight);
+
+    return {
+      number: t.number,
+      name: t.name,
+      type: t.type,
+      origin: t.origin,
+      destination: t.destination,
+      currentStation: t.currentStation,
+      nextStation: t.nextStation,
+      routePosition: t.routePosition,
+      scheduledArrival: t.schedArr,
+      scheduledDeparture: t.schedDep,
+      predictedArrival: t.predArr,
+      predictedDeparture: t.predDep,
+      speedKmph: t.speed,
+      priority: t.priority,
+      rakeId: t.rakeId,
+      status: t.status,
+      delayMinutes: t.delayMins,
+      platform: t.platform,
+      assignedPlatform: t.platform,
+      regimeWeights: {
+        clearTrack: Number(clearWeight.toFixed(2)),
+        congestion: Number(congWeight.toFixed(2)),
+        winterFog: Number(fogWeight.toFixed(2)),
+      },
+      epistemicStdMin: Number((1.2 + (t.delayMins % 5) * 0.3).toFixed(1)),
+      rakeTurnaround: {
+        incomingTrain: `12${Number(t.number.slice(-3)) - 1}`,
+        bufferMinutes: 240,
+        consumedMinutes: Math.min(240, Math.round(t.delayMins * 1.5)),
+        netDelayMinutes: Math.max(0, t.delayMins - 15),
+      },
+      tsrAhead: {
+        count: isCongested ? 2 : 1,
+        maxSlowdownPct: isCongested ? 45.5 : 30.0,
+        activeZones: ['CNB Yard Approach (PSR 45)', 'Ganga Bridge Works (PSR 30)'],
+      },
+      weatherTelemetry: {
+        temperatureC: 18.5,
+        visibilityMeters: isFoggy ? 450 : 3500,
+        fogFlag: isFoggy,
+        isDawnFogWindow: true,
+      },
+      etaBand: {
+        p10: t.p10,
+        p50: t.p50,
+        p90: t.p90,
+        spreadMinutes: 8,
+      },
+      journey: generateJourney(t.number, t.schedArr, t.delayMins),
+      delayAutopsy: createAutopsy(t.delayMins, t.type),
+      updatedAt: new Date().toISOString(),
+    };
+  });
 
   // Append generated preset trains to exceed 50+ total
   ADDITIONAL_TRAIN_PRESETS.forEach((p, i) => {
@@ -587,6 +618,29 @@ export function buildInitialTrains(): Train[] {
       delayMinutes: p.delay,
       platform: p.pf,
       assignedPlatform: p.pf,
+      regimeWeights: {
+        clearTrack: p.delay > 15 ? 0.3 : 0.8,
+        congestion: p.delay > 15 ? 0.6 : 0.15,
+        winterFog: 0.05,
+      },
+      epistemicStdMin: 1.5,
+      rakeTurnaround: {
+        incomingTrain: `12${Number(p.no.slice(-3)) - 1}`,
+        bufferMinutes: 240,
+        consumedMinutes: Math.min(240, p.delay * 2),
+        netDelayMinutes: Math.max(0, p.delay - 10),
+      },
+      tsrAhead: {
+        count: 1,
+        maxSlowdownPct: 35.0,
+        activeZones: ['CNB Outer Caution'],
+      },
+      weatherTelemetry: {
+        temperatureC: 21.0,
+        visibilityMeters: 4000,
+        fogFlag: false,
+        isDawnFogWindow: false,
+      },
       speedKmph: p.type === 'DFC Freight' ? 45 : 100,
       priority: p.type === 'Rajdhani Express' || p.type === 'Vande Bharat' ? 1 : p.type === 'DFC Freight' ? 4 : 2,
       rakeId: `RAKE-${p.no}`,

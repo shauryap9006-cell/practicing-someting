@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-COMMON_GRID = np.round(np.arange(0.02, 0.98, 0.02), 4)  # 49 points (0.02..0.96)
+COMMON_GRID = np.round(np.linspace(0.02, 0.98, 49), 4)  # 49 points (mean 0.50)
 
 
 def corridor_fog_days(

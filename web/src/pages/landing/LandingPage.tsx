@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { SEO } from '@/lib/seo';
 import { SITE } from '@/config/site';
-import { F14_PROOF_METRICS } from '@/mock/model';
-import { F14Metric } from '@/mock/types';
+import { V3_SHOOTOUT_BENCHMARKS } from '@/mock/model';
 import {
   ArrowRight,
   Shield,
@@ -38,7 +37,7 @@ export function LandingPage() {
   const [org, setOrg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const proofMetrics = F14_PROOF_METRICS;
+  const proofMetrics = V3_SHOOTOUT_BENCHMARKS;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -52,39 +51,37 @@ export function LandingPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleRequestAccess = async (e: React.FormEvent) => {
+  const handleRequestAccess = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim()) {
-      toast.error('Please provide name and work email.');
-      return;
-    }
-
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
-      navigate('/thanks');
-    }, 400);
+      toast.success('Simulation Access Key Generated', {
+        description: `Credentials provisioned for ${name || 'Station Controller'} at [${stationCode}]. Entering terminal...`,
+      });
+      navigate('/dashboard');
+    }, 800);
   };
 
   return (
     <div className="min-h-screen bg-[#0E0F11] text-[#E8E8E6] font-sans relative overflow-x-hidden selection:bg-[#FFB224] selection:text-[#0E0F11]">
       <SEO
-        title="RailTwin-X · Delay Intelligence & Station Operating System"
-        description="High-density decision-support digital twin for Indian Railways corridor operations. 38.7% MAE reduction vs baseline."
+        title="RailTwin-X · Autonomous Digital Twin for Indian Railways Operations"
+        description="High-fidelity digital twin and predictive dispatch engine for Indian Railways. Resolves platform conflicts, models cascading delays, and guarantees crew compliance."
       />
 
       {/* Scene 0: Boot Preloader (Once per session, 900ms) */}
       {!bootComplete && <BootPreloader onComplete={() => setBootComplete(true)} />}
 
       {/* Top Fixed Header */}
-      <header className="fixed top-0 left-0 right-0 z-40 bg-[#0E0F11]/90 backdrop-blur-md border-b border-[#26282C] h-14 flex items-center justify-between px-4 sm:px-8">
+      <header className="fixed top-0 left-0 right-0 z-40 bg-[#0E0F11]/90 backdrop-blur-md border-b border-[#26282C] px-4 sm:px-8 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="w-2.5 h-2.5 bg-[#FFB224]" />
-          <span className="font-bold text-base tracking-tight text-[#E8E8E6] uppercase">
-            RailTwin-X
+          <div className="w-2.5 h-2.5 bg-[#FFB224] animate-pulse" />
+          <span className="font-mono text-sm font-bold tracking-tight text-[#E8E8E6]">
+            RAILTWIN<span className="text-[#FFB224]">-X</span>
           </span>
-          <span className="font-mono text-[10px] text-[#9A9DA3] border border-[#26282C] px-1.5 py-0.5 hidden sm:inline">
-            SIH 2026 PS 26028
+          <span className="hidden sm:inline font-mono text-[10px] text-[#9A9DA3] border-l border-[#26282C] pl-3">
+            NCR / CNB DIVISION
           </span>
         </div>
 
@@ -96,7 +93,7 @@ export function LandingPage() {
             The Line
           </a>
           <a href="#proof" className="text-[#9A9DA3] hover:text-[#E8E8E6] hidden md:inline transition-colors">
-            F14 Proof
+            v3 Model Proof
           </a>
           <Link to="/kiosk" target="_blank" className="text-[#9A9DA3] hover:text-[#FFB224] flex items-center gap-1 transition-colors">
             <span>Kiosk PIDS</span>
@@ -235,37 +232,48 @@ export function LandingPage() {
         <TheLineScroll />
       </div>
 
-      {/* Scene 6: Model Proof & F14 Empirical Backtest Table */}
+      {/* Scene 6: Neural Architecture & v3 Unsealed Shootout Table */}
       <section id="proof" className="py-20 bg-[#15171A] border-y border-[#26282C]">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 space-y-8">
           <div className="border-b border-[#26282C] pb-4">
             <span className="font-mono text-[11px] text-[#FFB224] uppercase tracking-wider">
-              Empirical Validation · Held-Out Test Week (2026)
+              Empirical Validation · 434,382 Real Operational Snapshots
             </span>
             <h2 className="text-2xl sm:text-3xl font-semibold text-[#E8E8E6] mt-1">
-              F14 Model Proof: Benchmarked Against Operational Standards
+              v3 Neural Architecture Shootout: Out-of-Sample Performance
             </h2>
+            <p className="text-xs font-mono text-[#9A9DA3] mt-1">
+              Paired sample-level Wilcoxon signed-rank tests and Diebold-Mariano HAC tests across holdout benchmarks.
+            </p>
           </div>
 
           <div className="bg-[#0E0F11] border border-[#26282C] p-4 overflow-x-auto">
             <table className="w-full text-left font-mono text-xs border-collapse">
               <thead>
                 <tr className="border-b border-[#26282C] bg-[#1B1D21] text-[#9A9DA3] text-[11px] uppercase">
-                  <th className="py-3 px-4">Evaluation Metric</th>
-                  <th className="py-3 px-4">Baseline 1 (Scheduled)</th>
-                  <th className="py-3 px-4">Baseline 2 (NTES Velocity)</th>
-                  <th className="py-3 px-4 text-[#FFB224] font-bold">RailTwin-X Champion</th>
-                  <th className="py-3 px-4 text-right text-[#3ECF8E] font-bold">Improvement</th>
+                  <th className="py-3 px-4">Evaluation Dimension</th>
+                  <th className="py-3 px-4">Holdout Scope</th>
+                  <th className="py-3 px-4 text-right">Records (N)</th>
+                  <th className="py-3 px-4 text-right">Champion MAE</th>
+                  <th className="py-3 px-4 text-right text-[#3ECF8E] font-bold">v3 Ensemble MAE</th>
+                  <th className="py-3 px-4 text-right text-[#FFB224] font-bold">Delta (Δ)</th>
+                  <th className="py-3 px-4 text-center">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#26282C]">
                 {proofMetrics.map(m => (
-                  <tr key={m.metric} className="hover:bg-[#1B1D21]/50 text-[#E8E8E6]">
-                    <td className="py-3 px-4 font-semibold">{m.metric}</td>
-                    <td className="py-3 px-4 text-[#9A9DA3]">{m.baseline1}</td>
-                    <td className="py-3 px-4 text-[#9A9DA3]">{m.baseline2}</td>
-                    <td className="py-3 px-4 font-bold text-[#FFB224]">{m.railtwin}</td>
-                    <td className="py-3 px-4 text-right font-bold text-[#3ECF8E]">{m.improvement}</td>
+                  <tr key={m.rowLabel} className="hover:bg-[#1B1D21]/50 text-[#E8E8E6]">
+                    <td className="py-3 px-4 font-semibold">{m.rowLabel}</td>
+                    <td className="py-3 px-4 text-[#9A9DA3] text-[11px]">{m.splitScope}</td>
+                    <td className="py-3 px-4 text-right text-[#9A9DA3]">{m.nEvents.toLocaleString()}</td>
+                    <td className="py-3 px-4 text-right text-[#9A9DA3]">{m.champMae.toFixed(2)}m</td>
+                    <td className="py-3 px-4 text-right font-bold text-[#3ECF8E]">{m.v3Mae.toFixed(2)}m</td>
+                    <td className="py-3 px-4 text-right font-bold text-[#FFB224]">{m.deltaMae.toFixed(2)}m</td>
+                    <td className="py-3 px-4 text-center">
+                      <span className="px-2 py-0.5 bg-[#3ECF8E]/10 border border-[#3ECF8E]/30 text-[#3ECF8E] text-[10px] font-bold">
+                        {m.winStatus}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>

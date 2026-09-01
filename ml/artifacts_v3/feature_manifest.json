@@ -1,0 +1,14 @@
+{
+  "FEATURE_VERSION": 3,
+  "feature_count": 24,
+  "n_rows": 434382,
+  "sha256": "396d78ddb10811f203c98364e9d6d415529b3e58d23f038d5369bccc043072d5",
+  "timestamp": "2026-08-30T06:43:29.895087+00:00",
+  "splits": {
+    "train": "run_date BETWEEN '2025-02-08' AND '2025-10-31'",
+    "val": "run_date BETWEEN '2025-11-01' AND '2025-11-29'",
+    "bench_fog": "run_date BETWEEN '2025-11-30' AND '2026-01-01'",
+    "bench_normal": "run_date >= '2026-02-01'"
+  },
+  "human_ack_required": true
+}

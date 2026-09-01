@@ -10,8 +10,8 @@
   "overall_crps": 7.436122808393791,
   "rolling_origin_cv": {
     "num_folds": 6,
-    "cv_mean_mae": 58.09,
-    "cv_std_mae": 2.34,
+    "cv_mean_mae": 58.1,
+    "cv_std_mae": 2.35,
     "folds": [
       {
         "fold": 1,
@@ -23,10 +23,10 @@
         "test_end": "2025-07-03",
         "embargo_days": 2,
         "samples": 228435,
-        "mae": 58.72,
+        "mae": 58.73,
         "coverage_80": 78.8,
-        "winkler_score": 385.64,
-        "crps": 45.28
+        "winkler_score": 385.68,
+        "crps": 45.29
       },
       {
         "fold": 2,
@@ -38,10 +38,10 @@
         "test_end": "2025-09-12",
         "embargo_days": 2,
         "samples": 211165,
-        "mae": 61.62,
+        "mae": 61.65,
         "coverage_80": 80.6,
-        "winkler_score": 409.71,
-        "crps": 47.85
+        "winkler_score": 409.85,
+        "crps": 47.87
       },
       {
         "fold": 3,
@@ -53,10 +53,10 @@
         "test_end": "2025-11-22",
         "embargo_days": 2,
         "samples": 240746,
-        "mae": 56.46,
+        "mae": 56.47,
         "coverage_80": 80.5,
-        "winkler_score": 381.64,
-        "crps": 44.26
+        "winkler_score": 381.65,
+        "crps": 44.27
       },
       {
         "fold": 4,
@@ -70,7 +70,7 @@
         "samples": 241862,
         "mae": 55.56,
         "coverage_80": 82.1,
-        "winkler_score": 393.23,
+        "winkler_score": 393.22,
         "crps": 44.73
       },
       {

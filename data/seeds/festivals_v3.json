@@ -1,0 +1,44 @@
+[
+  {
+    "name": "Makar Sankranti",
+    "start": "2025-01-14",
+    "end": "2025-01-15",
+    "multiplier": 1.6
+  },
+  {
+    "name": "Maha Kumbh",
+    "start": "2025-01-13",
+    "end": "2025-02-26",
+    "multiplier": 3.0
+  },
+  {
+    "name": "Holi",
+    "start": "2025-03-14",
+    "end": "2025-03-15",
+    "multiplier": 2.2
+  },
+  {
+    "name": "Dussehra",
+    "start": "2025-10-02",
+    "end": "2025-10-02",
+    "multiplier": 1.8
+  },
+  {
+    "name": "Diwali",
+    "start": "2025-10-20",
+    "end": "2025-10-22",
+    "multiplier": 2.5
+  },
+  {
+    "name": "Chhath Puja",
+    "start": "2025-10-26",
+    "end": "2025-10-29",
+    "multiplier": 3.0
+  },
+  {
+    "name": "Holi 2026",
+    "start": "2026-03-04",
+    "end": "2026-03-05",
+    "multiplier": 2.2
+  }
+]

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, Search, Bell, Clock, ChevronDown } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { formatTimeIST } from '@/lib/utils';
-import { mockStore } from '@/mock/store';
+import { api } from '@/lib/api';
+import { queryKeys } from '@/lib/queryKeys';
 import { Badge } from '@/components/ui/Badge';
 import { Link } from 'react-router-dom';
 
@@ -17,9 +19,20 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenCommandPalette,
 }) => {
   const [timeStr, setTimeStr] = useState(formatTimeIST());
-  const activeStationCode = mockStore.getActiveStation();
-  const station = mockStore.getStation(activeStationCode);
-  const pendingAdvisoriesCount = mockStore.getAdvisories().filter(a => a.status === 'pending').length;
+
+  const { data: station } = useQuery({
+    queryKey: queryKeys.station(),
+    queryFn: () => api.getStation('NDLS'),
+  });
+
+  const { data: advisories = [] } = useQuery({
+    queryKey: queryKeys.advisories(),
+    queryFn: () => api.getAdvisories(),
+  });
+
+  const pendingAdvisoriesCount = advisories.filter(a => a.status === 'pending').length;
+  const stationCode = station?.code || 'CNB';
+  const stationName = station?.name || 'Kanpur Central';
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -54,8 +67,8 @@ export const TopBar: React.FC<TopBarProps> = ({
           title="Switch station or search (⌘K)"
         >
           <span className="w-1.5 h-1.5 bg-ok inline-block rounded-none" />
-          <span className="font-semibold">{station.code}</span>
-          <span className="hidden md:inline text-text-dim">· {station.name}</span>
+          <span className="font-semibold">{stationCode}</span>
+          <span className="hidden md:inline text-text-dim">· {stationName}</span>
           <ChevronDown className="w-3 h-3 text-text-dim stroke-[1.5]" />
         </button>
 

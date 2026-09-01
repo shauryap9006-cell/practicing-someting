@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Sidebar } from '@/components/shell/Sidebar';
 import { TopBar } from '@/components/shell/TopBar';
 import { StatusBar } from '@/components/shell/StatusBar';
 import { CommandPalette } from '@/components/shell/CommandPalette';
-import { mockStore } from '@/mock/store';
+import { api } from '@/lib/api';
+import { queryKeys } from '@/lib/queryKeys';
 import { SEO } from '@/lib/seo';
 
 export const DashboardLayout: React.FC = () => {
@@ -12,18 +14,11 @@ export const DashboardLayout: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCmdkOpen, setIsCmdkOpen] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-  const [pendingAdvisoriesCount, setPendingAdvisoriesCount] = useState(
-    mockStore.getAdvisories().filter(a => a.status === 'pending').length
-  );
 
-  useEffect(() => {
-    const unsubscribe = mockStore.subscribe(() => {
-      setPendingAdvisoriesCount(
-        mockStore.getAdvisories().filter(a => a.status === 'pending').length
-      );
-    });
-    return unsubscribe;
-  }, []);
+  const { data: station } = useQuery({
+    queryKey: queryKeys.station(),
+    queryFn: () => api.getStation('NDLS'),
+  });
 
   // Theme Management
   useEffect(() => {
@@ -65,7 +60,7 @@ export const DashboardLayout: React.FC = () => {
   };
 
   const pageTitle = getPageTitle(location.pathname);
-  const activeStation = mockStore.getActiveStation();
+  const activeStation = station?.code || 'CNB';
 
   return (
     <div className="min-h-screen bg-bg text-text-main flex flex-col font-sans">

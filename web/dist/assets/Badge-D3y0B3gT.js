@@ -1,1 +1,0 @@
-import{j as t}from"./vendor-react-DQmn5B1w.js";import{k as o}from"./index-RQn8wTK5.js";const m=({className:a,variant:r="neutral",children:e,...n})=>{const s={ok:"badge-ok",warn:"badge-warn",danger:"badge-danger",neutral:"badge-neutral"};return t.jsx("span",{className:o(s[r],a),...n,children:e})};export{m as B};

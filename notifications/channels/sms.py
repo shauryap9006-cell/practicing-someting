@@ -72,20 +72,29 @@ class SMSChannel:
             return False
 
     def _send_fast2sms(self, phone_10: str, text: str) -> bool:
-        """Dispatches SMS via Fast2SMS Quick Transactional API."""
+        """Dispatches SMS via Fast2SMS Quick Transactional / DLT bulkV2 API."""
         url = "https://www.fast2sms.com/dev/bulkV2"
         headers = {
             "authorization": self.api_key,
             "Content-Type": "application/json",
         }
+        # Route 'q' (Quick SMS) sends custom alert messages without requiring DLT approval
         payload = {
             "route": "q",
             "message": text,
             "numbers": phone_10,
+            "flash": 0,
         }
+        if self.sender_id:
+            payload["sender_id"] = self.sender_id
+            payload["route"] = "dlt"
+
         try:
             with httpx.Client(timeout=settings.REQUEST_TIMEOUT_SECONDS) as client:
                 r = client.post(url, headers=headers, json=payload)
-                return r.status_code < 300
+                if r.status_code < 300:
+                    data = r.json()
+                    return data.get("return", False) is True or r.status_code == 200
+                return False
         except Exception:
             return False

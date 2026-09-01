@@ -1,0 +1,442 @@
+{
+  "NDLS": {
+    "nearest": "NDLS",
+    "dist_km": 3.2
+  },
+  "GZB": {
+    "nearest": "GZB",
+    "dist_km": 0.6
+  },
+  "ALJN": {
+    "nearest": "ALJN",
+    "dist_km": 1.7
+  },
+  "TDL": {
+    "nearest": "TDL",
+    "dist_km": 9.6
+  },
+  "ETW": {
+    "nearest": "TDL",
+    "dist_km": 86.8
+  },
+  "CNB": {
+    "nearest": "CNB",
+    "dist_km": 0.4
+  },
+  "ON": {
+    "nearest": "CNB",
+    "dist_km": 17.7
+  },
+  "LKO": {
+    "nearest": "LKO",
+    "dist_km": 0.1
+  },
+  "HWH": {
+    "nearest": "DDU",
+    "dist_km": 609.8
+  },
+  "CSMT": {
+    "nearest": "TDL",
+    "dist_km": 1080.8
+  },
+  "MMCT": {
+    "nearest": "TDL",
+    "dist_km": 1078.8
+  },
+  "MAS": {
+    "nearest": "MZP",
+    "dist_km": 1368.3
+  },
+  "SBC": {
+    "nearest": "PRYJ",
+    "dist_km": 1455.8
+  },
+  "SC": {
+    "nearest": "PRYJ",
+    "dist_km": 954.6
+  },
+  "HYB": {
+    "nearest": "PRYJ",
+    "dist_km": 960.2
+  },
+  "ADI": {
+    "nearest": "ETW",
+    "dist_km": 736.2
+  },
+  "PUNE": {
+    "nearest": "TDL",
+    "dist_km": 1071.3
+  },
+  "PNBE": {
+    "nearest": "DDU",
+    "dist_km": 205.9
+  },
+  "BSB": {
+    "nearest": "DDU",
+    "dist_km": 14.2
+  },
+  "PRYJ": {
+    "nearest": "PRYJ",
+    "dist_km": 2.3
+  },
+  "DDU": {
+    "nearest": "DDU",
+    "dist_km": 0.1
+  },
+  "GKP": {
+    "nearest": "DDU",
+    "dist_km": 166.4
+  },
+  "AGC": {
+    "nearest": "TDL",
+    "dist_km": 34.6
+  },
+  "MTJ": {
+    "nearest": "ETW",
+    "dist_km": 33.5
+  },
+  "GWL": {
+    "nearest": "TDL",
+    "dist_km": 116.2
+  },
+  "VGLJ": {
+    "nearest": "TDL",
+    "dist_km": 201.7
+  },
+  "BPL": {
+    "nearest": "TDL",
+    "dist_km": 452.2
+  },
+  "RKMP": {
+    "nearest": "FTP",
+    "dist_km": 455.5
+  },
+  "NGP": {
+    "nearest": "PRYJ",
+    "dist_km": 553.3
+  },
+  "KOTA": {
+    "nearest": "ETW",
+    "dist_km": 330.5
+  },
+  "JP": {
+    "nearest": "ETW",
+    "dist_km": 228.9
+  },
+  "JU": {
+    "nearest": "NDLS",
+    "dist_km": 490.3
+  },
+  "BKN": {
+    "nearest": "NDLS",
+    "dist_km": 388.7
+  },
+  "AII": {
+    "nearest": "NDLS",
+    "dist_km": 352.1
+  },
+  "BRC": {
+    "nearest": "ETW",
+    "dist_km": 753.7
+  },
+  "ST": {
+    "nearest": "TDL",
+    "dist_km": 872.1
+  },
+  "RTM": {
+    "nearest": "TDL",
+    "dist_km": 545.6
+  },
+  "BSL": {
+    "nearest": "TDL",
+    "dist_km": 736.2
+  },
+  "BZA": {
+    "nearest": "MZP",
+    "dist_km": 986.9
+  },
+  "VSKP": {
+    "nearest": "MZP",
+    "dist_km": 827.0
+  },
+  "BBS": {
+    "nearest": "MZP",
+    "dist_km": 623.6
+  },
+  "CTC": {
+    "nearest": "DDU",
+    "dist_km": 606.5
+  },
+  "KUR": {
+    "nearest": "MZP",
+    "dist_km": 629.0
+  },
+  "PURI": {
+    "nearest": "MZP",
+    "dist_km": 667.6
+  },
+  "R": {
+    "nearest": "MZP",
+    "dist_km": 450.1
+  },
+  "BSP": {
+    "nearest": "MZP",
+    "dist_km": 348.6
+  },
+  "DURG": {
+    "nearest": "MZP",
+    "dist_km": 468.1
+  },
+  "TATA": {
+    "nearest": "DDU",
+    "dist_km": 419.7
+  },
+  "ROU": {
+    "nearest": "DDU",
+    "dist_km": 383.4
+  },
+  "KGP": {
+    "nearest": "DDU",
+    "dist_km": 539.1
+  },
+  "SDAH": {
+    "nearest": "DDU",
+    "dist_km": 613.2
+  },
+  "ASN": {
+    "nearest": "DDU",
+    "dist_km": 428.6
+  },
+  "DHN": {
+    "nearest": "DDU",
+    "dist_km": 373.6
+  },
+  "GAYA": {
+    "nearest": "DDU",
+    "dist_km": 196.8
+  },
+  "DNR": {
+    "nearest": "DDU",
+    "dist_km": 197.2
+  },
+  "BJU": {
+    "nearest": "DDU",
+    "dist_km": 287.5
+  },
+  "SPJ": {
+    "nearest": "DDU",
+    "dist_km": 274.8
+  },
+  "MFP": {
+    "nearest": "DDU",
+    "dist_km": 246.1
+  },
+  "DBG": {
+    "nearest": "DDU",
+    "dist_km": 294.3
+  },
+  "CPR": {
+    "nearest": "DDU",
+    "dist_km": 172.8
+  },
+  "GHY": {
+    "nearest": "DDU",
+    "dist_km": 870.6
+  },
+  "NJP": {
+    "nearest": "DDU",
+    "dist_km": 554.5
+  },
+  "DBRG": {
+    "nearest": "DDU",
+    "dist_km": 1199.4
+  },
+  "TPJ": {
+    "nearest": "MZP",
+    "dist_km": 1655.2
+  },
+  "MDU": {
+    "nearest": "MZP",
+    "dist_km": 1765.6
+  },
+  "CBE": {
+    "nearest": "PRYJ",
+    "dist_km": 1685.3
+  },
+  "SA": {
+    "nearest": "MZP",
+    "dist_km": 1579.4
+  },
+  "ED": {
+    "nearest": "PRYJ",
+    "dist_km": 1626.2
+  },
+  "TVC": {
+    "nearest": "PRYJ",
+    "dist_km": 1954.5
+  },
+  "ERS": {
+    "nearest": "PRYJ",
+    "dist_km": 1817.1
+  },
+  "CLT": {
+    "nearest": "PRYJ",
+    "dist_km": 1701.6
+  },
+  "CAN": {
+    "nearest": "PRYJ",
+    "dist_km": 1654.2
+  },
+  "PGT": {
+    "nearest": "PRYJ",
+    "dist_km": 1718.2
+  },
+  "TCR": {
+    "nearest": "PRYJ",
+    "dist_km": 1761.9
+  },
+  "QLN": {
+    "nearest": "PRYJ",
+    "dist_km": 1922.1
+  },
+  "UBL": {
+    "nearest": "FTP",
+    "dist_km": 1315.1
+  },
+  "MYS": {
+    "nearest": "PRYJ",
+    "dist_km": 1557.4
+  },
+  "YPR": {
+    "nearest": "PRYJ",
+    "dist_km": 1451.6
+  },
+  "TPTY": {
+    "nearest": "MZP",
+    "dist_km": 1330.1
+  },
+  "RU": {
+    "nearest": "MZP",
+    "dist_km": 1325.1
+  },
+  "GTL": {
+    "nearest": "PRYJ",
+    "dist_km": 1233.4
+  },
+  "KZJ": {
+    "nearest": "PRYJ",
+    "dist_km": 863.4
+  },
+  "RJY": {
+    "nearest": "MZP",
+    "dist_km": 912.6
+  },
+  "SUR": {
+    "nearest": "FTP",
+    "dist_km": 1049.0
+  },
+  "MMR": {
+    "nearest": "TDL",
+    "dist_km": 872.7
+  },
+  "NK": {
+    "nearest": "TDL",
+    "dist_km": 930.8
+  },
+  "IGP": {
+    "nearest": "TDL",
+    "dist_km": 969.9
+  },
+  "ASR": {
+    "nearest": "NDLS",
+    "dist_km": 401.9
+  },
+  "LDH": {
+    "nearest": "NDLS",
+    "dist_km": 283.4
+  },
+  "JUC": {
+    "nearest": "NDLS",
+    "dist_km": 337.7
+  },
+  "UMB": {
+    "nearest": "NDLS",
+    "dist_km": 191.4
+  },
+  "CDG": {
+    "nearest": "NDLS",
+    "dist_km": 232.5
+  },
+  "HW": {
+    "nearest": "GZB",
+    "dist_km": 158.4
+  },
+  "DDN": {
+    "nearest": "GZB",
+    "dist_km": 191.7
+  },
+  "BE": {
+    "nearest": "ALJN",
+    "dist_km": 141.2
+  },
+  "MB": {
+    "nearest": "ALJN",
+    "dist_km": 125.2
+  },
+  "SRE": {
+    "nearest": "GZB",
+    "dist_km": 144.3
+  },
+  "MTC": {
+    "nearest": "GZB",
+    "dist_km": 42.9
+  },
+  "JAT": {
+    "nearest": "NDLS",
+    "dist_km": 504.1
+  },
+  "SVDK": {
+    "nearest": "NDLS",
+    "dist_km": 530.8
+  },
+  "DADRI": {
+    "nearest": "GZB",
+    "dist_km": 17.8
+  },
+  "REWARI": {
+    "nearest": "NDLS",
+    "dist_km": 78.0
+  },
+  "FL": {
+    "nearest": "NDLS",
+    "dist_km": 277.1
+  },
+  "ABR": {
+    "nearest": "ETW",
+    "dist_km": 620.5
+  },
+  "PNU": {
+    "nearest": "ETW",
+    "dist_km": 669.2
+  },
+  "MSH": {
+    "nearest": "ETW",
+    "dist_km": 711.0
+  },
+  "JNPT": {
+    "nearest": "TDL",
+    "dist_km": 1073.8
+  },
+  "SEB": {
+    "nearest": "DDU",
+    "dist_km": 113.1
+  },
+  "GMO": {
+    "nearest": "DDU",
+    "dist_km": 344.4
+  },
+  "DKAE": {
+    "nearest": "DDU",
+    "dist_km": 599.8
+  }
+}

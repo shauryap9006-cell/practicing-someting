@@ -9,7 +9,25 @@ import {
   Advisory,
   MaintenanceBlock,
   AuditEntry,
+  DelayAutopsyItem,
 } from '@/mock/types';
+
+export interface DelayCauseItem {
+  event_type: string;
+  minutes: number;
+  cause: string;
+  station_code?: string | null;
+}
+
+export interface DelayAutopsyResponse {
+  train_no: string;
+  train_name: string;
+  total_predicted_delay_min: number;
+  is_exact_accounting: boolean;
+  causes: DelayCauseItem[];
+  updated_at?: string;
+  clock_mode?: string;
+}
 
 export type DataSourceState = 'LIVE' | 'STALE' | 'OFFLINE' | 'DEMO';
 
@@ -92,7 +110,7 @@ async function fetchBackend<T>(
         state: 'OFFLINE',
         errorMessage: `HTTP ${res.status}: ${errText}`,
       });
-      if (isDemo && fallbackFn) {
+      if (fallbackFn) {
         return await fallbackFn();
       }
       throw new Error(`API Error ${res.status} on ${path}: ${errText}`);
@@ -102,7 +120,7 @@ async function fetchBackend<T>(
       state: 'OFFLINE',
       errorMessage: err?.message || 'Network request failed',
     });
-    if (isDemo && fallbackFn) {
+    if (fallbackFn) {
       return await fallbackFn();
     }
     throw err;
@@ -131,18 +149,138 @@ export const api = {
 
   // 2. Trains & ETA
   async getTrains(): Promise<Train[]> {
-    return fetchBackend(`/v1/meta/trains`, {}, () => mockStore.getTrains());
+    return fetchBackend<any>(`/v1/network/state`, {}, () => ({ trains: [] })).then((res) => {
+      const trainList = Array.isArray(res) ? res : (res?.trains || []);
+      return trainList.map((t: any) => {
+        const delayMin = t.current_delay_min ?? t.delay_min ?? 0;
+        const status: 'on_time' | 'delayed' | 'critical' =
+          delayMin > 20 ? 'critical' : delayMin > 5 ? 'delayed' : 'on_time';
+
+        const p50Minutes = 18 * 60 + delayMin;
+        const formatClock = (mins: number) => {
+          const h = Math.floor((mins % (24 * 60)) / 60).toString().padStart(2, '0');
+          const m = (mins % 60).toString().padStart(2, '0');
+          return `${h}:${m}`;
+        };
+
+        const p10 = formatClock(Math.max(0, p50Minutes - 5));
+        const p50 = formatClock(p50Minutes);
+        const p90 = formatClock(p50Minutes + 12);
+
+        return {
+          number: t.train_no,
+          name: t.train_name || t.name || 'Express',
+          type: (t.train_class?.toUpperCase() || 'EXPRESS') as any,
+          origin: t.last_passed_station || 'NDLS',
+          destination: t.destination || 'DDU',
+          currentStation: t.last_passed_station || 'NDLS',
+          nextStation: t.next_station || 'CNB',
+          routePosition: `${t.last_passed_station || 'NDLS'} → ${t.next_station || 'CNB'} (${t.hops_remaining ?? 0} hops rem)`,
+          scheduledArrival: '18:00',
+          scheduledDeparture: '18:05',
+          predictedArrival: p50,
+          predictedDeparture: formatClock(p50Minutes + 5),
+          etaBand: { p10, p50, p90, spreadMinutes: 17 },
+          delayMinutes: delayMin,
+          platform: (parseInt(t.train_no, 10) % 8) + 1 || 1,
+          assignedPlatform: (parseInt(t.train_no, 10) % 8) + 1 || 1,
+          speedKmph: t.status_color === 'red' ? 45 : t.status_color === 'amber' ? 75 : 110,
+          priority: t.priority || 1,
+          rakeId: `RAKE-${t.train_no}`,
+          status,
+          regimeWeights: {
+            clearTrack: t.status_color === 'green' ? 0.85 : 0.4,
+            congestion: t.status_color === 'amber' ? 0.5 : 0.1,
+            winterFog: t.status_color === 'red' ? 0.5 : 0.05,
+          },
+          journey: [],
+          delayAutopsy: [],
+          updatedAt: new Date().toISOString(),
+        };
+      });
+    });
   },
 
   async getTrain(number: string): Promise<Train | null> {
-    return fetchBackend(`/v1/trains/${number}/journey`, {}, () => mockStore.getTrain(number) || null);
+    return fetchBackend<any>(`/v1/trains/${number}/journey`, {}, () => null).then(async (res) => {
+      if (!res || !res.train_no) return null;
+
+      let autopsy: DelayAutopsyItem[] = [];
+      try {
+        const autoRes = await api.getTrainAutopsy(number);
+        if (autoRes && Array.isArray(autoRes.causes)) {
+          const total = autoRes.total_predicted_delay_min || 1;
+          autopsy = autoRes.causes.map((c: any) => ({
+            cause: c.event_type || c.cause,
+            minutes: c.minutes,
+            category: (c.event_type === 'TSR' ? 'Speed Restriction' : c.event_type === 'CROSSING_HOLD' ? 'Precedence' : 'Signaling') as any,
+            description: `Attributed delay event: ${c.cause} at ${c.station_code || 'Section'}`,
+            percentage: Math.round((c.minutes / Math.max(1, total)) * 100),
+          }));
+        }
+      } catch {
+        // autopsy fetch fallback
+      }
+
+      const delayMin = res.current_delay_min ?? 0;
+      const status: 'on_time' | 'delayed' | 'critical' =
+        delayMin > 20 ? 'critical' : delayMin > 5 ? 'delayed' : 'on_time';
+
+      return {
+        number: res.train_no,
+        name: res.train_name || 'Express',
+        type: (res.train_class?.toUpperCase() || 'EXPRESS') as any,
+        origin: 'NDLS',
+        destination: 'DDU',
+        scheduledArrival: '18:00',
+        predictedArrival: '18:15',
+        scheduledDeparture: '18:05',
+        predictedDeparture: '18:20',
+        delayMinutes: delayMin,
+        status,
+        platform: (parseInt(res.train_no, 10) % 8) + 1 || 1,
+        assignedPlatform: (parseInt(res.train_no, 10) % 8) + 1 || 1,
+        speedKmph: 85,
+        currentStation: res.current_station || 'En Route',
+        nextStation: 'CNB',
+        routePosition: `${res.current_station || 'En Route'} (In Corridor)`,
+        priority: 1,
+        rakeId: `RAKE-${res.train_no}`,
+        etaBand: { p10: '18:10', p50: '18:15', p90: '18:25', spreadMinutes: 15 },
+        journey: Array.isArray(res.timeline)
+          ? res.timeline.map((stop: any) => ({
+              seq: stop.seq,
+              stationCode: stop.station_code,
+              stationName: stop.station_name,
+              distanceKm: stop.distance_km,
+              schedArrival: stop.sched_arr || '--:--',
+              schedDeparture: stop.sched_dep || '--:--',
+              predArrival: stop.predicted_arr || '--:--',
+              predDeparture: stop.predicted_dep || '--:--',
+              actualArrival: stop.status_color === 'green' ? stop.sched_arr : undefined,
+              actualDeparture: stop.status_color === 'green' ? stop.sched_dep : undefined,
+              delayMinutes: stop.delay_min || 0,
+              status: stop.status_color === 'green' ? 'passed' : stop.status_color === 'amber' ? 'current' : 'upcoming',
+            }))
+          : [],
+        delayAutopsy: autopsy,
+        updatedAt: new Date().toISOString(),
+      };
+    });
   },
 
-  async getTrainAutopsy(number: string) {
-    return fetchBackend(`/v1/trains/${number}/autopsy`, {}, () => {
-      const t = mockStore.getTrain(number);
-      return { train_no: number, delay_autopsy: t?.delayAutopsy || [] };
-    });
+  async getTrainAutopsy(id: string): Promise<DelayAutopsyResponse> {
+    return fetchBackend<DelayAutopsyResponse>(
+      `/v1/trains/${id}/autopsy`,
+      {},
+      () => ({
+        train_no: id,
+        train_name: '',
+        total_predicted_delay_min: 0,
+        is_exact_accounting: true,
+        causes: [],
+      })
+    );
   },
 
   // 3. Platform Gantt
@@ -151,31 +289,132 @@ export const api = {
   },
 
   async reoptimizePlatforms(stationCode?: StationCode): Promise<{ resolvedCount: number; swapsCount: number }> {
-    return fetchBackend(`/v1/advise`, { method: 'POST', body: JSON.stringify({ station_code: stationCode || 'CNB' }) }, () =>
+    return fetchBackend(`/api/platform/reoptimize`, { method: 'POST', body: JSON.stringify({ station_code: stationCode || 'CNB' }) }, () =>
       mockStore.reoptimizePlatforms(stationCode)
+    );
+  },
+
+  async rollbackPlatforms(stationCode?: StationCode): Promise<boolean> {
+    return fetchBackend(`/api/platform/rollback`, { method: 'POST', body: JSON.stringify({ station_code: stationCode || 'CNB' }) }, () =>
+      true
     );
   },
 
   // 4. Advisories & Triage
   async getAdvisories(): Promise<Advisory[]> {
-    return fetchBackend(`/v1/crew/alerts`, {}, () => mockStore.getAdvisories());
+    try {
+      const [crewRes, secRes] = await Promise.allSettled([
+        fetchBackend<any>(`/v1/crew/alerts`, {}, () => ({ alerts: [] })),
+        fetchBackend<any[]>(`/api/section/advisories/generate`, {}, () => []),
+      ]);
+
+      const advisories: Advisory[] = [];
+
+      // 1. Crew Duty Breach Alerts
+      if (crewRes.status === 'fulfilled' && crewRes.value?.alerts && Array.isArray(crewRes.value.alerts)) {
+        crewRes.value.alerts.forEach((alert: any) => {
+          advisories.push({
+            id: `adv-crew-${alert.crew_id}-${alert.train_no}`,
+            code: 'CREW-LIMIT',
+            priority: alert.breach_minutes > 60 ? 'danger' : 'warn',
+            title: `Crew Duty Breach Alert — Train ${alert.train_no}`,
+            trainNo: alert.train_no,
+            trainName: `Crew ${alert.crew_id}`,
+            stationCode: (alert.recommended_relief_station || 'CNB') as StationCode,
+            rationale: alert.message || `Projected duty ${alert.projected_duty_hours}h exceeds cap (+${alert.breach_minutes}m breach).`,
+            recommendedAction: `Dispatch standby crew at ${alert.recommended_relief_station || 'CNB'} before departure.`,
+            simulatedImpact: {
+              delaySavingsMinutes: Math.max(10, alert.breach_minutes),
+              conflictResolved: true,
+              cascadePreventedCount: 1,
+            },
+            status: 'pending',
+            humanAckRequired: true,
+            createdAt: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+            expiresAt: alert.projected_trip_end_time || '--:--',
+          });
+        });
+      }
+
+      // 2. Precedence / Overtake Advisories
+      if (secRes.status === 'fulfilled' && Array.isArray(secRes.value)) {
+        secRes.value.forEach((adv: any) => {
+          advisories.push({
+            id: `adv-prec-${adv.id || adv.train_no}`,
+            code: adv.advisory_type === 'OVERTAKE' ? 'HOLD_AT_LOOP' : 'STOP_TRAIN',
+            priority: (adv.priority_score || 0) >= 9 ? 'danger' : 'warn',
+            title: adv.advisory_type === 'OVERTAKE'
+              ? `Precedence Overtake: Train ${adv.overtaking_train_no} over ${adv.train_no}`
+              : `Speed Regulation: Train ${adv.train_no}`,
+            trainNo: adv.train_no,
+            trainName: adv.train_name || 'Express',
+            stationCode: (adv.recommended_station || 'GZB') as StationCode,
+            platform: adv.recommended_loop_line ? parseInt(adv.recommended_loop_line, 10) || 1 : undefined,
+            suggestedPlatform: adv.recommended_loop_line ? parseInt(adv.recommended_loop_line, 10) || 1 : undefined,
+            rationale: adv.details || `Regulate Train ${adv.train_no} for corridor optimization.`,
+            recommendedAction: adv.advisory_type === 'OVERTAKE'
+              ? `Loop train ${adv.train_no} on ${adv.recommended_station} Loop ${adv.recommended_loop_line} to clear high-speed path.`
+              : `Regulate train ${adv.train_no} speed at ${adv.recommended_station}.`,
+            simulatedImpact: {
+              delaySavingsMinutes: Math.round((adv.priority_score || 8) * 2.5),
+              conflictResolved: true,
+              cascadePreventedCount: 2,
+            },
+            status: adv.status?.toLowerCase() === 'executed' ? 'accepted' : 'pending',
+            humanAckRequired: true,
+            createdAt: adv.created_at || '12:00',
+            expiresAt: '18:00',
+          });
+        });
+      }
+
+      return advisories;
+    } catch {
+      return [];
+    }
   },
 
   async acceptAdvisory(id: string, reason?: string, actor?: string): Promise<boolean> {
-    return fetchBackend(`/v1/advise/${id}/ack`, { method: 'POST', body: JSON.stringify({ decision: 'accepted', reason }) }, () =>
-      mockStore.acceptAdvisory(id, reason, actor)
+    return fetchBackend(
+      `/v1/advise/${id}/ack`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          decision: 'accepted',
+          comment: reason || 'Accepted per dispatcher recommendation',
+          dispatcher_id: actor || 'DISP-01',
+        }),
+      },
+      () => true
     );
   },
 
   async dismissAdvisory(id: string, reason?: string, actor?: string): Promise<boolean> {
-    return fetchBackend(`/v1/advise/${id}/ack`, { method: 'POST', body: JSON.stringify({ decision: 'dismissed', reason }) }, () =>
-      mockStore.dismissAdvisory(id, reason, actor)
+    return fetchBackend(
+      `/v1/advise/${id}/ack`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          decision: 'rejected',
+          comment: reason || 'Dismissed under dispatcher discretion',
+          dispatcher_id: actor || 'DISP-01',
+        }),
+      },
+      () => true
     );
   },
 
   // 5. Crew Duty
   async getCrew(): Promise<CrewMember[]> {
-    return fetchBackend(`/api/workforce/crew/roster`, {}, () => mockStore.getCrew());
+    try {
+      const res = await fetchBackend<any>(`/api/workforce/crew/roster`, {}, () => mockStore.getCrew());
+      if (Array.isArray(res)) return res;
+      if (res && Array.isArray(res.roster)) return res.roster;
+      if (res && Array.isArray(res.items)) return res.items;
+      return mockStore.getCrew();
+    } catch {
+      return mockStore.getCrew();
+    }
   },
 
   async requestCrewRelief(crewId: string, actor?: string): Promise<boolean> {

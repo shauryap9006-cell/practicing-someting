@@ -1,11 +1,15 @@
-﻿data/*.db
+data/*.db*
+data/*.sqlite*
 data/backups/
 data/cache/
 data/kaggle_downloads/
 data/weather/*.json
 web/node_modules/
+node_modules/
+firebase-admin.json
 .venv/
 __pycache__/
 *.pyc
 .coverage
+web/dist/
 graphify-out/

@@ -27,6 +27,7 @@
     "date-fns": "^4.1.0",
     "echarts": "^5.5.1",
     "echarts-for-react": "^3.0.2",
+    "firebase": "^12.18.0",
     "gsap": "^3.12.5",
     "lenis": "^1.1.18",
     "lucide-react": "^0.468.0",

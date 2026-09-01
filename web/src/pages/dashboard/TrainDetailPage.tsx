@@ -28,6 +28,29 @@ export const TrainDetailPage: React.FC = () => {
     queryFn: () => api.getTrain(id || ''),
   });
 
+  const { data: autopsyData } = useQuery({
+    queryKey: queryKeys.trainAutopsy(id || ''),
+    queryFn: () => api.getTrainAutopsy(id || ''),
+    enabled: !!id,
+  });
+
+  const getCauseBadge = (eventType: string) => {
+    switch (eventType) {
+      case 'CROSSING_HOLD':
+        return <Badge variant="danger">CROSSING HOLD</Badge>;
+      case 'TSR':
+        return <Badge variant="warn">SPEED RESTRICTION</Badge>;
+      case 'RAKE_INHERIT':
+        return <Badge variant="neutral">RAKE INHERITED</Badge>;
+      case 'PLATFORM_WAIT':
+        return <Badge variant="warn">PLATFORM WAIT</Badge>;
+      case 'EXT_DWELL':
+        return <Badge variant="warn">EXTENDED DWELL</Badge>;
+      default:
+        return <Badge variant="neutral">{eventType || 'OPERATIONAL'}</Badge>;
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="p-8 text-center bg-panel border border-hairline space-y-4">
@@ -49,7 +72,8 @@ export const TrainDetailPage: React.FC = () => {
     );
   }
 
-  const totalAutopsyMinutes = train.delayAutopsy.reduce((sum, item) => sum + item.minutes, 0);
+  const causes = autopsyData?.causes || [];
+  const totalAutopsyMinutes = causes.reduce((sum, item) => sum + item.minutes, 0) || train.delayMinutes;
 
   return (
     <div className="space-y-6 font-sans">
@@ -222,43 +246,55 @@ export const TrainDetailPage: React.FC = () => {
               </h3>
             </div>
             <span className="text-[10px] font-mono text-ok border border-ok/40 px-1.5 py-0.5">
-              100% Balanced ({train.delayMinutes}m)
+              {autopsyData?.is_exact_accounting ? `100% Balanced (${totalAutopsyMinutes}m)` : `Delay Accounting (${totalAutopsyMinutes}m)`}
             </span>
           </div>
 
           <div className="bg-panel border border-hairline p-4 space-y-4">
-            {train.delayMinutes === 0 ? (
+            {train.delayMinutes === 0 && causes.length === 0 ? (
               <div className="p-6 text-center text-xs text-ok font-mono space-y-1">
                 <CheckCircle2 className="w-6 h-6 mx-auto stroke-[1.5]" />
                 <div className="font-bold">Train Running Strictly On Time</div>
                 <div className="text-[11px] text-text-dim">Zero delay minutes recorded across corridor blocks.</div>
               </div>
+            ) : causes.length === 0 ? (
+              <div className="p-6 text-center text-xs text-text-dim font-mono space-y-1">
+                <AlertTriangle className="w-6 h-6 mx-auto stroke-[1.5] text-warn" />
+                <div className="font-bold text-text-main">Delay Autopsy In Progress</div>
+                <div className="text-[11px] text-text-dim">Attribution engine analyzing {train.delayMinutes}m delay telemetry.</div>
+              </div>
             ) : (
               <>
                 <div className="text-xs text-text-dim font-sans leading-relaxed">
-                  Exact mathematical decomposition of all <span className="font-mono text-text-main font-semibold">{train.delayMinutes} delayed minutes</span> attributed across operational categories:
+                  Exact mathematical decomposition of all <span className="font-mono text-text-main font-semibold">{totalAutopsyMinutes} delayed minutes</span> attributed across operational categories:
                 </div>
 
                 <div className="space-y-3">
-                  {train.delayAutopsy.map((item, idx) => (
-                    <div key={idx} className="p-3 bg-panel-2 border border-hairline space-y-1.5 text-xs">
-                      <div className="flex items-center justify-between font-mono">
-                        <span className="font-bold text-text-main">{item.cause}</span>
-                        <span className="text-accent font-bold">+{item.minutes}m ({item.percentage}%)</span>
+                  {causes.map((item, idx) => {
+                    const pct = Math.round((item.minutes / Math.max(1, totalAutopsyMinutes)) * 100);
+                    return (
+                      <div key={idx} className="p-3 bg-panel-2 border border-hairline space-y-1.5 text-xs">
+                        <div className="flex items-center justify-between font-mono">
+                          <div className="flex items-center gap-2">
+                            {getCauseBadge(item.event_type)}
+                            <span className="font-bold text-text-main">{item.event_type}</span>
+                          </div>
+                          <span className="text-accent font-bold">+{item.minutes}m ({pct}%)</span>
+                        </div>
+                        <p className="text-[11px] text-text-dim font-sans leading-relaxed">
+                          {item.cause}{item.station_code ? ` at ${item.station_code}` : ''}
+                        </p>
+                        <div className="w-full bg-panel h-1.5 border border-hairline/60 overflow-hidden mt-1">
+                          <div className="bg-accent h-full" style={{ width: `${pct}%` }} />
+                        </div>
                       </div>
-                      <p className="text-[11px] text-text-dim font-sans leading-relaxed">
-                        {item.description}
-                      </p>
-                      <div className="w-full bg-panel h-1.5 border border-hairline/60 overflow-hidden mt-1">
-                        <div className="bg-accent h-full" style={{ width: `${item.percentage}%` }} />
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <div className="pt-2 border-t border-hairline flex items-center justify-between font-mono text-xs">
                   <span className="text-text-dim">Total Attributed Delay:</span>
-                  <span className="font-bold text-text-main">{totalAutopsyMinutes}m / {train.delayMinutes}m (100%)</span>
+                  <span className="font-bold text-text-main">{totalAutopsyMinutes}m ({autopsyData?.is_exact_accounting ? '100% Exact' : 'Estimated'})</span>
                 </div>
               </>
             )}

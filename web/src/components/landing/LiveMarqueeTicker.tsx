@@ -1,15 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { mockStore } from '@/mock/store';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api';
+import { queryKeys } from '@/lib/queryKeys';
 
 export function LiveMarqueeTicker() {
-  const [trains, setTrains] = useState(() => mockStore.getTrains().slice(0, 12));
+  const { data: allTrains = [] } = useQuery({
+    queryKey: queryKeys.board('NDLS'),
+    queryFn: () => api.getTrains(),
+    refetchInterval: 5000,
+  });
 
-  useEffect(() => {
-    const unsub = mockStore.subscribe(() => {
-      setTrains(mockStore.getTrains().slice(0, 12));
-    });
-    return unsub;
-  }, []);
+  const trains = allTrains.slice(0, 12);
 
   return (
     <div className="w-full bg-[#0E0F11] border-y border-[#26282C] overflow-hidden py-2 select-none">

@@ -163,6 +163,7 @@ export const TrainsPage: React.FC = () => {
                   <ArrowUpDown className="w-3 h-3 stroke-[1.5]" />
                 </div>
               </th>
+              <th scope="col" className="p-3">Regime</th>
               <th scope="col" className="p-3">PF</th>
               <th scope="col" className="p-3 text-right">Action</th>
             </tr>
@@ -170,62 +171,77 @@ export const TrainsPage: React.FC = () => {
           <tbody className="divide-y divide-hairline">
             {filteredTrains.length === 0 ? (
               <tr>
-                <td colSpan={8} className="p-8 text-center text-xs text-text-dim">
+                <td colSpan={9} className="p-8 text-center text-xs text-text-dim">
                   No trains found matching current filters.
                 </td>
               </tr>
             ) : (
-              filteredTrains.map(train => (
-                <tr
-                  key={train.number}
-                  onClick={() => navigate(`/dashboard/trains/${train.number}`)}
-                  className="hover:bg-panel-2/60 cursor-pointer transition-colors group"
-                >
-                  <td className="p-3 whitespace-nowrap">
-                    <div className="font-bold text-accent group-hover:underline">
-                      {train.number}
-                    </div>
-                    <div className="font-sans text-[11px] text-text-dim truncate max-w-[180px]">
-                      {train.name}
-                    </div>
-                  </td>
-                  <td className="p-3 whitespace-nowrap text-text-dim text-[11px]">
-                    {train.type}
-                  </td>
-                  <td className="p-3 whitespace-nowrap">
-                    <div className="text-text-main text-[11px]">{train.origin} → {train.destination}</div>
-                    <div className="text-[10px] text-text-dim font-sans">{train.routePosition}</div>
-                  </td>
-                  <td className="p-3 whitespace-nowrap text-text-dim">
-                    {train.scheduledArrival}
-                  </td>
-                  <td className="p-3 whitespace-nowrap">
-                    <div className="flex items-center gap-1.5 text-xs">
-                      <span className="text-text-dim text-[11px]">{train.etaBand.p10}</span>
-                      <span className="font-bold text-text-main">{train.etaBand.p50}</span>
-                      <span className="text-text-dim text-[11px]">{train.etaBand.p90}</span>
-                    </div>
-                  </td>
-                  <td className="p-3 whitespace-nowrap">
-                    {train.delayMinutes === 0 ? (
-                      <Badge variant="ok">ON TIME</Badge>
-                    ) : train.delayMinutes > 20 ? (
-                      <Badge variant="danger">{formatMinutes(train.delayMinutes)}</Badge>
-                    ) : (
-                      <Badge variant="warn">{formatMinutes(train.delayMinutes)}</Badge>
-                    )}
-                  </td>
-                  <td className="p-3 whitespace-nowrap font-bold text-text-main">
-                    PF{train.platform}
-                  </td>
-                  <td className="p-3 whitespace-nowrap text-right">
-                    <span className="text-[11px] text-text-dim group-hover:text-accent flex items-center justify-end gap-1 font-mono">
-                      <span>Detail</span>
-                      <ChevronRight className="w-3.5 h-3.5 stroke-[1.5]" />
-                    </span>
-                  </td>
-                </tr>
-              ))
+              filteredTrains.map(train => {
+                const reg = train.regimeWeights || { clearTrack: 0.8, congestion: 0.15, winterFog: 0.05 };
+                const topRegime =
+                  reg.winterFog >= 0.4
+                    ? { label: 'FOG', variant: 'neutral' as const }
+                    : reg.congestion >= 0.4
+                    ? { label: 'CONGESTION', variant: 'warn' as const }
+                    : { label: 'CLEAR', variant: 'ok' as const };
+
+                return (
+                  <tr
+                    key={train.number}
+                    onClick={() => navigate(`/dashboard/trains/${train.number}`)}
+                    className="hover:bg-panel-2/60 cursor-pointer transition-colors group"
+                  >
+                    <td className="p-3 whitespace-nowrap">
+                      <div className="font-bold text-accent group-hover:underline">
+                        {train.number}
+                      </div>
+                      <div className="font-sans text-[11px] text-text-dim truncate max-w-[180px]">
+                        {train.name}
+                      </div>
+                    </td>
+                    <td className="p-3 whitespace-nowrap text-text-dim text-[11px]">
+                      {train.type}
+                    </td>
+                    <td className="p-3 whitespace-nowrap">
+                      <div className="text-text-main text-[11px]">{train.origin} → {train.destination}</div>
+                      <div className="text-[10px] text-text-dim font-sans">{train.routePosition}</div>
+                    </td>
+                    <td className="p-3 whitespace-nowrap text-text-dim">
+                      {train.scheduledArrival}
+                    </td>
+                    <td className="p-3 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <span className="text-text-dim text-[11px]">{train.etaBand?.p10 ?? train.scheduledArrival}</span>
+                        <span className="font-bold text-text-main">{train.etaBand?.p50 ?? train.predictedArrival ?? train.scheduledArrival}</span>
+                        <span className="text-text-dim text-[11px]">{train.etaBand?.p90 ?? train.scheduledArrival}</span>
+                      </div>
+                    </td>
+                    <td className="p-3 whitespace-nowrap">
+                      {train.delayMinutes === 0 ? (
+                        <Badge variant="ok">ON TIME</Badge>
+                      ) : train.delayMinutes > 20 ? (
+                        <Badge variant="danger">{formatMinutes(train.delayMinutes)}</Badge>
+                      ) : (
+                        <Badge variant="warn">{formatMinutes(train.delayMinutes)}</Badge>
+                      )}
+                    </td>
+                    <td className="p-3 whitespace-nowrap">
+                      <Badge variant={topRegime.variant} className="text-[9px] py-0">
+                        {topRegime.label}
+                      </Badge>
+                    </td>
+                    <td className="p-3 whitespace-nowrap font-bold text-text-main">
+                      PF{train.platform}
+                    </td>
+                    <td className="p-3 whitespace-nowrap text-right">
+                      <span className="text-[11px] text-text-dim group-hover:text-accent flex items-center justify-end gap-1 font-mono">
+                        <span>Detail</span>
+                        <ChevronRight className="w-3.5 h-3.5 stroke-[1.5]" />
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

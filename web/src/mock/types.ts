@@ -97,6 +97,29 @@ export interface Train {
   priority: number; // 1 = highest
   rakeId: string;
   status: 'on_time' | 'delayed' | 'critical';
+  regimeWeights?: {
+    clearTrack: number;
+    congestion: number;
+    winterFog: number;
+  };
+  epistemicStdMin?: number;
+  rakeTurnaround?: {
+    incomingTrain: string;
+    bufferMinutes: number;
+    consumedMinutes: number;
+    netDelayMinutes: number;
+  };
+  tsrAhead?: {
+    count: number;
+    maxSlowdownPct: number;
+    activeZones: string[];
+  };
+  weatherTelemetry?: {
+    temperatureC: number;
+    visibilityMeters: number;
+    fogFlag: boolean;
+    isDawnFogWindow: boolean;
+  };
   journey: JourneyStop[];
   delayAutopsy: DelayAutopsyItem[];
   updatedAt: string;

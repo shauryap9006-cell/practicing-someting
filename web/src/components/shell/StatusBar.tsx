@@ -1,21 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldAlert, Radio, Activity } from 'lucide-react';
-import { mockStore } from '@/mock/store';
 import { formatTimeIST } from '@/lib/utils';
 import { SITE } from '@/config/site';
 import { isAnalyticsActive } from '@/lib/analytics';
 import { DataFreshnessBadge } from '@/components/common/DataFreshnessBadge';
 
-
 export const StatusBar: React.FC = () => {
-  const [lastUpdatedTime, setLastUpdatedTime] = useState<string>(formatTimeIST(mockStore.getLastUpdated()));
+  const [lastUpdatedTime, setLastUpdatedTime] = useState<string>(() => formatTimeIST());
   const analyticsActive = isAnalyticsActive();
 
   useEffect(() => {
-    const unsubscribe = mockStore.subscribe(() => {
-      setLastUpdatedTime(formatTimeIST(mockStore.getLastUpdated()));
-    });
-    return unsubscribe;
+    const timer = setInterval(() => {
+      setLastUpdatedTime(formatTimeIST());
+    }, 5000);
+    return () => clearInterval(timer);
   }, []);
 
   return (
