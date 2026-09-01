@@ -208,3 +208,76 @@ CREATE TABLE IF NOT EXISTS notification_log (
 CREATE INDEX IF NOT EXISTS idx_notif_log_staff ON notification_log(staff_id);
 CREATE INDEX IF NOT EXISTS idx_notif_log_sent ON notification_log(sent_at);
 
+-- 15. Hourly Micro-Weather (Phase B1 — Telemetry & Fog Forecast)
+CREATE TABLE IF NOT EXISTS weather_hourly (
+  station_code TEXT NOT NULL,
+  ts_ist TEXT NOT NULL,
+  date TEXT NOT NULL,
+  hour INTEGER NOT NULL,
+  temperature_2m REAL,
+  precipitation REAL,
+  visibility REAL,
+  wind_speed_10m REAL,
+  relative_humidity_2m REAL,
+  fog_flag INTEGER DEFAULT 0,
+  PRIMARY KEY (station_code, ts_ist)
+);
+CREATE INDEX IF NOT EXISTS idx_weather_hourly_date ON weather_hourly(station_code, date);
+CREATE INDEX IF NOT EXISTS idx_weather_hourly_ts ON weather_hourly(station_code, ts_ist);
+
+-- 16. Streaming Conformal PID State (Phase 0 — Calibration State Persistence)
+CREATE TABLE IF NOT EXISTS conformal_pid_state (
+  group_key TEXT PRIMARY KEY,
+  target_alpha REAL NOT NULL DEFAULT 0.20,
+  current_alpha REAL NOT NULL DEFAULT 0.20,
+  integral REAL NOT NULL DEFAULT 0.0,
+  prev_error REAL NOT NULL DEFAULT 0.0,
+  steps INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT NOT NULL
+);
+
+-- 17. Real-Time Live Train Positions (Pipeline 07)
+CREATE TABLE IF NOT EXISTS live_positions (
+  train_no TEXT NOT NULL,
+  run_date TEXT NOT NULL,
+  lat REAL NOT NULL,
+  lng REAL NOT NULL,
+  current_station_code TEXT,
+  next_station_code TEXT,
+  section_id TEXT,
+  speed_kmh REAL DEFAULT 0.0,
+  delay_minutes REAL DEFAULT 0.0,
+  confidence REAL DEFAULT 1.0,
+  progress_pct REAL DEFAULT 0.0,
+  is_dead_reckoned INTEGER DEFAULT 0,
+  source TEXT DEFAULT 'live',
+  last_event_time TEXT,
+  last_gps_fix TEXT,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (train_no, run_date),
+  FOREIGN KEY (train_no) REFERENCES trains(train_no) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_live_positions_station ON live_positions(current_station_code);
+CREATE INDEX IF NOT EXISTS idx_live_positions_updated ON live_positions(updated_at);
+
+-- 18. Live Delay Attribution Ledger (Pipeline 07)
+CREATE TABLE IF NOT EXISTS live_delay_ledger (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  train_no TEXT NOT NULL,
+  run_date TEXT NOT NULL,
+  timestamp TEXT NOT NULL,
+  delay_change_min REAL NOT NULL,
+  previous_delay_min REAL NOT NULL,
+  current_delay_min REAL NOT NULL,
+  primary_cause TEXT NOT NULL,
+  secondary_cause TEXT,
+  confidence REAL DEFAULT 1.0,
+  evidence_json TEXT NOT NULL DEFAULT '{}',
+  is_exact_accounting INTEGER DEFAULT 1,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (train_no) REFERENCES trains(train_no) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_live_delay_ledger_train ON live_delay_ledger(train_no, run_date);
+CREATE INDEX IF NOT EXISTS idx_live_delay_ledger_timestamp ON live_delay_ledger(timestamp);
+
+

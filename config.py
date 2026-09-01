@@ -10,7 +10,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from typing import List
-from pydantic import Field
+from pydantic import Field, AliasChoices
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -20,14 +20,15 @@ class Settings(BaseSettings):
     """Application settings with environment variable override support."""
 
     model_config = SettingsConfigDict(
+        env_prefix="RAILTWIN_",
         env_file=str(BASE_DIR / ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
     )
 
     # 1. Environment & Paths
-    APP_NAME: str = "RailTwin-X"
-    ENV: str = Field(default="development", description="'development', 'production', 'test'")
+    APP_NAME: str = Field(default="RailTwin-X", validation_alias=AliasChoices("RAILTWIN_APP_NAME", "APP_NAME"))
+    ENV: str = Field(default="development", validation_alias=AliasChoices("RAILTWIN_ENV", "ENV"), description="'development', 'production', 'test'")
     DATA_DIR: Path = BASE_DIR / "data"
     DB_PATH: Path = BASE_DIR / "data" / "railtwin.db"
     SCHEMA_PATH: Path = BASE_DIR / "data" / "schema.sql"
@@ -38,10 +39,10 @@ class Settings(BaseSettings):
     # 2. Time & Clock
     TIMEZONE_NAME: str = "Asia/Kolkata"
     TIMEZONE_OFFSET_HOURS: float = 5.5
-    DEFAULT_CLOCK_MODE: str = Field(default="live", description="'live' or 'replay'")
+    DEFAULT_CLOCK_MODE: str = Field(default="live", validation_alias=AliasChoices("RAILTWIN_DEFAULT_CLOCK_MODE", "DEFAULT_CLOCK_MODE"), description="'live' or 'replay'")
 
     # 3. External API Settings
-    RAPIDAPI_KEY: str = Field(default="", description="RapidAPI Indian Railways API Key (optional)")
+    RAPIDAPI_KEY: str = Field(default="", validation_alias=AliasChoices("RAILTWIN_RAPIDAPI_KEY", "RAPIDAPI_KEY"), description="RapidAPI Indian Railways API Key (optional)")
     RAPIDAPI_HOST: str = "indianrailways.p.rapidapi.com"
     RAPIDAPI_BASE_URL: str = "https://indianrailways.p.rapidapi.com"
     OPENMETEO_BASE_URL: str = "https://api.open-meteo.com/v1/forecast"
@@ -100,21 +101,78 @@ class Settings(BaseSettings):
         "http://127.0.0.1:3000",
         "http://localhost:8000",
         "http://127.0.0.1:8000",
-        "*",
+        "http://localhost:4173",
+        "http://127.0.0.1:4173",
     ]
 
     # 9. WhatsApp Gateway & Notification Dispatcher (OpenWA + SMS Fallback)
-    OPENWA_URL: str = Field(default="http://localhost:2785", description="OpenWA Gateway Base URL")
-    OPENWA_API_KEY: str = Field(default="", description="OpenWA Session API Key")
-    OPENWA_SESSION_ID: str = Field(default="railtwin-alerts", description="OpenWA Session ID")
-    OPENWA_WEBHOOK_SECRET: str = Field(default="", description="HMAC-SHA256 Secret for Inbound Webhook")
-    PUBLIC_URL: str = Field(default="http://localhost:8000", description="Public Base URL for Webhooks (e.g. ngrok / LAN IP)")
-    WHATSAPP_PROVIDER: str = Field(default="openwa", description="'openwa' or 'meta'")
-    SMS_PROVIDER: str = Field(default="mock", description="'msg91', 'fast2sms', or 'mock'")
-    SMS_API_KEY: str = Field(default="", description="SMS Fallback API Key")
-    SMS_SENDER_ID: str = Field(default="RLTWIN", description="Sender Header ID for SMS")
-    NOTIFICATION_RATE_LIMIT_MINUTES: float = Field(default=2.0, description="Max 1 alert per N minutes per staff member")
+    OPENWA_URL: str = Field(default="http://localhost:2785", validation_alias=AliasChoices("RAILTWIN_OPENWA_URL", "OPENWA_URL"), description="OpenWA Gateway Base URL")
+    OPENWA_API_KEY: str = Field(default="", validation_alias=AliasChoices("RAILTWIN_OPENWA_API_KEY", "OPENWA_API_KEY"), description="OpenWA Session API Key")
+    OPENWA_SESSION_ID: str = Field(default="railtwin-alerts", validation_alias=AliasChoices("RAILTWIN_OPENWA_SESSION_ID", "OPENWA_SESSION_ID"), description="OpenWA Session ID")
+    OPENWA_WEBHOOK_SECRET: str = Field(default="", validation_alias=AliasChoices("RAILTWIN_OPENWA_WEBHOOK_SECRET", "OPENWA_WEBHOOK_SECRET"), description="HMAC-SHA256 Secret for Inbound Webhook")
+    PUBLIC_URL: str = Field(default="http://localhost:8000", validation_alias=AliasChoices("RAILTWIN_PUBLIC_URL", "PUBLIC_URL"), description="Public Base URL for Webhooks (e.g. ngrok / LAN IP)")
+    WHATSAPP_PROVIDER: str = Field(default="openwa", validation_alias=AliasChoices("RAILTWIN_WHATSAPP_PROVIDER", "WHATSAPP_PROVIDER"), description="'openwa' or 'meta'")
+    SMS_PROVIDER: str = Field(default="mock", validation_alias=AliasChoices("RAILTWIN_SMS_PROVIDER", "SMS_PROVIDER"), description="'msg91', 'fast2sms', or 'mock'")
+    SMS_API_KEY: str = Field(default="", validation_alias=AliasChoices("RAILTWIN_SMS_API_KEY", "SMS_API_KEY"), description="SMS Fallback API Key")
+    SMS_SENDER_ID: str = Field(default="RLTWIN", validation_alias=AliasChoices("RAILTWIN_SMS_SENDER_ID", "SMS_SENDER_ID"), description="Sender Header ID for SMS")
+    NOTIFICATION_RATE_LIMIT_MINUTES: float = Field(default=2.0, validation_alias=AliasChoices("RAILTWIN_NOTIFICATION_RATE_LIMIT_MINUTES", "NOTIFICATION_RATE_LIMIT_MINUTES"), description="Max 1 alert per N minutes per staff member")
 
+    # 10. Pipeline 07: Live Position Tracking, Context & Real Delay Attribution
+    LIVE_TRACKER_INTERVAL_SECONDS: int = Field(
+        default=1,
+        validation_alias=AliasChoices("RAILTWIN_LIVE_TRACKER_INTERVAL_SECONDS", "LIVE_TRACKER_INTERVAL_SECONDS"),
+        description="Master live tracker tick interval in seconds",
+    )
+    LIVE_STATION_POLL_SECONDS: int = Field(
+        default=30,
+        validation_alias=AliasChoices("RAILTWIN_LIVE_STATION_POLL_SECONDS", "LIVE_STATION_POLL_SECONDS"),
+        description="Interval for station-board batch status polls in seconds",
+    )
+    LIVE_POLL_TPM_BUDGET: int = Field(
+        default=100,
+        validation_alias=AliasChoices("RAILTWIN_LIVE_POLL_TPM_BUDGET", "LIVE_POLL_TPM_BUDGET"),
+        description="Max individual RapidAPI train status queries per minute",
+    )
+    ATTRIBUTION_DELTA_MIN: float = Field(
+        default=5.0,
+        validation_alias=AliasChoices("RAILTWIN_ATTRIBUTION_DELTA_MIN", "ATTRIBUTION_DELTA_MIN"),
+        description="Minimum delay jump in minutes to trigger live attribution",
+    )
+    ATTRIBUTION_UNEXPLAINED_TOLERANCE_MIN: float = Field(
+        default=0.5,
+        validation_alias=AliasChoices("RAILTWIN_ATTRIBUTION_UNEXPLAINED_TOLERANCE_MIN", "ATTRIBUTION_UNEXPLAINED_TOLERANCE_MIN"),
+        description="Residual tolerance before logging UNEXPLAINED cause",
+    )
+    WEATHER_CACHE_MINUTES: int = Field(
+        default=15,
+        validation_alias=AliasChoices("RAILTWIN_WEATHER_CACHE_MINUTES", "WEATHER_CACHE_MINUTES"),
+        description="TTL for station weather telemetry cache in minutes",
+    )
+    POSITION_CACHE_TTL_SECONDS: int = Field(
+        default=60,
+        validation_alias=AliasChoices("RAILTWIN_POSITION_CACHE_TTL_SECONDS", "POSITION_CACHE_TTL_SECONDS"),
+        description="TTL for in-memory train position cache in seconds",
+    )
+    LIVE_SSE_PULSE_SECONDS: int = Field(
+        default=5,
+        validation_alias=AliasChoices("RAILTWIN_LIVE_SSE_PULSE_SECONDS", "LIVE_SSE_PULSE_SECONDS"),
+        description="Server-Sent Events streaming interval for live positions in seconds",
+    )
+    CONTEXT_CACHE_TTL_SECONDS: int = Field(
+        default=10,
+        validation_alias=AliasChoices("RAILTWIN_CONTEXT_CACHE_TTL_SECONDS", "CONTEXT_CACHE_TTL_SECONDS"),
+        description="TTL for enriched operational train context cache in seconds",
+    )
+    CONFIDENCE_TAU_SECONDS: float = Field(
+        default=120.0,
+        validation_alias=AliasChoices("RAILTWIN_CONFIDENCE_TAU_SECONDS", "CONFIDENCE_TAU_SECONDS"),
+        description="Characteristic decay tau in seconds for confidence exp(-Δt/τ)",
+    )
+    DEAD_RECKON_MIN_CONFIDENCE: float = Field(
+        default=0.3,
+        validation_alias=AliasChoices("RAILTWIN_DEAD_RECKON_MIN_CONFIDENCE", "DEAD_RECKON_MIN_CONFIDENCE"),
+        description="Confidence threshold below which position is marked STALE",
+    )
 
 
 # Singleton instance
@@ -128,3 +186,7 @@ if __name__ == "__main__":
     print(f"Conformal Coverage Target: {(1 - settings.CONFORMAL_MISCOVERAGE_ALPHA)*100:.0f}%")
     print(f"Quality Gate Max Delay: {settings.MAX_SANITY_DELAY_MINUTES} min")
     print(f"Crew Duty Cap: {settings.CREW_DUTY_HOURS_CAP} hours")
+    print(f"Live Tracker Interval: {settings.LIVE_TRACKER_INTERVAL_SECONDS}s")
+    print(f"Live Station Poll: {settings.LIVE_STATION_POLL_SECONDS}s")
+    print(f"Attribution Delta Min: {settings.ATTRIBUTION_DELTA_MIN}m")
+

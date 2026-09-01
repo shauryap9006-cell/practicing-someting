@@ -34,6 +34,8 @@ from api.commercial_routes import router as commercial_router
 from api.workforce_routes import router as workforce_router
 from api.infra_routes import router as infra_router
 from api.section_routes import router as section_router
+from api.live_routes import router as live_router
+from engine.live_tracker import get_live_tracker
 from api.middleware import IdempotencyMiddleware, ResponseCacheMiddleware, TokenBucketRateLimiter
 
 
@@ -56,8 +58,15 @@ async def lifespan(app: FastAPI):
         pass
     counts = db.table_counts()
     print(f"[INFO] SQLite Database initialized with {counts.get('station_events', 0):,} station events.")
+
+    # Pipeline 07: Start background live position tracking loop
+    tracker = get_live_tracker(db)
+    await tracker.start()
+
     yield
+
     print("[INFO] Shutting down RailTwin-X API Server...")
+    await tracker.stop()
 
 
 app = FastAPI(
@@ -121,13 +130,17 @@ app.include_router(commercial_router)
 # Mount Phase 4 Workforce & Crew Intelligence Routes
 app.include_router(workforce_router)
 
-# Mount Phase 5 Maintenance & Infrastructure Routes (with /api/infra alias)
-app.include_router(infra_router)
+# Mount Phase 5 Maintenance & Infrastructure Routes
+app.include_router(infra_router, prefix="/api/infrastructure")
 app.include_router(infra_router, prefix="/api/infra")
 
-# Mount Phase 6 Multi-Station & Section Coordination Routes (with /api/coordination alias)
-app.include_router(section_router)
+# Mount Phase 6 Multi-Station & Section Coordination Routes
+app.include_router(section_router, prefix="/api/section")
 app.include_router(section_router, prefix="/api/coordination")
+
+# Mount Pipeline 07 Live Position Tracking & Attribution Routes
+app.include_router(live_router)
+app.include_router(live_router, prefix="/api")
 
 
 

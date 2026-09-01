@@ -15,6 +15,7 @@ import { NotFoundPage } from '@/pages/public/NotFoundPage';
 
 // Private Dashboard Pages (Lazy loaded for optimal bundle size)
 const OverviewPage = lazy(() => import('@/pages/dashboard/OverviewPage').then(m => ({ default: m.OverviewPage })));
+const LiveMapPage = lazy(() => import('@/pages/dashboard/LiveMapPage').then(m => ({ default: m.LiveMapPage })));
 const GanttPage = lazy(() => import('@/pages/dashboard/GanttPage').then(m => ({ default: m.GanttPage })));
 const TrainsPage = lazy(() => import('@/pages/dashboard/TrainsPage').then(m => ({ default: m.TrainsPage })));
 const TrainDetailPage = lazy(() => import('@/pages/dashboard/TrainDetailPage').then(m => ({ default: m.TrainDetailPage })));
@@ -99,7 +100,9 @@ export function App() {
           <Route path="shunting" element={<Suspense fallback={<RouteFallback />}><ShuntingPage /></Suspense>} />
 
           {/* Network & Spatial */}
-          <Route path="map" element={<Suspense fallback={<RouteFallback />}><CorridorMapPage /></Suspense>} />
+          <Route path="live-map" element={<Suspense fallback={<RouteFallback />}><LiveMapPage /></Suspense>} />
+          <Route path="map" element={<Suspense fallback={<RouteFallback />}><LiveMapPage /></Suspense>} />
+          <Route path="corridor-gis" element={<Suspense fallback={<RouteFallback />}><CorridorMapPage /></Suspense>} />
           <Route path="yard-map" element={<Suspense fallback={<RouteFallback />}><YardDiagramPage /></Suspense>} />
 
           {/* Safety */}
