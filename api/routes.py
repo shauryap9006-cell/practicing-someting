@@ -463,8 +463,8 @@ def reoptimize_station_platforms(code: str, body: Optional[ReoptimizeRequest] = 
     db = get_db()
     clock = get_clock()
     pm = PlatformManager(db)
-
-    blocks, _ = pm.get_station_gantt(station_code)
+    target_date = body.target_date if body else None
+    blocks, _ = pm.get_station_gantt(station_code, target_date=target_date)
     reopt_blocks, diff = pm.reoptimize_platforms(station_code, blocks)
 
     return ReoptimizeResponse(
@@ -844,11 +844,27 @@ def get_health():
     try:
         counts = db.table_counts()
         db_status = f"connected ({counts.get('station_events', 0):,} events)"
+        live_pos_count = counts.get("live_positions", 0)
     except Exception as err:
         db_status = f"error: {err}"
+        live_pos_count = 0
 
     models_exist = (settings.ARTIFACTS_DIR / "model_direct_q50.txt").exists()
     models_status = "loaded" if models_exist else "pending_training"
+
+    # Inspect live tracker liveness
+    try:
+        from engine.live_tracker import get_live_tracker
+        tracker = get_live_tracker(db)
+        last_tick = tracker.last_tick_time
+        if last_tick:
+            age_sec = max(0.0, (clock.now() - last_tick).total_seconds())
+        else:
+            age_sec = 0.0
+        active_sse = len(getattr(tracker, "_queues", []))
+    except Exception:
+        age_sec = None
+        active_sse = 0
 
     return HealthResponse(
         status="healthy",
@@ -857,5 +873,9 @@ def get_health():
         whatsapp=health.whatsapp_status,
         clock_mode=clock.mode,
         updated_at=clock.now_iso(),
+        live_tracker_last_tick_age_seconds=round(age_sec, 1) if age_sec is not None else None,
+        active_sse_clients=active_sse,
+        adapter_tier_in_use="Tier 3 (MockReplaySource)" if clock.mode == "replay" else "Tier 1 (RapidAPI)",
+        live_positions_count=live_pos_count,
     )
 

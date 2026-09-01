@@ -242,6 +242,7 @@ def get_live_positions(
 @router.get("/api/v1/live/stream", response_model=None)
 async def stream_live_positions(
     request: Request,
+    max_frames: Optional[int] = Query(None, description="Optional limit on number of SSE frames"),
     tracker: LivePositionTracker = Depends(_get_tracker_dep),
 ):
     """Server-Sent Events (SSE) stream broadcasting real-time train positions and delay chips."""
@@ -249,6 +250,7 @@ async def stream_live_positions(
     tracker.subscribe(queue)
 
     async def event_generator():
+        frames_sent = 0
         try:
             # Initial burst: emit current snapshot immediately
             initial_positions = tracker.get_all_live_positions()
@@ -259,6 +261,9 @@ async def stream_live_positions(
                 "positions": initial_positions,
             }
             yield f"data: {json.dumps(initial_payload)}\n\n"
+            frames_sent += 1
+            if max_frames and frames_sent >= max_frames:
+                return
 
             while True:
                 # Check for client disconnect
@@ -272,6 +277,9 @@ async def stream_live_positions(
                         timeout=float(settings.LIVE_SSE_PULSE_SECONDS),
                     )
                     yield f"data: {json.dumps(payload)}\n\n"
+                    frames_sent += 1
+                    if max_frames and frames_sent >= max_frames:
+                        break
                 except asyncio.TimeoutError:
                     # Periodic heartbeat pulse
                     positions = tracker.get_all_live_positions()

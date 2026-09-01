@@ -75,7 +75,7 @@ def test_get_train_why_late(client):
 
 def test_live_stream_sse_endpoint(client):
     """Verifies GET /v1/live/stream returns text/event-stream content type and pulses."""
-    with client.stream("GET", "/v1/live/stream") as response:
+    with client.stream("GET", "/v1/live/stream?max_frames=1") as response:
         assert response.status_code == 200
         assert "text/event-stream" in response.headers["content-type"]
         # Read the initial event frame

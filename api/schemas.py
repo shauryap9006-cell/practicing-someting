@@ -226,6 +226,10 @@ class HealthResponse(BaseModel):
     whatsapp: str = "connected"
     clock_mode: str
     updated_at: str
+    live_tracker_last_tick_age_seconds: Optional[float] = None
+    active_sse_clients: Optional[int] = None
+    adapter_tier_in_use: Optional[str] = None
+    live_positions_count: Optional[int] = None
 
 
 # Phase 5: Dispatcher ACK schemas
