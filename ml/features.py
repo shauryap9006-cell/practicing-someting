@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
+import numpy as np
 import pandas as pd
 
 FEATURE_VERSION = 2
@@ -153,6 +154,41 @@ class TrainFeatureVector:
         if self.target_section_delta is not None:
             d["target_section_delta"] = float(self.target_section_delta)
         return d
+
+    def to_numpy_v1(self) -> np.ndarray:
+        """Fast 2D numpy array representation for sub-millisecond online inference."""
+        return np.array(
+            [
+                [
+                    float(self.current_delay),
+                    float(self.hops_remaining),
+                    float(self.km_remaining),
+                    float(self.hour_of_day),
+                    float(self.day_type),
+                    float(self.train_priority),
+                    float(self.target_is_junction),
+                    float(self.target_is_terminus),
+                    float(self.hist_avg_delay_train_target),
+                    float(self.hist_p90_delay_train_target),
+                    float(self.sched_halt_target_min),
+                    float(self.sched_congestion_target),
+                    float(self.fog_flag_target),
+                    float(self.rain_mm_target),
+                    float(self.active_corridor_trains),
+                    float(self.delay_velocity),
+                    float(self.chronic_baseline),
+                    float(self.trains_ahead_30k),
+                    float(self.trains_behind_30k),
+                    float(self.opposing_trains_30k),
+                    float(self.min_predicted_headway_next_station),
+                    float(self.sum_delay_trains_ahead_30k),
+                    float(self.section_occupancy_pct),
+                    float(self.rake_incoming_delay),
+                    float(self.crew_duty_pressure),
+                ]
+            ],
+            dtype=np.float64,
+        )
 
 
 def validate_feature_dataframe(df: pd.DataFrame, is_training: bool = True, version: int = 1) -> None:

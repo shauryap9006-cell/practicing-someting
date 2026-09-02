@@ -193,23 +193,31 @@ class EnsemblePredictor:
     ) -> Tuple[float, float, float]:
         """Predicts calibrated blended quantiles (p10, p50, p90) with horizon-dependent NNLS weights and Mondrian CQR."""
         # 1. LightGBM Predictions
-        gbm_p10 = float(self._gbm_models[0.1].predict(feature_df[FEATURE_NAMES])[0]) if 0.1 in self._gbm_models else 5.0
-        gbm_p50 = float(self._gbm_models[0.5].predict(feature_df[FEATURE_NAMES])[0]) if 0.5 in self._gbm_models else 10.0
-        gbm_p90 = float(self._gbm_models[0.9].predict(feature_df[FEATURE_NAMES])[0]) if 0.9 in self._gbm_models else 20.0
+        is_np = isinstance(feature_df, np.ndarray)
+        feat_input = feature_df if is_np else feature_df[FEATURE_NAMES]
+
+        gbm_p10 = float(self._gbm_models[0.1].predict(feat_input)[0]) if 0.1 in self._gbm_models else 5.0
+        gbm_p50 = float(self._gbm_models[0.5].predict(feat_input)[0]) if 0.5 in self._gbm_models else 10.0
+        gbm_p90 = float(self._gbm_models[0.9].predict(feat_input)[0]) if 0.9 in self._gbm_models else 20.0
 
         # 2. Linear Regression Benchmark Prediction
         lr_p50 = gbm_p50
         if self._lr_model is not None:
             try:
-                lr_p50 = max(0.0, float(self._lr_model.predict(feature_df[FEATURE_NAMES])[0]))
+                lr_p50 = max(0.0, float(self._lr_model.predict(feat_input)[0]))
             except Exception:
                 lr_p50 = gbm_p50
 
         # Horizon bucket selection for NNLS weights (5-tuple: gbm, gru, lr, b1, b3)
-        h = hops if hops is not None else 1
-        km = km_remaining if km_remaining is not None else (
-            float(feature_df.get("km_remaining", [50.0])[0]) if "km_remaining" in feature_df else 50.0
-        )
+        h = hops if hops is not None else (int(feature_df[0, 1]) if is_np else 1)
+        if km_remaining is not None:
+            km = km_remaining
+        elif is_np:
+            km = float(feature_df[0, 2])
+        elif "km_remaining" in feature_df:
+            km = float(feature_df.get("km_remaining", [50.0])[0])
+        else:
+            km = 50.0
 
         if km <= 90:
             w_gbm, w_gru, w_lr, w_b1, w_b3 = self.stacking_weights.get("short", (0.05, 0.05, 0.00, 0.85, 0.05))
@@ -218,8 +226,11 @@ class EnsemblePredictor:
         else:
             w_gbm, w_gru, w_lr, w_b1, w_b3 = self.stacking_weights.get("long", (0.35, 0.15, 0.10, 0.05, 0.35))
 
-        # B1: frozen delay from feature_df (current_delay IS the raw current delay)
-        b1_p50 = float(feature_df["current_delay"].iloc[0]) if "current_delay" in feature_df.columns else 0.0
+        # B1: frozen delay from feature_df (current_delay IS feature 0)
+        if is_np:
+            b1_p50 = float(feature_df[0, 0])
+        else:
+            b1_p50 = float(feature_df["current_delay"].iloc[0]) if "current_delay" in feature_df.columns else 0.0
 
         # 3. GRU Predictions & Blending
         if self._gru_model is not None and seq_tensor is not None:

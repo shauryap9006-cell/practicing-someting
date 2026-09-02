@@ -164,6 +164,14 @@ class PredictorService:
                     m = json.load(f)
                     self._q_hat = float(m.get("conformal_q_hat", 2.0))
 
+            # 4. Load 5-Model Convex NNLS Ensemble Stacking (Wiring Plan 3)
+            try:
+                from ml.ensemble import EnsemblePredictor
+                self._ensemble = EnsemblePredictor(db=self.db, artifacts_dir=self.artifacts_dir)
+            except Exception as e_err:
+                print(f"[WARN] Could not initialize EnsemblePredictor: {e_err}")
+                self._ensemble = None
+
             return True
         except Exception as err:
             print(f"[WARN] Model loading error: {err}")
@@ -249,9 +257,32 @@ class PredictorService:
                     prev_delay=p_delay,
                     query_time_iso=query_iso,
                 )
-                df_feat = pd.DataFrame([vec.to_dict()])
+                arr_feat = vec.to_numpy_v1()
 
-                if self.champion_name == "PyTorch_GRU_Quantile" and self._gru_model is not None and hops <= settings.DIRECT_MODEL_MAX_HOPS:
+                # Primary Served Inference: 5-Model Convex NNLS Ensemble Stacking (Wiring Plan 3)
+                if hasattr(self, "_ensemble") and self._ensemble is not None:
+                    try:
+                        raw_p10, raw_p50, raw_p90 = self._ensemble.predict(
+                            arr_feat,
+                            hops=hops,
+                            km_remaining=vec.km_remaining,
+                            train_class=target_stop.get("train_class"),
+                        )
+                        tier_used = "Tier2_Convex_Ensemble_NNLS"
+                    except Exception:
+                        tier_used = "Tier2_LightGBM_CQR"
+                        if hops <= settings.DIRECT_MODEL_MAX_HOPS:
+                            raw_p10 = float(self._direct_models[0.1].predict(arr_feat)[0]) - self._q_hat
+                            raw_p50 = float(self._direct_models[0.5].predict(arr_feat)[0])
+                            raw_p90 = float(self._direct_models[0.9].predict(arr_feat)[0]) + self._q_hat
+                        else:
+                            del_10 = float(self._delta_models[0.1].predict(arr_feat)[0])
+                            del_50 = float(self._delta_models[0.5].predict(arr_feat)[0])
+                            del_90 = float(self._delta_models[0.9].predict(arr_feat)[0])
+                            raw_p10 = c_delay + (del_10 * hops) - self._q_hat
+                            raw_p50 = c_delay + (del_50 * hops)
+                            raw_p90 = c_delay + (del_90 * hops) + self._q_hat
+                elif self.champion_name == "PyTorch_GRU_Quantile" and self._gru_model is not None and hops <= settings.DIRECT_MODEL_MAX_HOPS:
                     tier_used = "Tier2_PyTorch_GRU_Champion"
                     seq_mat = np.zeros((1, 8, 8), dtype=np.float32)
                     seq_mat[0, -1, 0] = float(c_delay)
@@ -270,13 +301,13 @@ class PredictorService:
                 else:
                     tier_used = "Tier2_LightGBM_CQR"
                     if hops <= settings.DIRECT_MODEL_MAX_HOPS:
-                        raw_p10 = float(self._direct_models[0.1].predict(df_feat[FEATURE_NAMES])[0]) - self._q_hat
-                        raw_p50 = float(self._direct_models[0.5].predict(df_feat[FEATURE_NAMES])[0])
-                        raw_p90 = float(self._direct_models[0.9].predict(df_feat[FEATURE_NAMES])[0]) + self._q_hat
+                        raw_p10 = float(self._direct_models[0.1].predict(arr_feat)[0]) - self._q_hat
+                        raw_p50 = float(self._direct_models[0.5].predict(arr_feat)[0])
+                        raw_p90 = float(self._direct_models[0.9].predict(arr_feat)[0]) + self._q_hat
                     else:
-                        del_10 = float(self._delta_models[0.1].predict(df_feat[FEATURE_NAMES])[0])
-                        del_50 = float(self._delta_models[0.5].predict(df_feat[FEATURE_NAMES])[0])
-                        del_90 = float(self._delta_models[0.9].predict(df_feat[FEATURE_NAMES])[0])
+                        del_10 = float(self._delta_models[0.1].predict(arr_feat)[0])
+                        del_50 = float(self._delta_models[0.5].predict(arr_feat)[0])
+                        del_90 = float(self._delta_models[0.9].predict(arr_feat)[0])
                         raw_p10 = c_delay + (del_10 * hops) - self._q_hat
                         raw_p50 = c_delay + (del_50 * hops)
                         raw_p90 = c_delay + (del_90 * hops) + self._q_hat
@@ -316,6 +347,22 @@ class PredictorService:
             )
             route = [dict(r) for r in cur.fetchall()]
 
+            # Pre-fetch recent events in single query to eliminate SQLite roundtrips in the loop
+            cur.execute(
+                """
+                SELECT seq, delay_arr_min, delay_dep_min
+                FROM station_events
+                WHERE train_no = ? AND (event_time <= ? OR event_time IS NULL)
+                ORDER BY seq ASC
+                """,
+                (train_no, query_iso),
+            )
+            ev_rows = cur.fetchall()
+            events_by_seq = {
+                int(r["seq"]): (float(r["delay_arr_min"]) if r["delay_arr_min"] is not None else float(r["delay_dep_min"] or 0.0))
+                for r in ev_rows
+            }
+
         target_stop = next((r for r in route if r["station_code"] == target_station_code), None)
         if not target_stop:
             raise ValueError(f"Station {target_station_code} is not on the route for train {train_no}.")
@@ -346,38 +393,8 @@ class PredictorService:
             if seq_k >= target_seq:
                 continue
 
-            k_delay = current_delay
-            if k_delay is None:
-                with self.db.transaction() as cur:
-                    cur.execute(
-                        """
-                        SELECT delay_arr_min, delay_dep_min
-                        FROM station_events
-                        WHERE train_no = ? AND seq <= ? AND (event_time <= ? OR event_time IS NULL)
-                        ORDER BY event_time DESC, seq DESC LIMIT 1
-                        """,
-                        (train_no, seq_k, query_iso),
-                    )
-                    ev = cur.fetchone()
-                    k_delay = float(ev["delay_arr_min"]) if ev and ev["delay_arr_min"] is not None else 0.0
-
-            k_prev_delay = k_delay
-            if seq_k > 1:
-                with self.db.transaction() as cur:
-                    cur.execute(
-                        """
-                        SELECT delay_arr_min, delay_dep_min
-                        FROM station_events
-                        WHERE train_no = ? AND seq = ? AND (event_time <= ? OR event_time IS NULL)
-                        ORDER BY event_time DESC LIMIT 1
-                        """,
-                        (train_no, seq_k - 1, query_iso),
-                    )
-                    prev_ev = cur.fetchone()
-                    if prev_ev and prev_ev["delay_arr_min"] is not None:
-                        k_prev_delay = float(prev_ev["delay_arr_min"])
-                    elif prev_ev and prev_ev["delay_dep_min"] is not None:
-                        k_prev_delay = float(prev_ev["delay_dep_min"])
+            k_delay = current_delay if current_delay is not None else events_by_seq.get(seq_k, 0.0)
+            k_prev_delay = events_by_seq.get(seq_k - 1, k_delay)
 
             q10, q50, q90, tier = self._predict_single_position(
                 train_no=train_no,
@@ -575,6 +592,22 @@ class PredictorService:
         else:
             uncertainty_level = "low"     # wide band -> red
 
+        # Record cryptographically sealed prediction receipt into ledger (Proposal 2)
+        receipt_hash = "unsealed"
+        try:
+            from engine.prediction_ledger import PredictionLedger
+            ledger = PredictionLedger(self.db)
+            receipt_hash = ledger.record_prediction_receipt(
+                train_no=train_no,
+                target_station=target_station,
+                p10=safe_p10,
+                p50=safe_p50,
+                p90=safe_p90,
+                query_timestamp=clock.now_iso(),
+            )
+        except Exception:
+            pass
+
         return {
             "train_no": train_no,
             "train_name": train_name,
@@ -600,6 +633,7 @@ class PredictorService:
             "tier_used": tier_used,
             "confidence_tier": final_tier,
             "safety_interlock": interlock_rep.to_dict(),
+            "prediction_receipt_hash": receipt_hash,
             "human_ack_required": True,
             "updated_at": clock.now_iso(),
             "clock_mode": clock.mode,
@@ -614,6 +648,7 @@ class PredictorService:
                 "feature_version": "v3.0_25feat",
                 "as_of_ts": clock.now_iso(),
                 "position": pos_dict,
+                "receipt_hash": receipt_hash,
             },
         }
 
