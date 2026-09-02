@@ -130,7 +130,6 @@ app.include_router(section_router, prefix="/api/coordination")
 
 # Mount Pipeline 07 Live Position Tracking & Attribution Routes
 app.include_router(live_router)
-app.include_router(live_router, prefix="/api")
 
 
 

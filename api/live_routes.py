@@ -43,8 +43,8 @@ def _get_attribution_dep() -> LiveAttributionEngine:
     return get_attribution_engine()
 
 
-@router.get("/v1/meta/config", response_model=None)
-@router.get("/api/v1/meta/config", response_model=None)
+@router.get("/v1/meta/config", response_model=None, operation_id="get_meta_config_v1")
+@router.get("/api/v1/meta/config", response_model=None, operation_id="get_meta_config_api_v1")
 def get_meta_config() -> Dict[str, Any]:
     """Returns frontend-relevant runtime constants, intervals, budgets, and color tokens."""
     return {
@@ -93,8 +93,8 @@ def get_meta_config() -> Dict[str, Any]:
     }
 
 
-@router.get("/v1/trains/{train_no}/live", response_model=None)
-@router.get("/api/v1/trains/{train_no}/live", response_model=None)
+@router.get("/v1/trains/{train_no}/live", response_model=None, operation_id="get_train_live_v1")
+@router.get("/api/v1/trains/{train_no}/live", response_model=None, operation_id="get_train_live_api_v1")
 def get_train_live(
     train_no: str,
     run_date: Optional[str] = Query(None, description="Run date YYYY-MM-DD (defaults to clock today)"),
@@ -193,8 +193,8 @@ def get_train_live(
     return response_payload
 
 
-@router.get("/v1/trains/{train_no}/why-late", response_model=None)
-@router.get("/api/v1/trains/{train_no}/why-late", response_model=None)
+@router.get("/v1/trains/{train_no}/why-late", response_model=None, operation_id="get_train_why_late_v1")
+@router.get("/api/v1/trains/{train_no}/why-late", response_model=None, operation_id="get_train_why_late_api_v1")
 def get_train_why_late(
     train_no: str,
     run_date: Optional[str] = Query(None, description="Run date YYYY-MM-DD (defaults to clock today)"),
@@ -219,8 +219,8 @@ def get_train_why_late(
     return summary
 
 
-@router.get("/v1/live/positions", response_model=None)
-@router.get("/api/v1/live/positions", response_model=None)
+@router.get("/v1/live/positions", response_model=None, operation_id="get_live_positions_v1")
+@router.get("/api/v1/live/positions", response_model=None, operation_id="get_live_positions_api_v1")
 def get_live_positions(
     run_date: Optional[str] = Query(None, description="Run date YYYY-MM-DD (defaults to clock today)"),
     tracker: LivePositionTracker = Depends(_get_tracker_dep),
@@ -238,8 +238,8 @@ def get_live_positions(
     }
 
 
-@router.get("/v1/live/stream", response_model=None)
-@router.get("/api/v1/live/stream", response_model=None)
+@router.get("/v1/live/stream", response_model=None, operation_id="stream_live_positions_v1")
+@router.get("/api/v1/live/stream", response_model=None, operation_id="stream_live_positions_api_v1")
 async def stream_live_positions(
     request: Request,
     max_frames: Optional[int] = Query(None, description="Optional limit on number of SSE frames"),
