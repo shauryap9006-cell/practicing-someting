@@ -18,23 +18,21 @@ from config import settings
 from data.db import get_db
 from api.routes import router as v1_router
 from api.auth_routes import router as auth_router
-from api.admin_routes import router as admin_router
 from api.audit_routes import router as audit_router
-from api.handover_routes import router as handover_router
 from api.notification_routes import router as notification_router
 from api.timetable_routes import router as timetable_router
-from api.ops_routes import router as ops_router
 from api.board_routes import router as board_router
 from api.platform_routes import router as platform_router
 from api.block_routes import router as block_router
 from api.planner_routes import router as planner_router
 from api.system_routes import router as system_router
 from api.safety_routes import router as safety_router
-from api.commercial_routes import router as commercial_router
 from api.workforce_routes import router as workforce_router
-from api.infra_routes import router as infra_router
 from api.section_routes import router as section_router
 from api.live_routes import router as live_router
+from api.admin_routes import router as admin_router
+from api.handover_routes import router as handover_router
+from api.infra_routes import router as infra_router
 from engine.live_tracker import get_live_tracker
 from api.middleware import IdempotencyMiddleware, ResponseCacheMiddleware, TokenBucketRateLimiter
 
@@ -105,36 +103,27 @@ app.add_middleware(TokenBucketRateLimiter)
 app.include_router(v1_router)
 app.include_router(v1_router, prefix="/api")
 
-# Mount Phase 0 Governance & Platform Routes
+# Mount Core Governance & Notification Routes
 app.include_router(auth_router)
-app.include_router(admin_router)
 app.include_router(audit_router)
+app.include_router(admin_router)
 app.include_router(handover_router)
+app.include_router(infra_router, prefix="/api/infrastructure")
 app.include_router(notification_router)
 
-# Mount Phase 1 Live Truth Operational Routes
+# Mount Live Operational & Delay Intelligence Routes
 app.include_router(timetable_router)
-app.include_router(ops_router)
 app.include_router(board_router)
 app.include_router(platform_router)
 app.include_router(block_router)
 app.include_router(planner_router)
 app.include_router(system_router)
 
-# Mount Phase 2 Safety & Compliance Routes
+# Mount Safety & Crew Intelligence Routes
 app.include_router(safety_router)
-
-# Mount Phase 3 Passenger & Commercial Routes
-app.include_router(commercial_router)
-
-# Mount Phase 4 Workforce & Crew Intelligence Routes
 app.include_router(workforce_router)
 
-# Mount Phase 5 Maintenance & Infrastructure Routes
-app.include_router(infra_router, prefix="/api/infrastructure")
-app.include_router(infra_router, prefix="/api/infra")
-
-# Mount Phase 6 Multi-Station & Section Coordination Routes
+# Mount Multi-Station & Section Coordination Routes
 app.include_router(section_router, prefix="/api/section")
 app.include_router(section_router, prefix="/api/coordination")
 
