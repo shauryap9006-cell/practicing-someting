@@ -40,64 +40,38 @@ interface NavItem {
   badgeType?: 'danger' | 'warn' | 'neutral';
 }
 
-// 7 Primary Core Operational Views (Phase C2 Focus Cut)
+// Primary Core Operational Views (PS 26028 Focus)
 const PRIMARY_NAV_ITEMS: NavItem[] = [
   { name: 'Overview', href: '/dashboard', icon: Activity },
-  { name: 'Live Map', href: '/dashboard/live-map', icon: Navigation, badge: 'LIVE', badgeType: 'warn' },
-  { name: 'Trains Directory', href: '/dashboard/trains', icon: Train },
+  { name: 'Live Map Radar', href: '/dashboard/live-map', icon: Navigation, badge: 'LIVE', badgeType: 'warn' },
+  { name: 'Trains & Why-Late', href: '/dashboard/trains', icon: Train },
   { name: 'Platform Gantt', href: '/dashboard/gantt', icon: Calendar },
   { name: 'Advisories', href: '/dashboard/advisories', icon: Bell, badge: 3, badgeType: 'warn' },
   { name: 'Model & Proof', href: '/dashboard/model', icon: FileCode },
+  { name: 'Tamper-Evident Ledger', href: '/dashboard/audit', icon: Shield },
   { name: 'Public Kiosk', href: '/kiosk', icon: Store },
 ];
 
-// Collapsible Advanced Views
+// Collapsible Operational Modules (PS 26028 Network & Safety)
 const ADVANCED_NAV_GROUPS: Array<{ title: string; items: NavItem[] }> = [
   {
-    title: 'Operations & Track',
+    title: 'Network & Track',
     items: [
       { name: 'Timetable Manager', href: '/dashboard/timetable', icon: Clock },
       { name: 'Block Sections', href: '/dashboard/blocks', icon: Grid },
-      { name: 'Shunting & Moves', href: '/dashboard/shunting', icon: Truck },
       { name: 'Yard Diagram', href: '/dashboard/yard-map', icon: Layers },
+      { name: 'Corridor GIS', href: '/dashboard/corridor-gis', icon: Navigation },
     ],
   },
   {
-    title: 'Safety & Compliance',
+    title: 'Safety & Risk Controls',
     items: [
       { name: 'TSR / Caution Orders', href: '/dashboard/safety/tsr', icon: ShieldAlert, badge: 2, badgeType: 'warn' },
-      { name: 'Incident Register', href: '/dashboard/safety/incidents', icon: AlertCircle, badge: 1, badgeType: 'danger' },
-      { name: 'Emergency SOP', href: '/dashboard/safety/sop', icon: FileCheck },
-      { name: 'LC Gate Monitor', href: '/dashboard/safety/lc', icon: Shield },
-    ],
-  },
-  {
-    title: 'Workforce & Infra',
-    items: [
-      { name: 'Crew Rosters', href: '/dashboard/crew', icon: Users },
+      { name: 'Incident Register', href: '/dashboard/safety/incidents', icon: AlertCircle },
+      { name: 'Crew Rosters & Duty', href: '/dashboard/crew', icon: Users },
       { name: 'Track-Block Gantt', href: '/dashboard/maintenance', icon: Wrench },
-      { name: 'Asset MTBF', href: '/dashboard/assets', icon: Wrench },
-      { name: 'Work Orders', href: '/dashboard/work-orders', icon: Grid, badge: 1, badgeType: 'danger' },
-      { name: 'Cleaning & Turn', href: '/dashboard/cleaning', icon: Sparkles },
-    ],
-  },
-  {
-    title: 'Coordination & Commercial',
-    items: [
       { name: 'Corridor Handoff', href: '/dashboard/corridor-coordination', icon: Radio },
       { name: 'DFC Precedence', href: '/dashboard/dfc-coordination', icon: Train },
-      { name: 'Delay Certificate', href: '/dashboard/commercial/delay-certificate', icon: FileCheck },
-      { name: 'PA Announcements', href: '/dashboard/commercial/announcements', icon: Radio },
-      { name: 'Stalls & Lost/Found', href: '/dashboard/commercial/stalls', icon: Store },
-    ],
-  },
-  {
-    title: 'Governance & Admin',
-    items: [
-      { name: 'Shift Handover', href: '/dashboard/handover', icon: BookOpen },
-      { name: 'Regulatory Audit', href: '/dashboard/audit', icon: Shield },
-      { name: 'User Management', href: '/dashboard/admin/users', icon: UserCheck },
-      { name: 'Backups & DB', href: '/dashboard/admin/backups', icon: Database },
     ],
   },
 ];

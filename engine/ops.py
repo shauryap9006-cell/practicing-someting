@@ -418,6 +418,190 @@ class CrewDutyEngine:
         return results
 
 
+@dataclass
+class ConnectionTransferStatus:
+    """Passenger interchange connection probability and hold advisory (Proposal 1)."""
+
+    feeder_train_no: str
+    feeder_train_name: str
+    feeder_p10_arr: str
+    feeder_p50_arr: str
+    feeder_p90_arr: str
+    connecting_train_no: str
+    connecting_train_name: str
+    connecting_sched_dep: str
+    connection_probability_pct: float
+    status: str  # SECURE, AT_RISK, CRITICAL_MISSED, MISSED
+    buffer_minutes: float
+    hold_advisory: Optional[dict] = None
+
+    def to_dict(self) -> dict:
+        return {
+            "feeder_train": {
+                "train_no": self.feeder_train_no,
+                "name": self.feeder_train_name,
+                "p10_arr": self.feeder_p10_arr,
+                "p50_arr": self.feeder_p50_arr,
+                "p90_arr": self.feeder_p90_arr,
+            },
+            "connecting_train": {
+                "train_no": self.connecting_train_no,
+                "name": self.connecting_train_name,
+                "sched_dep": self.connecting_sched_dep,
+            },
+            "connection_probability_pct": round(self.connection_probability_pct, 1),
+            "status": self.status,
+            "buffer_minutes": round(self.buffer_minutes, 1),
+            "hold_advisory": self.hold_advisory,
+        }
+
+
+class ConnectionCustodyEngine:
+    """Evaluates multi-train transfer feasibility at junctions using arrival quantiles."""
+
+    def __init__(self, db: Optional[Database] = None):
+        self.db = db or get_db()
+
+    def evaluate_station_connections(
+        self,
+        station_code: str,
+        run_date: Optional[str] = None,
+        min_connection_time_min: int = 15,
+    ) -> List[ConnectionTransferStatus]:
+        """Calculates passenger transfer feasibility and hold-decision tradeoff at interchange stations."""
+        clock = get_clock()
+        target_date = run_date or clock.today_str()
+        stn = station_code.upper()
+
+        with self.db.transaction() as cur:
+            # Query all trains serving this station
+            cur.execute(
+                """
+                SELECT rs.train_no, t.name as train_name, t.class, rs.sched_arr, rs.sched_dep, rs.seq
+                FROM route_stations rs
+                JOIN trains t ON rs.train_no = t.train_no
+                WHERE rs.station_code = ?
+                ORDER BY COALESCE(rs.sched_arr, rs.sched_dep) ASC
+                """,
+                (stn,),
+            )
+            rows = cur.fetchall()
+
+            # Query live delays at this station
+            cur.execute(
+                """
+                SELECT train_no, delay_arr_min, delay_dep_min
+                FROM station_events
+                WHERE station_code = ? AND run_date = ?
+                """,
+                (stn, target_date),
+            )
+            live_delays = {r["train_no"]: float(r["delay_arr_min"] if r["delay_arr_min"] is not None else (r["delay_dep_min"] or 0.0)) for r in cur.fetchall()}
+
+        arriving_trains = [r for r in rows if r["sched_arr"]]
+        departing_trains = [r for r in rows if r["sched_dep"]]
+
+        def _to_mins(time_str: Optional[str]) -> int:
+            if not time_str or ":" not in time_str:
+                return 0
+            parts = [int(x) for x in time_str.split(":")[:2]]
+            return parts[0] * 60 + parts[1]
+
+        def _to_time_str(mins: int) -> str:
+            m = max(0, int(mins))
+            return f"{(m // 60) % 24:02d}:{m % 60:02d}"
+
+        connections: List[ConnectionTransferStatus] = []
+
+        for f in arriving_trains:
+            f_no = str(f["train_no"])
+            f_name = f["train_name"]
+            f_arr_m = _to_mins(f["sched_arr"])
+
+            # Compute estimated delay quantiles for feeder
+            f_delay = live_delays.get(f_no, 0.0)
+            p10_delay = max(0.0, f_delay - 5.0)
+            p50_delay = max(0.0, f_delay)
+            p90_delay = max(0.0, f_delay + 15.0)
+
+            p10_arr_m = f_arr_m + p10_delay
+            p50_arr_m = f_arr_m + p50_delay
+            p90_arr_m = f_arr_m + p90_delay
+
+            for c in departing_trains:
+                c_no = str(c["train_no"])
+                if c_no == f_no:
+                    continue  # Same train
+
+                c_dep_m = _to_mins(c["sched_dep"])
+                sched_window = c_dep_m - f_arr_m
+
+                # Realistic interchange window: 15 mins to 180 mins
+                if not (min_connection_time_min <= sched_window <= 180):
+                    continue
+
+                # Buffer with p50 delay
+                actual_window = c_dep_m - (p50_arr_m + min_connection_time_min)
+
+                # Quantile Probability Calculation
+                if c_dep_m >= (p90_arr_m + min_connection_time_min):
+                    prob = 98.5
+                    conn_status = "SECURE"
+                elif c_dep_m >= (p50_arr_m + min_connection_time_min):
+                    ratio = (c_dep_m - (p50_arr_m + min_connection_time_min)) / max(1.0, (p90_arr_m - p50_arr_m))
+                    prob = 50.0 + ratio * 45.0
+                    conn_status = "SECURE" if prob >= 80.0 else "AT_RISK"
+                elif c_dep_m >= (p10_arr_m + min_connection_time_min):
+                    ratio = (c_dep_m - (p10_arr_m + min_connection_time_min)) / max(1.0, (p50_arr_m - p10_arr_m))
+                    prob = 10.0 + ratio * 40.0
+                    conn_status = "CRITICAL_MISSED"
+                else:
+                    prob = 1.5
+                    conn_status = "MISSED"
+
+                # Hold Decision Tradeoff Index (HDTI)
+                hold_advisory = None
+                if prob < 85.0:
+                    needed_hold_m = max(0, int(p50_arr_m + min_connection_time_min - c_dep_m))
+                    if 0 < needed_hold_m <= 20:
+                        est_transfer_pax = 35
+                        onboard_pax = 600
+                        next_train_headway_m = 300  # 5 hours
+                        pax_hours_saved = round((est_transfer_pax * next_train_headway_m - onboard_pax * needed_hold_m) / 60.0, 1)
+
+                        if pax_hours_saved > 0:
+                            hold_advisory = {
+                                "action": f"HOLD_DEPARTURE_{needed_hold_m}_MIN",
+                                "recommended_hold_minutes": needed_hold_m,
+                                "revised_departure": _to_time_str(c_dep_m + needed_hold_m),
+                                "estimated_transferring_passengers": est_transfer_pax,
+                                "net_passenger_hours_saved": pax_hours_saved,
+                                "reason": f"Hold #{c_no} by {needed_hold_m}m at {stn} to preserve connection for {est_transfer_pax} passengers on incoming #{f_no} (+{int(p50_delay)}m late). Net benefit: {pax_hours_saved} passenger-hours.",
+                            }
+
+                connections.append(
+                    ConnectionTransferStatus(
+                        feeder_train_no=f_no,
+                        feeder_train_name=f_name,
+                        feeder_p10_arr=_to_time_str(p10_arr_m),
+                        feeder_p50_arr=_to_time_str(p50_arr_m),
+                        feeder_p90_arr=_to_time_str(p90_arr_m),
+                        connecting_train_no=c_no,
+                        connecting_train_name=c["train_name"],
+                        connecting_sched_dep=c["sched_dep"],
+                        connection_probability_pct=prob,
+                        status=conn_status,
+                        buffer_minutes=actual_window,
+                        hold_advisory=hold_advisory,
+                    )
+                )
+
+        # Sort by most critical connections first
+        connections.sort(key=lambda x: (x.connection_probability_pct, -x.buffer_minutes))
+        return connections
+
+
+
 
 if __name__ == "__main__":
     print("=== Operations Layer Demo ===")

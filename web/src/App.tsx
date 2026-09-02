@@ -13,7 +13,7 @@ import { TermsPage } from '@/pages/public/TermsPage';
 import { ThanksPage } from '@/pages/public/ThanksPage';
 import { NotFoundPage } from '@/pages/public/NotFoundPage';
 
-// Private Dashboard Pages (Lazy loaded for optimal bundle size)
+// Core Dashboard Pages (Lazy loaded)
 const OverviewPage = lazy(() => import('@/pages/dashboard/OverviewPage').then(m => ({ default: m.OverviewPage })));
 const LiveMapPage = lazy(() => import('@/pages/dashboard/LiveMapPage').then(m => ({ default: m.LiveMapPage })));
 const GanttPage = lazy(() => import('@/pages/dashboard/GanttPage').then(m => ({ default: m.GanttPage })));
@@ -25,35 +25,15 @@ const MaintenancePage = lazy(() => import('@/pages/dashboard/MaintenancePage').t
 const AuditPage = lazy(() => import('@/pages/dashboard/AuditPage').then(m => ({ default: m.AuditPage })));
 const ModelPage = lazy(() => import('@/pages/dashboard/ModelPage').then(m => ({ default: m.ModelPage })));
 
-// New v3.0 Operations & Network Pages
+// Core Operational & Network Pages (PS 26028)
 const TimetablePage = lazy(() => import('@/pages/dashboard/ops/TimetablePage').then(m => ({ default: m.TimetablePage })));
 const BlockSectionsPage = lazy(() => import('@/pages/dashboard/ops/BlockSectionsPage').then(m => ({ default: m.BlockSectionsPage })));
-const ShuntingPage = lazy(() => import('@/pages/dashboard/ops/ShuntingPage').then(m => ({ default: m.ShuntingPage })));
 const CorridorMapPage = lazy(() => import('@/pages/dashboard/network/CorridorMapPage').then(m => ({ default: m.CorridorMapPage })));
 const YardDiagramPage = lazy(() => import('@/pages/dashboard/network/YardDiagramPage').then(m => ({ default: m.YardDiagramPage })));
 
-// New v3.0 Safety Pages
+// Safety & Coordination Pages (TSR & DFC Headway)
 const TSRRegistryPage = lazy(() => import('@/pages/dashboard/safety/TSRRegistryPage').then(m => ({ default: m.TSRRegistryPage })));
 const IncidentsPage = lazy(() => import('@/pages/dashboard/safety/IncidentsPage').then(m => ({ default: m.IncidentsPage })));
-const SOPRunnerPage = lazy(() => import('@/pages/dashboard/safety/SOPRunnerPage').then(m => ({ default: m.SOPRunnerPage })));
-const LCMonitorPage = lazy(() => import('@/pages/dashboard/safety/LCMonitorPage').then(m => ({ default: m.LCMonitorPage })));
-
-// New v3.0 Governance & Admin Pages
-const ShiftHandoverPage = lazy(() => import('@/pages/dashboard/gov/ShiftHandoverPage').then(m => ({ default: m.ShiftHandoverPage })));
-const AdminUsersPage = lazy(() => import('@/pages/dashboard/gov/AdminUsersPage').then(m => ({ default: m.AdminUsersPage })));
-const BackupsIntegrityPage = lazy(() => import('@/pages/dashboard/gov/BackupsIntegrityPage').then(m => ({ default: m.BackupsIntegrityPage })));
-
-// New v3.0 Commercial Pages
-const DelayCertificatePage = lazy(() => import('@/pages/dashboard/commercial/DelayCertificatePage').then(m => ({ default: m.DelayCertificatePage })));
-const AnnouncementsPage = lazy(() => import('@/pages/dashboard/commercial/AnnouncementsPage').then(m => ({ default: m.AnnouncementsPage })));
-const StallsLostFoundPage = lazy(() => import('@/pages/dashboard/commercial/StallsLostFoundPage').then(m => ({ default: m.StallsLostFoundPage })));
-
-// New v3.0 Infrastructure Pages
-const AssetsRegistryPage = lazy(() => import('@/pages/dashboard/infra/AssetsRegistryPage').then(m => ({ default: m.AssetsRegistryPage })));
-const WorkOrdersPage = lazy(() => import('@/pages/dashboard/infra/WorkOrdersPage').then(m => ({ default: m.WorkOrdersPage })));
-const CleaningPage = lazy(() => import('@/pages/dashboard/infra/CleaningPage').then(m => ({ default: m.CleaningPage })));
-
-// New v3.0 Coordination Pages
 const CorridorHandoffPage = lazy(() => import('@/pages/dashboard/coord/CorridorHandoffPage').then(m => ({ default: m.CorridorHandoffPage })));
 const DFCPrecedencePage = lazy(() => import('@/pages/dashboard/coord/DFCPrecedencePage').then(m => ({ default: m.DFCPrecedencePage })));
 
@@ -87,54 +67,40 @@ export function App() {
             </AuthGuard>
           }
         >
-          {/* Overview */}
+          {/* Core Overview & Real-Time Intelligence */}
           <Route index element={<Suspense fallback={<RouteFallback />}><OverviewPage /></Suspense>} />
+          <Route path="live-map" element={<Suspense fallback={<RouteFallback />}><LiveMapPage /></Suspense>} />
+          <Route path="map" element={<Suspense fallback={<RouteFallback />}><LiveMapPage /></Suspense>} />
 
-          {/* Operations */}
-          <Route path="gantt" element={<Suspense fallback={<RouteFallback />}><GanttPage /></Suspense>} />
+          {/* Trains & Causal Delay Autopsy */}
           <Route path="trains" element={<Suspense fallback={<RouteFallback />}><TrainsPage /></Suspense>} />
           <Route path="trains/:trainNo" element={<Suspense fallback={<RouteFallback />}><TrainDetailPage /></Suspense>} />
+
+          {/* Operations & Platform Re-Optimization */}
+          <Route path="gantt" element={<Suspense fallback={<RouteFallback />}><GanttPage /></Suspense>} />
           <Route path="advisories" element={<Suspense fallback={<RouteFallback />}><AdvisoriesPage /></Suspense>} />
           <Route path="timetable" element={<Suspense fallback={<RouteFallback />}><TimetablePage /></Suspense>} />
           <Route path="blocks" element={<Suspense fallback={<RouteFallback />}><BlockSectionsPage /></Suspense>} />
-          <Route path="shunting" element={<Suspense fallback={<RouteFallback />}><ShuntingPage /></Suspense>} />
 
-          {/* Network & Spatial */}
-          <Route path="live-map" element={<Suspense fallback={<RouteFallback />}><LiveMapPage /></Suspense>} />
-          <Route path="map" element={<Suspense fallback={<RouteFallback />}><LiveMapPage /></Suspense>} />
+          {/* Network Topology & Corridor GIS */}
           <Route path="corridor-gis" element={<Suspense fallback={<RouteFallback />}><CorridorMapPage /></Suspense>} />
           <Route path="yard-map" element={<Suspense fallback={<RouteFallback />}><YardDiagramPage /></Suspense>} />
 
-          {/* Safety */}
+          {/* Safety & Speed Restrictions (TSR) */}
           <Route path="safety/tsr" element={<Suspense fallback={<RouteFallback />}><TSRRegistryPage /></Suspense>} />
           <Route path="safety/incidents" element={<Suspense fallback={<RouteFallback />}><IncidentsPage /></Suspense>} />
-          <Route path="safety/sop" element={<Suspense fallback={<RouteFallback />}><SOPRunnerPage /></Suspense>} />
-          <Route path="safety/lc" element={<Suspense fallback={<RouteFallback />}><LCMonitorPage /></Suspense>} />
 
-          {/* Crew */}
+          {/* Workforce & Maintenance */}
           <Route path="crew" element={<Suspense fallback={<RouteFallback />}><CrewPage /></Suspense>} />
-
-          {/* Infrastructure */}
           <Route path="maintenance" element={<Suspense fallback={<RouteFallback />}><MaintenancePage /></Suspense>} />
-          <Route path="assets" element={<Suspense fallback={<RouteFallback />}><AssetsRegistryPage /></Suspense>} />
-          <Route path="work-orders" element={<Suspense fallback={<RouteFallback />}><WorkOrdersPage /></Suspense>} />
-          <Route path="cleaning" element={<Suspense fallback={<RouteFallback />}><CleaningPage /></Suspense>} />
 
-          {/* Coordination */}
+          {/* Corridor Handoff & DFC Precedence */}
           <Route path="corridor-coordination" element={<Suspense fallback={<RouteFallback />}><CorridorHandoffPage /></Suspense>} />
           <Route path="dfc-coordination" element={<Suspense fallback={<RouteFallback />}><DFCPrecedencePage /></Suspense>} />
 
-          {/* Commercial */}
-          <Route path="commercial/delay-certificate" element={<Suspense fallback={<RouteFallback />}><DelayCertificatePage /></Suspense>} />
-          <Route path="commercial/announcements" element={<Suspense fallback={<RouteFallback />}><AnnouncementsPage /></Suspense>} />
-          <Route path="commercial/stalls" element={<Suspense fallback={<RouteFallback />}><StallsLostFoundPage /></Suspense>} />
-
-          {/* Governance & Governance Admin */}
-          <Route path="handover" element={<Suspense fallback={<RouteFallback />}><ShiftHandoverPage /></Suspense>} />
+          {/* Model Proof & Tamper-Evident Ledger */}
           <Route path="audit" element={<Suspense fallback={<RouteFallback />}><AuditPage /></Suspense>} />
           <Route path="model" element={<Suspense fallback={<RouteFallback />}><ModelPage /></Suspense>} />
-          <Route path="admin/users" element={<Suspense fallback={<RouteFallback />}><AdminUsersPage /></Suspense>} />
-          <Route path="admin/backups" element={<Suspense fallback={<RouteFallback />}><BackupsIntegrityPage /></Suspense>} />
         </Route>
 
         {/* 404 Catch-All */}

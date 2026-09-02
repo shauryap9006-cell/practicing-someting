@@ -12,7 +12,7 @@ from fastapi import APIRouter, HTTPException, Query
 from config import settings
 from data.db import Database, get_db
 from engine.clocks import get_clock
-from engine.ops import PlatformManager, CrewDutyEngine
+from engine.ops import PlatformManager, CrewDutyEngine, ConnectionCustodyEngine
 from engine.simulator import CascadeSimulator
 from api.predictor import PredictorService, get_predictor_service
 from api.schemas import (
@@ -203,20 +203,73 @@ def get_train_autopsy(train_no: str):
         if not train_row:
             raise HTTPException(status_code=404, detail={"code": "TRAIN_NOT_FOUND", "message": f"Train {train_no} not found", "retryable": False})
 
-        # Query latest sim_ledger events for this train
+        # 1. Query live_delay_ledger (Pipeline 07 Real-Time Attribution)
         cur.execute(
             """
-            SELECT event_type, minutes, cause, station_code
-            FROM sim_ledger
+            SELECT primary_cause, delay_change_min, evidence_json
+            FROM live_delay_ledger
             WHERE train_no = ?
-            ORDER BY rowid DESC LIMIT 10
+            ORDER BY id DESC LIMIT 5
             """,
             (train_no,),
         )
-        ledger_rows = cur.fetchall()
+        live_ledger_rows = cur.fetchall()
 
-    if not ledger_rows:
-        with db.transaction() as cur:
+        causes = []
+        is_exact = False
+
+        if live_ledger_rows:
+            for row in live_ledger_rows:
+                try:
+                    ev_data = json.loads(row["evidence_json"])
+                    for c in ev_data.get("causes", []):
+                        if c.get("attributed_min", 0) > 0:
+                            causes.append(
+                                DelayCauseItem(
+                                    event_type=c.get("cause_code", row["primary_cause"]),
+                                    minutes=int(round(c.get("attributed_min", 0))),
+                                    cause=c.get("explanation", f"Attributed delay cause: {c.get('cause_code')}"),
+                                    station_code=None,
+                                )
+                            )
+                except Exception:
+                    causes.append(
+                        DelayCauseItem(
+                            event_type=row["primary_cause"],
+                            minutes=int(round(row["delay_change_min"])),
+                            cause=f"Attributed {row['primary_cause']} delay event",
+                            station_code=None,
+                        )
+                    )
+            if causes:
+                is_exact = True
+
+        # 2. Fall back to sim_ledger (SimPy discrete-event simulation) if live ledger empty
+        if not causes:
+            cur.execute(
+                """
+                SELECT event_type, minutes, cause, station_code
+                FROM sim_ledger
+                WHERE train_no = ?
+                ORDER BY rowid DESC LIMIT 10
+                """,
+                (train_no,),
+            )
+            sim_ledger_rows = cur.fetchall()
+            if sim_ledger_rows:
+                causes = [
+                    DelayCauseItem(
+                        event_type=r["event_type"],
+                        minutes=int(r["minutes"]),
+                        cause=r["cause"],
+                        station_code=r["station_code"],
+                    )
+                    for r in sim_ledger_rows
+                ]
+                is_exact = True
+
+        # 3. Fall back to historical station_events if neither ledger has rows
+        if not causes:
             cur.execute(
                 """
                 SELECT station_code, AVG(delay_arr_min) as avg_d
@@ -229,35 +282,19 @@ def get_train_autopsy(train_no: str):
                 (train_no,),
             )
             hist_rows = cur.fetchall()
+            if hist_rows:
+                causes = [
+                    DelayCauseItem(
+                        event_type="EXT_DWELL",
+                        minutes=max(1, int(r["avg_d"])),
+                        cause=f"Historical segment operational dwell at {r['station_code']}",
+                        station_code=r["station_code"],
+                    )
+                    for r in hist_rows
+                ]
+                is_exact = False
 
-        if hist_rows:
-            causes = [
-                DelayCauseItem(
-                    event_type="EXT_DWELL",
-                    minutes=max(1, int(r["avg_d"])),
-                    cause=f"Historical segment operational dwell at {r['station_code']}",
-                    station_code=r["station_code"],
-                )
-                for r in hist_rows
-            ]
-            total_d = sum(c.minutes for c in causes)
-            is_exact = False
-        else:
-            causes = []
-            total_d = 0
-            is_exact = False
-    else:
-        causes = [
-            DelayCauseItem(
-                event_type=r["event_type"],
-                minutes=int(r["minutes"]),
-                cause=r["cause"],
-                station_code=r["station_code"],
-            )
-            for r in ledger_rows
-        ]
         total_d = sum(c.minutes for c in causes)
-        is_exact = True
 
     return DelayAutopsyResponse(
         train_no=train_no,
@@ -550,6 +587,70 @@ def get_crew_alerts():
         updated_at=clock.now_iso(),
         clock_mode=clock.mode,
     )
+
+
+# ----------------------------------------------------
+# 8b. Connection Custody Engine (Proposal 1)
+# ----------------------------------------------------
+@router.get("/stations/{code}/connections", response_model=None)
+def get_station_connections(
+    code: str,
+    run_date: Optional[str] = Query(None, description="Date YYYY-MM-DD"),
+    min_transfer_min: int = Query(15, ge=5, le=60, description="Minimum connection transfer time in minutes"),
+):
+    """Evaluates junction interchange connection feasibility and hold-decision tradeoffs."""
+    db = get_db()
+    clock = get_clock()
+    engine = ConnectionCustodyEngine(db)
+    connections = engine.evaluate_station_connections(
+        station_code=code,
+        run_date=run_date,
+        min_connection_time_min=min_transfer_min,
+    )
+
+    at_risk_count = sum(1 for c in connections if c.status in ("AT_RISK", "CRITICAL_MISSED", "MISSED"))
+    advisories_count = sum(1 for c in connections if c.hold_advisory is not None)
+
+    return {
+        "status": "OK",
+        "station_code": code.upper(),
+        "run_date": run_date or clock.today_str(),
+        "total_connections_monitored": len(connections),
+        "at_risk_count": at_risk_count,
+        "hold_advisories_active": advisories_count,
+        "connections": [c.to_dict() for c in connections],
+        "as_of": clock.now_iso(),
+    }
+
+
+# ----------------------------------------------------
+# 8c. Tamper-Evident Prediction Ledger (Proposal 2)
+# ----------------------------------------------------
+@router.get("/ledger/scoreboard", response_model=None)
+def get_prediction_ledger_scoreboard():
+    """Returns unforgeable live calibration scoreboard across served ETA predictions."""
+    from engine.prediction_ledger import PredictionLedger
+    db = get_db()
+    ledger = PredictionLedger(db)
+    return {
+        "status": "OK",
+        "scoreboard": ledger.get_calibration_scoreboard(),
+    }
+
+
+@router.get("/ledger/verify", response_model=None)
+def verify_prediction_ledger_chain():
+    """Validates cryptographic integrity of entire hash chain from genesis to tip."""
+    from engine.prediction_ledger import PredictionLedger
+    db = get_db()
+    ledger = PredictionLedger(db)
+    is_valid, count, broken_id = ledger.verify_chain_integrity()
+    return {
+        "status": "OK",
+        "chain_integrity_verified": is_valid,
+        "total_blocks_verified": count,
+        "broken_at_block_id": broken_id,
+    }
 
 
 # ----------------------------------------------------
@@ -866,6 +967,19 @@ def get_health():
         age_sec = None
         active_sse = 0
 
+    # Live Drift & Model Trust Telemetry (Wiring Plan 4)
+    drift_val = "GREEN"
+    trust_val = "HIGH"
+    drift_rep_path = settings.ARTIFACTS_DIR / "drift_report.json"
+    if drift_rep_path.exists():
+        try:
+            with open(drift_rep_path, "r", encoding="utf-8") as f:
+                d_data = json.load(f)
+                drift_val = d_data.get("overall_status", "GREEN")
+                trust_val = "HIGH" if drift_val == "GREEN" else "MODERATE" if drift_val == "AMBER" else "DEGRADED"
+        except Exception:
+            pass
+
     return HealthResponse(
         status="healthy",
         db=db_status,
@@ -877,5 +991,7 @@ def get_health():
         active_sse_clients=active_sse,
         adapter_tier_in_use="Tier 3 (MockReplaySource)" if clock.mode == "replay" else "Tier 1 (RapidAPI)",
         live_positions_count=live_pos_count,
+        drift_status=drift_val,
+        model_trust=trust_val,
     )
 

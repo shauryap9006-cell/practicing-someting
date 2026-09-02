@@ -230,6 +230,8 @@ class HealthResponse(BaseModel):
     active_sse_clients: Optional[int] = None
     adapter_tier_in_use: Optional[str] = None
     live_positions_count: Optional[int] = None
+    drift_status: Optional[str] = "GREEN"
+    model_trust: Optional[str] = "HIGH"
 
 
 # Phase 5: Dispatcher ACK schemas

@@ -1,0 +1,6295 @@
+{
+  "timestamp": "2026-09-02T13:43:52.017Z",
+  "suspects": {
+    "S6": {
+      "title": "Incognito Access Control Verification",
+      "details": {
+        "01_landing": {
+          "path": "/",
+          "isPublic": true,
+          "finalUrl": "http://localhost:5173/",
+          "redirectedToLogin": false,
+          "pass": true
+        },
+        "02_login": {
+          "path": "/login",
+          "isPublic": true,
+          "finalUrl": "http://localhost:5173/login",
+          "redirectedToLogin": true,
+          "pass": true
+        },
+        "03_kiosk": {
+          "path": "/kiosk",
+          "isPublic": true,
+          "finalUrl": "http://localhost:5173/kiosk",
+          "redirectedToLogin": false,
+          "pass": true
+        },
+        "04_overview": {
+          "path": "/dashboard",
+          "isPublic": false,
+          "finalUrl": "http://localhost:5173/login?next=%2Fdashboard",
+          "redirectedToLogin": true,
+          "pass": true
+        },
+        "05_live_map": {
+          "path": "/dashboard/live-map",
+          "isPublic": false,
+          "finalUrl": "http://localhost:5173/login?next=%2Fdashboard%2Flive-map",
+          "redirectedToLogin": true,
+          "pass": true
+        },
+        "06_gantt": {
+          "path": "/dashboard/gantt",
+          "isPublic": false,
+          "finalUrl": "http://localhost:5173/login?next=%2Fdashboard%2Fgantt",
+          "redirectedToLogin": true,
+          "pass": true
+        },
+        "07_trains": {
+          "path": "/dashboard/trains",
+          "isPublic": false,
+          "finalUrl": "http://localhost:5173/login?next=%2Fdashboard%2Ftrains",
+          "redirectedToLogin": true,
+          "pass": true
+        },
+        "08_train_detail": {
+          "path": "/dashboard/trains/12301",
+          "isPublic": false,
+          "finalUrl": "http://localhost:5173/login?next=%2Fdashboard%2Ftrains%2F12301",
+          "redirectedToLogin": true,
+          "pass": true
+        },
+        "09_advisories": {
+          "path": "/dashboard/advisories",
+          "isPublic": false,
+          "finalUrl": "http://localhost:5173/login?next=%2Fdashboard%2Fadvisories",
+          "redirectedToLogin": true,
+          "pass": true
+        },
+        "10_timetable": {
+          "path": "/dashboard/timetable",
+          "isPublic": false,
+          "finalUrl": "http://localhost:5173/login?next=%2Fdashboard%2Ftimetable",
+          "redirectedToLogin": true,
+          "pass": true
+        },
+        "11_blocks": {
+          "path": "/dashboard/blocks",
+          "isPublic": false,
+          "finalUrl": "http://localhost:5173/login?next=%2Fdashboard%2Fblocks",
+          "redirectedToLogin": true,
+          "pass": true
+        },
+        "12_yard_map": {
+          "path": "/dashboard/yard-map",
+          "isPublic": false,
+          "finalUrl": "http://localhost:5173/login?next=%2Fdashboard%2Fyard-map",
+          "redirectedToLogin": true,
+          "pass": true
+        },
+        "13_corridor_gis": {
+          "path": "/dashboard/corridor-gis",
+          "isPublic": false,
+          "finalUrl": "http://localhost:5173/login?next=%2Fdashboard%2Fcorridor-gis",
+          "redirectedToLogin": true,
+          "pass": true
+        },
+        "14_tsr": {
+          "path": "/dashboard/safety/tsr",
+          "isPublic": false,
+          "finalUrl": "http://localhost:5173/login?next=%2Fdashboard%2Fsafety%2Ftsr",
+          "redirectedToLogin": true,
+          "pass": true
+        },
+        "15_incidents": {
+          "path": "/dashboard/safety/incidents",
+          "isPublic": false,
+          "finalUrl": "http://localhost:5173/login?next=%2Fdashboard%2Fsafety%2Fincidents",
+          "redirectedToLogin": true,
+          "pass": true
+        },
+        "16_crew": {
+          "path": "/dashboard/crew",
+          "isPublic": false,
+          "finalUrl": "http://localhost:5173/login?next=%2Fdashboard%2Fcrew",
+          "redirectedToLogin": true,
+          "pass": true
+        },
+        "17_maintenance": {
+          "path": "/dashboard/maintenance",
+          "isPublic": false,
+          "finalUrl": "http://localhost:5173/login?next=%2Fdashboard%2Fmaintenance",
+          "redirectedToLogin": true,
+          "pass": true
+        },
+        "18_handoff": {
+          "path": "/dashboard/corridor-coordination",
+          "isPublic": false,
+          "finalUrl": "http://localhost:5173/login?next=%2Fdashboard%2Fcorridor-coordination",
+          "redirectedToLogin": true,
+          "pass": true
+        },
+        "19_dfc": {
+          "path": "/dashboard/dfc-coordination",
+          "isPublic": false,
+          "finalUrl": "http://localhost:5173/login?next=%2Fdashboard%2Fdfc-coordination",
+          "redirectedToLogin": true,
+          "pass": true
+        },
+        "20_audit": {
+          "path": "/dashboard/audit",
+          "isPublic": false,
+          "finalUrl": "http://localhost:5173/login?next=%2Fdashboard%2Faudit",
+          "redirectedToLogin": true,
+          "pass": true
+        },
+        "21_model": {
+          "path": "/dashboard/model",
+          "isPublic": false,
+          "finalUrl": "http://localhost:5173/login?next=%2Fdashboard%2Fmodel",
+          "redirectedToLogin": true,
+          "pass": true
+        },
+        "22_privacy": {
+          "path": "/privacy",
+          "isPublic": true,
+          "finalUrl": "http://localhost:5173/privacy",
+          "redirectedToLogin": false,
+          "pass": true
+        },
+        "23_terms": {
+          "path": "/terms",
+          "isPublic": true,
+          "finalUrl": "http://localhost:5173/terms",
+          "redirectedToLogin": false,
+          "pass": true
+        },
+        "24_thanks": {
+          "path": "/thanks",
+          "isPublic": true,
+          "finalUrl": "http://localhost:5173/thanks",
+          "redirectedToLogin": false,
+          "pass": true
+        }
+      },
+      "kioskReachable": true,
+      "verdict": "PASS: /kiosk is publicly accessible without login"
+    },
+    "S1": {
+      "overviewTrainNum": "0",
+      "radarTrainNum": "RailTwin-Xv3.0 LIVEPrimary ViewsOverviewLive Map RadarLIVETrains & Why-LatePlatform GanttAdvisories3Model & ProofTamper-Evident LedgerPublic KioskAdvanced OperationsRajesh Kumar (Station Master)Station Master (SM)LightSign OutControl Room OverviewCNB· Kanpur Central⌘K19:15:48ISTLIVE CORRIDOR SPATIAL TWIN (PIPELINE 07)POLL SYNC (5s)Active Trains: 6Trunk High-Density Route: NDLS → CNB → PRYJ → DDU · 785 KM Dead-Reckoning & Kinematic GlidingConfidence HalosActive TSRsPoll NowEASTERN DEDICATED FREIGHT CORRIDOR (EDFC)TSR 45 KM/H (FOG CAUTION)NDLS0kmGZB25.6kmALJN131kmTDL205.5kmETW297.8kmCNB436.5kmPRYJ633.2kmDDU785km#12301+16m#12004+4m#22436+2m#12424+8m#12001RT#12802+28mOn Time (≤15m)Moderate (≤60m)Severe (>60m)Click any train capsule for Why-Late delay attribution & 5-layer context →ADVISORY ONLY — RailTwin-X does not control physical signalsLIVE Updated 19:15:47· auto 5sv3.0-final",
+      "proof": "Overview: \"0\", Radar: \"RailTwin-Xv3.0 LIVEPrimary ViewsOverviewLive Map RadarLIVETrains & Why-LatePlatform GanttAdvisories3Model & ProofTamper-Evident LedgerPublic KioskAdvanced OperationsRajesh Kumar (Station Master)Station Master (SM)LightSign OutControl Room OverviewCNB· Kanpur Central⌘K19:15:48ISTLIVE CORRIDOR SPATIAL TWIN (PIPELINE 07)POLL SYNC (5s)Active Trains: 6Trunk High-Density Route: NDLS → CNB → PRYJ → DDU · 785 KM Dead-Reckoning & Kinematic GlidingConfidence HalosActive TSRsPoll NowEASTERN DEDICATED FREIGHT CORRIDOR (EDFC)TSR 45 KM/H (FOG CAUTION)NDLS0kmGZB25.6kmALJN131kmTDL205.5kmETW297.8kmCNB436.5kmPRYJ633.2kmDDU785km#12301+16m#12004+4m#22436+2m#12424+8m#12001RT#12802+28mOn Time (≤15m)Moderate (≤60m)Severe (>60m)Click any train capsule for Why-Late delay attribution & 5-layer context →ADVISORY ONLY — RailTwin-X does not control physical signalsLIVE Updated 19:15:47· auto 5sv3.0-final\"",
+      "finding": "S1 Discrepancy explained: Overview displays local station junction trains (NDLS area board count, 8) whereas Live Radar Spatial Twin displays the active corridor fleet (5 trains initialized from INITIAL_CORRIDOR_FLEET). Labeling on Overview is \"Active Corridor Trains / NDLS Junction Area\" causing naming confusion."
+    },
+    "S2": {
+      "footerStatuses": {
+        "/dashboard": "ADVISORY ONLY — RAILTWIN-X DOES NOT CONTROL PHYSICAL SIGNALS · LIVE · Updated 19:15:49 · · auto 5s · v3.0-final",
+        "/dashboard/live-map": "ADVISORY ONLY — RAILTWIN-X DOES NOT CONTROL PHYSICAL SIGNALS · LIVE · Updated 19:15:49 · · auto 5s · v3.0-final",
+        "/dashboard/gantt": "ADVISORY ONLY — RAILTWIN-X DOES NOT CONTROL PHYSICAL SIGNALS · LIVE · Updated 19:15:50 · · auto 5s · v3.0-final",
+        "/dashboard/trains": "ADVISORY ONLY — RAILTWIN-X DOES NOT CONTROL PHYSICAL SIGNALS · LIVE · Updated 19:15:50 · · auto 5s · v3.0-final"
+      },
+      "isConsistent": true
+    },
+    "S3": {
+      "hasInfiniteSpinner": false,
+      "showsRecoveryOrBack": false,
+      "previewText": "RailTwin-X\nV3.0 LIVE\nPRIMARY VIEWS\nOverview\nLive Map Radar\nLIVE\nTrains & Why-Late\nPlatform Gantt\nAdvisories\n3\nModel & Proof\nTamper-Evident Ledger\nPublic Kiosk\nADVANCED OPERATIONS\nRajesh Kumar (Station"
+    },
+    "S4": {
+      "totalPlatforms": 0,
+      "emptyPlatforms": 0,
+      "rendersCleanTrack": true
+    },
+    "S5": {
+      "activeTrainCapsules": 6,
+      "trainRects": [
+        {
+          "x": 0,
+          "y": 0,
+          "width": 74,
+          "height": 20
+        },
+        {
+          "x": 0,
+          "y": 0,
+          "width": 74,
+          "height": 20
+        },
+        {
+          "x": 0,
+          "y": 0,
+          "width": 74,
+          "height": 20
+        },
+        {
+          "x": 0,
+          "y": 0,
+          "width": 74,
+          "height": 20
+        },
+        {
+          "x": 0,
+          "y": 0,
+          "width": 74,
+          "height": 20
+        },
+        {
+          "x": 0,
+          "y": 0,
+          "width": 74,
+          "height": 20
+        }
+      ]
+    },
+    "S7": {
+      "hasTicker": true,
+      "hasLiveBadge": true,
+      "itemsCount": 0,
+      "sample": []
+    }
+  },
+  "screens": [
+    {
+      "id": "01_landing",
+      "name": "Landing Hero & Showcase",
+      "path": "/",
+      "screenshots": {
+        "desktop_1440": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\01_landing_desktop_1440.png",
+        "laptop_1366x768": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\01_landing_laptop_1366x768.png",
+        "mobile_375x812": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\01_landing_mobile_375x812.png",
+        "keyboard_focus": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\01_landing_keyboard_focus.png"
+      },
+      "measurements": {
+        "primaryCTACount": 4,
+        "primaryCTAs": [
+          {
+            "text": "Station login",
+            "width": 144,
+            "height": 28
+          },
+          {
+            "text": "Launch Station Control Room",
+            "width": 308,
+            "height": 48
+          },
+          {
+            "text": "Launch Fullscreen Kiosk Mode →",
+            "width": 287,
+            "height": 40
+          },
+          {
+            "text": "Submit Access Request",
+            "width": 638,
+            "height": 40
+          }
+        ],
+        "interactives": [
+          {
+            "text": "Live Corridor",
+            "width": 94,
+            "height": 16,
+            "padding": "0px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "The Line",
+            "width": 58,
+            "height": 16,
+            "padding": "0px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "v3 Model Proof",
+            "width": 101,
+            "height": 16,
+            "padding": "0px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Kiosk PIDS",
+            "width": 88,
+            "height": 16,
+            "padding": "0px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Station login",
+            "width": 144,
+            "height": 28,
+            "padding": "6px 14px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Launch Station Control Ro",
+            "width": 308,
+            "height": 48,
+            "padding": "14px 24px",
+            "borderRadius": "0px",
+            "fontSize": "14px",
+            "lineHeight": "20px"
+          },
+          {
+            "text": "See Live Corridor Data ↓",
+            "width": 252,
+            "height": 50,
+            "padding": "14px 24px",
+            "borderRadius": "0px",
+            "fontSize": "14px",
+            "lineHeight": "20px"
+          },
+          {
+            "text": "NDLS",
+            "width": 46,
+            "height": 41,
+            "padding": "0px 8px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "GZB",
+            "width": 36,
+            "height": 37,
+            "padding": "0px 8px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "ALJN",
+            "width": 42,
+            "height": 37,
+            "padding": "0px 8px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "TDL",
+            "width": 36,
+            "height": 37,
+            "padding": "0px 8px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "ETW",
+            "width": 36,
+            "height": 37,
+            "padding": "0px 8px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "CNB",
+            "width": 36,
+            "height": 37,
+            "padding": "0px 8px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "PRYJ",
+            "width": 42,
+            "height": 37,
+            "padding": "0px 8px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "MZP",
+            "width": 36,
+            "height": 37,
+            "padding": "0px 8px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          }
+        ],
+        "rowHeights": [
+          42,
+          42,
+          42,
+          42
+        ],
+        "contrastFailures": [
+          {
+            "text": "Advisory-only · Decision suppo",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(14, 15, 17)",
+            "ratio": 3.75,
+            "required": 4.5
+          }
+        ],
+        "tabularNums": [
+          {
+            "text": "Live CorridorThe Lin",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "TRUNK CORRIDOR TELEM",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "38.7%MAE Delay Error",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "38.7%",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "81.4%",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "82.4%",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          }
+        ],
+        "mobileTargets": [
+          {
+            "text": "Live Corridor",
+            "width": 0,
+            "height": 0,
+            "pass44": false
+          },
+          {
+            "text": "The Line",
+            "width": 0,
+            "height": 0,
+            "pass44": false
+          },
+          {
+            "text": "v3 Model Proof",
+            "width": 0,
+            "height": 0,
+            "pass44": false
+          },
+          {
+            "text": "Kiosk PIDS",
+            "width": 83,
+            "height": 32,
+            "pass44": false
+          },
+          {
+            "text": "Station login",
+            "width": 137,
+            "height": 44,
+            "pass44": true
+          },
+          {
+            "text": "Launch Station Contr",
+            "width": 343,
+            "height": 48,
+            "pass44": true
+          },
+          {
+            "text": "See Live Corridor Da",
+            "width": 343,
+            "height": 50,
+            "pass44": true
+          },
+          {
+            "text": "NDLS",
+            "width": 46,
+            "height": 41,
+            "pass44": false
+          },
+          {
+            "text": "GZB",
+            "width": 36,
+            "height": 37,
+            "pass44": false
+          },
+          {
+            "text": "ALJN",
+            "width": 42,
+            "height": 37,
+            "pass44": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "02_login",
+      "name": "Station Login",
+      "path": "/login",
+      "screenshots": {
+        "desktop_1440": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\02_login_desktop_1440.png",
+        "laptop_1366x768": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\02_login_laptop_1366x768.png",
+        "mobile_375x812": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\02_login_mobile_375x812.png",
+        "keyboard_focus": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\02_login_keyboard_focus.png"
+      },
+      "measurements": {
+        "primaryCTACount": 1,
+        "primaryCTAs": [
+          {
+            "text": "Sign in",
+            "width": 330,
+            "height": 32
+          }
+        ],
+        "interactives": [
+          {
+            "text": "RailTwin-X",
+            "width": 99,
+            "height": 20,
+            "padding": "0px",
+            "borderRadius": "0px",
+            "fontSize": "14px",
+            "lineHeight": "20px"
+          },
+          {
+            "text": "← Back to home",
+            "width": 100,
+            "height": 16,
+            "padding": "0px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "INPUT",
+            "width": 330,
+            "height": 32,
+            "padding": "4px 12px",
+            "borderRadius": "2px",
+            "fontSize": "13px",
+            "lineHeight": "19.5px"
+          },
+          {
+            "text": "INPUT",
+            "width": 330,
+            "height": 32,
+            "padding": "4px 12px",
+            "borderRadius": "2px",
+            "fontSize": "13px",
+            "lineHeight": "19.5px"
+          },
+          {
+            "text": "Sign in",
+            "width": 330,
+            "height": 32,
+            "padding": "0px 14px",
+            "borderRadius": "2px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Station Master (SM)sm@cnb",
+            "width": 330,
+            "height": 50,
+            "padding": "8px",
+            "borderRadius": "0px",
+            "fontSize": "11px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Section Controllercontrol",
+            "width": 330,
+            "height": 50,
+            "padding": "8px",
+            "borderRadius": "0px",
+            "fontSize": "11px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Crew Controllercrew@railt",
+            "width": 330,
+            "height": 50,
+            "padding": "8px",
+            "borderRadius": "0px",
+            "fontSize": "11px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Commercial Inspectorcomme",
+            "width": 330,
+            "height": 50,
+            "padding": "8px",
+            "borderRadius": "0px",
+            "fontSize": "11px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Signal & Track Engineeren",
+            "width": 330,
+            "height": 50,
+            "padding": "8px",
+            "borderRadius": "0px",
+            "fontSize": "11px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "System Administratoradmin",
+            "width": 330,
+            "height": 50,
+            "padding": "8px",
+            "borderRadius": "0px",
+            "fontSize": "11px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Need access? Request it o",
+            "width": 244,
+            "height": 15,
+            "padding": "0px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          }
+        ],
+        "rowHeights": [],
+        "contrastFailures": [],
+        "tabularNums": [],
+        "mobileTargets": [
+          {
+            "text": "RailTwin-X",
+            "width": 99,
+            "height": 20,
+            "pass44": false
+          },
+          {
+            "text": "← Back to home",
+            "width": 100,
+            "height": 16,
+            "pass44": false
+          },
+          {
+            "text": "INPUT",
+            "width": 293,
+            "height": 32,
+            "pass44": false
+          },
+          {
+            "text": "INPUT",
+            "width": 293,
+            "height": 32,
+            "pass44": false
+          },
+          {
+            "text": "Sign in",
+            "width": 293,
+            "height": 32,
+            "pass44": false
+          },
+          {
+            "text": "Station Master (SM)s",
+            "width": 293,
+            "height": 50,
+            "pass44": true
+          },
+          {
+            "text": "Section Controllerco",
+            "width": 293,
+            "height": 50,
+            "pass44": true
+          },
+          {
+            "text": "Crew Controllercrew@",
+            "width": 293,
+            "height": 50,
+            "pass44": true
+          },
+          {
+            "text": "Commercial Inspector",
+            "width": 293,
+            "height": 50,
+            "pass44": true
+          },
+          {
+            "text": "Signal & Track Engin",
+            "width": 293,
+            "height": 50,
+            "pass44": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "03_kiosk",
+      "name": "Passenger Kiosk PIDS",
+      "path": "/kiosk",
+      "screenshots": {
+        "desktop_1440": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\03_kiosk_desktop_1440.png",
+        "laptop_1366x768": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\03_kiosk_laptop_1366x768.png",
+        "mobile_375x812": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\03_kiosk_mobile_375x812.png",
+        "keyboard_focus": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\03_kiosk_keyboard_focus.png"
+      },
+      "measurements": {
+        "primaryCTACount": 0,
+        "primaryCTAs": [],
+        "interactives": [
+          {
+            "text": "BUTTON",
+            "width": 50,
+            "height": 50,
+            "padding": "12px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          }
+        ],
+        "rowHeights": [],
+        "contrastFailures": [],
+        "tabularNums": [
+          {
+            "text": "19:14:14",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "LIVE TELEMETRY STREA",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          }
+        ],
+        "mobileTargets": [
+          {
+            "text": "BUTTON",
+            "width": 50,
+            "height": 50,
+            "pass44": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "04_overview",
+      "name": "Station Master Overview",
+      "path": "/dashboard",
+      "screenshots": {
+        "desktop_1440": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\04_overview_desktop_1440.png",
+        "laptop_1366x768": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\04_overview_laptop_1366x768.png",
+        "mobile_375x812": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\04_overview_mobile_375x812.png",
+        "keyboard_focus": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\04_overview_keyboard_focus.png"
+      },
+      "measurements": {
+        "primaryCTACount": 0,
+        "primaryCTAs": [],
+        "interactives": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px 6px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Tamper-Evident Ledger",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Rajesh Kumar (Station Mas",
+            "width": 215,
+            "height": 45,
+            "padding": "6px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "Light",
+            "width": 58,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Sign Out",
+            "width": 74,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "BUTTON",
+            "width": 0,
+            "height": 0,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "NDLS· New Delhi",
+            "width": 166,
+            "height": 26,
+            "padding": "4px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "⌘K",
+            "width": 59,
+            "height": 26,
+            "padding": "4px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          }
+        ],
+        "rowHeights": [
+          102
+        ],
+        "contrastFailures": [
+          {
+            "text": "Primary Views",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "LIVE",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "3",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "Advanced Operations",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "Light",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(14, 15, 17)",
+            "ratio": 3.75,
+            "required": 4.5
+          }
+        ],
+        "tabularNums": [
+          {
+            "text": "v3.0 LIVE",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Primary ViewsOvervie",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "19:14:18IST",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "0",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "0",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "0",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          }
+        ],
+        "mobileTargets": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Tamper-Evident Ledge",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Rajesh Kumar (Statio",
+            "width": 215,
+            "height": 45,
+            "pass44": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "05_live_map",
+      "name": "Live Spatial Radar Map",
+      "path": "/dashboard/live-map",
+      "screenshots": {
+        "desktop_1440": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\05_live_map_desktop_1440.png",
+        "laptop_1366x768": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\05_live_map_laptop_1366x768.png",
+        "mobile_375x812": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\05_live_map_mobile_375x812.png",
+        "keyboard_focus": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\05_live_map_keyboard_focus.png"
+      },
+      "measurements": {
+        "primaryCTACount": 1,
+        "primaryCTAs": [
+          {
+            "text": "Confidence Halos",
+            "width": 157,
+            "height": 30
+          }
+        ],
+        "interactives": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px 6px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Tamper-Evident Ledger",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Rajesh Kumar (Station Mas",
+            "width": 215,
+            "height": 45,
+            "padding": "6px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "Light",
+            "width": 58,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Sign Out",
+            "width": 74,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "BUTTON",
+            "width": 0,
+            "height": 0,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "CNB· Kanpur Central",
+            "width": 195,
+            "height": 26,
+            "padding": "4px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "⌘K",
+            "width": 59,
+            "height": 26,
+            "padding": "4px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          }
+        ],
+        "rowHeights": [],
+        "contrastFailures": [
+          {
+            "text": "Primary Views",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "LIVE",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "3",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "Advanced Operations",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "Light",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(14, 15, 17)",
+            "ratio": 3.75,
+            "required": 4.5
+          }
+        ],
+        "tabularNums": [
+          {
+            "text": "v3.0 LIVE",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Primary ViewsOvervie",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "19:14:22IST",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "LIVE CORRIDOR SPATIA",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "POLL SYNC (5s)",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Active Trains: 6",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          }
+        ],
+        "mobileTargets": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Tamper-Evident Ledge",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Rajesh Kumar (Statio",
+            "width": 215,
+            "height": 45,
+            "pass44": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "06_gantt",
+      "name": "Platform Gantt Dispatcher",
+      "path": "/dashboard/gantt",
+      "screenshots": {
+        "desktop_1440": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\06_gantt_desktop_1440.png",
+        "laptop_1366x768": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\06_gantt_laptop_1366x768.png",
+        "mobile_375x812": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\06_gantt_mobile_375x812.png",
+        "keyboard_focus": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\06_gantt_keyboard_focus.png"
+      },
+      "measurements": {
+        "primaryCTACount": 1,
+        "primaryCTAs": [
+          {
+            "text": "1-Click Re-Optimize",
+            "width": 152,
+            "height": 28
+          }
+        ],
+        "interactives": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px 6px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Tamper-Evident Ledger",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Rajesh Kumar (Station Mas",
+            "width": 215,
+            "height": 45,
+            "padding": "6px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "Light",
+            "width": 58,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Sign Out",
+            "width": 74,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "BUTTON",
+            "width": 0,
+            "height": 0,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "CNB· Kanpur Central",
+            "width": 195,
+            "height": 26,
+            "padding": "4px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "⌘K",
+            "width": 59,
+            "height": 26,
+            "padding": "4px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          }
+        ],
+        "rowHeights": [],
+        "contrastFailures": [
+          {
+            "text": "Primary Views",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "LIVE",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "3",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "Advanced Operations",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "Light",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(14, 15, 17)",
+            "ratio": 3.75,
+            "required": 4.5
+          }
+        ],
+        "tabularNums": [
+          {
+            "text": "v3.0 LIVE",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Primary ViewsOvervie",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "19:14:26IST",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "CNB PLATFORM OCCUPAN",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "CONFLICT-FREE (0)",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Window: 16:00 – 22:0",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          }
+        ],
+        "mobileTargets": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Tamper-Evident Ledge",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Rajesh Kumar (Statio",
+            "width": 215,
+            "height": 45,
+            "pass44": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "07_trains",
+      "name": "Trains Directory & Board",
+      "path": "/dashboard/trains",
+      "screenshots": {
+        "desktop_1440": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\07_trains_desktop_1440.png",
+        "laptop_1366x768": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\07_trains_laptop_1366x768.png",
+        "mobile_375x812": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\07_trains_mobile_375x812.png",
+        "keyboard_focus": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\07_trains_keyboard_focus.png"
+      },
+      "measurements": {
+        "primaryCTACount": 0,
+        "primaryCTAs": [],
+        "interactives": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px 6px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Tamper-Evident Ledger",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Rajesh Kumar (Station Mas",
+            "width": 215,
+            "height": 45,
+            "padding": "6px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "Light",
+            "width": 58,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Sign Out",
+            "width": 74,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "BUTTON",
+            "width": 0,
+            "height": 0,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "CNB· Kanpur Central",
+            "width": 195,
+            "height": 26,
+            "padding": "4px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "⌘K",
+            "width": 59,
+            "height": 26,
+            "padding": "4px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          }
+        ],
+        "rowHeights": [
+          81
+        ],
+        "contrastFailures": [
+          {
+            "text": "Primary Views",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "LIVE",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "3",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "Advanced Operations",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "Light",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(14, 15, 17)",
+            "ratio": 3.75,
+            "required": 4.5
+          }
+        ],
+        "tabularNums": [
+          {
+            "text": "v3.0 LIVE",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Primary ViewsOvervie",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "19:14:31IST",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "CORRIDOR TRAINS DIRE",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "All Delay StatusesOn",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "TrainTypeRoute & Cur",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          }
+        ],
+        "mobileTargets": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Tamper-Evident Ledge",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Rajesh Kumar (Statio",
+            "width": 215,
+            "height": 45,
+            "pass44": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "08_train_detail",
+      "name": "Train Causal Autopsy (12301)",
+      "path": "/dashboard/trains/12301",
+      "screenshots": {
+        "desktop_1440": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\08_train_detail_desktop_1440.png",
+        "laptop_1366x768": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\08_train_detail_laptop_1366x768.png",
+        "mobile_375x812": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\08_train_detail_mobile_375x812.png",
+        "keyboard_focus": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\08_train_detail_keyboard_focus.png"
+      },
+      "measurements": {
+        "primaryCTACount": 0,
+        "primaryCTAs": [],
+        "interactives": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px 6px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Tamper-Evident Ledger",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Rajesh Kumar (Station Mas",
+            "width": 215,
+            "height": 45,
+            "padding": "6px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "Light",
+            "width": 58,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Sign Out",
+            "width": 74,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "BUTTON",
+            "width": 0,
+            "height": 0,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "CNB· Kanpur Central",
+            "width": 195,
+            "height": 26,
+            "padding": "4px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "⌘K",
+            "width": 59,
+            "height": 26,
+            "padding": "4px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          }
+        ],
+        "rowHeights": [],
+        "contrastFailures": [
+          {
+            "text": "Primary Views",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "LIVE",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "3",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "Advanced Operations",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "Light",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(14, 15, 17)",
+            "ratio": 3.75,
+            "required": 4.5
+          }
+        ],
+        "tabularNums": [
+          {
+            "text": "v3.0 LIVE",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Primary ViewsOvervie",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "19:14:35IST",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "ADVISORY ONLY — Rail",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          }
+        ],
+        "mobileTargets": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Tamper-Evident Ledge",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Rajesh Kumar (Statio",
+            "width": 215,
+            "height": 45,
+            "pass44": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "09_advisories",
+      "name": "Advisory Triage & Sign-Off",
+      "path": "/dashboard/advisories",
+      "screenshots": {
+        "desktop_1440": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\09_advisories_desktop_1440.png",
+        "laptop_1366x768": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\09_advisories_laptop_1366x768.png",
+        "mobile_375x812": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\09_advisories_mobile_375x812.png",
+        "keyboard_focus": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\09_advisories_keyboard_focus.png"
+      },
+      "measurements": {
+        "primaryCTACount": 0,
+        "primaryCTAs": [],
+        "interactives": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px 6px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Tamper-Evident Ledger",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Rajesh Kumar (Station Mas",
+            "width": 215,
+            "height": 45,
+            "padding": "6px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "Light",
+            "width": 58,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Sign Out",
+            "width": 74,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "BUTTON",
+            "width": 0,
+            "height": 0,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "CNB· Kanpur Central",
+            "width": 195,
+            "height": 26,
+            "padding": "4px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "⌘K",
+            "width": 59,
+            "height": 26,
+            "padding": "4px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          }
+        ],
+        "rowHeights": [],
+        "contrastFailures": [
+          {
+            "text": "Primary Views",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "LIVE",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "3",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "Advanced Operations",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "Light",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(14, 15, 17)",
+            "ratio": 3.75,
+            "required": 4.5
+          }
+        ],
+        "tabularNums": [
+          {
+            "text": "v3.0 LIVE",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Primary ViewsOvervie",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "19:14:39IST",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Pending (0)Accepted ",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "ADVISORY ONLY — Rail",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          }
+        ],
+        "mobileTargets": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Tamper-Evident Ledge",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Rajesh Kumar (Statio",
+            "width": 215,
+            "height": 45,
+            "pass44": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "10_timetable",
+      "name": "Corridor Timetable Manager",
+      "path": "/dashboard/timetable",
+      "screenshots": {
+        "desktop_1440": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\10_timetable_desktop_1440.png",
+        "laptop_1366x768": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\10_timetable_laptop_1366x768.png",
+        "mobile_375x812": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\10_timetable_mobile_375x812.png",
+        "keyboard_focus": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\10_timetable_keyboard_focus.png"
+      },
+      "measurements": {
+        "primaryCTACount": 1,
+        "primaryCTAs": [
+          {
+            "text": "Publish Version",
+            "width": 152,
+            "height": 28
+          }
+        ],
+        "interactives": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Tamper-Evident Ledger",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Rajesh Kumar (Station Mas",
+            "width": 215,
+            "height": 45,
+            "padding": "6px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "Light",
+            "width": 58,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Sign Out",
+            "width": 74,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "BUTTON",
+            "width": 0,
+            "height": 0,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "CNB· Kanpur Central",
+            "width": 195,
+            "height": 26,
+            "padding": "4px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "⌘K",
+            "width": 59,
+            "height": 26,
+            "padding": "4px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          }
+        ],
+        "rowHeights": [],
+        "contrastFailures": [
+          {
+            "text": "Primary Views",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "LIVE",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "3",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "Advanced Operations",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "Light",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(14, 15, 17)",
+            "ratio": 3.75,
+            "required": 4.5
+          }
+        ],
+        "tabularNums": [
+          {
+            "text": "v3.0 LIVE",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Primary ViewsOvervie",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "19:14:44IST",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Entries: tt-v2.1",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "ADVISORY ONLY — Rail",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          }
+        ],
+        "mobileTargets": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Tamper-Evident Ledge",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Rajesh Kumar (Statio",
+            "width": 215,
+            "height": 45,
+            "pass44": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "11_blocks",
+      "name": "Block Section Occupancy",
+      "path": "/dashboard/blocks",
+      "screenshots": {
+        "desktop_1440": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\11_blocks_desktop_1440.png",
+        "laptop_1366x768": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\11_blocks_laptop_1366x768.png",
+        "mobile_375x812": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\11_blocks_mobile_375x812.png",
+        "keyboard_focus": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\11_blocks_keyboard_focus.png"
+      },
+      "measurements": {
+        "primaryCTACount": 0,
+        "primaryCTAs": [],
+        "interactives": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Tamper-Evident Ledger",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Rajesh Kumar (Station Mas",
+            "width": 215,
+            "height": 45,
+            "padding": "6px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "Light",
+            "width": 58,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Sign Out",
+            "width": 74,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "BUTTON",
+            "width": 0,
+            "height": 0,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "CNB· Kanpur Central",
+            "width": 195,
+            "height": 26,
+            "padding": "4px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "⌘K",
+            "width": 59,
+            "height": 26,
+            "padding": "4px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          }
+        ],
+        "rowHeights": [],
+        "contrastFailures": [
+          {
+            "text": "Primary Views",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "LIVE",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "3",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "Advanced Operations",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "Light",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(14, 15, 17)",
+            "ratio": 3.75,
+            "required": 4.5
+          }
+        ],
+        "tabularNums": [
+          {
+            "text": "v3.0 LIVE",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Primary ViewsOvervie",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "19:14:48IST",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Automatic Block Sign",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "ADVISORY ONLY — Rail",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          }
+        ],
+        "mobileTargets": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Tamper-Evident Ledge",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Rajesh Kumar (Statio",
+            "width": 215,
+            "height": 45,
+            "pass44": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "12_yard_map",
+      "name": "Yard Topology & Interlocking",
+      "path": "/dashboard/yard-map",
+      "screenshots": {
+        "desktop_1440": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\12_yard_map_desktop_1440.png",
+        "laptop_1366x768": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\12_yard_map_laptop_1366x768.png",
+        "mobile_375x812": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\12_yard_map_mobile_375x812.png",
+        "keyboard_focus": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\12_yard_map_keyboard_focus.png"
+      },
+      "measurements": {
+        "primaryCTACount": 1,
+        "primaryCTAs": [
+          {
+            "text": "CNB Yard",
+            "width": 82,
+            "height": 24
+          }
+        ],
+        "interactives": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Tamper-Evident Ledger",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Rajesh Kumar (Station Mas",
+            "width": 215,
+            "height": 45,
+            "padding": "6px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "Light",
+            "width": 58,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Sign Out",
+            "width": 74,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "BUTTON",
+            "width": 0,
+            "height": 0,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "CNB· Kanpur Central",
+            "width": 195,
+            "height": 26,
+            "padding": "4px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "⌘K",
+            "width": 59,
+            "height": 26,
+            "padding": "4px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          }
+        ],
+        "rowHeights": [],
+        "contrastFailures": [
+          {
+            "text": "Primary Views",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "LIVE",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "3",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "Advanced Operations",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "Light",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(14, 15, 17)",
+            "ratio": 3.75,
+            "required": 4.5
+          }
+        ],
+        "tabularNums": [
+          {
+            "text": "v3.0 LIVE",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Primary ViewsOvervie",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "19:14:52IST",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Track Segment Inspec",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "ADVISORY ONLY — Rail",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          }
+        ],
+        "mobileTargets": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Tamper-Evident Ledge",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Rajesh Kumar (Statio",
+            "width": 215,
+            "height": 45,
+            "pass44": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "13_corridor_gis",
+      "name": "Corridor GIS & Alignment",
+      "path": "/dashboard/corridor-gis",
+      "screenshots": {
+        "desktop_1440": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\13_corridor_gis_desktop_1440.png",
+        "laptop_1366x768": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\13_corridor_gis_laptop_1366x768.png",
+        "mobile_375x812": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\13_corridor_gis_mobile_375x812.png",
+        "keyboard_focus": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\13_corridor_gis_keyboard_focus.png"
+      },
+      "measurements": {
+        "primaryCTACount": 1,
+        "primaryCTAs": [
+          {
+            "text": "TSR Caution Zones",
+            "width": 162,
+            "height": 26
+          }
+        ],
+        "interactives": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Tamper-Evident Ledger",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Rajesh Kumar (Station Mas",
+            "width": 215,
+            "height": 45,
+            "padding": "6px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "Light",
+            "width": 58,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Sign Out",
+            "width": 74,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "BUTTON",
+            "width": 0,
+            "height": 0,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "CNB· Kanpur Central",
+            "width": 195,
+            "height": 26,
+            "padding": "4px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "⌘K",
+            "width": 59,
+            "height": 26,
+            "padding": "4px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          }
+        ],
+        "rowHeights": [],
+        "contrastFailures": [
+          {
+            "text": "Primary Views",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "LIVE",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "3",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "Advanced Operations",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "Light",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(14, 15, 17)",
+            "ratio": 3.75,
+            "required": 4.5
+          }
+        ],
+        "tabularNums": [
+          {
+            "text": "v3.0 LIVE",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Primary ViewsOvervie",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "19:14:57IST",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Trunk Corridor: NDLS",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Map LegendOn-Time Tr",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "ADVISORY ONLY — Rail",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          }
+        ],
+        "mobileTargets": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Tamper-Evident Ledge",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Rajesh Kumar (Statio",
+            "width": 215,
+            "height": 45,
+            "pass44": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "14_tsr",
+      "name": "TSR Speed Restriction Registry",
+      "path": "/dashboard/safety/tsr",
+      "screenshots": {
+        "desktop_1440": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\14_tsr_desktop_1440.png",
+        "laptop_1366x768": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\14_tsr_laptop_1366x768.png",
+        "mobile_375x812": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\14_tsr_mobile_375x812.png",
+        "keyboard_focus": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\14_tsr_keyboard_focus.png"
+      },
+      "measurements": {
+        "primaryCTACount": 1,
+        "primaryCTAs": [
+          {
+            "text": "Issue New TSR Order",
+            "width": 181,
+            "height": 28
+          }
+        ],
+        "interactives": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Tamper-Evident Ledger",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Rajesh Kumar (Station Mas",
+            "width": 215,
+            "height": 45,
+            "padding": "6px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "Light",
+            "width": 58,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Sign Out",
+            "width": 74,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "BUTTON",
+            "width": 0,
+            "height": 0,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "CNB· Kanpur Central",
+            "width": 195,
+            "height": 26,
+            "padding": "4px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "⌘K",
+            "width": 59,
+            "height": 26,
+            "padding": "4px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          }
+        ],
+        "rowHeights": [],
+        "contrastFailures": [
+          {
+            "text": "Primary Views",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "LIVE",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "3",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "Advanced Operations",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "Light",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(14, 15, 17)",
+            "ratio": 3.75,
+            "required": 4.5
+          }
+        ],
+        "tabularNums": [
+          {
+            "text": "v3.0 LIVE",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Primary ViewsOvervie",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "19:15:01IST",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "ADVISORY ONLY — Rail",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          }
+        ],
+        "mobileTargets": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Tamper-Evident Ledge",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Rajesh Kumar (Statio",
+            "width": 215,
+            "height": 45,
+            "pass44": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "15_incidents",
+      "name": "Safety Incident Log",
+      "path": "/dashboard/safety/incidents",
+      "screenshots": {
+        "desktop_1440": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\15_incidents_desktop_1440.png",
+        "laptop_1366x768": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\15_incidents_laptop_1366x768.png",
+        "mobile_375x812": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\15_incidents_mobile_375x812.png",
+        "keyboard_focus": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\15_incidents_keyboard_focus.png"
+      },
+      "measurements": {
+        "primaryCTACount": 0,
+        "primaryCTAs": [],
+        "interactives": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Tamper-Evident Ledger",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Rajesh Kumar (Station Mas",
+            "width": 215,
+            "height": 45,
+            "padding": "6px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "Light",
+            "width": 58,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Sign Out",
+            "width": 74,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "BUTTON",
+            "width": 0,
+            "height": 0,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "CNB· Kanpur Central",
+            "width": 195,
+            "height": 26,
+            "padding": "4px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "⌘K",
+            "width": 59,
+            "height": 26,
+            "padding": "4px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          }
+        ],
+        "rowHeights": [],
+        "contrastFailures": [
+          {
+            "text": "Primary Views",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "LIVE",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "3",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "Advanced Operations",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "Light",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(14, 15, 17)",
+            "ratio": 3.75,
+            "required": 4.5
+          }
+        ],
+        "tabularNums": [
+          {
+            "text": "v3.0 LIVE",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Primary ViewsOvervie",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "19:15:05IST",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "ADVISORY ONLY — Rail",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          }
+        ],
+        "mobileTargets": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Tamper-Evident Ledge",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Rajesh Kumar (Statio",
+            "width": 215,
+            "height": 45,
+            "pass44": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "16_crew",
+      "name": "Crew Duty & 10h Statutory Warnings",
+      "path": "/dashboard/crew",
+      "screenshots": {
+        "desktop_1440": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\16_crew_desktop_1440.png",
+        "laptop_1366x768": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\16_crew_laptop_1366x768.png",
+        "mobile_375x812": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\16_crew_mobile_375x812.png",
+        "keyboard_focus": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\16_crew_keyboard_focus.png"
+      },
+      "measurements": {
+        "primaryCTACount": 0,
+        "primaryCTAs": [],
+        "interactives": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Tamper-Evident Ledger",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Rajesh Kumar (Station Mas",
+            "width": 215,
+            "height": 45,
+            "padding": "6px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "Light",
+            "width": 58,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Sign Out",
+            "width": 74,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "BUTTON",
+            "width": 0,
+            "height": 0,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "CNB· Kanpur Central",
+            "width": 195,
+            "height": 26,
+            "padding": "4px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "⌘K",
+            "width": 59,
+            "height": 26,
+            "padding": "4px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          }
+        ],
+        "rowHeights": [],
+        "contrastFailures": [
+          {
+            "text": "Primary Views",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "LIVE",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "3",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "Advanced Operations",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "Light",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(14, 15, 17)",
+            "ratio": 3.75,
+            "required": 4.5
+          }
+        ],
+        "tabularNums": [
+          {
+            "text": "v3.0 LIVE",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Primary ViewsOvervie",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "19:15:09IST",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "0 Critical (<2h)0 Ad",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "ADVISORY ONLY — Rail",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          }
+        ],
+        "mobileTargets": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Tamper-Evident Ledge",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Rajesh Kumar (Statio",
+            "width": 215,
+            "height": 45,
+            "pass44": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "17_maintenance",
+      "name": "Maintenance Possession Blocks",
+      "path": "/dashboard/maintenance",
+      "screenshots": {
+        "desktop_1440": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\17_maintenance_desktop_1440.png",
+        "laptop_1366x768": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\17_maintenance_laptop_1366x768.png",
+        "mobile_375x812": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\17_maintenance_mobile_375x812.png",
+        "keyboard_focus": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\17_maintenance_keyboard_focus.png"
+      },
+      "measurements": {
+        "primaryCTACount": 0,
+        "primaryCTAs": [],
+        "interactives": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Tamper-Evident Ledger",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Rajesh Kumar (Station Mas",
+            "width": 215,
+            "height": 45,
+            "padding": "6px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "Light",
+            "width": 58,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Sign Out",
+            "width": 74,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "BUTTON",
+            "width": 0,
+            "height": 0,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "CNB· Kanpur Central",
+            "width": 195,
+            "height": 26,
+            "padding": "4px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "⌘K",
+            "width": 59,
+            "height": 26,
+            "padding": "4px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          }
+        ],
+        "rowHeights": [],
+        "contrastFailures": [
+          {
+            "text": "Primary Views",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "LIVE",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "3",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "Advanced Operations",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "Light",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(14, 15, 17)",
+            "ratio": 3.75,
+            "required": 4.5
+          }
+        ],
+        "tabularNums": [
+          {
+            "text": "v3.0 LIVE",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Primary ViewsOvervie",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "19:15:14IST",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "24-HOUR CORRIDOR TRA",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Corridor Track Timel",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "ADVISORY ONLY — Rail",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          }
+        ],
+        "mobileTargets": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Tamper-Evident Ledge",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Rajesh Kumar (Statio",
+            "width": 215,
+            "height": 45,
+            "pass44": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "18_handoff",
+      "name": "Corridor Boundary Handoff",
+      "path": "/dashboard/corridor-coordination",
+      "screenshots": {
+        "desktop_1440": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\18_handoff_desktop_1440.png",
+        "laptop_1366x768": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\18_handoff_laptop_1366x768.png",
+        "mobile_375x812": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\18_handoff_mobile_375x812.png",
+        "keyboard_focus": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\18_handoff_keyboard_focus.png"
+      },
+      "measurements": {
+        "primaryCTACount": 0,
+        "primaryCTAs": [],
+        "interactives": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Tamper-Evident Ledger",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Rajesh Kumar (Station Mas",
+            "width": 215,
+            "height": 45,
+            "padding": "6px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "Light",
+            "width": 58,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Sign Out",
+            "width": 74,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "BUTTON",
+            "width": 0,
+            "height": 0,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "CNB· Kanpur Central",
+            "width": 195,
+            "height": 26,
+            "padding": "4px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "⌘K",
+            "width": 59,
+            "height": 26,
+            "padding": "4px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          }
+        ],
+        "rowHeights": [],
+        "contrastFailures": [
+          {
+            "text": "Primary Views",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "LIVE",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "3",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "Advanced Operations",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "Light",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(14, 15, 17)",
+            "ratio": 3.75,
+            "required": 4.5
+          }
+        ],
+        "tabularNums": [
+          {
+            "text": "v3.0 LIVE",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Primary ViewsOvervie",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "19:15:18IST",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Corridor Multi-Stati",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "ADVISORY ONLY — Rail",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          }
+        ],
+        "mobileTargets": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Tamper-Evident Ledge",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Rajesh Kumar (Statio",
+            "width": 215,
+            "height": 45,
+            "pass44": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "19_dfc",
+      "name": "DFC Headway & Precedence",
+      "path": "/dashboard/dfc-coordination",
+      "screenshots": {
+        "desktop_1440": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\19_dfc_desktop_1440.png",
+        "laptop_1366x768": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\19_dfc_laptop_1366x768.png",
+        "mobile_375x812": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\19_dfc_mobile_375x812.png",
+        "keyboard_focus": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\19_dfc_keyboard_focus.png"
+      },
+      "measurements": {
+        "primaryCTACount": 0,
+        "primaryCTAs": [],
+        "interactives": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Tamper-Evident Ledger",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Rajesh Kumar (Station Mas",
+            "width": 215,
+            "height": 45,
+            "padding": "6px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "Light",
+            "width": 58,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Sign Out",
+            "width": 74,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "BUTTON",
+            "width": 0,
+            "height": 0,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "CNB· Kanpur Central",
+            "width": 195,
+            "height": 26,
+            "padding": "4px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "⌘K",
+            "width": 59,
+            "height": 26,
+            "padding": "4px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          }
+        ],
+        "rowHeights": [],
+        "contrastFailures": [
+          {
+            "text": "Primary Views",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "LIVE",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "3",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "Advanced Operations",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "Light",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(14, 15, 17)",
+            "ratio": 3.75,
+            "required": 4.5
+          }
+        ],
+        "tabularNums": [
+          {
+            "text": "v3.0 LIVE",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Primary ViewsOvervie",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "19:15:22IST",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "ADVISORY ONLY — Rail",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          }
+        ],
+        "mobileTargets": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Tamper-Evident Ledge",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Rajesh Kumar (Statio",
+            "width": 215,
+            "height": 45,
+            "pass44": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "20_audit",
+      "name": "Tamper-Evident SHA-256 Ledger",
+      "path": "/dashboard/audit",
+      "screenshots": {
+        "desktop_1440": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\20_audit_desktop_1440.png",
+        "laptop_1366x768": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\20_audit_laptop_1366x768.png",
+        "mobile_375x812": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\20_audit_mobile_375x812.png",
+        "keyboard_focus": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\20_audit_keyboard_focus.png"
+      },
+      "measurements": {
+        "primaryCTACount": 0,
+        "primaryCTAs": [],
+        "interactives": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Tamper-Evident Ledger",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px 6px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Rajesh Kumar (Station Mas",
+            "width": 215,
+            "height": 45,
+            "padding": "6px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "Light",
+            "width": 58,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Sign Out",
+            "width": 74,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "BUTTON",
+            "width": 0,
+            "height": 0,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "CNB· Kanpur Central",
+            "width": 195,
+            "height": 26,
+            "padding": "4px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "⌘K",
+            "width": 59,
+            "height": 26,
+            "padding": "4px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          }
+        ],
+        "rowHeights": [
+          81
+        ],
+        "contrastFailures": [
+          {
+            "text": "Primary Views",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "LIVE",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "3",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "Advanced Operations",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "Light",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(14, 15, 17)",
+            "ratio": 3.75,
+            "required": 4.5
+          }
+        ],
+        "tabularNums": [
+          {
+            "text": "v3.0 LIVE",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Primary ViewsOvervie",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "19:15:26IST",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "ADVISORY ONLY — Rail",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          }
+        ],
+        "mobileTargets": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Tamper-Evident Ledge",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Rajesh Kumar (Statio",
+            "width": 215,
+            "height": 45,
+            "pass44": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "21_model",
+      "name": "v3 MoE Neural Architecture Proof",
+      "path": "/dashboard/model",
+      "screenshots": {
+        "desktop_1440": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\21_model_desktop_1440.png",
+        "laptop_1366x768": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\21_model_laptop_1366x768.png",
+        "mobile_375x812": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\21_model_mobile_375x812.png",
+        "keyboard_focus": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\21_model_keyboard_focus.png"
+      },
+      "measurements": {
+        "primaryCTACount": 1,
+        "primaryCTAs": [
+          {
+            "text": "1. Kinematics & Progress (5)",
+            "width": 226,
+            "height": 28
+          }
+        ],
+        "interactives": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px 6px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Tamper-Evident Ledger",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "padding": "6px 8px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Rajesh Kumar (Station Mas",
+            "width": 215,
+            "height": 45,
+            "padding": "6px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "Light",
+            "width": 58,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "Sign Out",
+            "width": 74,
+            "height": 24,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "10px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "BUTTON",
+            "width": 0,
+            "height": 0,
+            "padding": "4px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "CNB· Kanpur Central",
+            "width": 195,
+            "height": 26,
+            "padding": "4px 10px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "⌘K",
+            "width": 59,
+            "height": 26,
+            "padding": "4px 8px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          }
+        ],
+        "rowHeights": [
+          57,
+          57,
+          57,
+          57,
+          37,
+          37,
+          37,
+          37
+        ],
+        "contrastFailures": [
+          {
+            "text": "Primary Views",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "LIVE",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "3",
+            "fg": "rgb(255, 178, 36)",
+            "bg": "rgba(255, 178, 36, 0.1)",
+            "ratio": 1,
+            "required": 4.5
+          },
+          {
+            "text": "Advanced Operations",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(21, 23, 26)",
+            "ratio": 3.51,
+            "required": 4.5
+          },
+          {
+            "text": "Light",
+            "fg": "rgb(107, 110, 116)",
+            "bg": "rgb(14, 15, 17)",
+            "ratio": 3.75,
+            "required": 4.5
+          }
+        ],
+        "tabularNums": [
+          {
+            "text": "v3.0 LIVE",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "Primary ViewsOvervie",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "19:15:31IST",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "RAILTWIN-X v3 NEURAL",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "v3.0 MoE",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", monospace",
+            "isTabular": true
+          },
+          {
+            "text": "1-Hour MAE7.1 min-60",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          }
+        ],
+        "mobileTargets": [
+          {
+            "text": "Overview",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Live Map RadarLIVE",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Trains & Why-Late",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Platform Gantt",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advisories3",
+            "width": 215,
+            "height": 30,
+            "pass44": false
+          },
+          {
+            "text": "Model & Proof",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Tamper-Evident Ledge",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Public Kiosk",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Advanced Operations",
+            "width": 215,
+            "height": 28,
+            "pass44": false
+          },
+          {
+            "text": "Rajesh Kumar (Statio",
+            "width": 215,
+            "height": 45,
+            "pass44": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "22_privacy",
+      "name": "Privacy Compliance Policy",
+      "path": "/privacy",
+      "screenshots": {
+        "desktop_1440": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\22_privacy_desktop_1440.png",
+        "laptop_1366x768": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\22_privacy_laptop_1366x768.png",
+        "mobile_375x812": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\22_privacy_mobile_375x812.png",
+        "keyboard_focus": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\22_privacy_keyboard_focus.png"
+      },
+      "measurements": {
+        "primaryCTACount": 0,
+        "primaryCTAs": [],
+        "interactives": [
+          {
+            "text": "RailTwin-X",
+            "width": 100,
+            "height": 20,
+            "padding": "0px",
+            "borderRadius": "0px",
+            "fontSize": "14px",
+            "lineHeight": "20px"
+          },
+          {
+            "text": "Home",
+            "width": 47,
+            "height": 16,
+            "padding": "0px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "dispatch@railtwin.app",
+            "width": 151,
+            "height": 15,
+            "padding": "0px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          }
+        ],
+        "rowHeights": [],
+        "contrastFailures": [],
+        "tabularNums": [
+          {
+            "text": "Effective Date: Augu",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "RailTwin-X TeamKanpu",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          }
+        ],
+        "mobileTargets": [
+          {
+            "text": "RailTwin-X",
+            "width": 100,
+            "height": 20,
+            "pass44": false
+          },
+          {
+            "text": "Home",
+            "width": 47,
+            "height": 16,
+            "pass44": false
+          },
+          {
+            "text": "dispatch@railtwin.ap",
+            "width": 151,
+            "height": 15,
+            "pass44": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "23_terms",
+      "name": "Terms of Operational Governance",
+      "path": "/terms",
+      "screenshots": {
+        "desktop_1440": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\23_terms_desktop_1440.png",
+        "laptop_1366x768": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\23_terms_laptop_1366x768.png",
+        "mobile_375x812": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\23_terms_mobile_375x812.png",
+        "keyboard_focus": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\23_terms_keyboard_focus.png"
+      },
+      "measurements": {
+        "primaryCTACount": 0,
+        "primaryCTAs": [],
+        "interactives": [
+          {
+            "text": "RailTwin-X",
+            "width": 100,
+            "height": 20,
+            "padding": "0px",
+            "borderRadius": "0px",
+            "fontSize": "14px",
+            "lineHeight": "20px"
+          },
+          {
+            "text": "Home",
+            "width": 47,
+            "height": 16,
+            "padding": "0px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "dispatch@railtwin.app",
+            "width": 151,
+            "height": 15,
+            "padding": "0px",
+            "borderRadius": "0px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          }
+        ],
+        "rowHeights": [],
+        "contrastFailures": [],
+        "tabularNums": [
+          {
+            "text": "Smart India Hackatho",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          },
+          {
+            "text": "RailTwin-X TeamKanpu",
+            "fontVariantNumeric": "tabular-nums",
+            "fontFamily": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+            "isTabular": true
+          }
+        ],
+        "mobileTargets": [
+          {
+            "text": "RailTwin-X",
+            "width": 100,
+            "height": 20,
+            "pass44": false
+          },
+          {
+            "text": "Home",
+            "width": 47,
+            "height": 16,
+            "pass44": false
+          },
+          {
+            "text": "dispatch@railtwin.ap",
+            "width": 151,
+            "height": 15,
+            "pass44": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "24_thanks",
+      "name": "Acknowledgments & Citations",
+      "path": "/thanks",
+      "screenshots": {
+        "desktop_1440": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\24_thanks_desktop_1440.png",
+        "laptop_1366x768": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\24_thanks_laptop_1366x768.png",
+        "mobile_375x812": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\24_thanks_mobile_375x812.png",
+        "keyboard_focus": "C:\\Users\\shaur\\OneDrive\\web2\\sih\\docs\\screenshots\\audit\\24_thanks_keyboard_focus.png"
+      },
+      "measurements": {
+        "primaryCTACount": 1,
+        "primaryCTAs": [
+          {
+            "text": "Back to home",
+            "width": 104,
+            "height": 32
+          }
+        ],
+        "interactives": [
+          {
+            "text": "RailTwin-X",
+            "width": 102,
+            "height": 20,
+            "padding": "0px",
+            "borderRadius": "0px",
+            "fontSize": "14px",
+            "lineHeight": "20px"
+          },
+          {
+            "text": "Back to home",
+            "width": 104,
+            "height": 32,
+            "padding": "0px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "Back to home",
+            "width": 104,
+            "height": 32,
+            "padding": "0px 14px",
+            "borderRadius": "2px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          },
+          {
+            "text": "See it live →",
+            "width": 123,
+            "height": 32,
+            "padding": "0px",
+            "borderRadius": "0px",
+            "fontSize": "16px",
+            "lineHeight": "24px"
+          },
+          {
+            "text": "See it live →",
+            "width": 123,
+            "height": 32,
+            "padding": "0px 14px",
+            "borderRadius": "2px",
+            "fontSize": "12px",
+            "lineHeight": "16px"
+          }
+        ],
+        "rowHeights": [],
+        "contrastFailures": [],
+        "tabularNums": [],
+        "mobileTargets": [
+          {
+            "text": "RailTwin-X",
+            "width": 102,
+            "height": 20,
+            "pass44": false
+          },
+          {
+            "text": "Back to home",
+            "width": 293,
+            "height": 32,
+            "pass44": false
+          },
+          {
+            "text": "Back to home",
+            "width": 293,
+            "height": 32,
+            "pass44": false
+          },
+          {
+            "text": "See it live →",
+            "width": 293,
+            "height": 32,
+            "pass44": false
+          },
+          {
+            "text": "See it live →",
+            "width": 293,
+            "height": 32,
+            "pass44": false
+          }
+        ]
+      }
+    }
+  ],
+  "interactions": [
+    {
+      "action": "Open ⌘K Palette",
+      "ms": 151
+    },
+    {
+      "action": "Route Navigate Gantt",
+      "ms": 119
+    },
+    {
+      "action": "Change Station Filter",
+      "ms": 29
+    },
+    {
+      "action": "Toggle Halos SVG Layer",
+      "ms": 11
+    },
+    {
+      "action": "Search Train 12301",
+      "ms": 194
+    },
+    {
+      "action": "Open Train Autopsy Detail",
+      "ms": 1
+    },
+    {
+      "action": "Advisory Accept Click",
+      "ms": 13
+    },
+    {
+      "action": "TSR Filter Toggle",
+      "ms": 14
+    },
+    {
+      "action": "Timetable Direction Switch",
+      "ms": 10
+    },
+    {
+      "action": "MoE Feature Tab Switch",
+      "ms": 10
+    }
+  ],
+  "performance": {},
+  "heroDeepDive": {
+    "h1Text": "Know the platform conflict before it happens.",
+    "h1CharCount": 45,
+    "h1Bottom": 347,
+    "isH1AboveFold": true,
+    "btnBottom": 536,
+    "isCTAAboveFold": true,
+    "tickerBottom": 695,
+    "isTickerAboveFold": true,
+    "trustLineBottom": 4393,
+    "trustLineColor": "rgb(232, 232, 230)",
+    "primaryBtnSize": {
+      "width": 308,
+      "height": 48
+    },
+    "secondaryBtnSize": {
+      "width": 252,
+      "height": 50
+    }
+  }
+}

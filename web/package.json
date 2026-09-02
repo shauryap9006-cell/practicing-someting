@@ -32,6 +32,7 @@
     "lenis": "^1.1.18",
     "lucide-react": "^0.468.0",
     "maplibre-gl": "^4.7.1",
+    "puppeteer": "^25.9.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-helmet-async": "^2.0.5",
