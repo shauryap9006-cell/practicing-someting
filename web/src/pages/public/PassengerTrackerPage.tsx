@@ -389,19 +389,19 @@ export function PassengerTrackerPage() {
           </div>
         </div>
 
-        {/* 4. SATELLITE & GIS RADAR MAP VIEW */}
+        {/* 4. SATELLITE RAIL TRACKER */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold font-mono uppercase tracking-wider text-[#E9EBEE] flex items-center gap-2">
               <Layers className="w-4 h-4 text-[#F5A524]" />
               <span>
                 {lang === 'HI'
-                  ? 'लाइव सैटेलाइट और सिग्नल ट्रैकर'
-                  : 'LIVE SATELLITE & SIGNAL RADAR TRACKER'}
+                  ? 'सटीक रेलवे ट्रैक सैटेलाइट व्यू'
+                  : 'LIVE PHYSICAL SATELLITE TRACKER'}
               </span>
             </h2>
-            <span className="text-[11px] text-[#6B7480] font-mono">
-              {lang === 'HI' ? 'क्लिक करके स्टेशन देखें' : 'Click stations to inspect'}
+            <span className="text-[11px] text-[#3DDC97] font-mono">
+              {lang === 'HI' ? '● वास्तविक रेलवे ट्रैक पर संरेखित' : '● PHYSICAL TRACK ALIGNED'}
             </span>
           </div>
 
