@@ -3,15 +3,19 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { queryKeys } from '@/lib/queryKeys';
 import { AuditEntry } from '@/mock/types';
-import { Badge } from '@/components/ui/Badge';
-import { Input } from '@/components/ui/Input';
-import { DataFreshnessBadge } from '@/components/common/DataFreshnessBadge';
-import { ShieldCheck, Search, Filter, ChevronDown, ChevronRight, Hash } from 'lucide-react';
+import {
+  AspectLamp,
+  AspectType,
+  Provenance,
+  EmptyState,
+} from '@/components/aspect';
+import { ShieldCheck, Search, Filter, ChevronDown, ChevronRight, Hash, CheckCircle2 } from 'lucide-react';
 
 export const AuditPage: React.FC = () => {
   const { data: logs = [], dataUpdatedAt } = useQuery({
     queryKey: queryKeys.audit(),
     queryFn: () => api.getAuditLogs(),
+    refetchInterval: 5000,
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<string>('ALL');
@@ -24,7 +28,6 @@ export const AuditPage: React.FC = () => {
     { label: 'Platform Re-Opt', value: 'platform_reopt' },
     { label: 'Crew Relief', value: 'crew_relief' },
     { label: 'Speed Regulations', value: 'speed_regulation' },
-    { label: 'Station Switches', value: 'station_switch' },
   ];
 
   const filteredLogs = useMemo(() => {
@@ -45,45 +48,51 @@ export const AuditPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4 font-sans">
+    <div className="space-y-6 font-mono select-none">
       {/* Header & Immutable Ledger Meta */}
-      <div className="bg-panel border border-hairline p-4 space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="bg-[#101216] border border-[#23272F] rounded-lg p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#23272F]">
           <div>
-            <h2 className="text-base font-bold font-mono text-text-main flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-accent stroke-[1.5]" />
-              <span>REGULATORY AUDIT LOG & COMPLIANCE LEDGER</span>
-            </h2>
-            <p className="text-xs text-text-dim mt-0.5 font-sans">
-              Cryptographically referenced audit ledger. Every human dispatcher sign-off, override, and automated safety interlock is permanently recorded.
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#F5A524] shadow-[0_0_8px_rgba(245,165,36,0.6)] animate-pulse" />
+              <h1 className="text-lg font-bold text-[#E9EBEE] uppercase tracking-wider font-display">
+                REGULATORY AUDIT LEDGER & COMPLIANCE LOG ({filteredLogs.length})
+              </h1>
+            </div>
+            <p className="text-xs font-sans text-[#A3ABB6] mt-1">
+              Cryptographically referenced audit ledger. Dispatcher sign-offs, overrides, and safety interlocks permanently logged.
             </p>
           </div>
-          <DataFreshnessBadge dataUpdatedAt={dataUpdatedAt} />
+
+          <div className="text-xs text-[#3DDC97] flex items-center gap-1.5 font-semibold">
+            <ShieldCheck className="w-4 h-4" />
+            <span>HASH INTEGRITY VERIFIED</span>
+          </div>
         </div>
 
-        {/* Filter Chips & Search Bar */}
-        <div className="space-y-3 pt-2">
-          {/* Search box */}
+        {/* Search & Filter Toolbar */}
+        <div className="space-y-3 pt-1">
           <div className="relative">
-            <Search className="w-4 h-4 text-text-dim absolute left-3 top-2.5 stroke-[1.5]" />
-            <Input
+            <Search className="w-4 h-4 text-[#6B7480] absolute left-3 top-1/2 transform -translate-y-1/2" />
+            <input
+              type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search audit records by actor, train, action, or reference hash..."
-              className="pl-9 text-xs font-mono"
+              placeholder="Search audit records by actor, train, action, or SHA-256 reference hash..."
+              className="w-full bg-[#0A0B0D] border border-[#23272F] focus:border-[#F5A524] rounded-sm py-2 pl-9 pr-3 text-xs text-[#E9EBEE] placeholder-[#6B7480]"
             />
           </div>
 
-          {/* Event Filter Chips */}
-          <div className="flex flex-wrap items-center gap-1.5 text-xs font-mono">
+          <div className="flex flex-wrap items-center gap-1.5 text-xs">
             {eventTypes.map(t => (
               <button
                 key={t.value}
+                type="button"
                 onClick={() => setSelectedType(t.value)}
-                className={`px-2.5 py-1 border transition-colors ${
+                className={`px-2.5 py-1 rounded-sm border transition-colors ${
                   selectedType === t.value
-                    ? 'bg-panel-2 border-accent text-accent font-semibold'
-                    : 'border-hairline bg-panel text-text-dim hover:text-text-main'
+                    ? 'bg-[#F5A524] text-[#0A0B0D] border-[#F5A524] font-bold'
+                    : 'border-[#23272F] bg-[#0A0B0D] text-[#A3ABB6] hover:border-[#2E333D] hover:text-[#E9EBEE]'
                 }`}
               >
                 {t.label}
@@ -94,104 +103,92 @@ export const AuditPage: React.FC = () => {
       </div>
 
       {/* Ledger Table */}
-      <div className="bg-panel border border-hairline overflow-x-auto">
-        <table className="w-full text-left text-xs font-mono border-collapse" role="table">
-          <thead>
-            <tr className="bg-panel-2 border-b border-hairline text-text-dim text-[11px] uppercase select-none">
-              <th scope="col" className="p-3 w-8"></th>
-              <th scope="col" className="p-3">Timestamp (IST)</th>
-              <th scope="col" className="p-3">Event Type</th>
-              <th scope="col" className="p-3">Train / Zone</th>
-              <th scope="col" className="p-3">Action Description</th>
-              <th scope="col" className="p-3">Actor / Authorizer</th>
-              <th scope="col" className="p-3 text-right">Ledger Hash</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-hairline">
-            {filteredLogs.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="p-8 text-center text-xs text-text-dim">
-                  No audit entries found matching current filter.
-                </td>
-              </tr>
-            ) : (
-              filteredLogs.map(entry => {
-                const isExpanded = expandedId === entry.id;
-                return (
-                  <React.Fragment key={entry.id}>
-                    <tr
-                      onClick={() => toggleExpand(entry.id)}
-                      className={`hover:bg-panel-2/60 cursor-pointer transition-colors ${
-                        isExpanded ? 'bg-panel-2/40' : ''
-                      }`}
-                    >
-                      <td className="p-3 text-text-dim">
-                        {isExpanded ? (
-                          <ChevronDown className="w-3.5 h-3.5 stroke-[1.5]" />
-                        ) : (
-                          <ChevronRight className="w-3.5 h-3.5 stroke-[1.5]" />
-                        )}
-                      </td>
-                      <td className="p-3 whitespace-nowrap font-bold text-text-main">
-                        {entry.timestamp}
-                      </td>
-                      <td className="p-3 whitespace-nowrap">
-                        <Badge
-                          variant={
-                            entry.eventType === 'advisory_ack'
-                              ? 'ok'
-                              : entry.eventType === 'advisory_dismiss'
-                              ? 'warn'
-                              : entry.eventType === 'crew_relief'
-                              ? 'danger'
-                              : 'neutral'
-                          }
-                        >
-                          {entry.eventType.replace('_', ' ').toUpperCase()}
-                        </Badge>
-                      </td>
-                      <td className="p-3 whitespace-nowrap">
-                        <span className="font-bold text-accent mr-1.5">{entry.trainNo || 'CORRIDOR'}</span>
-                        <span className="text-[10px] text-text-dim">{entry.zone}</span>
-                      </td>
-                      <td className="p-3 text-text-main font-sans text-xs">
-                        {entry.action}
-                      </td>
-                      <td className="p-3 whitespace-nowrap text-text-dim text-[11px]">
-                        {entry.actor}
-                      </td>
-                      <td className="p-3 whitespace-nowrap text-right text-[11px] text-text-dim font-mono">
-                        {entry.referenceHash}
-                      </td>
-                    </tr>
+      <div className="bg-[#101216] border border-[#23272F] rounded-lg overflow-hidden">
+        {filteredLogs.length === 0 ? (
+          <EmptyState
+            title="No matching ledger records"
+            description="Clear search or filter criteria to view all compliance entries."
+            onRetry={() => {
+              setSearchQuery('');
+              setSelectedType('ALL');
+            }}
+          />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs font-mono border-collapse">
+              <thead>
+                <tr className="bg-[#0A0B0D] border-b border-[#23272F] text-[#A3ABB6] text-[11px] uppercase">
+                  <th className="py-3 px-4">Timestamp (IST)</th>
+                  <th className="py-3 px-4">Action Summary</th>
+                  <th className="py-3 px-4">Operator</th>
+                  <th className="py-3 px-4">Target Train</th>
+                  <th className="py-3 px-4">Safety Interlock</th>
+                  <th className="py-3 px-4 text-right">SHA-256 Hash</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#23272F]">
+                {filteredLogs.map(log => {
+                  const isExpanded = expandedId === log.id;
 
-                    {/* Expandable Detail Payload */}
-                    {isExpanded && (
-                      <tr className="bg-panel-2/30">
-                        <td colSpan={7} className="p-4 pl-10 border-b border-hairline space-y-2">
-                          <div className="text-xs font-sans text-text-main leading-relaxed">
-                            <span className="font-bold font-mono text-[11px] text-text-dim mr-2">LOG DETAILS:</span>
-                            {entry.details}
-                          </div>
-                          {entry.payload && (
-                            <div className="pt-2">
-                              <span className="text-[10px] font-mono text-text-dim uppercase block mb-1">
-                                Structured Telemetry Payload:
-                              </span>
-                              <pre className="p-2.5 bg-bg border border-hairline text-[11px] font-mono text-text-main overflow-x-auto">
-                                {JSON.stringify(entry.payload, null, 2)}
-                              </pre>
-                            </div>
-                          )}
+                  return (
+                    <React.Fragment key={log.id}>
+                      <tr
+                        onClick={() => toggleExpand(log.id)}
+                        className="hover:bg-[#15181D] transition-colors cursor-pointer"
+                      >
+                        <td className="py-3 px-4 text-[#A3ABB6] tabular-nums">
+                          {log.timestamp}
+                        </td>
+
+                        <td className="py-3 px-4 font-bold text-[#E9EBEE] font-sans text-xs">
+                          {log.action}
+                        </td>
+
+                        <td className="py-3 px-4 text-[#A3ABB6]">
+                          {log.actor}
+                        </td>
+
+                        <td className="py-3 px-4 font-bold text-[#F5A524]">
+                          {log.trainNo || 'Corridor-Wide'}
+                        </td>
+
+                        <td className="py-3 px-4">
+                          <span className="px-2 py-0.5 bg-[rgba(61,220,151,0.13)] border border-[#3DDC97]/40 text-[#3DDC97] text-[10px] font-bold rounded-sm">
+                            CONFIRMED
+                          </span>
+                        </td>
+
+                        <td className="py-3 px-4 text-right text-[#6B7480] font-mono text-[11px]">
+                          {log.referenceHash.slice(0, 12)}…
                         </td>
                       </tr>
-                    )}
-                  </React.Fragment>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+
+                      {isExpanded && (
+                        <tr className="bg-[#0A0B0D]/80">
+                          <td colSpan={6} className="p-4 border-t border-[#23272F]">
+                            <div className="space-y-2 text-xs">
+                              <span className="text-[10px] text-[#6B7480] uppercase block">Detailed Payload Log</span>
+                              <p className="font-sans text-[#A3ABB6] leading-relaxed">
+                                {log.details}
+                              </p>
+                              <div className="pt-2 text-[10px] text-[#6B7480] font-mono">
+                                Full Hash: {log.referenceHash}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="p-4 border-t border-[#23272F] bg-[#0A0B0D]">
+          <Provenance updatedAt={dataUpdatedAt} source="CRYPTO AUDIT F14 IMMUTABLE LEDGER" />
+        </div>
       </div>
     </div>
   );

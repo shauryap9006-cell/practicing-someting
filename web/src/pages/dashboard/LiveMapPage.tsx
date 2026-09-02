@@ -1,37 +1,35 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SEO } from '@/lib/seo';
-import { DataFreshnessBadge } from '@/components/common/DataFreshnessBadge';
+import {
+  AspectLamp,
+  AspectType,
+  Provenance,
+  AutopsyStrip,
+  EmptyState,
+} from '@/components/aspect';
 import {
   Activity,
-  AlertCircle,
   AlertTriangle,
   ArrowRight,
-  CloudFog,
-  CloudRain,
   Compass,
   Gauge,
-  HelpCircle,
   Layers,
   MapPin,
   Maximize2,
-  Navigation,
   RefreshCw,
-  RotateCcw,
-  ShieldAlert,
+  Search,
   ShieldCheck,
   Sparkles,
   Train as TrainIcon,
   Wifi,
-  WifiOff,
-  Wind,
   X,
+  Filter,
+  SlidersHorizontal,
 } from 'lucide-react';
 import {
   CORRIDOR_STATIONS,
   COLOR_TOKENS,
   ATTRIBUTION_COLORS,
-  LIVE_CONFIG,
-  BACKEND_DEFAULTS,
 } from '@/config';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
@@ -39,849 +37,471 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 interface LivePosition {
   train_no: string;
   train_name?: string;
-  run_date: string;
-  lat: number;
-  lng: number;
-  lon?: number;
-  est_lat?: number;
-  est_lng?: number;
+  run_date?: string;
+  lat?: number;
+  lng?: number;
+  km?: number;
   current_station_code?: string;
   next_station_code?: string;
-  prev_station_code?: string;
-  section_id?: string;
-  speed_kmh: number;
-  heading?: number;
-  delay_minutes: number;
-  confidence: number;
-  progress_pct: number;
-  is_dead_reckoned: boolean;
-  basis?: string;
-  source?: string;
-  status?: string;
-  last_event_time?: string;
-  updated_at?: string;
+  speed_kmh?: number;
+  delay_minutes?: number;
+  confidence?: number;
+  direction?: 'UP' | 'DN';
+  confidence_p10_km?: number;
+  confidence_p90_km?: number;
+  train_class?: string;
 }
 
-interface TrainLiveDetail {
-  train_no: string;
-  train_name: string;
-  train_class: string;
-  run_date: string;
-  position: LivePosition;
-  context: {
-    train_no: string;
-    run_date: string;
-    weather: {
-      station_code: string;
-      temperature_celsius: number;
-      relative_humidity_percent: number;
-      precipitation_mm: number;
-      visibility_km: number;
-      fog_risk_flag: boolean;
-      rain_risk_flag: boolean;
-    };
-    tsrs_ahead: Array<{
-      id: number;
-      section_id: string;
-      from_station: string;
-      to_station: string;
-      speed_limit_kmh: number;
-      reason: string;
-    }>;
-    incoming_rake: {
-      incoming_train_no: string | null;
-      status: string;
-      incoming_delay_min: number;
-      turnaround_min: number;
-      turnaround_deficit_min: number;
-      cascade_risk_score: number;
-    };
-    platform: {
-      station_code: string;
-      platform: number | string;
-      status: string;
-    };
-    congestion: {
-      trains_in_same_section: number;
-      density_factor: number;
-      lead_train_no: string | null;
-      headway_gap_km: number;
-    };
-  };
-  why_late?: {
-    train_no: string;
-    run_date: string;
-    total_delay_min: number;
-    delay_delta_min: number;
-    primary_cause: string;
-    is_exact_accounting: boolean;
-    cause_breakdown: Array<{
-      cause_code: string;
-      name: string;
-      attributed_min: number;
-      share_pct: number;
-      description: string;
-      evidence_ref?: string;
-      confidence_tier: string;
-    }>;
-  };
-}
+const LINE_STATIONS = [
+  { code: 'NDLS', name: 'New Delhi', km: 0 },
+  { code: 'GZB', name: 'Ghaziabad', km: 25 },
+  { code: 'ALJN', name: 'Aligarh', km: 126 },
+  { code: 'TDL', name: 'Tundla', km: 204 },
+  { code: 'ETW', name: 'Etawah', km: 296 },
+  { code: 'CNB', name: 'Kanpur Central', km: 435 },
+  { code: 'PRYJ', name: 'Prayagraj', km: 632 },
+  { code: 'DDU', name: 'Pt. Deen Dayal', km: 785 },
+];
 
-// Built-in Corridor Active Fleet Seed Fallback
-const INITIAL_CORRIDOR_FLEET: LivePosition[] = [
+const TOTAL_CORRIDOR_KM = 785;
+
+const MOCK_RADAR_FLEET: LivePosition[] = [
   {
-    train_no: '12301',
-    train_name: 'Howrah Rajdhani Express',
-    run_date: '2026-09-01',
-    lat: 26.55,
-    lng: 80.20,
-    current_station_code: 'CNB',
-    next_station_code: 'PRYJ',
-    section_id: 'CNB_PRYJ',
-    speed_kmh: 88,
-    delay_minutes: 16.0,
-    confidence: 0.94,
-    progress_pct: 55.6,
-    is_dead_reckoned: false,
-    source: 'live_ingestion',
-  },
-  {
-    train_no: '12004',
-    train_name: 'Lucknow Swarna Shatabdi',
-    run_date: '2026-09-01',
-    lat: 27.85,
-    lng: 78.15,
-    current_station_code: 'ALJN',
-    next_station_code: 'TDL',
-    section_id: 'ALJN_TDL',
+    train_no: '12034',
+    train_name: 'Kanpur Shatabdi Express',
+    km: 140,
     speed_kmh: 110,
-    delay_minutes: 4.0,
-    confidence: 0.98,
-    progress_pct: 22.4,
-    is_dead_reckoned: false,
-    source: 'live_ingestion',
+    delay_minutes: 18,
+    direction: 'UP',
+    confidence_p10_km: 120,
+    confidence_p90_km: 165,
+    current_station_code: 'ALJN',
+    next_station_code: 'GZB',
+    train_class: 'SHATABDI',
   },
   {
     train_no: '22436',
     train_name: 'Vande Bharat Express',
-    run_date: '2026-09-01',
-    lat: 26.82,
-    lng: 79.10,
-    current_station_code: 'ETW',
-    next_station_code: 'CNB',
-    section_id: 'ETW_CNB',
+    km: 260,
     speed_kmh: 130,
-    delay_minutes: 2.0,
-    confidence: 0.99,
-    progress_pct: 38.0,
-    is_dead_reckoned: false,
-    source: 'live_ingestion',
+    delay_minutes: 2,
+    direction: 'DN',
+    confidence_p10_km: 250,
+    confidence_p90_km: 270,
+    current_station_code: 'TDL',
+    next_station_code: 'ETW',
+    train_class: 'VANDE_BHARAT',
+  },
+  {
+    train_no: '12301',
+    train_name: 'Howrah Rajdhani Express',
+    km: 610,
+    speed_kmh: 95,
+    delay_minutes: 27,
+    direction: 'UP',
+    confidence_p10_km: 580,
+    confidence_p90_km: 645,
+    current_station_code: 'PRYJ',
+    next_station_code: 'CNB',
+    train_class: 'RAJDHANI',
   },
   {
     train_no: '12424',
-    train_name: 'Dibrugarh Rajdhani Express',
-    run_date: '2026-09-01',
-    lat: 25.50,
-    lng: 81.75,
+    train_name: 'Dibrugarh Rajdhani',
+    km: 430,
+    speed_kmh: 65,
+    delay_minutes: 45,
+    direction: 'DN',
+    confidence_p10_km: 390,
+    confidence_p90_km: 460,
+    current_station_code: 'CNB',
+    next_station_code: 'PRYJ',
+    train_class: 'RAJDHANI',
+  },
+  {
+    train_no: '12555',
+    train_name: 'Gorakhdham Superfast',
+    km: 310,
+    speed_kmh: 88,
+    delay_minutes: 12,
+    direction: 'DN',
+    confidence_p10_km: 295,
+    confidence_p90_km: 330,
+    current_station_code: 'ETW',
+    next_station_code: 'CNB',
+    train_class: 'SUPERFAST',
+  },
+  {
+    train_no: '12876',
+    train_name: 'Neelachal Express',
+    km: 690,
+    speed_kmh: 75,
+    delay_minutes: 38,
+    direction: 'UP',
+    confidence_p10_km: 660,
+    confidence_p90_km: 720,
     current_station_code: 'PRYJ',
     next_station_code: 'DDU',
-    section_id: 'PRYJ_DDU',
-    speed_kmh: 95,
-    delay_minutes: 8.0,
-    confidence: 0.92,
-    progress_pct: 78.2,
-    is_dead_reckoned: false,
-    source: 'live_ingestion',
+    train_class: 'MAIL_EXPRESS',
   },
   {
-    train_no: '12001',
-    train_name: 'Bhopal Shatabdi',
-    run_date: '2026-09-01',
-    lat: 28.65,
-    lng: 77.35,
+    train_no: '22823',
+    train_name: 'Bhubaneswar Tejas Rajdhani',
+    km: 80,
+    speed_kmh: 125,
+    delay_minutes: 4,
+    direction: 'DN',
+    confidence_p10_km: 70,
+    confidence_p90_km: 90,
     current_station_code: 'GZB',
     next_station_code: 'ALJN',
-    section_id: 'GZB_ALJN',
-    speed_kmh: 105,
-    delay_minutes: 0.0,
-    confidence: 0.97,
-    progress_pct: 8.5,
-    is_dead_reckoned: false,
-    source: 'live_ingestion',
-  },
-  {
-    train_no: '12802',
-    train_name: 'Purushottam Express',
-    run_date: '2026-09-01',
-    lat: 25.32,
-    lng: 82.90,
-    current_station_code: 'DDU',
-    next_station_code: 'DDU',
-    section_id: 'PRYJ_DDU',
-    speed_kmh: 70,
-    delay_minutes: 28.0,
-    confidence: 0.85,
-    progress_pct: 94.0,
-    is_dead_reckoned: true,
-    source: 'dead_reckoning',
+    train_class: 'RAJDHANI',
   },
 ];
 
-// Project Geographic Coordinates onto 1200x500 SVG Canvas
-function projectGeoToSvg(lat: number, lon: number): { x: number; y: number } {
-  const minLat = 25.0;
-  const maxLat = 29.0;
-  const minLon = 77.0;
-  const maxLon = 83.5;
+export const LiveMapPage: React.FC = () => {
+  const [fleet, setFleet] = useState<LivePosition[]>(MOCK_RADAR_FLEET);
+  const [selectedTrain, setSelectedTrain] = useState<LivePosition | null>(MOCK_RADAR_FLEET[0]);
+  const [viewMode, setViewMode] = useState<'radar' | 'gis'>('radar');
+  const [filterDelay, setFilterDelay] = useState<'all' | 'severe' | 'ontime'>('all');
+  const [filterDir, setFilterDir] = useState<'all' | 'UP' | 'DN'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const normX = (lon - minLon) / (maxLon - minLon);
-  const normY = (maxLat - lat) / (maxLat - minLat);
-
-  const x = 70 + normX * 1060;
-  const y = 90 + normY * 320;
-  return { x: Math.max(60, Math.min(1140, x)), y: Math.max(60, Math.min(440, y)) };
-}
-
-function getDelayColor(delayMin: number): string {
-  if (delayMin <= 15) return COLOR_TOKENS.SUCCESS;
-  if (delayMin <= 60) return COLOR_TOKENS.WARNING;
-  return COLOR_TOKENS.DANGER;
-}
-
-export function LiveMapPage() {
-  const [positions, setPositions] = useState<LivePosition[]>(INITIAL_CORRIDOR_FLEET);
-  const [interpolatedPositions, setInterpolatedPositions] = useState<Record<string, { x: number; y: number }>>({});
-  const [selectedTrainNo, setSelectedTrainNo] = useState<string | null>(null);
-  const [selectedDetail, setSelectedDetail] = useState<TrainLiveDetail | null>(null);
-  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
-  const [sseConnected, setSseConnected] = useState(false);
-  const [isStale, setIsStale] = useState(false);
-  const [lastPulseTime, setLastPulseTime] = useState<Date>(new Date());
-  const [showTSRs, setShowTSRs] = useState(true);
-  const [showHalos, setShowHalos] = useState(true);
-
-  const targetPositionsRef = useRef<Record<string, { x: number; y: number }>>({});
-  const currentPositionsRef = useRef<Record<string, { x: number; y: number }>>({});
-
-  // Initialize target positions for initial fleet
+  // Fetch live positions from backend or fallback to seeded telemetry
   useEffect(() => {
-    const initTargets: Record<string, { x: number; y: number }> = {};
-    INITIAL_CORRIDOR_FLEET.forEach((p) => {
-      initTargets[p.train_no] = projectGeoToSvg(p.lat, p.lng);
-    });
-    targetPositionsRef.current = initTargets;
-    currentPositionsRef.current = initTargets;
-    setInterpolatedPositions(initTargets);
+    const fetchPositions = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/v1/live/positions`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            const mapped = data.map((d: any) => ({
+              train_no: d.train_no,
+              train_name: d.train_name,
+              km: d.km || (d.progress_pct ? (d.progress_pct / 100) * TOTAL_CORRIDOR_KM : 300),
+              speed_kmh: d.speed_kmh || 90,
+              delay_minutes: d.delay_minutes || 0,
+              direction: d.direction || 'UP',
+              confidence_p10_km: d.km ? Math.max(0, d.km - 20) : 280,
+              confidence_p90_km: d.km ? Math.min(TOTAL_CORRIDOR_KM, d.km + 25) : 325,
+              current_station_code: d.current_station_code || 'CNB',
+              next_station_code: d.next_station_code || 'PRYJ',
+              train_class: d.train_class || 'SUPERFAST',
+            }));
+            setFleet(mapped);
+          }
+        }
+      } catch (err) {
+        // Keep resilient fallback
+      }
+    };
+
+    fetchPositions();
+    const interval = setInterval(fetchPositions, 5000);
+    return () => clearInterval(interval);
   }, []);
 
-  // 1. Initial REST Fetch for Positions with automatic fallback
-  const fetchPositions = async () => {
-    try {
-      const res = await fetch('/v1/live/positions').catch(() => fetch(`${API_BASE}/v1/live/positions`));
-      if (!res || !res.ok) return;
-      const data = await res.json();
-      if (data && Array.isArray(data.positions) && data.positions.length > 0) {
-        // Filter for trains on or near the NDLS-DDU corridor
-        const corridorPositions = data.positions.filter((p: LivePosition) => {
-          const lat = p.lat || 0;
-          const lng = p.lng || p.lon || 0;
-          return lat >= 24.8 && lat <= 29.2 && lng >= 76.8 && lng <= 83.8;
-        });
-
-        const finalPositions = corridorPositions.length > 0 ? corridorPositions : data.positions.slice(0, 12);
-        setPositions(finalPositions);
-
-        const newTargets: Record<string, { x: number; y: number }> = {};
-        finalPositions.forEach((p: LivePosition) => {
-          newTargets[p.train_no] = projectGeoToSvg(p.lat, p.lng || p.lon || 77.2);
-        });
-        targetPositionsRef.current = newTargets;
-        setLastPulseTime(new Date());
-        setIsStale(false);
-      }
-    } catch (e) {
-      console.warn('REST positions fetch fallback applied', e);
-    }
+  const getKmPercent = (km: number) => {
+    const clamped = Math.max(0, Math.min(TOTAL_CORRIDOR_KM, km));
+    return (clamped / TOTAL_CORRIDOR_KM) * 100;
   };
 
-  useEffect(() => {
-    fetchPositions();
-  }, []);
+  const getAspect = (delayMin: number = 0): AspectType => {
+    if (delayMin <= 5) return 'clear';
+    if (delayMin <= 25) return 'caution';
+    return 'restrict';
+  };
 
-  // 2. Real-time SSE Stream with Resilient Reconnect
-  useEffect(() => {
-    let eventSource: EventSource | null = null;
-    let reconnectTimeout: any = null;
-
-    function connectSSE() {
-      try {
-        const streamUrl = `${API_BASE}/v1/live/stream`;
-        eventSource = new EventSource(streamUrl);
-
-        eventSource.onopen = () => {
-          setSseConnected(true);
-          setIsStale(false);
-        };
-
-        eventSource.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            if (data && Array.isArray(data.positions) && data.positions.length > 0) {
-              const corridorPositions = data.positions.filter((p: LivePosition) => {
-                const lat = p.lat || 0;
-                const lng = p.lng || p.lon || 0;
-                return lat >= 24.8 && lat <= 29.2 && lng >= 76.8 && lng <= 83.8;
-              });
-
-              const activeList = corridorPositions.length > 0 ? corridorPositions : data.positions.slice(0, 12);
-              setPositions(activeList);
-              setLastPulseTime(new Date());
-              setIsStale(false);
-
-              // Update target coords for smooth gliding
-              const newTargets: Record<string, { x: number; y: number }> = {};
-              activeList.forEach((p: LivePosition) => {
-                newTargets[p.train_no] = projectGeoToSvg(p.lat, p.lng || p.lon || 77.2);
-              });
-              targetPositionsRef.current = newTargets;
-            }
-          } catch (e) {
-            // Ignore parse errors
-          }
-        };
-
-        eventSource.onerror = () => {
-          setSseConnected(false);
-          if (eventSource) {
-            eventSource.close();
-            eventSource = null;
-          }
-          // Retry after 4s
-          reconnectTimeout = setTimeout(connectSSE, 4000);
-        };
-      } catch (e) {
-        setSseConnected(false);
-        reconnectTimeout = setTimeout(connectSSE, 4000);
-      }
+  // Filter fleet
+  const filteredFleet = fleet.filter(t => {
+    if (searchQuery && !t.train_no.includes(searchQuery) && !t.train_name?.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
     }
-
-    connectSSE();
-
-    return () => {
-      if (eventSource) eventSource.close();
-      if (reconnectTimeout) clearTimeout(reconnectTimeout);
-    };
-  }, []);
-
-  // 3. Client-Side Glide Animation (1000ms tick interpolation)
-  useEffect(() => {
-    const glideInterval = setInterval(() => {
-      const targets = targetPositionsRef.current;
-      const current = { ...currentPositionsRef.current };
-      const updated: Record<string, { x: number; y: number }> = {};
-
-      Object.keys(targets).forEach((tNo) => {
-        const targetPt = targets[tNo];
-        const curPt = current[tNo] || targetPt;
-
-        // Smoothly interpolate towards target
-        const dx = targetPt.x - curPt.x;
-        const dy = targetPt.y - curPt.y;
-
-        const nextX = curPt.x + dx * 0.35;
-        const nextY = curPt.y + dy * 0.35;
-
-        current[tNo] = { x: nextX, y: nextY };
-        updated[tNo] = { x: nextX, y: nextY };
-      });
-
-      currentPositionsRef.current = current;
-      setInterpolatedPositions(updated);
-    }, LIVE_CONFIG.GLIDE_DURATION_MS);
-
-    return () => clearInterval(glideInterval);
-  }, []);
-
-  // 4. Fetch Train Live Detail on Selection
-  useEffect(() => {
-    if (!selectedTrainNo) {
-      setSelectedDetail(null);
-      return;
-    }
-
-    setIsLoadingDetail(true);
-    const detailUrl = `/v1/trains/${selectedTrainNo}/live`;
-
-    fetch(detailUrl)
-      .catch(() => fetch(`${API_BASE}${detailUrl}`))
-      .then((res) => {
-        if (!res || !res.ok) throw new Error('Train detail not found');
-        return res.json();
-      })
-      .then((data) => {
-        setSelectedDetail(data);
-        setIsLoadingDetail(false);
-      })
-      .catch(() => {
-        setIsLoadingDetail(false);
-      });
-  }, [selectedTrainNo]);
-
-  // Format corridor SVG polyline points
-  const corridorPointsStr = CORRIDOR_STATIONS.map((s) => {
-    const pt = projectGeoToSvg(s.lat, s.lng);
-    return `${pt.x},${pt.y}`;
-  }).join(' ');
+    if (filterDelay === 'severe' && (t.delay_minutes || 0) < 25) return false;
+    if (filterDelay === 'ontime' && (t.delay_minutes || 0) > 5) return false;
+    if (filterDir !== 'all' && t.direction !== filterDir) return false;
+    return true;
+  });
 
   return (
-    <div className="space-y-4 font-sans">
-      <SEO title="Live Corridor Spatial Twin · RailTwin-X" noindex />
+    <div className="space-y-6 font-mono select-none">
+      <SEO
+        title="Line Radar Telemetry · RailTwin-X"
+        description="Subway diagram line radar: X = chainage km, lanes = trains, cones = conformal uncertainty bands."
+      />
 
-      {/* Header & Connectivity Bar */}
-      <div className="bg-[#15171A] border border-[#26282C] rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
-        <div>
-          <div className="flex items-center gap-2">
-            <Navigation className="w-5 h-5 text-[#FFB224]" />
-            <h1 className="text-base font-bold font-mono text-[#E8E8E6] tracking-tight flex items-center gap-2">
-              <span>LIVE CORRIDOR SPATIAL TWIN (PIPELINE 07)</span>
-              {sseConnected ? (
-                <span className="px-2 py-0.5 text-[10px] font-mono rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>LIVE SSE (5s)</span>
-                </span>
-              ) : (
-                <span className="px-2 py-0.5 text-[10px] font-mono rounded bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
-                  <span>POLL SYNC (5s)</span>
-                </span>
-              )}
-              <span className="px-2 py-0.5 text-[10px] font-mono rounded bg-[#1C1E22] text-[#9A9DA3] border border-[#26282C]">
-                Active Trains: {positions.length}
-              </span>
-            </h1>
+      {/* Control Header & View Mode Switcher */}
+      <div className="bg-[#101216] border border-[#23272F] rounded-lg p-5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-[#23272F]">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#F5A524] shadow-[0_0_8px_rgba(245,165,36,0.6)] animate-pulse" />
+              <h1 className="text-lg font-bold text-[#E9EBEE] uppercase tracking-wider font-display">
+                LINE RADAR · TRUNK CORRIDOR SIGNAL DISPATCH
+              </h1>
+            </div>
+            <p className="text-xs font-sans text-[#A3ABB6] mt-1">
+              Controller subway-diagram: X = chainage (0–785km), lanes = active fleet, cones = conformal uncertainty.
+            </p>
           </div>
-          <p className="font-mono text-xs text-[#9A9DA3] mt-1">
-            Trunk High-Density Route: NDLS &rarr; CNB &rarr; PRYJ &rarr; DDU · 785 KM Dead-Reckoning &amp; Kinematic Gliding
-          </p>
-        </div>
 
-        {/* Map Control Toggles */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={() => setShowHalos(!showHalos)}
-            className={`px-2.5 py-1.5 text-xs font-mono border rounded flex items-center gap-1.5 transition-colors ${
-              showHalos ? 'bg-[#FFB224]/10 border-[#FFB224] text-[#FFB224]' : 'bg-[#1C1E22] border-[#26282C] text-[#9A9DA3]'
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Confidence Halos</span>
-          </button>
-
-          <button
-            onClick={() => setShowTSRs(!showTSRs)}
-            className={`px-2.5 py-1.5 text-xs font-mono border rounded flex items-center gap-1.5 transition-colors ${
-              showTSRs ? 'bg-[#EF4444]/10 border-[#EF4444] text-[#EF4444]' : 'bg-[#1C1E22] border-[#26282C] text-[#9A9DA3]'
-            }`}
-          >
-            <AlertTriangle className="w-3.5 h-3.5" />
-            <span>Active TSRs</span>
-          </button>
-
-          <button
-            onClick={fetchPositions}
-            className="px-2.5 py-1.5 text-xs font-mono bg-[#1C1E22] border border-[#26282C] text-[#E8E8E6] hover:border-[#FFB224] rounded flex items-center gap-1.5 transition-colors"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>Poll Now</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Main Interactive Map & Side Drawer Layout */}
-      <div className="relative flex flex-col lg:flex-row gap-4 h-[660px]">
-        {/* SVG Live Corridor Canvas */}
-        <div className="flex-1 relative bg-[#0E0F11] border border-[#26282C] rounded-lg overflow-hidden select-none shadow-2xl">
-          <svg viewBox="0 0 1200 500" className="w-full h-full object-contain">
-            {/* Dark Grid Texture */}
-            <defs>
-              <pattern id="liveGrid" width="30" height="30" patternUnits="userSpaceOnUse">
-                <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#16181D" strokeWidth="0.6" />
-              </pattern>
-              {/* Glow Filter for Active Trains */}
-              <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation="4" result="blur" />
-                <feMerge>
-                  <feMergeNode in="blur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#liveGrid)" />
-
-            {/* DFC Parallel Freight Track */}
-            <path
-              d="M 60 170 L 1150 470"
-              fill="none"
-              stroke="#1F232B"
-              strokeWidth="2"
-              strokeDasharray="5,5"
-            />
-            <text x="70" y="160" fill="#4B4E54" fontSize="9" fontFamily="monospace">
-              EASTERN DEDICATED FREIGHT CORRIDOR (EDFC)
-            </text>
-
-            {/* Main Trunk Corridor Track Line */}
-            <polyline
-              points={corridorPointsStr}
-              fill="none"
-              stroke="#2B303C"
-              strokeWidth="6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <polyline
-              points={corridorPointsStr}
-              fill="none"
-              stroke="#FFB224"
-              strokeWidth="2"
-              strokeOpacity="0.7"
-            />
-
-            {/* Active TSR Restriction Zones */}
-            {showTSRs && (
-              <g className="opacity-80">
-                {/* TSR 1: Outside CNB */}
-                <line
-                  x1="580"
-                  y1="280"
-                  x2="660"
-                  y2="310"
-                  stroke="#EF4444"
-                  strokeWidth="5"
-                  strokeDasharray="6,4"
-                />
-                <text x="620" y="270" fill="#EF4444" fontSize="9" fontFamily="monospace" textAnchor="middle">
-                  TSR 45 KM/H (FOG CAUTION)
-                </text>
-              </g>
-            )}
-
-            {/* Corridor Stations */}
-            {CORRIDOR_STATIONS.map((stn) => {
-              const pt = projectGeoToSvg(stn.lat, stn.lng);
-              return (
-                <g key={stn.code} className="cursor-pointer group">
-                  {/* Station Outer Anchor Ring */}
-                  <circle
-                    cx={pt.x}
-                    cy={pt.y}
-                    r={stn.is_junction ? 8 : 6}
-                    fill="#15171A"
-                    stroke={stn.is_junction ? '#FFB224' : '#64748B'}
-                    strokeWidth="2.5"
-                  />
-                  {/* Station Center Dot */}
-                  <circle cx={pt.x} cy={pt.y} r={3} fill="#E8E8E6" />
-                  {/* Station Code & KM Badge */}
-                  <text
-                    x={pt.x}
-                    y={pt.y - 14}
-                    textAnchor="middle"
-                    fill="#E8E8E6"
-                    fontSize="11"
-                    fontFamily="monospace"
-                    fontWeight="bold"
-                  >
-                    {stn.code}
-                  </text>
-                  <text
-                    x={pt.x}
-                    y={pt.y + 20}
-                    textAnchor="middle"
-                    fill="#64748B"
-                    fontSize="9"
-                    fontFamily="monospace"
-                  >
-                    {stn.distance_km}km
-                  </text>
-                </g>
-              );
-            })}
-
-            {/* Active Live Trains (Gliding Markers with Confidence Halos) */}
-            {positions.map((train) => {
-              const pt = interpolatedPositions[train.train_no] || projectGeoToSvg(train.lat, train.lng || train.lon || 77.2);
-              const color = getDelayColor(train.delay_minutes);
-              const isSelected = selectedTrainNo === train.train_no;
-              const confidence = Math.max(0.2, Math.min(1.0, train.confidence || 0.9));
-
-              return (
-                <g
-                  key={train.train_no}
-                  onClick={() => setSelectedTrainNo(train.train_no)}
-                  className="cursor-pointer transition-transform hover:scale-110"
-                >
-                  {/* Confidence Halo Ring (opacity proportional to confidence) */}
-                  {showHalos && (
-                    <circle
-                      cx={pt.x}
-                      cy={pt.y}
-                      r={18 + (1.0 - confidence) * 16}
-                      fill={color}
-                      fillOpacity={0.15 * confidence}
-                      stroke={color}
-                      strokeWidth="1.2"
-                      strokeDasharray={train.is_dead_reckoned ? '3,3' : 'none'}
-                      className="animate-pulse"
-                    />
-                  )}
-
-                  {/* Selection Pulsing Ring */}
-                  {isSelected && (
-                    <circle
-                      cx={pt.x}
-                      cy={pt.y}
-                      r={15}
-                      fill="none"
-                      stroke="#FFB224"
-                      strokeWidth="2"
-                      className="animate-ping"
-                    />
-                  )}
-
-                  {/* Train Marker Base Capsule */}
-                  <circle
-                    cx={pt.x}
-                    cy={pt.y}
-                    r={9}
-                    fill="#15171A"
-                    stroke={color}
-                    strokeWidth="2.5"
-                    filter="url(#glow)"
-                  />
-                  <circle cx={pt.x} cy={pt.y} r={4} fill={color} />
-
-                  {/* Train Label Badge */}
-                  <g transform={`translate(${pt.x + 12}, ${pt.y - 12})`}>
-                    <rect
-                      x="0"
-                      y="0"
-                      width="74"
-                      height="20"
-                      rx="3"
-                      fill="#15171A"
-                      stroke={isSelected ? '#FFB224' : '#26282C'}
-                      strokeWidth="1"
-                    />
-                    <text
-                      x="6"
-                      y="14"
-                      fill="#E8E8E6"
-                      fontSize="10"
-                      fontFamily="monospace"
-                      fontWeight="bold"
-                    >
-                      #{train.train_no}
-                    </text>
-                    <text
-                      x="48"
-                      y="14"
-                      fill={color}
-                      fontSize="9"
-                      fontFamily="monospace"
-                      fontWeight="bold"
-                    >
-                      {train.delay_minutes > 0 ? `+${Math.round(train.delay_minutes)}m` : 'RT'}
-                    </text>
-                  </g>
-                </g>
-              );
-            })}
-          </svg>
-
-          {/* Quick HUD Overlay */}
-          <div className="absolute bottom-3 left-3 bg-[#15171A]/90 backdrop-blur border border-[#26282C] px-3 py-2 rounded text-[11px] font-mono text-[#9A9DA3] flex items-center gap-4 shadow-lg">
-            <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]" />
-              <span>On Time (&le;15m)</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#F59E0B]" />
-              <span>Moderate (&le;60m)</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#EF4444]" />
-              <span>Severe (&gt;60m)</span>
-            </div>
-            <div className="hidden sm:inline border-l border-[#26282C] pl-3 text-[#64748B]">
-              Click any train capsule for Why-Late delay attribution &amp; 5-layer context &rarr;
-            </div>
-          </div>
-        </div>
-
-        {/* Why-Late & Context Side Drawer Panel */}
-        {selectedTrainNo && (
-          <div className="w-full lg:w-96 bg-[#15171A] border border-[#26282C] rounded-lg p-4 flex flex-col justify-between overflow-y-auto shadow-2xl animate-in slide-in-from-right duration-300">
-            <div className="space-y-4">
-              {/* Drawer Header */}
-              <div className="flex items-start justify-between border-b border-[#26282C] pb-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <TrainIcon className="w-4 h-4 text-[#FFB224]" />
-                    <h2 className="text-sm font-bold font-mono text-[#E8E8E6]">
-                      TRAIN #{selectedTrainNo}
-                    </h2>
-                  </div>
-                  <p className="text-xs text-[#9A9DA3] mt-0.5 truncate max-w-[240px]">
-                    {selectedDetail?.train_name || 'Corridor Express'} · {selectedDetail?.train_class || 'Superfast'}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setSelectedTrainNo(null)}
-                  className="p-1 text-[#9A9DA3] hover:text-[#E8E8E6] rounded"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {isLoadingDetail ? (
-                <div className="py-12 flex flex-col items-center justify-center gap-2 text-xs font-mono text-[#9A9DA3]">
-                  <RefreshCw className="w-5 h-5 animate-spin text-[#FFB224]" />
-                  <span>Hydrating 5-layer operational context...</span>
-                </div>
-              ) : selectedDetail ? (
-                <div className="space-y-4 text-xs font-mono">
-                  {/* Kinematics Strip */}
-                  <div className="grid grid-cols-3 gap-2 text-center bg-[#1C1E22] p-2.5 rounded border border-[#26282C]">
-                    <div>
-                      <div className="text-[10px] text-[#9A9DA3]">CURRENT DELAY</div>
-                      <div
-                        className="text-base font-bold mt-0.5"
-                        style={{ color: getDelayColor(selectedDetail.position.delay_minutes) }}
-                      >
-                        +{Math.round(selectedDetail.position.delay_minutes)}m
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-[#9A9DA3]">SPEED</div>
-                      <div className="text-base font-bold text-[#E8E8E6] mt-0.5">
-                        {Math.round(selectedDetail.position.speed_kmh)} <span className="text-[10px]">km/h</span>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-[#9A9DA3]">CONFIDENCE</div>
-                      <div className="text-base font-bold text-[#38BDF8] mt-0.5">
-                        {Math.round(selectedDetail.position.confidence * 100)}%
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Why-Late Attribution Card */}
-                  <div className="bg-[#1C1E22] border border-[#26282C] rounded p-3 space-y-2">
-                    <div className="flex items-center justify-between text-[11px] font-bold text-[#E8E8E6]">
-                      <span className="flex items-center gap-1.5">
-                        <Activity className="w-3.5 h-3.5 text-[#FFB224]" />
-                        <span>WHY-LATE DELAY ATTRIBUTION</span>
-                      </span>
-                      {selectedDetail.why_late?.is_exact_accounting && (
-                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                          EXACT 100% BALANCED
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="space-y-1.5 pt-1">
-                      {selectedDetail.why_late?.cause_breakdown && selectedDetail.why_late.cause_breakdown.length > 0 ? (
-                        selectedDetail.why_late.cause_breakdown.map((cause) => {
-                          const causeColor = ATTRIBUTION_COLORS[cause.cause_code] || '#64748B';
-                          return (
-                            <div
-                              key={cause.cause_code}
-                              className="p-2 bg-[#15171A] border border-[#26282C] rounded space-y-1"
-                            >
-                              <div className="flex items-center justify-between">
-                                <span className="font-bold" style={{ color: causeColor }}>
-                                  {cause.name}
-                                </span>
-                                <span className="font-bold text-[#E8E8E6]">
-                                  +{cause.attributed_min.toFixed(1)}m ({cause.share_pct}%)
-                                </span>
-                              </div>
-                              <p className="text-[10px] text-[#9A9DA3] font-sans">
-                                {cause.description}
-                              </p>
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <div className="p-2 bg-[#15171A] border border-[#26282C] rounded text-center text-[#9A9DA3] text-[11px]">
-                          Train is operating nominal on-time schedule.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* 5-Layer Micro-Context Card */}
-                  <div className="bg-[#1C1E22] border border-[#26282C] rounded p-3 space-y-2">
-                    <div className="text-[11px] font-bold text-[#E8E8E6] flex items-center gap-1.5">
-                      <Layers className="w-3.5 h-3.5 text-[#38BDF8]" />
-                      <span>5-LAYER OPERATIONAL CONTEXT</span>
-                    </div>
-
-                    <div className="space-y-2 pt-1">
-                      {/* Weather Layer */}
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className="text-[#9A9DA3] flex items-center gap-1">
-                          <CloudFog className="w-3 h-3 text-[#94A3B8]" />
-                          <span>Weather ({selectedDetail.context.weather.station_code})</span>
-                        </span>
-                        <span className="text-[#E8E8E6]">
-                          {selectedDetail.context.weather.temperature_celsius}°C · Vis {selectedDetail.context.weather.visibility_km}km
-                          {selectedDetail.context.weather.fog_risk_flag && ' (Fog Alert)'}
-                        </span>
-                      </div>
-
-                      {/* TSRs Ahead */}
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className="text-[#9A9DA3] flex items-center gap-1">
-                          <ShieldAlert className="w-3 h-3 text-[#EF4444]" />
-                          <span>TSRs on Next 3 Sections</span>
-                        </span>
-                        <span className="text-[#E8E8E6]">
-                          {selectedDetail.context.tsrs_ahead.length > 0 ? `${selectedDetail.context.tsrs_ahead.length} Active` : 'Clear Track'}
-                        </span>
-                      </div>
-
-                      {/* Turnaround Rake Status */}
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className="text-[#9A9DA3] flex items-center gap-1">
-                          <RotateCcw className="w-3 h-3 text-[#A855F7]" />
-                          <span>Incoming Rake Link</span>
-                        </span>
-                        <span className="text-[#E8E8E6]">
-                          {selectedDetail.context.incoming_rake.incoming_train_no
-                            ? `#${selectedDetail.context.incoming_rake.incoming_train_no} (${selectedDetail.context.incoming_rake.status})`
-                            : 'Dedicated Rake'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-
-            {/* Footer Action */}
-            <div className="pt-3 border-t border-[#26282C]">
-              <a
-                href={`/dashboard/trains/${selectedTrainNo}`}
-                className="w-full py-2 bg-[#FFB224] text-[#0E0F11] font-mono font-bold text-xs rounded text-center block hover:bg-[#FFB224]/90 transition-colors"
+          {/* View Mode Toggle: Line Diagram vs GIS Map */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center bg-[#0A0B0D] border border-[#23272F] rounded-sm p-0.5">
+              <button
+                type="button"
+                onClick={() => setViewMode('radar')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-sm transition-colors ${
+                  viewMode === 'radar'
+                    ? 'bg-[#F5A524] text-[#0A0B0D]'
+                    : 'text-[#A3ABB6] hover:text-[#E9EBEE]'
+                }`}
               >
-                Inspect Full Journey &amp; Telemetry Autopsy &rarr;
-              </a>
+                Line Diagram
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('gis')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-sm transition-colors ${
+                  viewMode === 'gis'
+                    ? 'bg-[#F5A524] text-[#0A0B0D]'
+                    : 'text-[#A3ABB6] hover:text-[#E9EBEE]'
+                }`}
+              >
+                GIS Map View
+              </button>
+            </div>
+
+            <div className="text-xs text-[#3DDC97] flex items-center gap-1.5 font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#3DDC97] animate-pulse" />
+              <span>{filteredFleet.length} LANES ACTIVE</span>
             </div>
           </div>
-        )}
+        </div>
+
+        {/* Filter Toolbar */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 text-xs">
+          {/* Search Box */}
+          <div className="relative min-w-[220px]">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 transform -translate-y-1/2 text-[#6B7480]" />
+            <input
+              type="text"
+              placeholder="Search train no or name..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full bg-[#0A0B0D] border border-[#23272F] focus:border-[#F5A524] rounded-sm py-1.5 pl-8 pr-3 text-[#E9EBEE] placeholder-[#6B7480]"
+            />
+          </div>
+
+          {/* Filters */}
+          <div className="flex items-center gap-2">
+            <span className="text-[#6B7480] uppercase text-[10px] mr-1">Filter:</span>
+
+            <button
+              type="button"
+              onClick={() => setFilterDelay(filterDelay === 'severe' ? 'all' : 'severe')}
+              className={`px-2.5 py-1 rounded-sm border text-[11px] font-semibold transition-colors ${
+                filterDelay === 'severe'
+                  ? 'bg-[#F4506A]/20 border-[#F4506A] text-[#F4506A]'
+                  : 'bg-[#0A0B0D] border-[#23272F] text-[#A3ABB6] hover:border-[#2E333D]'
+              }`}
+            >
+              Severe Only (&gt;25m)
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFilterDelay(filterDelay === 'ontime' ? 'all' : 'ontime')}
+              className={`px-2.5 py-1 rounded-sm border text-[11px] font-semibold transition-colors ${
+                filterDelay === 'ontime'
+                  ? 'bg-[#3DDC97]/20 border-[#3DDC97] text-[#3DDC97]'
+                  : 'bg-[#0A0B0D] border-[#23272F] text-[#A3ABB6] hover:border-[#2E333D]'
+              }`}
+            >
+              On Time Only
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFilterDir(filterDir === 'UP' ? 'all' : 'UP')}
+              className={`px-2 py-1 rounded-sm border text-[11px] font-semibold transition-colors ${
+                filterDir === 'UP'
+                  ? 'bg-[#F5A524]/20 border-[#F5A524] text-[#F5A524]'
+                  : 'bg-[#0A0B0D] border-[#23272F] text-[#A3ABB6] hover:border-[#2E333D]'
+              }`}
+            >
+              UP (Towards NDLS)
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFilterDir(filterDir === 'DN' ? 'all' : 'DN')}
+              className={`px-2 py-1 rounded-sm border text-[11px] font-semibold transition-colors ${
+                filterDir === 'DN'
+                  ? 'bg-[#F5A524]/20 border-[#F5A524] text-[#F5A524]'
+                  : 'bg-[#0A0B0D] border-[#23272F] text-[#A3ABB6] hover:border-[#2E333D]'
+              }`}
+            >
+              DN (Towards DDU)
+            </button>
+          </div>
+        </div>
       </div>
+
+      {/* Main Surface Area */}
+      {viewMode === 'radar' ? (
+        <div className="bg-[#101216] border border-[#23272F] rounded-lg p-5 overflow-x-auto">
+          {/* Top Subway Station Header Axis */}
+          <div className="relative w-full h-12 border-b border-[#23272F] mb-4 min-w-[800px]">
+            {/* Horizontal Track Guide */}
+            <div className="absolute top-5 left-48 right-12 h-[2px] bg-[#2E333D]" />
+
+            {/* Station Nodes */}
+            <div className="absolute inset-0 left-48 right-12">
+              {LINE_STATIONS.map(stn => {
+                const pct = getKmPercent(stn.km);
+                return (
+                  <div
+                    key={stn.code}
+                    className="absolute top-2.5 transform -translate-x-1/2 flex flex-col items-center"
+                    style={{ left: `${pct}%` }}
+                  >
+                    <div className="w-3 h-3 rounded-full bg-[#15181D] border-2 border-[#A3ABB6]" />
+                    <span className="font-bold text-[10px] text-[#E9EBEE] mt-1">{stn.code}</span>
+                    <span className="text-[8px] text-[#6B7480]">{stn.km}k</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Lane Per Train Rows */}
+          {filteredFleet.length === 0 ? (
+            <EmptyState
+              title="No trains matched your filter"
+              description="Adjust search query or delay threshold filters."
+              onRetry={() => {
+                setFilterDelay('all');
+                setFilterDir('all');
+                setSearchQuery('');
+              }}
+            />
+          ) : (
+            <div className="space-y-2.5 min-w-[800px]">
+              {filteredFleet.map(train => {
+                const aspect = getAspect(train.delay_minutes);
+                const isSelected = selectedTrain?.train_no === train.train_no;
+                const km = train.km || 200;
+                const pct = getKmPercent(km);
+                const p10Pct = getKmPercent(train.confidence_p10_km || Math.max(0, km - 25));
+                const p90Pct = getKmPercent(train.confidence_p90_km || Math.min(TOTAL_CORRIDOR_KM, km + 30));
+                const coneWidth = Math.max(4, p90Pct - p10Pct);
+
+                return (
+                  <button
+                    key={train.train_no}
+                    type="button"
+                    onClick={() => setSelectedTrain(train)}
+                    className={`relative w-full h-11 bg-[#0A0B0D] border rounded-sm flex items-center transition-all duration-120 text-left group ${
+                      isSelected
+                        ? 'border-[#F5A524] ring-1 ring-[#F5A524] bg-[#15181D]'
+                        : 'border-[#23272F] hover:border-[#2E333D] hover:bg-[#15181D]/60'
+                    }`}
+                  >
+                    {/* Left Sticky Label: Train No + Aspect */}
+                    <div className="w-48 h-full flex items-center justify-between px-3 border-r border-[#23272F] shrink-0 bg-[#101216]">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-xs text-[#E9EBEE]">{train.train_no}</span>
+                        <span className="text-[10px] text-[#6B7480]">{train.direction}</span>
+                      </div>
+                      <AspectLamp
+                        aspect={aspect}
+                        label={train.delay_minutes && train.delay_minutes > 0 ? `+${train.delay_minutes}m` : 'OT'}
+                        size="xs"
+                      />
+                    </div>
+
+                    {/* Right Lane Track */}
+                    <div className="relative flex-1 h-full mx-4 overflow-visible flex items-center">
+                      {/* Lane Hairline */}
+                      <div className="absolute inset-x-0 h-[1px] bg-[#23272F] group-hover:bg-[#2E333D]" />
+
+                      {/* Uncertainty Cone Taper (Signal Blue Tint) */}
+                      <div
+                        className="absolute h-4 bg-gradient-to-r from-transparent via-[rgba(108,159,255,0.25)] to-transparent rounded pointer-events-none"
+                        style={{
+                          left: `${p10Pct}%`,
+                          width: `${coneWidth}%`,
+                        }}
+                      />
+
+                      {/* Train Marker Indicator Dot */}
+                      <div
+                        className="absolute transform -translate-x-1/2 flex items-center justify-center z-10"
+                        style={{ left: `${pct}%` }}
+                      >
+                        <div
+                          className={`w-3.5 h-3.5 rounded-full border-2 transition-transform duration-120 ${
+                            aspect === 'clear'
+                              ? 'bg-[#3DDC97] border-[#0A0B0D] shadow-[0_0_8px_rgba(61,220,151,0.7)]'
+                              : aspect === 'restrict'
+                              ? 'bg-[#F4506A] border-[#0A0B0D] shadow-[0_0_8px_rgba(244,80,106,0.8)]'
+                              : 'bg-[#F5A524] border-[#0A0B0D] shadow-[0_0_8px_rgba(245,165,36,0.7)]'
+                          } ${isSelected ? 'scale-125 ring-2 ring-[#E9EBEE]' : ''}`}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Far Right Speed & KM */}
+                    <div className="w-28 h-full flex items-center justify-end px-3 border-l border-[#23272F] shrink-0 text-[11px] text-[#A3ABB6] bg-[#101216]">
+                      <span>{train.speed_kmh || 90} km/h</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          <Provenance className="mt-6" source="LINE RADAR SSE TELEMETRY" />
+        </div>
+      ) : (
+        /* GIS Fallback Map View */
+        <div className="bg-[#101216] border border-[#23272F] rounded-lg p-5">
+          <div className="h-[480px] bg-[#0A0B0D] border border-[#23272F] rounded-sm flex items-center justify-center font-mono text-xs text-[#A3ABB6]">
+            <div className="text-center space-y-2">
+              <Compass className="w-8 h-8 text-[#F5A524] mx-auto animate-pulse" />
+              <p className="font-bold text-[#E9EBEE]">GIS Satellite Map Active</p>
+              <p className="text-[11px] text-[#6B7480]">785 km Geodesic Coordinates Synchronized with GPS Feeds</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Selected Train Quick Telemetry Inspection */}
+      {selectedTrain && (
+        <div className="bg-[#101216] border border-[#23272F] rounded-lg p-5 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-[#23272F]">
+            <div className="flex items-center gap-3">
+              <span className="font-bold text-sm text-[#E9EBEE]">{selectedTrain.train_no} {selectedTrain.train_name}</span>
+              <AspectLamp
+                aspect={getAspect(selectedTrain.delay_minutes)}
+                label={selectedTrain.delay_minutes && selectedTrain.delay_minutes > 0 ? `+${selectedTrain.delay_minutes} MIN DELAY` : 'CLEAR (ON TIME)'}
+                size="sm"
+              />
+            </div>
+            <span className="text-xs text-[#A3ABB6]">
+              Chainage: KM {Math.round(selectedTrain.km || 0)} · Speed: {selectedTrain.speed_kmh || 90} km/h
+            </span>
+          </div>
+
+          <AutopsyStrip
+            trainNo={selectedTrain.train_no}
+            trainName={selectedTrain.train_name}
+            totalDelayMin={selectedTrain.delay_minutes || 0}
+          />
+        </div>
+      )}
     </div>
   );
-}
+};

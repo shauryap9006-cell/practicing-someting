@@ -100,8 +100,8 @@ class ResponseCacheMiddleware(BaseHTTPMiddleware):
 # 2. Token-Bucket Rate Limiter
 # ---------------------------------------------------------------------------
 
-_RATE_LIMIT_RPM = 60          # requests per minute per IP
-_RATE_LIMIT_BURST = 10        # max burst above steady rate
+_RATE_LIMIT_RPM = 1200        # requests per minute per IP (high capacity for operational dashboard)
+_RATE_LIMIT_BURST = 300       # max burst above steady rate
 _BUCKET_REFILL_RATE = _RATE_LIMIT_RPM / 60.0  # tokens/sec
 
 _BUCKETS: Dict[str, Tuple[float, float]] = {}   # ip -> (tokens, last_refill_ts)
@@ -117,11 +117,11 @@ def _get_client_ip(request: Request) -> str:
 
 
 class TokenBucketRateLimiter(BaseHTTPMiddleware):
-    """60 req/min per IP token-bucket rate limiter. Returns 429 on exhaustion.
+    """Token-bucket rate limiter. Returns 429 on exhaustion.
 
     Bypassed when:
-    - client IP is 'unknown' or 'testclient' (FastAPI TestClient, CI environments)
-    - RAILTWIN_TESTING=1 env variable is set
+    - client IP is 'unknown', 'testclient', or loopback (127.0.0.1, localhost, ::1)
+    - RAILTWIN_TESTING=1 or ENVIRONMENT=development
     """
 
     async def dispatch(self, request: Request, call_next):
@@ -132,8 +132,11 @@ class TokenBucketRateLimiter(BaseHTTPMiddleware):
 
         ip = _get_client_ip(request)
 
-        # Bypass for test clients (no real IP) and when testing flag is set
-        if ip in ("unknown", "testclient") or os.environ.get("RAILTWIN_TESTING", "0") == "1":
+        # Bypass for loopback/localhost dev proxy, test clients, and testing environments
+        if (
+            ip in ("unknown", "testclient", "127.0.0.1", "localhost", "::1")
+            or os.environ.get("RAILTWIN_TESTING", "0") == "1"
+        ):
             return await call_next(request)
 
         now = time.monotonic()

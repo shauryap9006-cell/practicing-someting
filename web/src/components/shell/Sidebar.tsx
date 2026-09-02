@@ -119,20 +119,20 @@ export function Sidebar({
       )}
 
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-40 w-60 bg-[#15171A] border-r border-[#26282C] flex flex-col transition-transform duration-200 ease-in-out lg:translate-x-0 ${
+        className={`fixed top-0 bottom-0 left-0 z-40 w-60 bg-[#101216] border-r border-[#23272F] flex flex-col transition-transform duration-200 ease-in-out lg:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Brand Header */}
-        <div className="h-12 border-b border-[#26282C] flex items-center justify-between px-4 bg-[#0E0F11]">
+        <div className="h-12 border-b border-[#23272F] flex items-center justify-between px-4 bg-[#0A0B0D]">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 bg-[#FFB224]" />
-            <span className="font-sans font-bold text-sm tracking-tight text-[#E8E8E6]">
-              RailTwin-X
+            <span className="w-2.5 h-2.5 rounded-full bg-[#F5A524] shadow-[0_0_8px_rgba(245,165,36,0.6)] animate-pulse" />
+            <span className="font-sans font-bold text-sm tracking-tight text-[#E9EBEE]">
+              RailTwin<span className="text-[#F5A524]">-X</span>
             </span>
           </div>
-          <span className="font-mono text-[10px] uppercase tracking-wider text-[#FFB224] border border-[#FFB224]/30 px-1.5 py-0.2">
-            v3.0 LIVE
+          <span className="font-mono text-[9px] uppercase tracking-wider text-[#F5A524] border border-[#F5A524]/30 bg-[rgba(245,165,36,0.1)] px-1.5 py-0.5 rounded-xs font-semibold">
+            ASPECT OS
           </span>
         </div>
 
@@ -140,8 +140,8 @@ export function Sidebar({
         <nav className="flex-1 overflow-y-auto p-3 space-y-4 font-mono text-xs no-scrollbar">
           {/* Primary 7 Focus Views */}
           <div className="space-y-1">
-            <div className="px-2 text-[10px] font-bold text-[#6B6E74] uppercase tracking-wider">
-              Primary Views
+            <div className="px-2 text-[10px] font-bold text-[#6B7480] uppercase tracking-wider">
+              Signal Panels
             </div>
             <div className="space-y-0.5">
               {PRIMARY_NAV_ITEMS.map((item) => {
@@ -155,26 +155,26 @@ export function Sidebar({
                       if (window.innerWidth < 1024) onClose();
                     }}
                     className={({ isActive }) =>
-                      `flex items-center justify-between px-2 py-1.5 rounded-none transition-colors group ${
+                      `flex items-center justify-between px-2.5 py-2 rounded-sm transition-colors group min-h-[40px] ${
                         isActive
-                          ? 'bg-[#1B1D21] text-[#FFB224] border-l-2 border-[#FFB224] font-semibold pl-2.5'
-                          : 'text-[#9A9DA3] hover:bg-[#1B1D21] hover:text-[#E8E8E6]'
+                          ? 'bg-[#15181D] text-[#E9EBEE] border-l-2 border-[#F5A524] font-semibold'
+                          : 'text-[#A3ABB6] hover:bg-[#15181D] hover:text-[#E9EBEE]'
                       }`
                     }
                   >
-                    <div className="flex items-center gap-2 truncate">
-                      <Icon className="w-4 h-4 shrink-0" />
-                      <span className="truncate text-[11px]">{item.name}</span>
+                    <div className="flex items-center gap-2.5 truncate">
+                      <Icon className="w-4 h-4 shrink-0 text-[#6B7480] group-hover:text-[#F5A524] transition-colors" />
+                      <span className="truncate text-xs">{item.name}</span>
                     </div>
 
                     {item.badge !== undefined && (
                       <span
-                        className={`text-[9px] px-1 py-0.2 border ${
+                        className={`text-[9px] px-1.5 py-0.5 rounded-xs border font-bold ${
                           item.badgeType === 'danger'
-                            ? 'border-[#F0533A] text-[#F0533A] bg-[#F0533A]/10'
+                            ? 'border-[#F4506A]/40 text-[#F4506A] bg-[rgba(244,80,106,0.13)]'
                             : item.badgeType === 'warn'
-                            ? 'border-[#FFB224] text-[#FFB224] bg-[#FFB224]/10'
-                            : 'border-[#26282C] text-[#9A9DA3]'
+                            ? 'border-[#F5A524]/40 text-[#F5A524] bg-[rgba(245,165,36,0.13)]'
+                            : 'border-[#23272F] text-[#A3ABB6] bg-[#15181D]'
                         }`}
                       >
                         {item.badge}
@@ -187,10 +187,10 @@ export function Sidebar({
           </div>
 
           {/* Collapsible Advanced Group */}
-          <div className="pt-2 border-t border-[#26282C]/60 space-y-2">
+          <div className="pt-2 border-t border-[#23272F] space-y-2">
             <button
               onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
-              className="w-full flex items-center justify-between px-2 py-1.5 text-[10px] font-bold text-[#6B6E74] hover:text-[#E8E8E6] uppercase tracking-wider rounded transition-colors"
+              className="w-full flex items-center justify-between px-2 py-1.5 text-[10px] font-bold text-[#6B7480] hover:text-[#E9EBEE] uppercase tracking-wider rounded-sm transition-colors"
             >
               <span>Advanced Operations</span>
               {isAdvancedOpen ? (
@@ -204,7 +204,7 @@ export function Sidebar({
               <div className="space-y-3 pl-1 pt-1 animate-in fade-in duration-200">
                 {ADVANCED_NAV_GROUPS.map((group) => (
                   <div key={group.title} className="space-y-1">
-                    <div className="px-2 text-[9px] font-bold text-[#4B4E54] uppercase tracking-wider">
+                    <div className="px-2 text-[9px] font-bold text-[#6B7480] uppercase tracking-wider">
                       {group.title}
                     </div>
                     <div className="space-y-0.5">
@@ -218,20 +218,20 @@ export function Sidebar({
                               if (window.innerWidth < 1024) onClose();
                             }}
                             className={({ isActive }) =>
-                              `flex items-center justify-between px-2 py-1 rounded-none transition-colors group ${
+                              `flex items-center justify-between px-2.5 py-1.5 rounded-sm transition-colors group ${
                                 isActive
-                                  ? 'bg-[#1B1D21] text-[#FFB224] border-l-2 border-[#FFB224] font-semibold pl-2.5'
-                                  : 'text-[#8A8D93] hover:bg-[#1B1D21] hover:text-[#E8E8E6]'
+                                  ? 'bg-[#15181D] text-[#E9EBEE] border-l-2 border-[#F5A524] font-semibold'
+                                  : 'text-[#A3ABB6] hover:bg-[#15181D] hover:text-[#E9EBEE]'
                               }`
                             }
                           >
                             <div className="flex items-center gap-2 truncate">
-                              <Icon className="w-3.5 h-3.5 shrink-0 text-[#6B6E74] group-hover:text-[#E8E8E6]" />
-                              <span className="truncate text-[10px]">{item.name}</span>
+                              <Icon className="w-3.5 h-3.5 shrink-0 text-[#6B7480] group-hover:text-[#E9EBEE]" />
+                              <span className="truncate text-[11px]">{item.name}</span>
                             </div>
 
                             {item.badge !== undefined && (
-                              <span className="text-[8px] px-1 py-0.2 border border-[#26282C] text-[#8A8D93]">
+                              <span className="text-[8px] px-1 py-0.2 border border-[#23272F] text-[#A3ABB6]">
                                 {item.badge}
                               </span>
                             )}
@@ -247,7 +247,7 @@ export function Sidebar({
         </nav>
 
         {/* User & Role Switcher Footer */}
-        <div className="border-t border-[#26282C] p-3 space-y-2 bg-[#0E0F11]">
+        <div className="border-t border-[#23272F] p-3 space-y-2 bg-[#0A0B0D]">
           {/* Active Role Card */}
           <div className="relative">
             <button

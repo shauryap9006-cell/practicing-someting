@@ -188,123 +188,44 @@ def get_train_journey(train_no: str):
     )
 
 
+from engine.attribution import get_attribution_engine
+
 # ----------------------------------------------------
-# 3. Delay Autopsy (F5)
+# 3. Delay Autopsy (F5) — Event-Sourced Causal Decomposition
 # ----------------------------------------------------
 @router.get("/trains/{train_no}/autopsy", response_model=DelayAutopsyResponse)
 def get_train_autopsy(train_no: str):
-    """Returns exact causal delay breakdown where minutes sum exactly to total delay."""
-    db = get_db()
-    clock = get_clock()
-
-    with db.transaction() as cur:
-        cur.execute("SELECT name FROM trains WHERE train_no = ?", (train_no,))
-        train_row = cur.fetchone()
-        if not train_row:
-            raise HTTPException(status_code=404, detail={"code": "TRAIN_NOT_FOUND", "message": f"Train {train_no} not found", "retryable": False})
-
-        # 1. Query live_delay_ledger (Pipeline 07 Real-Time Attribution)
-        cur.execute(
-            """
-            SELECT primary_cause, delay_change_min, evidence_json
-            FROM live_delay_ledger
-            WHERE train_no = ?
-            ORDER BY id DESC LIMIT 5
-            """,
-            (train_no,),
+    """Returns exact causal delay breakdown where minutes sum exactly to total delay by construction."""
+    attribution_engine = get_attribution_engine()
+    try:
+        res = attribution_engine.decompose_train_delay(train_no)
+        return DelayAutopsyResponse(
+            train_no=res.train_no,
+            train_name=res.train_name,
+            total_predicted_delay_min=res.total_delay_min,
+            is_exact_accounting=res.is_exact_accounting,
+            causes=[
+                DelayCauseItem(
+                    event_type=c.category,
+                    minutes=c.minutes,
+                    cause=c.cause,
+                    station_code=c.station_code,
+                    evidence=c.evidence.to_dict() if c.evidence else None,
+                    evidence_pointer=c.evidence_pointer,
+                )
+                for c in res.causes
+            ],
+            narrative=res.narrative,
+            integrity_status=res.integrity_status,
+            integrity_checks=res.integrity_checks,
+            as_of_ts=res.as_of_ts,
+            updated_at=res.as_of_ts,
+            clock_mode=attribution_engine.clock.mode,
         )
-        live_ledger_rows = cur.fetchall()
-
-        causes = []
-        is_exact = False
-
-        if live_ledger_rows:
-            for row in live_ledger_rows:
-                try:
-                    ev_data = json.loads(row["evidence_json"])
-                    for c in ev_data.get("causes", []):
-                        if c.get("attributed_min", 0) > 0:
-                            causes.append(
-                                DelayCauseItem(
-                                    event_type=c.get("cause_code", row["primary_cause"]),
-                                    minutes=int(round(c.get("attributed_min", 0))),
-                                    cause=c.get("explanation", f"Attributed delay cause: {c.get('cause_code')}"),
-                                    station_code=None,
-                                )
-                            )
-                except Exception:
-                    causes.append(
-                        DelayCauseItem(
-                            event_type=row["primary_cause"],
-                            minutes=int(round(row["delay_change_min"])),
-                            cause=f"Attributed {row['primary_cause']} delay event",
-                            station_code=None,
-                        )
-                    )
-            if causes:
-                is_exact = True
-
-        # 2. Fall back to sim_ledger (SimPy discrete-event simulation) if live ledger empty
-        if not causes:
-            cur.execute(
-                """
-                SELECT event_type, minutes, cause, station_code
-                FROM sim_ledger
-                WHERE train_no = ?
-                ORDER BY rowid DESC LIMIT 10
-                """,
-                (train_no,),
-            )
-            sim_ledger_rows = cur.fetchall()
-            if sim_ledger_rows:
-                causes = [
-                    DelayCauseItem(
-                        event_type=r["event_type"],
-                        minutes=int(r["minutes"]),
-                        cause=r["cause"],
-                        station_code=r["station_code"],
-                    )
-                    for r in sim_ledger_rows
-                ]
-                is_exact = True
-
-        # 3. Fall back to historical station_events if neither ledger has rows
-        if not causes:
-            cur.execute(
-                """
-                SELECT station_code, AVG(delay_arr_min) as avg_d
-                FROM station_events
-                WHERE train_no = ?
-                GROUP BY station_code
-                HAVING avg_d > 0
-                ORDER BY seq ASC LIMIT 5
-                """,
-                (train_no,),
-            )
-            hist_rows = cur.fetchall()
-            if hist_rows:
-                causes = [
-                    DelayCauseItem(
-                        event_type="EXT_DWELL",
-                        minutes=max(1, int(r["avg_d"])),
-                        cause=f"Historical segment operational dwell at {r['station_code']}",
-                        station_code=r["station_code"],
-                    )
-                    for r in hist_rows
-                ]
-                is_exact = False
-
-        total_d = sum(c.minutes for c in causes)
-
-    return DelayAutopsyResponse(
-        train_no=train_no,
-        train_name=train_row["name"],
-        total_predicted_delay_min=total_d,
-        is_exact_accounting=is_exact,
-        causes=causes,
-        updated_at=clock.now_iso(),
-        clock_mode=clock.mode,
-    )
+    except ValueError as err:
+        raise HTTPException(status_code=404, detail={"code": "TRAIN_NOT_FOUND", "message": str(err), "retryable": False})
+    except Exception as err:
+        raise HTTPException(status_code=500, detail={"code": "ATTRIBUTION_ERROR", "message": str(err), "retryable": True})
 
 
 # ----------------------------------------------------

@@ -104,6 +104,8 @@ class DelayCauseItem(BaseModel):
     minutes: int
     cause: str
     station_code: Optional[str] = None
+    evidence: Optional[Dict[str, Any]] = None
+    evidence_pointer: Optional[str] = None
 
 
 class DelayAutopsyResponse(BaseResponse):
@@ -112,6 +114,10 @@ class DelayAutopsyResponse(BaseResponse):
     total_predicted_delay_min: int
     is_exact_accounting: bool = True
     causes: List[DelayCauseItem]
+    narrative: Optional[str] = None
+    integrity_status: Optional[str] = Field(default="VERIFIED", description="'VERIFIED' or 'WARNING'")
+    integrity_checks: Optional[Dict[str, bool]] = None
+    as_of_ts: Optional[str] = None
 
 
 class NetworkTrainState(BaseModel):

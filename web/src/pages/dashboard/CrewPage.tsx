@@ -3,10 +3,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { queryKeys } from '@/lib/queryKeys';
 import { CrewMember } from '@/mock/types';
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { DataFreshnessBadge } from '@/components/common/DataFreshnessBadge';
-import { Users, Phone, AlertTriangle, ShieldCheck, CheckCircle2, UserCheck } from 'lucide-react';
+import {
+  AspectLamp,
+  AspectType,
+  Provenance,
+  EmptyState,
+} from '@/components/aspect';
+import { Users, Phone, AlertTriangle, ShieldCheck, CheckCircle2, UserCheck, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const CrewPage: React.FC = () => {
@@ -14,6 +17,7 @@ export const CrewPage: React.FC = () => {
   const { data: crew = [], dataUpdatedAt } = useQuery({
     queryKey: queryKeys.crew(),
     queryFn: () => api.getCrew(),
+    refetchInterval: 5000,
   });
   const [requestingId, setRequestingId] = useState<string | null>(null);
 
@@ -23,7 +27,7 @@ export const CrewPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.crew() });
       const member = crew.find(c => c.id === id);
       toast.success(`Relief Crew Dispatched for ${member?.name || 'Crew Member'}`, {
-        description: `Standby crew assigned at ${member?.reliefStation || 'CNB'} for train ${member?.trainNo || ''}.`,
+        description: `Standby relief crew assigned at ${member?.reliefStation || 'CNB'} for train ${member?.trainNo || ''}.`,
       });
     },
     onError: (err: any) => {
@@ -40,146 +44,145 @@ export const CrewPage: React.FC = () => {
     }
   };
 
+  const getAspect = (status: string): AspectType => {
+    if (status === 'critical') return 'restrict';
+    if (status === 'advisory' || status === 'warn') return 'caution';
+    return 'clear';
+  };
+
   const criticalCount = crew.filter(c => c.status === 'critical').length;
   const advisoryCount = crew.filter(c => c.status === 'advisory').length;
 
   return (
-    <div className="space-y-4 font-sans">
+    <div className="space-y-6 font-mono select-none">
       {/* Header & Stats Strip */}
-      <div className="bg-panel border border-hairline p-4 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="bg-[#101216] border border-[#23272F] rounded-lg p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#23272F]">
           <div>
-            <h2 className="text-base font-bold font-mono text-text-main flex items-center gap-2">
-              <Users className="w-4 h-4 text-accent stroke-[1.5]" />
-              <span>LOCO PILOT & CREW DUTY ROSTER WATCH</span>
-            </h2>
-            <p className="text-xs text-text-dim mt-0.5 font-sans">
-              Statutory 10-hour duty limit early warning system. Automatically calculates remaining section running times to prevent mid-section breaches.
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#F5A524] shadow-[0_0_8px_rgba(245,165,36,0.6)] animate-pulse" />
+              <h1 className="text-lg font-bold text-[#E9EBEE] uppercase tracking-wider font-display">
+                CREW DUTY ROSTER & STATUTORY 10H HOER WATCH
+              </h1>
+            </div>
+            <p className="text-xs font-sans text-[#A3ABB6] mt-1">
+              Statutory 10-hour duty limit early warning system. Prevents mid-section crew expiry by calculating section runtimes.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <DataFreshnessBadge dataUpdatedAt={dataUpdatedAt} />
-            <div className="flex items-center gap-2 font-mono text-xs">
-              <div className="px-2.5 py-1 bg-danger/10 border border-danger text-danger">
-                {criticalCount} Critical (&lt;2h)
-              </div>
-              <div className="px-2.5 py-1 bg-warn/10 border border-warn text-warn">
-                {advisoryCount} Advisory (2–4h)
-              </div>
-            </div>
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-1 bg-[rgba(244,80,106,0.13)] border border-[#F4506A]/40 text-[#F4506A] text-xs font-bold rounded-sm">
+              {criticalCount} Critical (&lt;2h)
+            </span>
+            <span className="px-2.5 py-1 bg-[rgba(245,165,36,0.13)] border border-[#F5A524]/40 text-[#F5A524] text-xs font-bold rounded-sm">
+              {advisoryCount} Advisory (2–4h)
+            </span>
           </div>
         </div>
       </div>
 
       {/* Roster Table */}
-      <div className="bg-panel border border-hairline overflow-x-auto">
-        <table className="w-full text-left text-xs font-mono border-collapse" role="table">
-          <thead>
-            <tr className="bg-panel-2 border-b border-hairline text-text-dim text-[11px] uppercase">
-              <th scope="col" className="p-3">Crew Member / ID</th>
-              <th scope="col" className="p-3">Assigned Train</th>
-              <th scope="col" className="p-3">Sign-On</th>
-              <th scope="col" className="p-3">Elapsed Duty</th>
-              <th scope="col" className="p-3">Projected Total</th>
-              <th scope="col" className="p-3">Hours Left</th>
-              <th scope="col" className="p-3">Relief Station</th>
-              <th scope="col" className="p-3 text-right">Relief Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-hairline">
-            {crew.map(member => {
-              const dutyPercent = Math.min(100, (member.dutyHoursSoFar / member.maxAllowedHours) * 100);
-              return (
-                <tr key={member.id} className="hover:bg-panel-2/60 transition-colors">
-                  {/* Name & ID */}
-                  <td className="p-3 whitespace-nowrap">
-                    <div className="font-bold text-text-main font-sans">{member.name}</div>
-                    <div className="text-[10px] text-text-dim">{member.id} · {member.designation}</div>
-                  </td>
+      <div className="bg-[#101216] border border-[#23272F] rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs font-mono border-collapse">
+            <thead>
+              <tr className="bg-[#0A0B0D] border-b border-[#23272F] text-[#A3ABB6] text-[11px] uppercase">
+                <th className="py-3.5 px-4">Crew Member / ID</th>
+                <th className="py-3.5 px-4">Assigned Train</th>
+                <th className="py-3.5 px-4">Sign-On</th>
+                <th className="py-3.5 px-4">Elapsed Duty</th>
+                <th className="py-3.5 px-4">Duty Progress</th>
+                <th className="py-3.5 px-4">Hours Left</th>
+                <th className="py-3.5 px-4">Relief Station</th>
+                <th className="py-3.5 px-4 text-right">Relief Dispatch</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#23272F]">
+              {crew.map(member => {
+                const dutyPercent = Math.min(100, (member.dutyHoursSoFar / member.maxAllowedHours) * 100);
+                const aspect = getAspect(member.status);
 
-                  {/* Train */}
-                  <td className="p-3 whitespace-nowrap">
-                    <div className="font-bold text-accent">{member.trainNo}</div>
-                    <div className="text-[10px] text-text-dim font-sans">{member.trainName}</div>
-                  </td>
+                return (
+                  <tr key={member.id} className="hover:bg-[#15181D] transition-colors">
+                    {/* Name & ID */}
+                    <td className="py-3 px-4">
+                      <div className="font-bold text-[#E9EBEE] font-sans">{member.name}</div>
+                      <div className="text-[10px] text-[#6B7480]">{member.id} · {member.designation}</div>
+                    </td>
 
-                  {/* Sign-on */}
-                  <td className="p-3 whitespace-nowrap text-text-dim">
-                    <div>{member.signOnTime} IST</div>
-                    <div className="text-[10px]">{member.signOnStation}</div>
-                  </td>
+                    {/* Assigned Train */}
+                    <td className="py-3 px-4 font-bold text-[#F5A524]">
+                      {member.trainNo}
+                    </td>
 
-                  {/* Duty Bar & Elapsed */}
-                  <td className="p-3 whitespace-nowrap">
-                    <div className="font-bold text-text-main">{member.dutyHoursSoFar}h / {member.maxAllowedHours}h</div>
-                    <div className="w-24 bg-panel-2 h-1.5 border border-hairline/60 overflow-hidden mt-1">
-                      <div
-                        className={`h-full ${
-                          member.status === 'critical'
-                            ? 'bg-danger'
-                            : member.status === 'advisory'
-                            ? 'bg-warn'
-                            : 'bg-ok'
-                        }`}
-                        style={{ width: `${dutyPercent}%` }}
+                    {/* Sign-On */}
+                    <td className="py-3 px-4 text-[#A3ABB6]">
+                      {member.signOnTime} IST
+                    </td>
+
+                    {/* Elapsed Duty */}
+                    <td className="py-3 px-4 font-bold text-[#E9EBEE] tabular-nums">
+                      {member.dutyHoursSoFar.toFixed(1)}h / {member.maxAllowedHours}h
+                    </td>
+
+                    {/* Progress Bar */}
+                    <td className="py-3 px-4 min-w-[140px]">
+                      <div className="w-full bg-[#0A0B0D] h-2 rounded-xs border border-[#23272F] overflow-hidden">
+                        <div
+                          className={`h-full rounded-xs transition-all ${
+                            aspect === 'restrict'
+                              ? 'bg-[#F4506A]'
+                              : aspect === 'caution'
+                              ? 'bg-[#F5A524]'
+                              : 'bg-[#3DDC97]'
+                          }`}
+                          style={{ width: `${dutyPercent}%` }}
+                        />
+                      </div>
+                    </td>
+
+                    {/* Hours Left + Aspect Lamp */}
+                    <td className="py-3 px-4">
+                      <AspectLamp
+                        aspect={aspect}
+                        label={`${(member.maxAllowedHours - member.dutyHoursSoFar).toFixed(1)}h LEFT`}
+                        size="xs"
                       />
-                    </div>
-                  </td>
+                    </td>
 
-                  {/* Projected total */}
-                  <td className="p-3 whitespace-nowrap">
-                    <span className={member.projectedTotalHours > member.maxAllowedHours ? 'text-danger font-bold' : 'text-text-main'}>
-                      {member.projectedTotalHours}h
-                    </span>
-                    {member.projectedTotalHours > member.maxAllowedHours && (
-                      <div className="text-[9px] text-danger uppercase font-bold">Limit Breach</div>
-                    )}
-                  </td>
+                    {/* Relief Station */}
+                    <td className="py-3 px-4 text-[#A3ABB6]">
+                      {member.reliefStation || 'CNB'}
+                    </td>
 
-                  {/* Hours Left Badge */}
-                  <td className="p-3 whitespace-nowrap">
-                    {member.status === 'critical' ? (
-                      <Badge variant="danger">{member.remainingHours}h remaining</Badge>
-                    ) : member.status === 'advisory' ? (
-                      <Badge variant="warn">{member.remainingHours}h remaining</Badge>
-                    ) : (
-                      <Badge variant="ok">{member.remainingHours}h nominal</Badge>
-                    )}
-                  </td>
+                    {/* Action */}
+                    <td className="py-3 px-4 text-right">
+                      {member.status !== 'ok' ? (
+                        <button
+                          type="button"
+                          disabled={requestingId === member.id}
+                          onClick={() => handleRequestRelief(member)}
+                          className="px-3 py-1 bg-[#F5A524] hover:bg-[#F5A524]/90 text-[#0A0B0D] font-bold text-xs rounded-sm transition-colors shadow-sm"
+                        >
+                          {requestingId === member.id ? 'Dispatching...' : 'Plan Relief'}
+                        </button>
+                      ) : (
+                        <span className="text-[#3DDC97] text-[11px] font-semibold flex items-center justify-end gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Nominal</span>
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
 
-                  {/* Relief station */}
-                  <td className="p-3 whitespace-nowrap font-bold text-text-main">
-                    {member.reliefStation}
-                  </td>
-
-                  {/* Relief Action */}
-                  <td className="p-3 whitespace-nowrap text-right">
-                    {member.reliefRequested ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] text-ok font-mono font-semibold">
-                        <CheckCircle2 className="w-3.5 h-3.5 stroke-[2]" />
-                        <span>Relief Arranged</span>
-                      </span>
-                    ) : member.status !== 'ok' ? (
-                      <Button
-                        variant={member.status === 'critical' ? 'danger' : 'secondary'}
-                        size="sm"
-                        isLoading={requestingId === member.id}
-                        onClick={() => handleRequestRelief(member)}
-                        className="text-[11px] font-mono h-7 px-2.5"
-                      >
-                        <UserCheck className="w-3.5 h-3.5 mr-1 stroke-[1.5]" />
-                        <span>Dispatch Relief</span>
-                      </Button>
-                    ) : (
-                      <span className="text-text-dim text-[11px]">Nominal</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div className="p-4 border-t border-[#23272F] bg-[#0A0B0D]">
+          <Provenance updatedAt={dataUpdatedAt} source="RAILWAY HOER CREW ROSTER SYSTEM" />
+        </div>
       </div>
     </div>
   );

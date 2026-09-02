@@ -65,51 +65,51 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center pt-20 p-4">
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-start justify-center pt-20 p-4 font-mono select-none">
       <div
-        className="w-full max-w-xl bg-[#15171A] border border-[#26282C] shadow-2xl rounded-none overflow-hidden font-mono"
+        className="w-full max-w-xl bg-[#101216] border border-[#23272F] shadow-2xl rounded-lg overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         <Command
-          className="w-full bg-transparent text-[#E8E8E6] text-xs"
+          className="w-full bg-transparent text-[#E9EBEE] text-xs"
           loop
         >
-          <div className="flex items-center gap-2 px-3 py-2.5 border-b border-[#26282C]">
-            <Search className="w-4 h-4 text-[#9A9DA3]" />
+          <div className="flex items-center gap-2 px-3 py-3 border-b border-[#23272F] bg-[#0A0B0D]">
+            <Search className="w-4 h-4 text-[#A3ABB6]" />
             <Command.Input
               autoFocus
-              placeholder="Type a module, action, train number (#12301), or station (CNB)..."
-              className="w-full bg-transparent text-[#E8E8E6] placeholder-[#9A9DA3] text-xs focus:outline-none"
+              placeholder="Type train no (#12301), station (CNB), or module..."
+              className="w-full bg-transparent text-[#E9EBEE] placeholder-[#6B7480] text-xs focus:outline-none"
             />
-            <kbd className="text-[10px] text-[#9A9DA3] border border-[#26282C] px-1.5 py-0.5">ESC</kbd>
+            <kbd className="text-[10px] text-[#6B7480] border border-[#23272F] px-1.5 py-0.5 rounded-xs">ESC</kbd>
           </div>
 
           <Command.List className="max-h-80 overflow-y-auto p-2 space-y-1">
-            <Command.Empty className="py-6 text-center text-[#9A9DA3] text-xs">
+            <Command.Empty className="py-6 text-center text-[#A3ABB6] text-xs">
               No matching modules, actions, or trains found.
             </Command.Empty>
 
             {/* Quick Actions */}
-            <Command.Group heading="Quick Actions" className="text-[10px] uppercase text-[#6B6E74] px-2 py-1 font-bold">
+            <Command.Group heading="Operational Shortcuts" className="text-[10px] uppercase text-[#6B7480] px-2 py-1 font-bold">
               <Command.Item
-                onSelect={() => handleSelectRoute('/dashboard/commercial/delay-certificate')}
-                className="flex items-center gap-2 px-2 py-1.5 cursor-pointer text-[#E8E8E6] hover:bg-[#1B1D21] hover:text-[#FFB224] transition-colors"
+                onSelect={() => handleSelectRoute('/dashboard/gantt')}
+                className="flex items-center gap-2 px-2.5 py-2 rounded-sm cursor-pointer text-[#E9EBEE] hover:bg-[#15181D] hover:text-[#F5A524] transition-colors"
               >
-                <FileCheck className="w-4 h-4 text-[#FFB224]" />
-                <span>Issue Digital Delay Certificate (QR)</span>
+                <Sparkles className="w-4 h-4 text-[#F5A524]" />
+                <span>Platform Gantt Re-Optimizer (MILP)</span>
               </Command.Item>
               <Command.Item
-                onSelect={() => handleSelectRoute('/dashboard/safety/sop')}
-                className="flex items-center gap-2 px-2 py-1.5 cursor-pointer text-[#E8E8E6] hover:bg-[#1B1D21] hover:text-[#FFB224] transition-colors"
+                onSelect={() => handleSelectRoute('/dashboard/live-map')}
+                className="flex items-center gap-2 px-2.5 py-2 rounded-sm cursor-pointer text-[#E9EBEE] hover:bg-[#15181D] hover:text-[#F5A524] transition-colors"
               >
-                <ShieldAlert className="w-4 h-4 text-[#F0533A]" />
-                <span>Trigger Emergency SOP Protocol</span>
+                <Navigation className="w-4 h-4 text-[#3DDC97]" />
+                <span>Line Radar Telemetry (Subway View)</span>
               </Command.Item>
               <Command.Item
                 onSelect={() => handleSelectRoute('/dashboard/safety/tsr')}
-                className="flex items-center gap-2 px-2 py-1.5 cursor-pointer text-[#E8E8E6] hover:bg-[#1B1D21] hover:text-[#FFB224] transition-colors"
+                className="flex items-center gap-2 px-2.5 py-2 rounded-sm cursor-pointer text-[#E9EBEE] hover:bg-[#15181D] hover:text-[#F5A524] transition-colors"
               >
-                <Shield className="w-4 h-4 text-[#FFB224]" />
+                <ShieldAlert className="w-4 h-4 text-[#F4506A]" />
                 <span>Issue Caution Order / Speed Restriction</span>
               </Command.Item>
             </Command.Group>
@@ -117,89 +117,75 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             {/* Navigation Modules */}
             <Command.Group heading="Station Modules" className="text-[10px] uppercase text-[#6B6E74] px-2 py-1 font-bold">
               <Command.Item
-                onSelect={() => handleSelectRoute('/dashboard/map')}
-                className="flex items-center gap-2 px-2 py-1.5 cursor-pointer text-[#E8E8E6] hover:bg-[#1B1D21] hover:text-[#FFB224] transition-colors"
+                onSelect={() => handleSelectRoute('/dashboard')}
+                className="flex items-center gap-2 px-2.5 py-2 rounded-sm cursor-pointer text-[#E9EBEE] hover:bg-[#15181D] hover:text-[#F5A524] transition-colors"
               >
-                <Navigation className="w-4 h-4" />
-                <span>Corridor GIS Spatial Map</span>
+                <Activity className="w-4 h-4" />
+                <span>Duty Board Control Room Overview</span>
               </Command.Item>
               <Command.Item
-                onSelect={() => handleSelectRoute('/dashboard/yard-map')}
-                className="flex items-center gap-2 px-2 py-1.5 cursor-pointer text-[#E8E8E6] hover:bg-[#1B1D21] hover:text-[#FFB224] transition-colors"
+                onSelect={() => handleSelectRoute('/dashboard/trains')}
+                className="flex items-center gap-2 px-2.5 py-2 rounded-sm cursor-pointer text-[#E9EBEE] hover:bg-[#15181D] hover:text-[#F5A524] transition-colors"
               >
-                <Layers className="w-4 h-4" />
-                <span>Station Yard Micro-Track Layout</span>
+                <Train className="w-4 h-4" />
+                <span>Trains Directory & Delay Autopsy</span>
               </Command.Item>
               <Command.Item
-                onSelect={() => handleSelectRoute('/dashboard/gantt')}
-                className="flex items-center gap-2 px-2 py-1.5 cursor-pointer text-[#E8E8E6] hover:bg-[#1B1D21] hover:text-[#FFB224] transition-colors"
+                onSelect={() => handleSelectRoute('/dashboard/advisories')}
+                className="flex items-center gap-2 px-2.5 py-2 rounded-sm cursor-pointer text-[#E9EBEE] hover:bg-[#15181D] hover:text-[#F5A524] transition-colors"
               >
-                <Calendar className="w-4 h-4" />
-                <span>Platform Gantt Scheduler</span>
+                <Bell className="w-4 h-4" />
+                <span>Advisory Triage Queue</span>
               </Command.Item>
               <Command.Item
-                onSelect={() => handleSelectRoute('/dashboard/timetable')}
-                className="flex items-center gap-2 px-2 py-1.5 cursor-pointer text-[#E8E8E6] hover:bg-[#1B1D21] hover:text-[#FFB224] transition-colors"
+                onSelect={() => handleSelectRoute('/dashboard/crew')}
+                className="flex items-center gap-2 px-2.5 py-2 rounded-sm cursor-pointer text-[#E9EBEE] hover:bg-[#15181D] hover:text-[#F5A524] transition-colors"
               >
-                <Clock className="w-4 h-4" />
-                <span>Working Timetable (WTT) Manager</span>
-              </Command.Item>
-              <Command.Item
-                onSelect={() => handleSelectRoute('/dashboard/blocks')}
-                className="flex items-center gap-2 px-2 py-1.5 cursor-pointer text-[#E8E8E6] hover:bg-[#1B1D21] hover:text-[#FFB224] transition-colors"
-              >
-                <Grid className="w-4 h-4" />
-                <span>Block Section Line Clear Board</span>
-              </Command.Item>
-              <Command.Item
-                onSelect={() => handleSelectRoute('/dashboard/handover')}
-                className="flex items-center gap-2 px-2 py-1.5 cursor-pointer text-[#E8E8E6] hover:bg-[#1B1D21] hover:text-[#FFB224] transition-colors"
-              >
-                <BookOpen className="w-4 h-4" />
-                <span>Shift Handover Logbook</span>
+                <Users className="w-4 h-4" />
+                <span>Crew Rosters & 10h Duty Limits</span>
               </Command.Item>
               <Command.Item
                 onSelect={() => handleSelectRoute('/kiosk')}
-                className="flex items-center gap-2 px-2 py-1.5 cursor-pointer text-[#E8E8E6] hover:bg-[#1B1D21] hover:text-[#FFB224] transition-colors"
+                className="flex items-center gap-2 px-2.5 py-2 rounded-sm cursor-pointer text-[#E9EBEE] hover:bg-[#15181D] hover:text-[#F5A524] transition-colors"
               >
-                <Activity className="w-4 h-4 text-[#3ECF8E]" />
-                <span>Station Kiosk PIDS Screen (3m View)</span>
+                <Store className="w-4 h-4 text-[#3DDC97]" />
+                <span>Passenger Kiosk PIDS Screen</span>
               </Command.Item>
             </Command.Group>
 
             {/* Stations Switcher */}
-            <Command.Group heading="Switch Operational Station" className="text-[10px] uppercase text-[#6B6E74] px-2 py-1 font-bold">
+            <Command.Group heading="Switch Station Yard" className="text-[10px] uppercase text-[#6B7480] px-2 py-1 font-bold">
               {(['CNB', 'NDLS', 'GZB'] as StationCode[]).map(code => (
                 <Command.Item
                   key={code}
                   onSelect={() => handleSelectStation(code)}
-                  className="flex items-center justify-between px-2 py-1.5 cursor-pointer text-[#E8E8E6] hover:bg-[#1B1D21] hover:text-[#FFB224] transition-colors"
+                  className="flex items-center justify-between px-2.5 py-2 rounded-sm cursor-pointer text-[#E9EBEE] hover:bg-[#15181D] hover:text-[#F5A524] transition-colors"
                 >
                   <div className="flex items-center gap-2">
                     <MapPin className="w-3.5 h-3.5" />
                     <span>{code} Station Yard</span>
                   </div>
                   {activeStation === code && (
-                    <span className="text-[10px] text-[#FFB224] font-bold">ACTIVE</span>
+                    <span className="text-[10px] text-[#F5A524] font-bold">● ACTIVE</span>
                   )}
                 </Command.Item>
               ))}
             </Command.Group>
 
             {/* Live Corridor Trains */}
-            <Command.Group heading="Tracked Corridor Trains" className="text-[10px] uppercase text-[#6B6E74] px-2 py-1 font-bold">
-              {trains.slice(0, 10).map(t => (
+            <Command.Group heading="Active Trains" className="text-[10px] uppercase text-[#6B7480] px-2 py-1 font-bold">
+              {trains.slice(0, 8).map(t => (
                 <Command.Item
                   key={t.number}
                   onSelect={() => handleSelectRoute(`/dashboard/trains/${t.number}`)}
-                  className="flex items-center justify-between px-2 py-1.5 cursor-pointer text-[#E8E8E6] hover:bg-[#1B1D21] hover:text-[#FFB224] transition-colors"
+                  className="flex items-center justify-between px-2.5 py-2 rounded-sm cursor-pointer text-[#E9EBEE] hover:bg-[#15181D] hover:text-[#F5A524] transition-colors"
                 >
                   <div className="flex items-center gap-2 truncate">
-                    <Train className="w-3.5 h-3.5 text-[#9A9DA3]" />
-                    <span className="font-bold text-[#FFB224]">{t.number}</span>
-                    <span className="truncate text-[11px] text-[#E8E8E6]">{t.name}</span>
+                    <Train className="w-3.5 h-3.5 text-[#6B7480]" />
+                    <span className="font-bold text-[#F5A524]">{t.number}</span>
+                    <span className="truncate text-[11px] text-[#A3ABB6] font-sans">{t.name}</span>
                   </div>
-                  <span className="text-[10px] text-[#9A9DA3] shrink-0">PF {t.platform} · {t.predictedArrival}</span>
+                  <span className="text-[10px] text-[#A3ABB6] shrink-0">PF {t.platform || 1} · {t.predictedArrival || '18:22'}</span>
                 </Command.Item>
               ))}
             </Command.Group>

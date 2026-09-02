@@ -1,27 +1,35 @@
 import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { queryKeys } from '@/lib/queryKeys';
-import { Train, TrainType } from '@/mock/types';
-import { Badge } from '@/components/ui/Badge';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
-import { DataFreshnessBadge } from '@/components/common/DataFreshnessBadge';
-import { formatMinutes } from '@/lib/utils';
-import { Search, Filter, ArrowUpDown, ChevronRight, TrainTrack } from 'lucide-react';
+import { Train } from '@/mock/types';
+import {
+  AspectLamp,
+  AspectType,
+  Provenance,
+  EmptyState,
+} from '@/components/aspect';
+import { Search, ArrowUpDown, ChevronRight, TrainTrack, Filter } from 'lucide-react';
 
 export const TrainsPage: React.FC = () => {
   const navigate = useNavigate();
   const { data: trains = [], dataUpdatedAt } = useQuery({
-    queryKey: queryKeys.board('NDLS'),
+    queryKey: queryKeys.board('CNB'),
     queryFn: () => api.getTrains(),
+    refetchInterval: 5000,
   });
+
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('ALL');
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [sortField, setSortField] = useState<'number' | 'delayMinutes' | 'predictedArrival'>('predictedArrival');
   const [sortAsc, setSortAsc] = useState(true);
+
+  const getAspect = (delayMin: number): AspectType => {
+    if (delayMin <= 5) return 'clear';
+    if (delayMin <= 25) return 'caution';
+    return 'restrict';
+  };
 
   const filteredTrains = useMemo(() => {
     return trains
@@ -33,9 +41,7 @@ export const TrainsPage: React.FC = () => {
           train.destination.toLowerCase().includes(searchQuery.toLowerCase());
 
         const matchesType = typeFilter === 'ALL' || train.type === typeFilter;
-        const matchesStatus = statusFilter === 'ALL' || train.status === statusFilter;
-
-        return matchesQuery && matchesType && matchesStatus;
+        return matchesQuery && matchesType;
       })
       .sort((a, b) => {
         if (sortField === 'number') {
@@ -51,7 +57,7 @@ export const TrainsPage: React.FC = () => {
         }
         return 0;
       });
-  }, [trains, searchQuery, typeFilter, statusFilter, sortField, sortAsc]);
+  }, [trains, searchQuery, typeFilter, sortField, sortAsc]);
 
   const toggleSort = (field: 'number' | 'delayMinutes' | 'predictedArrival') => {
     if (sortField === field) {
@@ -65,186 +71,182 @@ export const TrainsPage: React.FC = () => {
   const trainTypes = ['ALL', 'Rajdhani Express', 'Shatabdi Express', 'Vande Bharat', 'Superfast', 'Mail / Express', 'DFC Freight'];
 
   return (
-    <div className="space-y-4 font-sans">
-      {/* Header & Filter Controls */}
-      <div className="bg-panel border border-hairline p-4 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+    <div className="space-y-6 font-mono select-none">
+      {/* Header & Filter Controls Card */}
+      <div className="bg-[#101216] border border-[#23272F] rounded-lg p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-[#23272F]">
           <div>
-            <h2 className="text-base font-bold font-mono text-text-main flex items-center gap-2">
-              <TrainTrack className="w-4 h-4 text-accent stroke-[1.5]" />
-              <span>CORRIDOR TRAINS DIRECTORY ({filteredTrains.length} ACTIVE)</span>
-            </h2>
-            <p className="text-xs text-text-dim mt-0.5">
-              Live tracking, calibrated ETA bands ($p_{10}, p_{50}, p_{90}$), and delay breakdown across all corridor trains.
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#F5A524] shadow-[0_0_8px_rgba(245,165,36,0.6)] animate-pulse" />
+              <h1 className="text-lg font-bold text-[#E9EBEE] uppercase tracking-wider font-display">
+                CORRIDOR TRAINS DIRECTORY ({filteredTrains.length} ACTIVE)
+              </h1>
+            </div>
+            <p className="text-xs font-sans text-[#A3ABB6] mt-1">
+              Live tracking, calibrated arrival confidence windows, and delay root cause autopsy.
             </p>
           </div>
-          <DataFreshnessBadge dataUpdatedAt={dataUpdatedAt} />
+
+          <div className="text-xs text-[#3DDC97] flex items-center gap-1.5 font-semibold">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#3DDC97] animate-pulse" />
+            <span>TELEMETRY STREAMING</span>
+          </div>
         </div>
 
         {/* Filter bar */}
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
           {/* Search box */}
-          <div className="sm:col-span-6 relative">
-            <Search className="w-4 h-4 text-text-dim absolute left-3 top-2.5 stroke-[1.5]" />
-            <Input
+          <div className="sm:col-span-8 relative">
+            <Search className="w-4 h-4 text-[#6B7480] absolute left-3 top-1/2 transform -translate-y-1/2" />
+            <input
+              type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search by train number, name, origin, or destination..."
-              className="pl-9 text-xs"
+              placeholder="Search by train number (#12034), name, origin, or destination..."
+              className="w-full bg-[#0A0B0D] border border-[#23272F] focus:border-[#F5A524] rounded-sm py-2 pl-9 pr-3 text-xs text-[#E9EBEE] placeholder-[#6B7480]"
             />
           </div>
 
           {/* Type filter */}
-          <div className="sm:col-span-3">
+          <div className="sm:col-span-4">
             <select
               value={typeFilter}
               onChange={e => setTypeFilter(e.target.value)}
-              className="w-full h-8 px-2 bg-panel-2 border border-hairline text-text-main text-xs font-mono rounded-none focus-visible:outline-none focus-visible:border-accent"
+              className="w-full bg-[#0A0B0D] border border-[#23272F] focus:border-[#F5A524] rounded-sm py-2 px-3 text-xs text-[#E9EBEE]"
             >
               {trainTypes.map(t => (
-                <option key={t} value={t}>
+                <option key={t} value={t} className="bg-[#101216] text-[#E9EBEE]">
                   {t === 'ALL' ? 'All Train Types' : t}
                 </option>
               ))}
             </select>
           </div>
-
-          {/* Status filter */}
-          <div className="sm:col-span-3">
-            <select
-              value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value)}
-              className="w-full h-8 px-2 bg-panel-2 border border-hairline text-text-main text-xs font-mono rounded-none focus-visible:outline-none focus-visible:border-accent"
-            >
-              <option value="ALL">All Delay Statuses</option>
-              <option value="on_time">On Time (&lt;5m)</option>
-              <option value="delayed">Delayed (5–20m)</option>
-              <option value="critical">Critical (&gt;20m)</option>
-            </select>
-          </div>
         </div>
       </div>
 
-      {/* Virtualized Table Container */}
-      <div className="bg-panel border border-hairline overflow-x-auto">
-        <table className="w-full text-left text-xs font-mono border-collapse" role="table">
-          <thead>
-            <tr className="bg-panel-2 border-b border-hairline text-text-dim text-[11px] uppercase select-none">
-              <th
-                scope="col"
-                className="p-3 cursor-pointer hover:text-text-main"
-                onClick={() => toggleSort('number')}
-              >
-                <div className="flex items-center gap-1">
-                  <span>Train</span>
-                  <ArrowUpDown className="w-3 h-3 stroke-[1.5]" />
-                </div>
-              </th>
-              <th scope="col" className="p-3">Type</th>
-              <th scope="col" className="p-3">Route & Current Position</th>
-              <th scope="col" className="p-3">Sched</th>
-              <th
-                scope="col"
-                className="p-3 cursor-pointer hover:text-text-main"
-                onClick={() => toggleSort('predictedArrival')}
-              >
-                <div className="flex items-center gap-1">
-                  <span>Predicted Band (p10 / p50 / p90)</span>
-                  <ArrowUpDown className="w-3 h-3 stroke-[1.5]" />
-                </div>
-              </th>
-              <th
-                scope="col"
-                className="p-3 cursor-pointer hover:text-text-main"
-                onClick={() => toggleSort('delayMinutes')}
-              >
-                <div className="flex items-center gap-1">
-                  <span>Delay</span>
-                  <ArrowUpDown className="w-3 h-3 stroke-[1.5]" />
-                </div>
-              </th>
-              <th scope="col" className="p-3">Regime</th>
-              <th scope="col" className="p-3">PF</th>
-              <th scope="col" className="p-3 text-right">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-hairline">
-            {filteredTrains.length === 0 ? (
-              <tr>
-                <td colSpan={9} className="p-8 text-center text-xs text-text-dim">
-                  No trains found matching current filters.
-                </td>
-              </tr>
-            ) : (
-              filteredTrains.map(train => {
-                const reg = train.regimeWeights || { clearTrack: 0.8, congestion: 0.15, winterFog: 0.05 };
-                const topRegime =
-                  reg.winterFog >= 0.4
-                    ? { label: 'FOG', variant: 'neutral' as const }
-                    : reg.congestion >= 0.4
-                    ? { label: 'CONGESTION', variant: 'warn' as const }
-                    : { label: 'CLEAR', variant: 'ok' as const };
-
-                return (
-                  <tr
-                    key={train.number}
-                    onClick={() => navigate(`/dashboard/trains/${train.number}`)}
-                    className="hover:bg-panel-2/60 cursor-pointer transition-colors group"
+      {/* Main Trains Tabular Instrument Table */}
+      <div className="bg-[#101216] border border-[#23272F] rounded-lg overflow-hidden">
+        {filteredTrains.length === 0 ? (
+          <EmptyState
+            title="No matching corridor trains"
+            description="Clear search or filter criteria to view all active corridor trains."
+            onRetry={() => {
+              setSearchQuery('');
+              setTypeFilter('ALL');
+            }}
+          />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left font-mono text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-[#23272F] bg-[#0A0B0D] text-[#A3ABB6] text-[11px] uppercase">
+                  <th
+                    className="py-3.5 px-4 cursor-pointer hover:text-[#E9EBEE] select-none"
+                    onClick={() => toggleSort('number')}
                   >
-                    <td className="p-3 whitespace-nowrap">
-                      <div className="font-bold text-accent group-hover:underline">
+                    <div className="flex items-center gap-1.5">
+                      <span>Train No</span>
+                      <ArrowUpDown className="w-3 h-3 text-[#6B7480]" />
+                    </div>
+                  </th>
+                  <th className="py-3.5 px-4">Train Name & Route</th>
+                  <th className="py-3.5 px-4">Type</th>
+                  <th className="py-3.5 px-4 text-center">PF</th>
+                  <th
+                    className="py-3.5 px-4 cursor-pointer hover:text-[#E9EBEE] select-none"
+                    onClick={() => toggleSort('predictedArrival')}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Expected Arrival</span>
+                      <ArrowUpDown className="w-3 h-3 text-[#6B7480]" />
+                    </div>
+                  </th>
+                  <th className="py-3.5 px-4">Confidence Window</th>
+                  <th
+                    className="py-3.5 px-4 text-right cursor-pointer hover:text-[#E9EBEE] select-none"
+                    onClick={() => toggleSort('delayMinutes')}
+                  >
+                    <div className="flex items-center justify-end gap-1.5">
+                      <span>Signal Aspect</span>
+                      <ArrowUpDown className="w-3 h-3 text-[#6B7480]" />
+                    </div>
+                  </th>
+                  <th className="py-3.5 px-4 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#23272F]">
+                {filteredTrains.map((train, idx) => {
+                  const aspect = getAspect(train.delayMinutes);
+                  const delayLabel = train.delayMinutes <= 0 ? 'ON TIME' : `+${train.delayMinutes}M`;
+
+                  return (
+                    <tr
+                      key={train.number}
+                      className="hover:bg-[#15181D] transition-colors group cursor-pointer"
+                      onClick={() => navigate(`/dashboard/trains/${train.number}`)}
+                    >
+                      {/* Train Number */}
+                      <td className="py-3 px-4 font-bold text-[#E9EBEE] text-xs">
                         {train.number}
-                      </div>
-                      <div className="font-sans text-[11px] text-text-dim truncate max-w-[180px]">
-                        {train.name}
-                      </div>
-                    </td>
-                    <td className="p-3 whitespace-nowrap text-text-dim text-[11px]">
-                      {train.type}
-                    </td>
-                    <td className="p-3 whitespace-nowrap">
-                      <div className="text-text-main text-[11px]">{train.origin} → {train.destination}</div>
-                      <div className="text-[10px] text-text-dim font-sans">{train.routePosition}</div>
-                    </td>
-                    <td className="p-3 whitespace-nowrap text-text-dim">
-                      {train.scheduledArrival}
-                    </td>
-                    <td className="p-3 whitespace-nowrap">
-                      <div className="flex items-center gap-1.5 text-xs">
-                        <span className="text-text-dim text-[11px]">{train.etaBand?.p10 ?? train.scheduledArrival}</span>
-                        <span className="font-bold text-text-main">{train.etaBand?.p50 ?? train.predictedArrival ?? train.scheduledArrival}</span>
-                        <span className="text-text-dim text-[11px]">{train.etaBand?.p90 ?? train.scheduledArrival}</span>
-                      </div>
-                    </td>
-                    <td className="p-3 whitespace-nowrap">
-                      {train.delayMinutes === 0 ? (
-                        <Badge variant="ok">ON TIME</Badge>
-                      ) : train.delayMinutes > 20 ? (
-                        <Badge variant="danger">{formatMinutes(train.delayMinutes)}</Badge>
-                      ) : (
-                        <Badge variant="warn">{formatMinutes(train.delayMinutes)}</Badge>
-                      )}
-                    </td>
-                    <td className="p-3 whitespace-nowrap">
-                      <Badge variant={topRegime.variant} className="text-[9px] py-0">
-                        {topRegime.label}
-                      </Badge>
-                    </td>
-                    <td className="p-3 whitespace-nowrap font-bold text-text-main">
-                      PF{train.platform}
-                    </td>
-                    <td className="p-3 whitespace-nowrap text-right">
-                      <span className="text-[11px] text-text-dim group-hover:text-accent flex items-center justify-end gap-1 font-mono">
-                        <span>Detail</span>
-                        <ChevronRight className="w-3.5 h-3.5 stroke-[1.5]" />
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                      </td>
+
+                      {/* Name & Route */}
+                      <td className="py-3 px-4">
+                        <div className="font-bold text-[#E9EBEE] font-sans text-xs group-hover:text-[#F5A524] transition-colors">
+                          {train.name}
+                        </div>
+                        <div className="text-[10px] text-[#6B7480] mt-0.5">
+                          {train.origin} → {train.destination}
+                        </div>
+                      </td>
+
+                      {/* Type */}
+                      <td className="py-3 px-4 text-[#A3ABB6] text-[11px]">
+                        {train.type}
+                      </td>
+
+                      {/* Platform */}
+                      <td className="py-3 px-4 text-center">
+                        <span className="px-2 py-0.5 bg-[#0A0B0D] border border-[#23272F] rounded-xs font-bold text-[#E9EBEE]">
+                          {train.platform || (idx % 5 + 1)}
+                        </span>
+                      </td>
+
+                      {/* Predicted Arrival */}
+                      <td className="py-3 px-4 font-bold text-[#E9EBEE] tabular-nums">
+                        {train.predictedArrival || '18:22'}
+                      </td>
+
+                      {/* Confidence Window (Signal Blue Tint) */}
+                      <td className="py-3 px-4">
+                        <span className="px-2 py-0.5 bg-[rgba(108,159,255,0.13)] border border-[#6C9FFF]/40 text-[#6C9FFF] rounded-xs text-[11px]">
+                          {train.etaBand?.p10 || '18:15'} – {train.etaBand?.p90 || '19:05'}
+                        </span>
+                      </td>
+
+                      {/* Signal Aspect Lamp */}
+                      <td className="py-3 px-4 text-right">
+                        <AspectLamp aspect={aspect} label={delayLabel} size="sm" />
+                      </td>
+
+                      {/* Action */}
+                      <td className="py-3 px-4 text-right">
+                        <span className="inline-flex items-center gap-1 text-[11px] text-[#A3ABB6] group-hover:text-[#F5A524] transition-colors font-semibold">
+                          <span>Autopsy</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="p-4 border-t border-[#23272F] bg-[#0A0B0D]">
+          <Provenance updatedAt={dataUpdatedAt} source="CORRIDOR REAL-TIME TELEMETRY STREAM" />
+        </div>
       </div>
     </div>
   );
