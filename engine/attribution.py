@@ -428,6 +428,20 @@ class DelayAttributionEngine:
         joined = ", ".join(parts[:-1]) + f", and {parts[-1]}" if len(parts) > 1 else parts[0]
         return f"Running {total_delay} min late — {joined}."
 
+    def get_why_late_summary(self, train_no: str, run_date: Optional[str] = None) -> Dict[str, Any]:
+        """Returns why-late summary structure for Pipeline 07 live routes."""
+        res = self.decompose_train_delay(train_no)
+        return {
+            "train_no": train_no,
+            "total_delay_minutes": res.total_delay_min,
+            "is_exact_accounting": res.is_exact_accounting,
+            "narrative": res.narrative,
+            "integrity_status": res.integrity_status,
+            "causes": [c.to_dict() for c in res.causes],
+            "top_cause": res.causes[0].cause if res.causes else "Nominal timetable clearance",
+            "as_of": res.as_of_ts,
+        }
+
     def evaluate_delay_jump(
         self,
         train_no: str,

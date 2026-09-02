@@ -13,6 +13,7 @@ export const queryKeys = {
   train: (trainNo: string) => ['train', trainNo] as const,
   trainJourney: (trainNo: string) => ['train', trainNo, 'journey'] as const,
   trainAutopsy: (trainNo: string) => ['train', trainNo, 'autopsy'] as const,
+  trainLive: (trainNo: string) => ['train', trainNo, 'live'] as const,
   platforms: (stationCode?: string) => ['platforms', stationCode || 'NDLS'] as const,
   advisories: () => ['advisories'] as const,
   crew: () => ['crew'] as const,

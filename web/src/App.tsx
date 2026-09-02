@@ -8,6 +8,7 @@ import { CookieBanner } from '@/components/shell/CookieBanner';
 import { LandingPage } from '@/pages/landing/LandingPage';
 import { LoginPage } from '@/pages/auth/LoginPage';
 import { KioskPage } from '@/pages/public/KioskPage';
+import { PassengerTrackerPage } from '@/pages/public/PassengerTrackerPage';
 import { PrivacyPage } from '@/pages/public/PrivacyPage';
 import { TermsPage } from '@/pages/public/TermsPage';
 import { ThanksPage } from '@/pages/public/ThanksPage';
@@ -52,6 +53,9 @@ export function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />
+        <Route path="/track" element={<PassengerTrackerPage />} />
+        <Route path="/track/:trainNo" element={<PassengerTrackerPage />} />
+        <Route path="/passenger" element={<Navigate to="/track" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/kiosk" element={<KioskPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />

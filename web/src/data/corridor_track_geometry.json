@@ -1,0 +1,1378 @@
+{
+  "trunk_NDLS_DDU": [
+    [
+      77.22000399999999,
+      28.642314
+    ],
+    [
+      77.226612,
+      28.634101
+    ],
+    [
+      77.237995,
+      28.627633
+    ],
+    [
+      77.251,
+      28.623
+    ],
+    [
+      77.262,
+      28.625
+    ],
+    [
+      77.2882,
+      28.6322
+    ],
+    [
+      77.3140236,
+      28.6486144
+    ],
+    [
+      77.364182,
+      28.674037
+    ],
+    [
+      77.395,
+      28.663
+    ],
+    [
+      77.431099,
+      28.649702
+    ],
+    [
+      77.495428,
+      28.586886
+    ],
+    [
+      77.537422,
+      28.537940000000003
+    ],
+    [
+      77.56361700000001,
+      28.507907999999997
+    ],
+    [
+      77.59373730349999,
+      28.4728347205
+    ],
+    [
+      77.64321100000001,
+      28.415313
+    ],
+    [
+      77.69926699999999,
+      28.347255
+    ],
+    [
+      77.72940894,
+      28.31216512
+    ],
+    [
+      77.783931,
+      28.247759000000002
+    ],
+    [
+      77.81903999999999,
+      28.206407000000002
+    ],
+    [
+      77.88391252,
+      28.129968509999998
+    ],
+    [
+      77.83998100000001,
+      28.182673
+    ],
+    [
+      77.948193,
+      28.052674
+    ],
+    [
+      78.007062,
+      27.982509
+    ],
+    [
+      78.04247000000001,
+      27.937875000000002
+    ],
+    [
+      78.074559,
+      27.889584
+    ],
+    [
+      78.09879699999999,
+      27.830504
+    ],
+    [
+      78.1102865904,
+      27.7686349988
+    ],
+    [
+      78.1224601752,
+      27.704263607599998
+    ],
+    [
+      78.13706699999999,
+      27.62483
+    ],
+    [
+      78.180143,
+      27.393031999999998
+    ],
+    [
+      78.16993,
+      27.44546
+    ],
+    [
+      78.154207,
+      27.532025
+    ],
+    [
+      78.19231699999999,
+      27.32891
+    ],
+    [
+      78.19892399999999,
+      27.292310999999998
+    ],
+    [
+      78.233285,
+      27.207747
+    ],
+    [
+      78.31461900000001,
+      27.175703000000002
+    ],
+    [
+      78.386691,
+      27.147415
+    ],
+    [
+      78.4715,
+      27.119485
+    ],
+    [
+      78.57495499999999,
+      27.085686
+    ],
+    [
+      78.664813,
+      27.029
+    ],
+    [
+      78.73749459999999,
+      26.9793918
+    ],
+    [
+      78.8237102228,
+      26.9205023929
+    ],
+    [
+      78.893731,
+      26.872978000000003
+    ],
+    [
+      79.021502,
+      26.785970000000002
+    ],
+    [
+      79.116455,
+      26.76628
+    ],
+    [
+      79.2163612,
+      26.7502248
+    ],
+    [
+      79.320694,
+      26.734186
+    ],
+    [
+      80.068986,
+      27.80926
+    ],
+    [
+      79.6740109,
+      23.142728299999998
+    ],
+    [
+      78.142621,
+      11.654084
+    ],
+    [
+      88.315615,
+      22.555508
+    ],
+    [
+      79.404392,
+      26.701949
+    ],
+    [
+      80.54541499999999,
+      26.444642
+    ],
+    [
+      79.5542552124,
+      26.632118317699998
+    ],
+    [
+      79.6354260596,
+      26.59792371
+    ],
+    [
+      75.545676,
+      32.218706
+    ],
+    [
+      79.826878,
+      26.515363999999998
+    ],
+    [
+      79.908216,
+      26.485377
+    ],
+    [
+      80.025181,
+      26.476492
+    ],
+    [
+      79.984729,
+      26.479318
+    ],
+    [
+      80.12429014,
+      26.46811536
+    ],
+    [
+      80.313203,
+      26.454423
+    ],
+    [
+      80.350966,
+      26.454240000000002
+    ],
+    [
+      80.365,
+      26.465
+    ],
+    [
+      80.379316,
+      26.477460999999998
+    ],
+    [
+      80.40654599999999,
+      26.381159999999998
+    ],
+    [
+      86.035742,
+      25.746302
+    ],
+    [
+      80.462852,
+      26.297301
+    ],
+    [
+      81.401934,
+      25.605607000000003
+    ],
+    [
+      80.580557,
+      26.116562000000002
+    ],
+    [
+      80.544495,
+      26.16423
+    ],
+    [
+      80.502629,
+      26.200502
+    ],
+    [
+      80.801869,
+      25.917489
+    ],
+    [
+      80.8532993597,
+      25.8911534211
+    ],
+    [
+      80.685594,
+      26.017246
+    ],
+    [
+      80.752455,
+      25.955085
+    ],
+    [
+      81.03942,
+      25.795325
+    ],
+    [
+      81.102658,
+      25.761853
+    ],
+    [
+      81.31786,
+      25.650642
+    ],
+    [
+      81.2620300824,
+      25.678728805000002
+    ],
+    [
+      81.21464405030001,
+      25.7036520692
+    ],
+    [
+      81.4918665,
+      25.5591917
+    ],
+    [
+      81.44201699999999,
+      25.585017
+    ],
+    [
+      81.55907499999999,
+      25.524992
+    ],
+    [
+      81.613788,
+      25.494982
+    ],
+    [
+      81.741641,
+      25.44494
+    ],
+    [
+      81.662491,
+      25.470171
+    ],
+    [
+      81.789897,
+      25.439879
+    ],
+    [
+      81.86004199999999,
+      25.393138
+    ],
+    [
+      81.916127,
+      25.313666
+    ],
+    [
+      81.98924,
+      25.265024
+    ],
+    [
+      82.089337,
+      25.221545
+    ],
+    [
+      82.1633748193,
+      25.1924197817
+    ],
+    [
+      82.236678,
+      25.162718
+    ],
+    [
+      82.32555500000001,
+      25.157891
+    ],
+    [
+      82.38624899999999,
+      25.16045
+    ],
+    [
+      82.449749,
+      25.173789
+    ],
+    [
+      82.5020212,
+      25.160771699999998
+    ],
+    [
+      82.56986900000001,
+      25.13435
+    ],
+    [
+      82.6513464526,
+      25.124474674400002
+    ],
+    [
+      82.7247816913,
+      25.1197842638
+    ],
+    [
+      82.874703,
+      25.103351
+    ],
+    [
+      82.947581,
+      25.155223
+    ],
+    [
+      87.848322,
+      25.781637999999997
+    ],
+    [
+      83.18436299999999,
+      25.273922000000002
+    ],
+    [
+      83.0618954504,
+      25.2313981241
+    ]
+  ],
+  "branch_CNB_LKO": [
+    [
+      80.350966,
+      26.454240000000002
+    ],
+    [
+      80.379316,
+      26.477460999999998
+    ],
+    [
+      80.428892,
+      26.523705
+    ],
+    [
+      80.486199,
+      26.548354
+    ],
+    [
+      80.559833,
+      26.586191
+    ],
+    [
+      80.798664,
+      26.743403999999998
+    ],
+    [
+      80.841544,
+      26.77443
+    ],
+    [
+      80.890615,
+      26.810176
+    ],
+    [
+      80.925291,
+      26.830675
+    ]
+  ],
+  "total_points": 106,
+  "stations": {
+    "NDLS": {
+      "name": "NEW DELHI",
+      "coordinates": [
+        77.22000399999999,
+        28.642314
+      ],
+      "zone": null,
+      "state": null
+    },
+    "CSB": {
+      "name": "SHIVAJI BRIDGE",
+      "coordinates": [
+        77.226612,
+        28.634101
+      ],
+      "zone": null,
+      "state": null
+    },
+    "TKJ": {
+      "name": "TILAK BRIDGE",
+      "coordinates": [
+        77.237995,
+        28.627633
+      ],
+      "zone": null,
+      "state": null
+    },
+    "ANVR": {
+      "name": "ANAND VIHAR",
+      "coordinates": [
+        77.3140236,
+        28.6486144
+      ],
+      "zone": null,
+      "state": null
+    },
+    "SBB": {
+      "name": "SAHIBABAD",
+      "coordinates": [
+        77.364182,
+        28.674037
+      ],
+      "zone": null,
+      "state": null
+    },
+    "GZB": {
+      "name": "GHAZIABAD",
+      "coordinates": [
+        77.431099,
+        28.649702
+      ],
+      "zone": null,
+      "state": null
+    },
+    "MIU": {
+      "name": "MARIPAT",
+      "coordinates": [
+        77.495428,
+        28.586886
+      ],
+      "zone": null,
+      "state": null
+    },
+    "DER": {
+      "name": "DADRI",
+      "coordinates": [
+        77.537422,
+        28.537940000000003
+      ],
+      "zone": null,
+      "state": null
+    },
+    "BRKY": {
+      "name": "BORAKI",
+      "coordinates": [
+        77.56361700000001,
+        28.507907999999997
+      ],
+      "zone": null,
+      "state": null
+    },
+    "AJR": {
+      "name": "AJAIBPUR",
+      "coordinates": [
+        77.59373730349999,
+        28.4728347205
+      ],
+      "zone": null,
+      "state": null
+    },
+    "DKDE": {
+      "name": "DANKAUR",
+      "coordinates": [
+        77.64321100000001,
+        28.415313
+      ],
+      "zone": null,
+      "state": null
+    },
+    "WAIR": {
+      "name": "WAIR",
+      "coordinates": [
+        77.69926699999999,
+        28.347255
+      ],
+      "zone": null,
+      "state": null
+    },
+    "CHL": {
+      "name": "CHOLA",
+      "coordinates": [
+        77.72940894,
+        28.31216512
+      ],
+      "zone": null,
+      "state": null
+    },
+    "SKQ": {
+      "name": "SIKANDARPUR",
+      "coordinates": [
+        77.783931,
+        28.247759000000002
+      ],
+      "zone": null,
+      "state": null
+    },
+    "KRJ": {
+      "name": "KHURJA JN",
+      "coordinates": [
+        77.81903999999999,
+        28.206407000000002
+      ],
+      "zone": null,
+      "state": null
+    },
+    "DAR": {
+      "name": "DANWAR",
+      "coordinates": [
+        77.88391252,
+        28.129968509999998
+      ],
+      "zone": null,
+      "state": null
+    },
+    "KAMP": {
+      "name": "KAMALPUR",
+      "coordinates": [
+        77.83998100000001,
+        28.182673
+      ],
+      "zone": null,
+      "state": null
+    },
+    "SOM": {
+      "name": "SOMNA",
+      "coordinates": [
+        77.948193,
+        28.052674
+      ],
+      "zone": null,
+      "state": null
+    },
+    "KLA": {
+      "name": "KULWA",
+      "coordinates": [
+        78.007062,
+        27.982509
+      ],
+      "zone": null,
+      "state": null
+    },
+    "MWUE": {
+      "name": "MAHRAWAL",
+      "coordinates": [
+        78.04247000000001,
+        27.937875000000002
+      ],
+      "zone": null,
+      "state": null
+    },
+    "ALJN": {
+      "name": "ALIGARH JN",
+      "coordinates": [
+        78.074559,
+        27.889584
+      ],
+      "zone": null,
+      "state": null
+    },
+    "DAQ": {
+      "name": "DAUD KHAN",
+      "coordinates": [
+        78.09879699999999,
+        27.830504
+      ],
+      "zone": null,
+      "state": null
+    },
+    "MXK": {
+      "name": "MANDRAK",
+      "coordinates": [
+        78.1102865904,
+        27.7686349988
+      ],
+      "zone": null,
+      "state": null
+    },
+    "SNS": {
+      "name": "SASNI",
+      "coordinates": [
+        78.1224601752,
+        27.704263607599998
+      ],
+      "zone": null,
+      "state": null
+    },
+    "HRS": {
+      "name": "HATHRAS JN",
+      "coordinates": [
+        78.13706699999999,
+        27.62483
+      ],
+      "zone": null,
+      "state": null
+    },
+    "CMR": {
+      "name": "CHAMROLA",
+      "coordinates": [
+        78.180143,
+        27.393031999999998
+      ],
+      "zone": null,
+      "state": null
+    },
+    "JLS": {
+      "name": "JALESAR ROAD",
+      "coordinates": [
+        78.16993,
+        27.44546
+      ],
+      "zone": null,
+      "state": null
+    },
+    "PORA": {
+      "name": "PORA",
+      "coordinates": [
+        78.154207,
+        27.532025
+      ],
+      "zone": null,
+      "state": null
+    },
+    "BRN": {
+      "name": "BARHAN",
+      "coordinates": [
+        78.19231699999999,
+        27.32891
+      ],
+      "zone": null,
+      "state": null
+    },
+    "MTI": {
+      "name": "MITAWAL",
+      "coordinates": [
+        78.19892399999999,
+        27.292310999999998
+      ],
+      "zone": null,
+      "state": null
+    },
+    "TDL": {
+      "name": "TUNDLA JN",
+      "coordinates": [
+        78.233285,
+        27.207747
+      ],
+      "zone": null,
+      "state": null
+    },
+    "HNG": {
+      "name": "HIRANGAON",
+      "coordinates": [
+        78.31461900000001,
+        27.175703000000002
+      ],
+      "zone": null,
+      "state": null
+    },
+    "FZD": {
+      "name": "FIROZABAD",
+      "coordinates": [
+        78.386691,
+        27.147415
+      ],
+      "zone": null,
+      "state": null
+    },
+    "MNR": {
+      "name": "MAKKHANPUR",
+      "coordinates": [
+        78.4715,
+        27.119485
+      ],
+      "zone": null,
+      "state": null
+    },
+    "SKB": {
+      "name": "SHIKOHABAD JN",
+      "coordinates": [
+        78.57495499999999,
+        27.085686
+      ],
+      "zone": null,
+      "state": null
+    },
+    "KAA": {
+      "name": "KAURARA",
+      "coordinates": [
+        78.664813,
+        27.029
+      ],
+      "zone": null,
+      "state": null
+    },
+    "BDN": {
+      "name": "BHADAN",
+      "coordinates": [
+        78.73749459999999,
+        26.9793918
+      ],
+      "zone": null,
+      "state": null
+    },
+    "BBL": {
+      "name": "BALRAI",
+      "coordinates": [
+        78.8237102228,
+        26.9205023929
+      ],
+      "zone": null,
+      "state": null
+    },
+    "JGR": {
+      "name": "JASWANTNAGAR",
+      "coordinates": [
+        78.893731,
+        26.872978000000003
+      ],
+      "zone": null,
+      "state": null
+    },
+    "ETW": {
+      "name": "ETAWAH",
+      "coordinates": [
+        79.021502,
+        26.785970000000002
+      ],
+      "zone": null,
+      "state": null
+    },
+    "EKL": {
+      "name": "EKDIL",
+      "coordinates": [
+        79.116455,
+        26.76628
+      ],
+      "zone": null,
+      "state": null
+    },
+    "BNT": {
+      "name": "BHARTHANA",
+      "coordinates": [
+        79.2163612,
+        26.7502248
+      ],
+      "zone": null,
+      "state": null
+    },
+    "SHW": {
+      "name": "SAMHON",
+      "coordinates": [
+        79.320694,
+        26.734186
+      ],
+      "zone": null,
+      "state": null
+    },
+    "UCH": {
+      "name": "UNCHAULIA",
+      "coordinates": [
+        80.068986,
+        27.80926
+      ],
+      "zone": null,
+      "state": null
+    },
+    "BHTN": {
+      "name": "BHITONI",
+      "coordinates": [
+        79.6740109,
+        23.142728299999998
+      ],
+      "zone": "WCR",
+      "state": "Madhya Pradesh"
+    },
+    "SAMT": {
+      "name": "SALEM MARKET",
+      "coordinates": [
+        78.142621,
+        11.654084
+      ],
+      "zone": null,
+      "state": null
+    },
+    "SHM": {
+      "name": "KOLKATA SHALIMAR",
+      "coordinates": [
+        88.315615,
+        22.555508
+      ],
+      "zone": "SER",
+      "state": "West Bengal"
+    },
+    "ULD": {
+      "name": "ACHALDA",
+      "coordinates": [
+        79.404392,
+        26.701949
+      ],
+      "zone": null,
+      "state": null
+    },
+    "ACH": {
+      "name": "Achalganj",
+      "coordinates": [
+        80.54541499999999,
+        26.444642
+      ],
+      "zone": "NR",
+      "state": "Uttar Pradesh"
+    },
+    "PHD": {
+      "name": "PHAPHUND",
+      "coordinates": [
+        79.5542552124,
+        26.632118317699998
+      ],
+      "zone": null,
+      "state": null
+    },
+    "KNS": {
+      "name": "KANCHAUSI",
+      "coordinates": [
+        79.6354260596,
+        26.59792371
+      ],
+      "zone": null,
+      "state": null
+    },
+    "JK": {
+      "name": "Jakolari",
+      "coordinates": [
+        75.545676,
+        32.218706
+      ],
+      "zone": "NR",
+      "state": "Punjab"
+    },
+    "AAP": {
+      "name": "AMBIAPUR",
+      "coordinates": [
+        79.826878,
+        26.515363999999998
+      ],
+      "zone": null,
+      "state": null
+    },
+    "RURA": {
+      "name": "RURA",
+      "coordinates": [
+        79.908216,
+        26.485377
+      ],
+      "zone": null,
+      "state": null
+    },
+    "MTO": {
+      "name": "MAITHA",
+      "coordinates": [
+        80.025181,
+        26.476492
+      ],
+      "zone": null,
+      "state": null
+    },
+    "RMW": {
+      "name": "ROSHAN MAU",
+      "coordinates": [
+        79.984729,
+        26.479318
+      ],
+      "zone": null,
+      "state": null
+    },
+    "BPU": {
+      "name": "BHAUPUR",
+      "coordinates": [
+        80.12429014,
+        26.46811536
+      ],
+      "zone": null,
+      "state": null
+    },
+    "GOY": {
+      "name": "GOVINDPURI",
+      "coordinates": [
+        80.313203,
+        26.454423
+      ],
+      "zone": null,
+      "state": null
+    },
+    "CNB": {
+      "name": "KANPUR CENTRAL",
+      "coordinates": [
+        80.350966,
+        26.454240000000002
+      ],
+      "zone": null,
+      "state": null
+    },
+    "CPB": {
+      "name": "KANPUR BRIDGE LEFT BANK",
+      "coordinates": [
+        80.379316,
+        26.477460999999998
+      ],
+      "zone": null,
+      "state": null
+    },
+    "CHK": {
+      "name": "CHAKERI",
+      "coordinates": [
+        80.40654599999999,
+        26.381159999999998
+      ],
+      "zone": null,
+      "state": null
+    },
+    "ROA": {
+      "name": "RUSERA GHAT",
+      "coordinates": [
+        86.035742,
+        25.746302
+      ],
+      "zone": null,
+      "state": null
+    },
+    "SSL": {
+      "name": "SIRSAUL",
+      "coordinates": [
+        80.462852,
+        26.297301
+      ],
+      "zone": null,
+      "state": null
+    },
+    "SJT": {
+      "name": "SHUJAATPUR",
+      "coordinates": [
+        81.401934,
+        25.605607000000003
+      ],
+      "zone": null,
+      "state": null
+    },
+    "BKO": {
+      "name": "BINDKI ROAD",
+      "coordinates": [
+        80.580557,
+        26.116562000000002
+      ],
+      "zone": null,
+      "state": null
+    },
+    "AUNG": {
+      "name": "AUNG",
+      "coordinates": [
+        80.544495,
+        26.16423
+      ],
+      "zone": null,
+      "state": null
+    },
+    "KBN": {
+      "name": "KARBIGWAN",
+      "coordinates": [
+        80.502629,
+        26.200502
+      ],
+      "zone": null,
+      "state": null
+    },
+    "FTP": {
+      "name": "FATEHPUR",
+      "coordinates": [
+        80.801869,
+        25.917489
+      ],
+      "zone": null,
+      "state": null
+    },
+    "RAMA": {
+      "name": "RAMVA",
+      "coordinates": [
+        80.8532993597,
+        25.8911534211
+      ],
+      "zone": null,
+      "state": null
+    },
+    "MWH": {
+      "name": "MALWAN",
+      "coordinates": [
+        80.685594,
+        26.017246
+      ],
+      "zone": null,
+      "state": null
+    },
+    "KKS": {
+      "name": "KURASTI KALAN",
+      "coordinates": [
+        80.752455,
+        25.955085
+      ],
+      "zone": null,
+      "state": null
+    },
+    "SNIE": {
+      "name": "SATH NARAINI",
+      "coordinates": [
+        81.03942,
+        25.795325
+      ],
+      "zone": null,
+      "state": null
+    },
+    "KGA": {
+      "name": "KHAGA",
+      "coordinates": [
+        81.102658,
+        25.761853
+      ],
+      "zone": null,
+      "state": null
+    },
+    "SRO": {
+      "name": "SIRATHU",
+      "coordinates": [
+        81.31786,
+        25.650642
+      ],
+      "zone": null,
+      "state": null
+    },
+    "ASCE": {
+      "name": "ATHSARAI",
+      "coordinates": [
+        81.2620300824,
+        25.678728805000002
+      ],
+      "zone": null,
+      "state": null
+    },
+    "KUW": {
+      "name": "KANWAR",
+      "coordinates": [
+        81.21464405030001,
+        25.7036520692
+      ],
+      "zone": null,
+      "state": null
+    },
+    "BRE": {
+      "name": "BHARWARI",
+      "coordinates": [
+        81.4918665,
+        25.5591917
+      ],
+      "zone": null,
+      "state": null
+    },
+    "BDNP": {
+      "name": "BIDANPUR",
+      "coordinates": [
+        81.44201699999999,
+        25.585017
+      ],
+      "zone": null,
+      "state": null
+    },
+    "MNJ": {
+      "name": "MANOHARGANJ",
+      "coordinates": [
+        81.55907499999999,
+        25.524992
+      ],
+      "zone": null,
+      "state": null
+    },
+    "SYWN": {
+      "name": "SAIYID SARAWAN",
+      "coordinates": [
+        81.613788,
+        25.494982
+      ],
+      "zone": null,
+      "state": null
+    },
+    "BMU": {
+      "name": "BAMHRAULI",
+      "coordinates": [
+        81.741641,
+        25.44494
+      ],
+      "zone": null,
+      "state": null
+    },
+    "MRE": {
+      "name": "MANAURI",
+      "coordinates": [
+        81.662491,
+        25.470171
+      ],
+      "zone": null,
+      "state": null
+    },
+    "SFG": {
+      "name": "SUBEDARGANJ",
+      "coordinates": [
+        81.789897,
+        25.439879
+      ],
+      "zone": null,
+      "state": null
+    },
+    "NYN": {
+      "name": "NAINI",
+      "coordinates": [
+        81.86004199999999,
+        25.393138
+      ],
+      "zone": null,
+      "state": null
+    },
+    "KCN": {
+      "name": "KARCHANA",
+      "coordinates": [
+        81.916127,
+        25.313666
+      ],
+      "zone": null,
+      "state": null
+    },
+    "BEP": {
+      "name": "BHEERPUR",
+      "coordinates": [
+        81.98924,
+        25.265024
+      ],
+      "zone": null,
+      "state": null
+    },
+    "MJA": {
+      "name": "MEJA ROAD",
+      "coordinates": [
+        82.089337,
+        25.221545
+      ],
+      "zone": null,
+      "state": null
+    },
+    "UND": {
+      "name": "UNCHDIH",
+      "coordinates": [
+        82.1633748193,
+        25.1924197817
+      ],
+      "zone": null,
+      "state": null
+    },
+    "MNF": {
+      "name": "MANDA ROAD",
+      "coordinates": [
+        82.236678,
+        25.162718
+      ],
+      "zone": null,
+      "state": null
+    },
+    "JIA": {
+      "name": "JIGNA",
+      "coordinates": [
+        82.32555500000001,
+        25.157891
+      ],
+      "zone": null,
+      "state": null
+    },
+    "GAE": {
+      "name": "GAIPURA",
+      "coordinates": [
+        82.38624899999999,
+        25.16045
+      ],
+      "zone": null,
+      "state": null
+    },
+    "BEO": {
+      "name": "BIROHE",
+      "coordinates": [
+        82.449749,
+        25.173789
+      ],
+      "zone": null,
+      "state": null
+    },
+    "BDL": {
+      "name": "VINDHYACHAL",
+      "coordinates": [
+        82.5020212,
+        25.160771699999998
+      ],
+      "zone": null,
+      "state": null
+    },
+    "MZP": {
+      "name": "MIRZAPUR",
+      "coordinates": [
+        82.56986900000001,
+        25.13435
+      ],
+      "zone": null,
+      "state": null
+    },
+    "JHG": {
+      "name": "JHINGURA",
+      "coordinates": [
+        82.6513464526,
+        25.124474674400002
+      ],
+      "zone": null,
+      "state": null
+    },
+    "PRE": {
+      "name": "PAHARA",
+      "coordinates": [
+        82.7247816913,
+        25.1197842638
+      ],
+      "zone": null,
+      "state": null
+    },
+    "CAR": {
+      "name": "CHUNAR",
+      "coordinates": [
+        82.874703,
+        25.103351
+      ],
+      "zone": null,
+      "state": null
+    },
+    "KYT": {
+      "name": "KAILAHAT",
+      "coordinates": [
+        82.947581,
+        25.155223
+      ],
+      "zone": null,
+      "state": null
+    },
+    "AHL": {
+      "name": "AJHARAIL",
+      "coordinates": [
+        87.848322,
+        25.781637999999997
+      ],
+      "zone": null,
+      "state": null
+    },
+    "GAQ": {
+      "name": "GANJ KHAWAJA",
+      "coordinates": [
+        83.18436299999999,
+        25.273922000000002
+      ],
+      "zone": null,
+      "state": null
+    },
+    "JEP": {
+      "name": "JEONATHPUR",
+      "coordinates": [
+        83.0618954504,
+        25.2313981241
+      ],
+      "zone": null,
+      "state": null
+    }
+  }
+}

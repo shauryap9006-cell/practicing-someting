@@ -346,6 +346,10 @@ export const api = {
     });
   },
 
+  async getTrainLive(trainNo: string): Promise<any> {
+    return fetchBackend<any>(`/v1/trains/${trainNo}/live`, {}, () => null);
+  },
+
   // 3. Platform Gantt
   async getPlatforms(code?: StationCode): Promise<PlatformInfo[]> {
     return fetchBackend(`/api/platform/states`, {}, () => mockStore.getPlatforms(code));

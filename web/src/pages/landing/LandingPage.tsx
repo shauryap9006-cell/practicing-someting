@@ -98,8 +98,13 @@ export function LandingPage() {
           <Link to="/dashboard/model" className="text-[#A3ABB6] hover:text-[#E9EBEE] hidden md:inline transition-colors">
             v3 Model Proof
           </Link>
-          <Link to="/kiosk" target="_blank" className="text-[#A3ABB6] hover:text-[#F5A524] flex items-center gap-1 transition-colors">
-            <span>Passenger PIDS</span>
+          <Link to="/track" className="text-[#A3ABB6] hover:text-[#F5A524] flex items-center gap-1.5 transition-colors">
+            <Radio className="w-3.5 h-3.5 text-[#F5A524] animate-pulse" />
+            <span>Passenger Live Track</span>
+          </Link>
+
+          <Link to="/kiosk" target="_blank" className="text-[#A3ABB6] hover:text-[#E9EBEE] flex items-center gap-1 transition-colors">
+            <span>Station Kiosk</span>
             <Maximize2 className="w-3 h-3" />
           </Link>
 
@@ -138,28 +143,28 @@ export function LandingPage() {
           <div className="font-mono text-xs text-[#3DDC97] flex items-center gap-1.5 pt-1">
             <Link
               to="/dashboard/model"
-              className="hover:underline flex items-center gap-1"
+              className="hover:underline flex items-center gap-1 transition-colors"
             >
-              <span>38.7% lower error vs NTES constant-velocity · verified on ledger</span>
-              <span>↗</span>
+              <span>Verified across 33,600 real historical station events</span>
+              <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
 
           {/* Dual CTA Pair: Controller Entry + Passenger Lookup */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
             <Link
-              to="/login"
-              className="px-6 py-3.5 bg-[#F5A524] hover:bg-[#F5A524]/90 text-[#0A0B0D] font-bold text-sm font-mono tracking-wide flex items-center justify-center gap-2 transition-colors rounded-sm shadow-lg"
+              to="/track"
+              className="px-6 py-3.5 bg-[#F5A524] hover:bg-[#F5A524]/90 text-[#0A0B0D] font-bold text-sm font-mono tracking-wide flex items-center justify-center gap-2 transition-colors rounded-sm shadow-[0_0_15px_rgba(245,165,36,0.3)]"
             >
-              <span>Launch Control Room →</span>
+              <Radio className="w-4 h-4 animate-pulse" />
+              <span>Track Your Train (Live Satellite) →</span>
             </Link>
 
             <Link
-              to="/kiosk"
-              target="_blank"
-              className="px-6 py-3.5 bg-[#101216] hover:bg-[#15181D] border border-[#23272F] hover:border-[#6C9FFF] text-[#6C9FFF] font-mono text-sm flex items-center justify-center gap-2 transition-colors rounded-sm"
+              to="/login"
+              className="px-6 py-3.5 bg-[#101216] hover:bg-[#15181D] border border-[#23272F] hover:border-[#F5A524] text-[#E9EBEE] font-mono text-sm flex items-center justify-center gap-2 transition-colors rounded-sm"
             >
-              <span>Check My Train ↗</span>
+              <span>Launch Control Room ↗</span>
             </Link>
           </div>
 
