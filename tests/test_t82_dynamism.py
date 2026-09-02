@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 import datetime, json, os, pytest
 from api.predictor import get_predictor_service
 from engine.clocks import ReplayClock, set_global_clock, RealClock
@@ -12,9 +12,12 @@ def test_t82_differential_dynamism_full_cycle():
     train_no = "12034"
     target_stn = "NDLS"
 
+    orig_active_ids = []
     try:
         with db.transaction() as cur:
-            cur.execute("UPDATE speed_restrictions SET is_active = 0;")
+            cur.execute("SELECT id FROM speed_restrictions WHERE is_active = 1;")
+            orig_active_ids = [r[0] for r in cur.fetchall()]
+            cur.execute("UPDATE speed_restrictions SET is_active = 0 WHERE from_code = 'GZB' AND to_code = 'NDLS';")
 
         # (a) Baseline A
         t0 = clock.now_iso()
@@ -74,3 +77,6 @@ def test_t82_differential_dynamism_full_cycle():
 
     finally:
         set_global_clock(RealClock())
+        if orig_active_ids:
+            with db.transaction() as cur:
+                cur.execute(f"UPDATE speed_restrictions SET is_active = 1 WHERE id IN ({','.join('?' for _ in orig_active_ids)});", orig_active_ids)

@@ -29,10 +29,12 @@ from api.system_routes import router as system_router
 from api.safety_routes import router as safety_router
 from api.workforce_routes import router as workforce_router
 from api.section_routes import router as section_router
-from api.live_routes import router as live_router
 from api.admin_routes import router as admin_router
 from api.handover_routes import router as handover_router
 from api.infra_routes import router as infra_router
+from api.ops_routes import router as ops_router
+from api.commercial_routes import router as commercial_router
+from api.live_routes import router as live_router
 from engine.live_tracker import get_live_tracker
 from api.middleware import IdempotencyMiddleware, ResponseCacheMiddleware, TokenBucketRateLimiter
 
@@ -114,6 +116,7 @@ app.include_router(notification_router)
 
 # Mount Live Operational & Delay Intelligence Routes
 app.include_router(timetable_router)
+app.include_router(ops_router)
 app.include_router(board_router)
 app.include_router(platform_router)
 app.include_router(block_router)
@@ -122,6 +125,7 @@ app.include_router(system_router)
 
 # Mount Safety & Crew Intelligence Routes
 app.include_router(safety_router)
+app.include_router(commercial_router)
 app.include_router(workforce_router)
 
 # Mount Multi-Station & Section Coordination Routes

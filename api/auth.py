@@ -147,13 +147,18 @@ def get_current_user(
     db: Database = Depends(get_db),
 ) -> Dict[str, Any]:
     """FastAPI dependency to extract and validate the authenticated user from the Authorization header."""
-    username = "admin"
-    if auth and auth.credentials and auth.credentials != "demo-jwt-token-sih-2026":
-        try:
-            payload = decode_access_token(auth.credentials)
-            username = payload.get("sub", "admin")
-        except Exception:
-            username = "admin"
+    if not auth or not auth.credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required. Please provide a valid Bearer token.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if auth.credentials == "demo-jwt-token-sih-2026":
+        username = "admin"
+    else:
+        payload = decode_access_token(auth.credentials)
+        username = payload.get("sub", "admin")
 
     with db.transaction() as cur:
         cur.execute(
@@ -162,7 +167,7 @@ def get_current_user(
                    r.name as role_name, r.permissions_json
             FROM users u
             JOIN roles r ON u.role_id = r.id
-            WHERE (u.username = ? OR u.role_id = 'admin') AND u.is_active = 1
+            WHERE u.username = ? AND u.is_active = 1
             LIMIT 1;
             """,
             (username,),
