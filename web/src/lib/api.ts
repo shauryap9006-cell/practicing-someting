@@ -350,6 +350,10 @@ export const api = {
     return fetchBackend<any>(`/v1/trains/${trainNo}/live`, {}, () => null);
   },
 
+  async getPNRStatus(pnrNo: string): Promise<any> {
+    return fetchBackend<any>(`/v1/pnr/${pnrNo}`, {}, () => null);
+  },
+
   // 3. Platform Gantt
   async getPlatforms(code?: StationCode): Promise<PlatformInfo[]> {
     return fetchBackend(`/api/platform/states`, {}, () => mockStore.getPlatforms(code));

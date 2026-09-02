@@ -229,6 +229,139 @@ def get_train_autopsy(train_no: str):
 
 
 # ----------------------------------------------------
+# 3b. Public Passenger PNR Status & Live Tracking
+# ----------------------------------------------------
+@router.get("/pnr/{pnr_no}")
+def get_pnr_status(pnr_no: str):
+    """Returns passenger booking details, coach position, and live train kinematics for a 10-digit PNR."""
+    clean_pnr = pnr_no.strip().replace("-", "")
+    if not clean_pnr.isdigit() or len(clean_pnr) != 10:
+        raise HTTPException(
+            status_code=400,
+            detail={"code": "INVALID_PNR", "message": "PNR must be a 10-digit numerical identifier (e.g. 2458910342).", "retryable": False}
+        )
+
+    db = get_db()
+    clock = get_clock()
+
+    # Deterministic mapping based on PNR hash
+    pnr_hash = sum(int(c) * (idx + 1) for idx, c in enumerate(clean_pnr))
+
+    candidate_trains = ["12003", "22436", "12301", "12424", "22439"]
+    selected_train_no = candidate_trains[pnr_hash % len(candidate_trains)]
+
+    with db.transaction() as cur:
+        cur.execute("SELECT train_no, name, class FROM trains WHERE train_no = ?", (selected_train_no,))
+        train_row = cur.fetchone()
+        train_name = train_row["name"] if train_row else "Superfast Express"
+        train_class = train_row["class"] if train_row else "EXPRESS"
+
+        cur.execute(
+            """
+            SELECT station_code, seq, sched_arr, sched_dep, distance_km
+            FROM route_stations
+            WHERE train_no = ?
+            ORDER BY seq ASC
+            """,
+            (selected_train_no,)
+        )
+        stops = cur.fetchall()
+
+    if not stops:
+        from_code, to_code = "NDLS", "CNB"
+        sched_dep, sched_arr = "16:50", "21:30"
+    else:
+        from_code = stops[0]["station_code"]
+        to_code = stops[-1]["station_code"] if len(stops) > 1 else "CNB"
+        sched_dep = stops[0]["sched_dep"] or "16:50"
+        sched_arr = stops[-1]["sched_arr"] or "21:30"
+
+    station_names = {
+        "NDLS": "New Delhi",
+        "GZB": "Ghaziabad Jn",
+        "ALJN": "Aligarh Jn",
+        "TDL": "Tundla Jn",
+        "ETW": "Etawah Jn",
+        "CNB": "Kanpur Central",
+        "PRYJ": "Prayagraj Jn",
+        "DDU": "Pt. Deen Dayal Upadhyaya",
+        "LKO": "Lucknow Charbagh",
+    }
+
+    # Derive coach, berth, and passenger list
+    is_chair_car = "shatabdi" in train_name.lower() or "vande" in train_name.lower()
+    coach_code = f"C{(pnr_hash % 6) + 1}" if is_chair_car else f"B{(pnr_hash % 5) + 1}"
+    berth_1 = (pnr_hash % 68) + 1
+    berth_2 = berth_1 + 1
+
+    berth_type_1 = "Window Seat (WS)" if is_chair_car else ("Lower Berth (LB)" if berth_1 % 8 in (1, 4) else "Side Lower (SL)")
+    berth_type_2 = "Aisle Seat (AS)" if is_chair_car else ("Middle Berth (MB)" if berth_2 % 8 in (2, 5) else "Upper Berth (UB)")
+
+    # Complete rake composition for platform coach guidance
+    rake_coaches = (
+        ["LOCO", "EOG", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "EC1", "EC2", "EOG"]
+        if is_chair_car else
+        ["LOCO", "SLR", "GEN", "B1", "B2", "B3", "B4", "B5", "A1", "A2", "H1", "S1", "S2", "S3", "S4", "S5", "S6", "SLR"]
+    )
+
+    coach_pos = rake_coaches.index(coach_code) + 1 if coach_code in rake_coaches else 5
+    platform_num = (pnr_hash % 5) + 1
+
+    return {
+        "pnr_no": clean_pnr,
+        "train_no": selected_train_no,
+        "train_name": train_name,
+        "date_of_journey": clock.today_str(),
+        "from_station": {
+            "code": from_code,
+            "name": station_names.get(from_code, from_code),
+            "sched_dep": sched_dep,
+            "platform": platform_num,
+        },
+        "to_station": {
+            "code": to_code,
+            "name": station_names.get(to_code, to_code),
+            "sched_arr": sched_arr,
+            "platform": (platform_num % 4) + 1,
+        },
+        "travel_class": {
+            "code": "CC" if is_chair_car else "3A",
+            "name": "AC Chair Car" if is_chair_car else "AC 3 Tier",
+        },
+        "quota": "GENERAL (GN)",
+        "charting_status": "CHART PREPARED",
+        "passengers": [
+            {
+                "passenger_no": 1,
+                "booking_status": "CNF",
+                "current_status": "CNF",
+                "coach": coach_code,
+                "berth": berth_1,
+                "berth_type": berth_type_1,
+            },
+            {
+                "passenger_no": 2,
+                "booking_status": "CNF",
+                "current_status": "CNF",
+                "coach": coach_code,
+                "berth": berth_2,
+                "berth_type": berth_type_2,
+            },
+        ],
+        "coach_position": {
+            "coach": coach_code,
+            "position_from_engine": coach_pos,
+            "total_coaches": len(rake_coaches),
+            "rake_type": "LHB",
+            "all_coaches": rake_coaches,
+            "platform_guidance": f"Coach {coach_code} stands approx. {coach_pos * 24}m from engine (near Platform {platform_num} middle foot overbridge/escalator).",
+        },
+        "fare_paid": 1240.0 if is_chair_car else 1580.0,
+        "as_of": clock.now_iso(),
+    }
+
+
+# ----------------------------------------------------
 # 4. Network State Corridor View (F1, F10)
 # ----------------------------------------------------
 @router.get("/network/state", response_model=NetworkStateResponse)

@@ -1,11 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { queryKeys } from '@/lib/queryKeys';
 import { SEO } from '@/lib/seo';
-import { formatTimeIST } from '@/lib/utils';
-import { AspectLamp, AspectType, ConfidenceBand, EmptyState } from '@/components/aspect';
+import { AspectLamp, AspectType } from '@/components/aspect';
 import { PassengerSatelliteMap, RouteStopGeo } from '@/components/passenger/PassengerSatelliteMap';
 import {
   Search,
@@ -14,15 +13,16 @@ import {
   Radio,
   Train as TrainIcon,
   ShieldCheck,
-  AlertTriangle,
   ArrowRight,
   Layers,
-  ChevronDown,
-  Navigation,
+  Ticket,
   CheckCircle2,
   Languages,
-  Sparkles,
-  Share2,
+  User,
+  AlertCircle,
+  Copy,
+  Check,
+  Compass,
 } from 'lucide-react';
 
 // Hardcoded coordinates for NCR trunk corridor stations
@@ -49,17 +49,26 @@ const POPULAR_TRAINS = [
   { no: '22439', name: 'Vande Bharat Katra', nameHi: 'वंदे भारत कटरा' },
 ];
 
+const SAMPLE_PNRS = [
+  { pnr: '2458910342', label: '2458910342 (Shatabdi C3)' },
+  { pnr: '6412345678', label: '6412345678 (Vande Bharat C2)' },
+  { pnr: '8219402851', label: '8219402851 (Rajdhani B3)' },
+];
+
 export function PassengerTrackerPage() {
   const { trainNo: routeTrainNo } = useParams<{ trainNo?: string }>();
   const navigate = useNavigate();
 
+  const [searchMode, setSearchMode] = useState<'TRAIN' | 'PNR'>('TRAIN');
   const [searchInput, setSearchInput] = useState('');
   const [activeTrainNo, setActiveTrainNo] = useState(routeTrainNo || '12003');
+  const [activePnr, setActivePnr] = useState<string | null>(null);
   const [userStationCode, setUserStationCode] = useState<string>('CNB');
   const [lang, setLang] = useState<'EN' | 'HI'>('EN');
+  const [copiedPnr, setCopiedPnr] = useState(false);
 
   // 1. Live Train Journey and Timetable (polling every 5s)
-  const { data: train, isLoading: trainLoading } = useQuery({
+  const { data: train } = useQuery({
     queryKey: queryKeys.train(activeTrainNo),
     queryFn: () => api.getTrain(activeTrainNo),
     enabled: !!activeTrainNo,
@@ -82,17 +91,49 @@ export function PassengerTrackerPage() {
     refetchInterval: 5000,
   });
 
+  // 4. PNR Status Query (when activePnr is set)
+  const { data: pnrData, isLoading: pnrLoading, error: pnrError } = useQuery({
+    queryKey: queryKeys.pnr(activePnr || ''),
+    queryFn: () => api.getPNRStatus(activePnr!),
+    enabled: !!activePnr && activePnr.length === 10,
+  });
+
+  // When PNR data loads, sync with train tracking
+  useEffect(() => {
+    if (pnrData && pnrData.train_no) {
+      setActiveTrainNo(pnrData.train_no);
+      if (pnrData.to_station?.code) {
+        setUserStationCode(pnrData.to_station.code);
+      }
+    }
+  }, [pnrData]);
+
   // Handle Search Submission
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const clean = searchInput.trim().toUpperCase();
+    const clean = searchInput.trim().replace("-", "");
     if (!clean) return;
 
-    // Check if input matches a number or name
-    const match = POPULAR_TRAINS.find(t => t.no === clean || t.name.toUpperCase().includes(clean));
+    // Auto-detect 10-digit numeric PNR
+    if (/^\d{10}$/.test(clean)) {
+      setSearchMode('PNR');
+      setActivePnr(clean);
+      return;
+    }
+
+    // Otherwise Train Number or Name
+    setSearchMode('TRAIN');
+    setActivePnr(null);
+    const match = POPULAR_TRAINS.find(t => t.no === clean || t.name.toUpperCase().includes(clean.toUpperCase()));
     const targetNo = match ? match.no : clean;
     setActiveTrainNo(targetNo);
     navigate(`/track/${targetNo}`);
+  };
+
+  const copyPnrToClipboard = (pnr: string) => {
+    navigator.clipboard.writeText(pnr);
+    setCopiedPnr(true);
+    setTimeout(() => setCopiedPnr(false), 2000);
   };
 
   // Convert Journey Stops with accurate Geolocation
@@ -149,8 +190,8 @@ export function PassengerTrackerPage() {
   return (
     <div className="min-h-screen bg-[#0A0B0D] text-[#E9EBEE] font-sans antialiased selection:bg-[#F5A524]/30 selection:text-[#F5A524] pb-16">
       <SEO
-        title={`Live Train Status #${activeTrainNo} · RailTwin-X Passenger Portal`}
-        description="Check real-time train location, honest predicted arrival time, platform number, and why your train is late with live satellite tracking."
+        title={`Live Passenger Status & PNR Tracker · RailTwin-X`}
+        description="Search by Train Number or 10-digit PNR for real-time train location on physical satellite maps, platform number, coach position, and delay autopsy."
       />
 
       {/* 1. Passenger Navigation Header */}
@@ -164,11 +205,11 @@ export function PassengerTrackerPage() {
               <div className="flex items-center gap-1.5">
                 <span className="font-mono font-bold text-sm text-[#E9EBEE] tracking-tight">RAILTWIN-X</span>
                 <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#F5A524]/15 border border-[#F5A524]/30 text-[#F5A524]">
-                  LIVE PASSENGER
+                  PASSENGER & PNR
                 </span>
               </div>
               <p className="text-[10px] text-[#A3ABB6] font-mono hidden sm:block">
-                {lang === 'HI' ? 'भारतीय रेल वास्तविक समय लाइव ट्रैकर' : 'Indian Railways Real-Time Live Tracker'}
+                {lang === 'HI' ? 'भारतीय रेल वास्तविक समय लाइव व पीएनआर ट्रैकर' : 'Indian Railways Live Train & PNR Tracker'}
               </p>
             </div>
           </Link>
@@ -190,7 +231,7 @@ export function PassengerTrackerPage() {
               to="/dashboard"
               className="hidden sm:flex items-center gap-1 px-3 py-1 bg-[#15181D] hover:bg-[#1B1F26] border border-[#23272F] text-xs font-mono text-[#A3ABB6] hover:text-[#E9EBEE] rounded transition-colors"
             >
-              <span>{lang === 'HI' ? 'कंट्रोलर पैनल' : 'Controller Panel'}</span>
+              <span>{lang === 'HI' ? 'कंट्रोलर पैनल' : 'Controller'}</span>
               <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
@@ -199,21 +240,55 @@ export function PassengerTrackerPage() {
 
       {/* Main Content Container */}
       <main className="max-w-5xl mx-auto px-4 pt-6 space-y-6">
-        {/* 2. Train Search & Quick Selector */}
-        <div className="bg-[#101216] border border-[#23272F] rounded-lg p-4 sm:p-5 space-y-3 font-mono">
+        {/* 2. Unified Search Box (Train No. OR 10-Digit PNR) */}
+        <div className="bg-[#101216] border border-[#23272F] rounded-lg p-4 sm:p-5 space-y-4 font-mono">
+          {/* Mode Switcher */}
+          <div className="flex items-center gap-2 border-b border-[#23272F] pb-3 text-xs">
+            <button
+              type="button"
+              onClick={() => setSearchMode('TRAIN')}
+              className={`px-3 py-1.5 rounded-sm font-bold flex items-center gap-1.5 transition-all ${
+                searchMode === 'TRAIN'
+                  ? 'bg-[#F5A524] text-[#0A0B0D]'
+                  : 'text-[#A3ABB6] hover:text-[#E9EBEE]'
+              }`}
+            >
+              <TrainIcon className="w-3.5 h-3.5" />
+              <span>{lang === 'HI' ? 'ट्रेन नंबर या नाम' : 'Train Number / Name'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSearchMode('PNR')}
+              className={`px-3 py-1.5 rounded-sm font-bold flex items-center gap-1.5 transition-all ${
+                searchMode === 'PNR'
+                  ? 'bg-[#F5A524] text-[#0A0B0D]'
+                  : 'text-[#A3ABB6] hover:text-[#E9EBEE]'
+              }`}
+            >
+              <Ticket className="w-3.5 h-3.5" />
+              <span>{lang === 'HI' ? '10-अंकीय पीएनआर' : '10-Digit PNR Status'}</span>
+            </button>
+          </div>
+
+          {/* Search Form */}
           <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2">
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-[#6B7480] absolute left-3.5 top-1/2 -translate-y-1/2" />
+              {searchMode === 'PNR' ? (
+                <Ticket className="w-4 h-4 text-[#F5A524] absolute left-3.5 top-1/2 -translate-y-1/2" />
+              ) : (
+                <Search className="w-4 h-4 text-[#6B7480] absolute left-3.5 top-1/2 -translate-y-1/2" />
+              )}
               <input
                 type="text"
                 value={searchInput}
                 onChange={e => setSearchInput(e.target.value)}
                 placeholder={
-                  lang === 'HI'
-                    ? 'ट्रेन नंबर या नाम दर्ज करें (जैसे 12003, शताब्दी, राजधानी)...'
-                    : 'Enter Train Number or Name (e.g. 12003, Shatabdi, Rajdhani)...'
+                  searchMode === 'PNR'
+                    ? (lang === 'HI' ? '10-अंकीय पीएनआर दर्ज करें (उदा. 2458910342)...' : 'Enter 10-Digit PNR Number (e.g. 2458910342)...')
+                    : (lang === 'HI' ? 'ट्रेन नंबर या नाम दर्ज करें (उदा. 12003, शताब्दी, राजधानी)...' : 'Enter Train Number or Name (e.g. 12003, Shatabdi)...')
                 }
-                className="w-full pl-10 pr-4 py-2.5 bg-[#0A0B0D] border border-[#23272F] rounded text-xs text-[#E9EBEE] placeholder-[#6B7480] focus:outline-none focus:border-[#F5A524] transition-colors"
+                className="w-full pl-10 pr-4 py-2.5 bg-[#0A0B0D] border border-[#23272F] rounded text-xs text-[#E9EBEE] placeholder-[#6B7480] focus:outline-none focus:border-[#F5A524] transition-colors font-mono"
               />
             </div>
             <button
@@ -221,39 +296,206 @@ export function PassengerTrackerPage() {
               className="px-5 py-2.5 bg-[#F5A524] hover:bg-[#F5A524]/90 text-[#0A0B0D] font-bold text-xs rounded transition-colors flex items-center justify-center gap-1.5 shadow-md"
             >
               <Radio className="w-3.5 h-3.5 animate-pulse" />
-              <span>{lang === 'HI' ? 'ट्रेन ट्रैक करें' : 'Track Train'}</span>
+              <span>{searchMode === 'PNR' ? (lang === 'HI' ? 'पीएनआर खोजें' : 'Check PNR') : (lang === 'HI' ? 'ट्रेन ट्रैक करें' : 'Track Train')}</span>
             </button>
           </form>
 
-          {/* Popular Train Quick Chips */}
-          <div className="flex flex-wrap items-center gap-2 pt-1">
-            <span className="text-[11px] text-[#6B7480]">
-              {lang === 'HI' ? 'त्वरित चयन:' : 'Quick Select:'}
+          {/* Quick Selection Chips */}
+          <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+            <span className="text-[#6B7480] text-[11px]">
+              {searchMode === 'PNR' ? (lang === 'HI' ? 'नमूना पीएनआर:' : 'Sample PNRs:') : (lang === 'HI' ? 'त्वरित चयन:' : 'Quick Select:')}
             </span>
-            {POPULAR_TRAINS.map(t => (
-              <button
-                key={t.no}
-                type="button"
-                onClick={() => {
-                  setActiveTrainNo(t.no);
-                  navigate(`/track/${t.no}`);
-                }}
-                className={`px-2.5 py-1 rounded text-xs border transition-all ${
-                  activeTrainNo === t.no
-                    ? 'bg-[#F5A524] text-[#0A0B0D] border-[#F5A524] font-bold'
-                    : 'bg-[#15181D] text-[#A3ABB6] border-[#23272F] hover:border-[#2E333D] hover:text-[#E9EBEE]'
-                }`}
-              >
-                <span>{t.no}</span>
-                <span className="opacity-75 ml-1 hidden md:inline font-sans">
-                  ({lang === 'HI' ? t.nameHi : t.name})
-                </span>
-              </button>
-            ))}
+
+            {searchMode === 'PNR' ? (
+              SAMPLE_PNRS.map(p => (
+                <button
+                  key={p.pnr}
+                  type="button"
+                  onClick={() => {
+                    setSearchInput(p.pnr);
+                    setActivePnr(p.pnr);
+                  }}
+                  className={`px-2.5 py-1 rounded text-xs border transition-all ${
+                    activePnr === p.pnr
+                      ? 'bg-[#F5A524] text-[#0A0B0D] border-[#F5A524] font-bold'
+                      : 'bg-[#15181D] text-[#A3ABB6] border-[#23272F] hover:border-[#2E333D] hover:text-[#E9EBEE]'
+                  }`}
+                >
+                  <span>{p.label}</span>
+                </button>
+              ))
+            ) : (
+              POPULAR_TRAINS.map(t => (
+                <button
+                  key={t.no}
+                  type="button"
+                  onClick={() => {
+                    setActiveTrainNo(t.no);
+                    setActivePnr(null);
+                    navigate(`/track/${t.no}`);
+                  }}
+                  className={`px-2.5 py-1 rounded text-xs border transition-all ${
+                    activeTrainNo === t.no && !activePnr
+                      ? 'bg-[#F5A524] text-[#0A0B0D] border-[#F5A524] font-bold'
+                      : 'bg-[#15181D] text-[#A3ABB6] border-[#23272F] hover:border-[#2E333D] hover:text-[#E9EBEE]'
+                  }`}
+                >
+                  <span>{t.no}</span>
+                  <span className="opacity-75 ml-1 hidden md:inline font-sans">
+                    ({lang === 'HI' ? t.nameHi : t.name})
+                  </span>
+                </button>
+              ))
+            )}
           </div>
         </div>
 
-        {/* 3. HERO PASSENGER STATUS CARD (The 4 Questions Solved) */}
+        {/* 3. PNR BOOKING & COACH POSITION INSTRUMENT CARD (When PNR active) */}
+        {activePnr && pnrData && (
+          <div className="bg-[#101216] border border-[#23272F] rounded-lg p-5 sm:p-6 space-y-5 font-mono">
+            {/* PNR Header Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#23272F]">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded bg-[#F5A524]/15 border border-[#F5A524]/30 flex items-center justify-center shrink-0">
+                  <Ticket className="w-5 h-5 text-[#F5A524]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-[#6B7480]">PNR</span>
+                    <span className="text-xl font-bold text-[#E9EBEE] tracking-wider">{pnrData.pnr_no}</span>
+                    <button
+                      type="button"
+                      onClick={() => copyPnrToClipboard(pnrData.pnr_no)}
+                      className="text-[#A3ABB6] hover:text-[#E9EBEE] transition-colors"
+                      title="Copy PNR"
+                    >
+                      {copiedPnr ? <Check className="w-3.5 h-3.5 text-[#3DDC97]" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                  <span className="text-xs text-[#A3ABB6] font-sans">
+                    {pnrData.train_no} · {pnrData.train_name}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#3DDC97]/15 border border-[#3DDC97]/40 text-[#3DDC97]">
+                  ● {pnrData.charting_status}
+                </span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#15181D] border border-[#23272F] text-[#E9EBEE]">
+                  {pnrData.travel_class?.name} ({pnrData.travel_class?.code})
+                </span>
+                <span className="px-2 py-0.5 rounded text-[10px] bg-[#15181D] border border-[#23272F] text-[#A3ABB6]">
+                  {pnrData.quota}
+                </span>
+              </div>
+            </div>
+
+            {/* Journey Stations & Times */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3.5 bg-[#0A0B0D] border border-[#23272F] rounded-md text-xs">
+              <div>
+                <span className="text-[10px] text-[#6B7480] uppercase block">
+                  {lang === 'HI' ? 'प्रस्थान स्टेशन' : 'FROM STATION'}
+                </span>
+                <div className="flex items-baseline gap-2 mt-0.5">
+                  <span className="text-base font-bold text-[#E9EBEE]">{pnrData.from_station?.code}</span>
+                  <span className="text-[#A3ABB6] font-sans">{pnrData.from_station?.name}</span>
+                </div>
+                <div className="text-[#6B7480] text-[11px] mt-1">
+                  <span>Dep: {pnrData.from_station?.sched_dep}</span>
+                  <span className="ml-2 font-bold text-[#F5A524]">Platform {pnrData.from_station?.platform}</span>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-[10px] text-[#6B7480] uppercase block">
+                  {lang === 'HI' ? 'गंतव्य स्टेशन' : 'TO DESTINATION'}
+                </span>
+                <div className="flex items-baseline gap-2 mt-0.5">
+                  <span className="text-base font-bold text-[#E9EBEE]">{pnrData.to_station?.code}</span>
+                  <span className="text-[#A3ABB6] font-sans">{pnrData.to_station?.name}</span>
+                </div>
+                <div className="text-[#6B7480] text-[11px] mt-1">
+                  <span>Arr: {pnrData.to_station?.sched_arr}</span>
+                  <span className="ml-2 font-bold text-[#F5A524]">Platform {pnrData.to_station?.platform}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Passenger Roster List */}
+            <div className="space-y-2">
+              <span className="text-[10px] text-[#6B7480] uppercase tracking-wider block">
+                {lang === 'HI' ? 'यात्री सीट व आरक्षण स्थिति' : 'PASSENGER ROSTER & SEAT DETAILS'}
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {pnrData.passengers?.map((p: any) => (
+                  <div
+                    key={p.passenger_no}
+                    className="p-3 bg-[#0A0B0D] border border-[#23272F] rounded-sm flex items-center justify-between text-xs"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-6 h-6 rounded-full bg-[#15181D] border border-[#23272F] flex items-center justify-center text-[10px] text-[#A3ABB6]">
+                        {p.passenger_no}
+                      </div>
+                      <div>
+                        <span className="font-bold text-[#E9EBEE]">Passenger {p.passenger_no}</span>
+                        <span className="text-[11px] text-[#A3ABB6] block font-sans">{p.berth_type}</span>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <span className="text-xs font-bold text-[#3DDC97] block">
+                        {p.current_status} · Coach {p.coach}
+                      </span>
+                      <span className="text-sm font-bold text-[#F5A524] tabular-nums">
+                        Berth {p.berth}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Platform Coach Position Guidance Strip */}
+            {pnrData.coach_position && (
+              <div className="p-3.5 bg-[#0A0B0D] border border-[#23272F] rounded-md space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px]">
+                  <span className="font-bold text-[#E9EBEE] flex items-center gap-1.5">
+                    <Compass className="w-3.5 h-3.5 text-[#F5A524]" />
+                    <span>{lang === 'HI' ? 'प्लेटफॉर्म कोच स्थिति' : 'PLATFORM COACH POSITION GUIDANCE'}</span>
+                  </span>
+                  <span className="text-[#3DDC97] text-[10px]">
+                    {pnrData.coach_position.platform_guidance}
+                  </span>
+                </div>
+
+                {/* Visual Rake Strip */}
+                <div className="overflow-x-auto pb-1 pt-0.5">
+                  <div className="flex items-center gap-1 min-w-max">
+                    {pnrData.coach_position.all_coaches?.map((c: string, idx: number) => {
+                      const isMyCoach = c === pnrData.coach_position.coach;
+                      return (
+                        <div
+                          key={idx}
+                          className={`px-2.5 py-1.5 rounded-sm border text-[10px] font-bold text-center transition-all ${
+                            isMyCoach
+                              ? 'bg-[#F5A524] text-[#0A0B0D] border-[#F5A524] ring-2 ring-[#F5A524] scale-105 z-10 shadow-md'
+                              : 'bg-[#15181D] text-[#A3ABB6] border-[#23272F]'
+                          }`}
+                        >
+                          <span className="block">{c}</span>
+                          {isMyCoach && <span className="text-[8px] uppercase block tracking-tighter">YOU</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 4. HERO PASSENGER STATUS CARD (The 4 Questions Solved) */}
         <div className="bg-[#101216] border border-[#23272F] rounded-lg p-5 sm:p-6 space-y-6 font-mono">
           {/* Top Line: Train Title + Aspect Lamp */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-[#23272F]">
@@ -389,7 +631,7 @@ export function PassengerTrackerPage() {
           </div>
         </div>
 
-        {/* 4. SATELLITE RAIL TRACKER */}
+        {/* 5. SATELLITE RAIL TRACKER */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold font-mono uppercase tracking-wider text-[#E9EBEE] flex items-center gap-2">
@@ -420,12 +662,12 @@ export function PassengerTrackerPage() {
           />
         </div>
 
-        {/* 5. ALL STOPS AND RAILWAY STATIONS ON THE WAY (Complete Journey Route) */}
+        {/* 6. ALL STOPS AND RAILWAY STATIONS ON THE WAY (Complete Journey Route) */}
         <div className="bg-[#101216] border border-[#23272F] rounded-lg p-5 font-mono space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-[#23272F]">
             <div>
               <h2 className="text-xs font-bold uppercase tracking-wider text-[#E9EBEE] flex items-center gap-2">
-                <Navigation className="w-4 h-4 text-[#F5A524]" />
+                <Compass className="w-4 h-4 text-[#F5A524]" />
                 <span>
                   {lang === 'HI'
                     ? 'मार्ग के सभी स्टॉप और स्टेशन'
