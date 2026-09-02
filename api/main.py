@@ -109,6 +109,7 @@ app.include_router(audit_router)
 app.include_router(admin_router)
 app.include_router(handover_router)
 app.include_router(infra_router, prefix="/api/infrastructure")
+app.include_router(infra_router, prefix="/api/infra")
 app.include_router(notification_router)
 
 # Mount Live Operational & Delay Intelligence Routes

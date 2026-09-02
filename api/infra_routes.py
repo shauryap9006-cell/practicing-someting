@@ -424,6 +424,7 @@ def record_cleaning_log(
 
 
 @router.get("/cleaning-logs", response_model=List[Dict[str, Any]])
+@router.get("/feedback", response_model=List[Dict[str, Any]])
 def list_cleaning_logs(
     station_code: Optional[str] = Query(None, description="Station filter"),
     current_user: Dict[str, Any] = Depends(get_current_user),

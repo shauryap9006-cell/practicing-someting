@@ -94,7 +94,7 @@ def test_platform_reoptimize_default_and_ndls():
 # ============================================================================
 def test_delay_autopsy_exact_accounting():
     """Verify GET /v1/trains/{id}/autopsy returns exact causal accounting."""
-    train_ids = ["12034", "12002", "12424", "12302"]
+    train_ids = ["12034", "12004", "12424", "12302"]
     for train_id in train_ids:
         resp = client.get(f"/v1/trains/{train_id}/autopsy")
         assert resp.status_code == 200, f"Train {train_id} autopsy failed: {resp.text}"
@@ -239,7 +239,7 @@ def test_delay_autopsy_edge_cases():
     with db.transaction() as cur:
         cur.execute(
             "INSERT OR REPLACE INTO trains (train_no, name, class, priority) VALUES (?, ?, ?, ?)",
-            ("99991", "Test Ghost Express", "special", 1),
+            ("99991", "Test Ghost Express", "superfast", 1),
         )
     try:
         resp_ghost = client.get("/v1/trains/99991/autopsy")

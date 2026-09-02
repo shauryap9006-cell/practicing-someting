@@ -217,6 +217,7 @@ def list_cross_station_handoffs(
 # C2. DYNAMIC PRECEDENCE & OVERTAKE ADVISORY ENGINE
 # ----------------------------------------------------
 @router.get("/advisories/generate", response_model=List[Dict[str, Any]])
+@router.get("/precedence", response_model=List[Dict[str, Any]])
 def generate_precedence_advisories(
     section_id: str = Query("SEC-NDLS-GZB", description="Corridor section ID"),
     current_user: Dict[str, Any] = Depends(get_current_user),
