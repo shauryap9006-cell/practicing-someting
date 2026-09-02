@@ -1,0 +1,33 @@
+{
+  "test_id": "T8.2",
+  "title": "Differential Dynamism Proof Transcript",
+  "train_no": "12034",
+  "target_station": "NDLS",
+  "step_a_baseline": {
+    "clock": "2026-08-27T08:00:00+05:30",
+    "delay_min": 21
+  },
+  "step_b_clock_advance_no_events": {
+    "clock": "2026-08-27T08:10:00+05:30",
+    "delay_min": 21,
+    "equals_a": true
+  },
+  "step_c_tsr_injected": {
+    "clock": "2026-08-27T08:10:00+05:30",
+    "delay_min": 30,
+    "greater_than_b_plus_5": true,
+    "delta_min": 9
+  },
+  "step_d_clock_advance_tsr_active": {
+    "clock": "2026-08-27T08:15:00+05:30",
+    "delay_min": 30,
+    "equals_c": true
+  },
+  "step_e_tsr_cleared": {
+    "clock": "2026-08-27T08:15:00+05:30",
+    "delay_min": 21,
+    "dropped_below_c": true,
+    "returned_to_baseline": true
+  },
+  "verdict": "PASS"
+}
