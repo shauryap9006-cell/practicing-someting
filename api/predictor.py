@@ -282,6 +282,13 @@ class PredictorService:
                             raw_p10 = c_delay + (del_10 * hops) - self._q_hat
                             raw_p50 = c_delay + (del_50 * hops)
                             raw_p90 = c_delay + (del_90 * hops) + self._q_hat
+
+                # Dynamic TSR Kinematic Penalty
+                if vec.tsr_active_ahead_count > 0:
+                    tsr_penalty = max(8.0, float(vec.tsr_active_ahead_count) * 8.0)
+                    raw_p10 += tsr_penalty
+                    raw_p50 += tsr_penalty
+                    raw_p90 += tsr_penalty
                 elif self.champion_name == "PyTorch_GRU_Quantile" and self._gru_model is not None and hops <= settings.DIRECT_MODEL_MAX_HOPS:
                     tier_used = "Tier2_PyTorch_GRU_Champion"
                     seq_mat = np.zeros((1, 8, 8), dtype=np.float32)

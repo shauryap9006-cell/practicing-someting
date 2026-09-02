@@ -5,27 +5,27 @@
   "target_station": "NDLS",
   "step_a_baseline": {
     "clock": "2026-08-27T08:00:00+05:30",
-    "delay_min": 21
+    "delay_min": 166
   },
   "step_b_clock_advance_no_events": {
     "clock": "2026-08-27T08:10:00+05:30",
-    "delay_min": 21,
+    "delay_min": 166,
     "equals_a": true
   },
   "step_c_tsr_injected": {
     "clock": "2026-08-27T08:10:00+05:30",
-    "delay_min": 30,
+    "delay_min": 174,
     "greater_than_b_plus_5": true,
-    "delta_min": 9
+    "delta_min": 8
   },
   "step_d_clock_advance_tsr_active": {
     "clock": "2026-08-27T08:15:00+05:30",
-    "delay_min": 30,
+    "delay_min": 174,
     "equals_c": true
   },
   "step_e_tsr_cleared": {
     "clock": "2026-08-27T08:15:00+05:30",
-    "delay_min": 21,
+    "delay_min": 166,
     "dropped_below_c": true,
     "returned_to_baseline": true
   },

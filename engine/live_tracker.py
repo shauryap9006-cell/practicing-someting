@@ -56,6 +56,9 @@ class LiveTrainPosition:
     last_event_time: Optional[str]
     updated_at: str
     context: Optional[Dict[str, Any]] = None
+    signal_hold_active: bool = False
+    signal_hold_duration_min: float = 0.0
+    inferred_signal_aspect: str = "GREEN"  # GREEN, DOUBLE_YELLOW, YELLOW, RED
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -81,7 +84,11 @@ class LiveTrainPosition:
             "last_event_time": self.last_event_time,
             "updated_at": self.updated_at,
             "context": self.context,
+            "signal_hold_active": self.signal_hold_active,
+            "signal_hold_duration_min": round(self.signal_hold_duration_min, 1),
+            "inferred_signal_aspect": self.inferred_signal_aspect,
         }
+
 
 
 class TokenBucket:
@@ -307,6 +314,20 @@ class LivePositionTracker:
                                 "causes": [c.to_dict() for c in attr_res.causes],
                             })
 
+                    # Automated Background Prediction Ledger Grading (Wiring Plan 2)
+                    if pos.current_station_code:
+                        try:
+                            from engine.prediction_ledger import PredictionLedger
+                            ledger = PredictionLedger(self.db)
+                            ledger.grade_actual_arrival(
+                                train_no=t_no,
+                                station_code=pos.current_station_code,
+                                actual_delay=curr_delay,
+                                actual_timestamp=now_iso,
+                            )
+                        except Exception:
+                            pass
+
                     self._previous_delays[t_no] = curr_delay
             except Exception:
                 continue
@@ -492,6 +513,20 @@ class LivePositionTracker:
         basis = "dead_reckoning" if frac > 0.0 else "last_event"
         is_dead_reckoned = (basis == "dead_reckoning")
 
+        # Proposal 3: Mid-Section Signal-Hold Inference
+        # If train is in mid-section between stations and delay is accumulating or speed is restricted
+        signal_hold_active = False
+        signal_hold_duration_min = 0.0
+        inferred_signal_aspect = "GREEN"
+
+        if 0.05 <= frac <= 0.95:
+            if curr_delay >= 10.0 or speed_kmh < 15.0:
+                signal_hold_active = True
+                signal_hold_duration_min = round(min(curr_delay, 45.0), 1)
+                inferred_signal_aspect = "RED" if speed_kmh < 5.0 else ("YELLOW" if speed_kmh < 30.0 else "DOUBLE_YELLOW")
+            elif curr_delay >= 5.0:
+                inferred_signal_aspect = "DOUBLE_YELLOW"
+
         return LiveTrainPosition(
             train_no=train_no,
             run_date=run_date,
@@ -512,6 +547,9 @@ class LivePositionTracker:
             status=status,
             last_event_time=last_event_time_str,
             updated_at=now_iso,
+            signal_hold_active=signal_hold_active,
+            signal_hold_duration_min=signal_hold_duration_min,
+            inferred_signal_aspect=inferred_signal_aspect,
         )
 
     def get_live_position(self, train_no: str, run_date: Optional[str] = None) -> Optional[Dict[str, Any]]:
@@ -560,6 +598,13 @@ class LivePositionTracker:
         # Fast path: check DB
         db_positions = self.db.get_all_live_positions()
         if db_positions:
+            for r in db_positions:
+                if "inferred_signal_aspect" not in r or r.get("inferred_signal_aspect") is None:
+                    spd = float(r.get("speed_kmph", 0.0))
+                    is_held = bool(r.get("is_dead_reckoned", 0) and spd < 5.0)
+                    r["signal_hold_active"] = is_held
+                    r["signal_hold_duration_min"] = 12.0 if is_held else 0.0
+                    r["inferred_signal_aspect"] = "RED" if is_held else "GREEN" if spd > 60 else "YELLOW"
             return db_positions
 
         # Fallback: compute for all corridor trains

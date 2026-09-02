@@ -172,9 +172,6 @@ class SnapshotGenerator:
         self, route: List[dict], current_seq: int, target_seq: int
     ) -> Tuple[int, float]:
         """Calculates active TSR count and maximum slowdown percentage on remaining route."""
-        if not self._cached_tsrs:
-            return 0, 0.0
-
         remaining_stns = [
             r["station_code"]
             for r in route
@@ -189,10 +186,17 @@ class SnapshotGenerator:
             remaining_pairs.add((s1, s2))
             remaining_pairs.add((s2, s1))
 
+        # Query live active TSRs from speed_restrictions
+        active_tsrs = []
+        try:
+            with self.db.transaction() as cur:
+                cur.execute("SELECT from_code, to_code, speed_limit_kmph, is_active FROM speed_restrictions WHERE is_active = 1")
+                active_tsrs = [dict(r) for r in cur.fetchall()]
+        except Exception:
+            active_tsrs = [t for t in (self._cached_tsrs or []) if t.get("is_active", 1)]
+
         matched_tsrs = []
-        for tsr in self._cached_tsrs:
-            if not tsr.get("is_active", 1):
-                continue
+        for tsr in active_tsrs:
             pair = (tsr.get("from_code"), tsr.get("to_code"))
             if pair in remaining_pairs:
                 matched_tsrs.append(tsr)
