@@ -39,6 +39,218 @@ export interface DelayAutopsyResponse {
   clock_mode?: string;
 }
 
+export interface PassengerSearchResult {
+  train_no: string;
+  name: string;
+  name_hi?: string;
+  type: string;
+  runs_today: boolean;
+  route_short: string;
+  next_departure: string;
+  status_lamp: 'green' | 'amber' | 'red' | 'blue';
+  delay_min: number;
+  is_pnr?: boolean;
+  pnr_no?: string;
+}
+
+export interface PassengerPopularTrain {
+  train_no: string;
+  name: string;
+  name_hi?: string;
+  type: string;
+  route_short: string;
+  next_departure: string;
+  status_lamp: 'green' | 'amber' | 'red' | 'blue';
+  runs_today: boolean;
+  delay_min: number;
+}
+
+export interface PassengerPNRResponse {
+  status: 'valid' | 'invalid' | 'not_found' | 'completed';
+  pnr_no: string;
+  train_no: string;
+  train_name: string;
+  train_name_hi?: string;
+  boarding: {
+    code: string;
+    name: string;
+    name_hi?: string;
+    sched_dep?: string;
+  };
+  destination: {
+    code: string;
+    name: string;
+    name_hi?: string;
+  };
+  coach: string;
+  berth: string;
+  journey_date: string;
+  run_status: 'RUNNING' | 'COMPLETED' | 'NOT_RUNNING';
+}
+
+export interface PassengerSnapshot {
+  train: {
+    train_no: string;
+    name: string;
+    name_hi?: string;
+    type: string;
+    origin: { code: string; name: string; name_hi?: string };
+    destination: { code: string; name: string; name_hi?: string };
+    runs_today: boolean;
+    run_status: 'RUNNING' | 'COMPLETED' | 'NOT_RUNNING_TODAY';
+    next_run_note?: string;
+    next_run_note_hi?: string;
+  };
+  pnr_info?: {
+    pnr_masked?: string;
+    coach?: string;
+    berth?: string;
+    boarding_station?: { code: string; name: string; name_hi?: string };
+    destination_station?: { code: string; name: string; name_hi?: string };
+  } | null;
+  next_stop?: {
+    station_code: string;
+    station_name: string;
+    station_name_hi: string;
+    distance_km: number;
+    km_away: number;
+    eta_minutes: number;
+    scheduled_time: string;
+    expected_time: string;
+    platform: string | null;
+    status: string;
+  } | null;
+  selected_stop: {
+    station_code: string;
+    station_name: string;
+    station_name_hi?: string;
+    is_boarding_stop: boolean;
+    scheduled_arr?: string | null;
+    scheduled_dep?: string | null;
+    expected_arr: string;
+    expected_dep?: string | null;
+    time_window: { min: string; max: string };
+    platform: string | null;
+    status: 'passed' | 'current' | 'upcoming';
+    actual_arr?: string | null;
+    actual_dep?: string | null;
+  };
+  single_delay: {
+    delay_min: number;
+    status_lamp: 'green' | 'amber' | 'red' | 'blue';
+    label: string;
+    label_hi: string;
+    invariant_checked?: boolean;
+  };
+  position_strip: {
+    total_km: number;
+    current_km: number;
+    progress_pct: number;
+    next_stop_summary?: string | null;
+    next_stop_summary_hi?: string | null;
+    prev_stop_name?: string;
+    prev_stop_name_hi?: string;
+    stations: Array<{
+      code: string;
+      name: string;
+      name_hi?: string;
+      seq: number;
+      distance_km: number;
+      passed: boolean;
+      is_selected_stop: boolean;
+      is_current: boolean;
+      is_next_stop?: boolean;
+      sched_time?: string | null;
+      pred_time?: string | null;
+    }>;
+  };
+  live_status: {
+    summary: string;
+    summary_hi: string;
+    is_halted: boolean;
+    halted_station?: string | null;
+    dwell_time_min?: number | null;
+    between_stations: [string, string];
+    between_stations_hi: [string, string];
+    km_covered: number;
+    speed_kmh: number;
+    speed_from_deltas: number;
+  };
+  autopsy: {
+    headline: string;
+    headline_hi: string;
+    integrity_status: 'VERIFIED' | 'WARNING';
+    total_delay_min: number;
+    causes: Array<{
+      category: string;
+      minutes: number;
+      lamp: 'green' | 'amber' | 'red' | 'blue';
+      plain_text: string;
+      plain_text_hi: string;
+      evidence_ref: string;
+    }>;
+  };
+  map_card: {
+    polyline: Array<[number, number]>;
+    train_marker: {
+      lat: number;
+      lon: number;
+      heading: number;
+      km: number;
+      speed_kmh: number;
+      label: string;
+    };
+    tsr_zones: Array<{
+      order_no: string;
+      speed_limit_kmph: number;
+      start_km: number;
+      end_km: number;
+      lat1: number;
+      lon1: number;
+      lat2: number;
+      lon2: number;
+      label: string;
+      label_hi?: string;
+    }>;
+    track_verified: boolean;
+    displacement_km: number;
+  };
+  all_stops: Array<{
+    station_code: string;
+    station_name: string;
+    station_name_hi?: string;
+    seq: number;
+    distance_km: number;
+    scheduled_arr?: string | null;
+    scheduled_dep?: string | null;
+    predicted_arr?: string | null;
+    predicted_dep?: string | null;
+    actual_arr?: string | null;
+    actual_dep?: string | null;
+    platform?: string | null;
+    delay_min: number;
+    status: 'passed' | 'current' | 'upcoming';
+    status_lamp: 'green' | 'amber' | 'red' | 'blue';
+    is_next_stop?: boolean;
+    lat: number;
+    lon: number;
+  }>;
+  waypoints?: PassengerWaypoint[];
+  provenance: {
+    as_of: string;
+    auto_refresh_sec: number;
+    clock_mode: string;
+    simulated_clock: string;
+  };
+}
+
+export interface PassengerWaypoint {
+  code: string;
+  name: string;
+  name_hi?: string;
+  km: number;
+}
+
 export type DataSourceState = 'LIVE' | 'STALE' | 'OFFLINE' | 'DEMO';
 
 export interface DataSourceStatus {
@@ -352,6 +564,45 @@ export const api = {
 
   async getPNRStatus(pnrNo: string): Promise<any> {
     return fetchBackend<any>(`/v1/pnr/${pnrNo}`, {}, () => null);
+  },
+
+  // 2b. Passenger Journey Tracking Contract (Pipeline 08)
+  async searchPassengerTrains(q: string): Promise<PassengerSearchResult[]> {
+    return fetchBackend<PassengerSearchResult[]>(
+      `/v1/passenger/search?q=${encodeURIComponent(q)}`,
+      {},
+      () => []
+    );
+  },
+
+  async getPopularPassengerTrains(): Promise<PassengerPopularTrain[]> {
+    return fetchBackend<PassengerPopularTrain[]>(
+      `/v1/passenger/popular`,
+      {},
+      () => []
+    );
+  },
+
+  async getPassengerPNR(pnr: string): Promise<PassengerPNRResponse> {
+    return fetchBackend<PassengerPNRResponse>(
+      `/v1/passenger/pnr/${encodeURIComponent(pnr)}`,
+      {}
+    );
+  },
+
+  async getPassengerSnapshot(train?: string, stop?: string, pnr?: string): Promise<PassengerSnapshot> {
+    const params = new URLSearchParams();
+    if (train) params.set('train', train);
+    if (stop) params.set('stop', stop);
+    if (pnr) params.set('pnr', pnr);
+    return fetchBackend<PassengerSnapshot>(
+      `/v1/passenger/snapshot?${params.toString()}`,
+      {}
+    );
+  },
+
+  getPassengerStreamUrl(trainNo: string): string {
+    return `${API_BASE}/v1/passenger/stream?train=${encodeURIComponent(trainNo)}`;
   },
 
   // 3. Platform Gantt

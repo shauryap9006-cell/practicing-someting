@@ -13,6 +13,9 @@ import { PrivacyPage } from '@/pages/public/PrivacyPage';
 import { TermsPage } from '@/pages/public/TermsPage';
 import { ThanksPage } from '@/pages/public/ThanksPage';
 import { NotFoundPage } from '@/pages/public/NotFoundPage';
+import { TrackModalProvider } from '@/context/TrackModalContext';
+import { TrackTrainModal } from '@/components/passenger/TrackTrainModal';
+import { PassengerFAB } from '@/components/passenger/PassengerFAB';
 
 // Core Dashboard Pages (Lazy loaded)
 const OverviewPage = lazy(() => import('@/pages/dashboard/OverviewPage').then(m => ({ default: m.OverviewPage })));
@@ -49,7 +52,7 @@ function RouteFallback() {
 
 export function App() {
   return (
-    <>
+    <TrackModalProvider>
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />
@@ -111,8 +114,14 @@ export function App() {
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
 
+      {/* Global Passenger Train Search Modal (Flow 2) */}
+      <TrackTrainModal />
+
+      {/* Mobile Sticky FAB (E4) */}
+      <PassengerFAB />
+
       {/* Global Cookieless Consent Banner */}
       <CookieBanner />
-    </>
+    </TrackModalProvider>
   );
 }

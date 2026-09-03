@@ -23,9 +23,11 @@ import { BootPreloader } from '@/components/landing/BootPreloader';
 import { TheLineScroll } from '@/components/landing/TheLineScroll';
 import { AuditChainVisual } from '@/components/landing/AuditChainVisual';
 import { CorridorSpine, EventTicker, RailCursor } from '@/components/aspect';
+import { useTrackModal } from '@/context/TrackModalContext';
 
 export function LandingPage() {
   const navigate = useNavigate();
+  const { openModal } = useTrackModal();
   const [bootComplete, setBootComplete] = useState(false);
   const [showStickyCTA, setShowStickyCTA] = useState(false);
   const [activeTab, setActiveTab] = useState<'proof' | 'safety'>('proof');
@@ -98,10 +100,13 @@ export function LandingPage() {
           <Link to="/dashboard/model" className="text-[#A3ABB6] hover:text-[#E9EBEE] hidden md:inline transition-colors">
             v3 Model Proof
           </Link>
-          <Link to="/track" className="text-[#A3ABB6] hover:text-[#F5A524] flex items-center gap-1.5 transition-colors">
-            <Radio className="w-3.5 h-3.5 text-[#F5A524] animate-pulse" />
-            <span>Passenger Live Track</span>
-          </Link>
+          <button
+            type="button"
+            onClick={(e) => openModal(undefined, e.currentTarget)}
+            className="text-[#A3ABB6] hover:text-[#F5A524] flex items-center gap-1.5 transition-colors font-mono text-xs"
+          >
+            <span>🚆 Track Train</span>
+          </button>
 
           <Link to="/kiosk" target="_blank" className="text-[#A3ABB6] hover:text-[#E9EBEE] flex items-center gap-1 transition-colors">
             <span>Station Kiosk</span>
@@ -150,19 +155,20 @@ export function LandingPage() {
             </Link>
           </div>
 
-          {/* Dual CTA Pair: Controller Entry + Passenger Lookup */}
+          {/* CTA Pair: Single Passenger Lookup + Controller Entry */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
-            <Link
-              to="/track"
-              className="px-6 py-3.5 bg-[#F5A524] hover:bg-[#F5A524]/90 text-[#0A0B0D] font-bold text-sm font-mono tracking-wide flex items-center justify-center gap-2 transition-colors rounded-sm shadow-[0_0_15px_rgba(245,165,36,0.3)]"
+            <button
+              type="button"
+              onClick={(e) => openModal(undefined, e.currentTarget)}
+              className="px-6 py-3.5 bg-[#F5A524] hover:bg-[#F5A524]/90 text-[#0A0B0D] font-bold text-sm font-mono tracking-wide flex items-center justify-center gap-2 transition-colors rounded-sm shadow-[0_0_15px_rgba(245,165,36,0.3)] min-h-[44px]"
             >
               <Radio className="w-4 h-4 animate-pulse" />
-              <span>Track Your Train (Live Satellite) →</span>
-            </Link>
+              <span>Track Your Train →</span>
+            </button>
 
             <Link
               to="/login"
-              className="px-6 py-3.5 bg-[#101216] hover:bg-[#15181D] border border-[#23272F] hover:border-[#F5A524] text-[#E9EBEE] font-mono text-sm flex items-center justify-center gap-2 transition-colors rounded-sm"
+              className="px-6 py-3.5 bg-[#101216] hover:bg-[#15181D] border border-[#23272F] hover:border-[#F5A524] text-[#E9EBEE] font-mono text-sm flex items-center justify-center gap-2 transition-colors rounded-sm min-h-[44px]"
             >
               <span>Launch Control Room ↗</span>
             </Link>

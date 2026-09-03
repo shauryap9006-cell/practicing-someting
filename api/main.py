@@ -35,6 +35,7 @@ from api.infra_routes import router as infra_router
 from api.ops_routes import router as ops_router
 from api.commercial_routes import router as commercial_router
 from api.live_routes import router as live_router
+from api.passenger_routes import router as passenger_router
 from engine.live_tracker import get_live_tracker
 from api.middleware import IdempotencyMiddleware, ResponseCacheMiddleware, TokenBucketRateLimiter
 
@@ -101,39 +102,13 @@ app.add_middleware(ResponseCacheMiddleware)
 # Phase 5: Token-bucket rate limiter (60 req/min per IP, 10-token burst)
 app.add_middleware(TokenBucketRateLimiter)
 
+# Mount Passenger Train Tracking Flow (Pipeline 08)
+app.include_router(passenger_router)
+app.include_router(passenger_router, prefix="/api")
+
 # Mount Core Operational Routes
 app.include_router(v1_router)
 app.include_router(v1_router, prefix="/api")
-
-# Mount Core Governance & Notification Routes
-app.include_router(auth_router)
-app.include_router(audit_router)
-app.include_router(admin_router)
-app.include_router(handover_router)
-app.include_router(infra_router, prefix="/api/infrastructure")
-app.include_router(infra_router, prefix="/api/infra")
-app.include_router(notification_router)
-
-# Mount Live Operational & Delay Intelligence Routes
-app.include_router(timetable_router)
-app.include_router(ops_router)
-app.include_router(board_router)
-app.include_router(platform_router)
-app.include_router(block_router)
-app.include_router(planner_router)
-app.include_router(system_router)
-
-# Mount Safety & Crew Intelligence Routes
-app.include_router(safety_router)
-app.include_router(commercial_router)
-app.include_router(workforce_router)
-
-# Mount Multi-Station & Section Coordination Routes
-app.include_router(section_router, prefix="/api/section")
-app.include_router(section_router, prefix="/api/coordination")
-
-# Mount Pipeline 07 Live Position Tracking & Attribution Routes
-app.include_router(live_router)
 
 
 

@@ -362,6 +362,50 @@ def get_pnr_status(pnr_no: str):
 
 
 # ----------------------------------------------------
+# 3c. Passenger Instant Search (Trains, Stations & PNRs)
+# ----------------------------------------------------
+@router.get("/passenger/search")
+def passenger_search(q: str = ""):
+    """Instant search for passenger tracker (matches train numbers, names, stations, or PNRs)."""
+    clean = q.strip().upper()
+    if not clean:
+        return {"query": "", "trains": [], "stations": [], "is_pnr": False}
+
+    db = get_db()
+    with db.transaction() as cur:
+        cur.execute(
+            """
+            SELECT train_no, name, class, priority
+            FROM trains
+            WHERE train_no LIKE ? OR UPPER(name) LIKE ?
+            LIMIT 10
+            """,
+            (f"%{clean}%", f"%{clean}%")
+        )
+        trains = [dict(r) for r in cur.fetchall()]
+
+        cur.execute(
+            """
+            SELECT code, name
+            FROM stations
+            WHERE code LIKE ? OR UPPER(name) LIKE ?
+            LIMIT 6
+            """,
+            (f"%{clean}%", f"%{clean}%")
+        )
+        stations = [dict(r) for r in cur.fetchall()]
+
+    is_pnr = clean.isdigit() and len(clean) == 10
+
+    return {
+        "query": clean,
+        "is_pnr": is_pnr,
+        "trains": trains,
+        "stations": stations,
+    }
+
+
+# ----------------------------------------------------
 # 4. Network State Corridor View (F1, F10)
 # ----------------------------------------------------
 @router.get("/network/state", response_model=NetworkStateResponse)
