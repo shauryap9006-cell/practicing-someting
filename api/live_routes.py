@@ -201,7 +201,36 @@ def get_train_why_late(
     db: Database = Depends(get_db),
     attribution_engine: LiveAttributionEngine = Depends(_get_attribution_dep),
 ) -> Dict[str, Any]:
-    """Returns causal delay autopsy breakdown, ranked causes, and mathematical accounting proof."""
+    """Returns causal delay autopsy breakdown, ranked causes, and mathematical accounting proof.
+
+    Response Contract:
+    {
+        "train_no": str,
+        "train_name": str,
+        "train_class": str,
+        "run_date": str,
+        "total_delay_minutes": float,
+        "total_attributed_delay_min": float,
+        "is_exact_accounting": bool,
+        "primary_cause": str,            # Human summary / top causal bucket
+        "top_cause": str,                # Primary cause alias
+        "cause_breakdown": [             # Full list of ranked causal breakdown segments
+            {
+                "cause_code": str,
+                "event_type": str,
+                "attributed_min": float,
+                "minutes": float,
+                "percentage": float
+            }
+        ],
+        "causes": list,                  # Canonical alias for cause_breakdown
+        "events_count": int,
+        "timeline": list,
+        "narrative": str,
+        "integrity_status": str,
+        "as_of": str
+    }
+    """
     clean_no = train_no.strip()
 
     with db.transaction() as cur:
