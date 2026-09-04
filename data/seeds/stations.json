@@ -1098,5 +1098,25 @@
     "category": "DFC",
     "platforms": 6,
     "is_junction": 1
+  },
+  {
+    "code": "DLI",
+    "name": "Old Delhi Junction",
+    "lat": 28.6619,
+    "lon": 77.228,
+    "zone": "NR",
+    "category": "NSG-1",
+    "platforms": 16,
+    "is_junction": 1
+  },
+  {
+    "code": "MZP",
+    "name": "Mirzapur",
+    "lat": 25.1337,
+    "lon": 82.5644,
+    "zone": "NCR",
+    "category": "NSG-3",
+    "platforms": 3,
+    "is_junction": 1
   }
 ]

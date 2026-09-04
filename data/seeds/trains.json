@@ -148,5 +148,6 @@
   {"train_no": "54381", "name": "Farrukhabad - Kanpur Passenger", "class": "passenger", "priority": 4},
   {"train_no": "54382", "name": "Kanpur - Farrukhabad Passenger", "class": "passenger", "priority": 4},
   {"train_no": "54385", "name": "Kasganj - Kanpur Passenger", "class": "passenger", "priority": 4},
-  {"train_no": "54386", "name": "Kanpur - Kasganj Passenger", "class": "passenger", "priority": 4}
+  {"train_no": "54386", "name": "Kanpur - Kasganj Passenger", "class": "passenger", "priority": 4},
+  {"train_no": "2421", "name": "Bhubaneswar Rajdhani Express", "class": "rajdhani", "priority": 1}
 ]

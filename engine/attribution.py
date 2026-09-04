@@ -292,26 +292,25 @@ class DelayAttributionEngine:
                 # Kinematic time delta (hours to min): (len/tsr_speed - len/line_speed) * 60
                 tsr_delta_min = max(1, int(round((tsr_len / tsr_speed - tsr_len / line_speed) * 60)))
 
-                if explained_minutes + tsr_delta_min <= total_delay + 8:
-                    causes.append(
-                        AttributedCause(
-                            category=CauseCategory.TSR,
-                            minutes=tsr_delta_min,
-                            cause=f"Speed restriction of {tsr_speed} km/h between {tsr['from_code']}–{tsr['to_code']} (km {tsr_start}–{tsr_end}): {tsr['cause']}",
+                causes.append(
+                    AttributedCause(
+                        category=CauseCategory.TSR,
+                        minutes=tsr_delta_min,
+                        cause=f"Speed restriction of {tsr_speed} km/h between {tsr['from_code']}–{tsr['to_code']} (km {tsr_start}–{tsr_end}): {tsr['cause']}",
+                        station_code=tsr["from_code"],
+                        evidence=EvidencePointer(
+                            source_type="TSR",
+                            record_id=f"TSR-{tsr['id']}",
                             station_code=tsr["from_code"],
-                            evidence=EvidencePointer(
-                                source_type="TSR",
-                                record_id=f"TSR-{tsr['id']}",
-                                station_code=tsr["from_code"],
-                                km_range=f"{tsr_start}-{tsr_end}",
-                                speed_limit_kmph=tsr_speed,
-                                planned_speed_kmph=line_speed,
-                                details={"tsr_id": tsr["id"], "cause": tsr["cause"]},
-                            ),
-                            evidence_pointer=f"TSR #{tsr['id']} ({tsr_speed} km/h @ km {tsr_start}-{tsr_end})",
-                        )
+                            km_range=f"{tsr_start}-{tsr_end}",
+                            speed_limit_kmph=tsr_speed,
+                            planned_speed_kmph=line_speed,
+                            details={"tsr_id": tsr["id"], "cause": tsr["cause"]},
+                        ),
+                        evidence_pointer=f"TSR #{tsr['id']} ({tsr_speed} km/h @ km {tsr_start}-{tsr_end})",
                     )
-                    explained_minutes += tsr_delta_min
+                )
+                explained_minutes += tsr_delta_min
 
         # Step D1: WEATHER & VISIBILITY PENALTY
         cur_station = events[-1]["station_code"] if events else "NDLS"
@@ -581,17 +580,30 @@ class DelayAttributionEngine:
             return None
 
         ctx = context
-        if ctx is None and self.context_engine is not None:
-            try:
-                ctx = self.context_engine.get_train_context(
-                    train_no=train_no,
-                    run_date=run_date,
-                    current_station_code=station_code,
-                    current_km=current_km,
-                    as_of_time=as_of_time or self.clock.now(),
-                )
-            except Exception:
-                ctx = None
+        if ctx is None:
+            if self.context_engine is not None:
+                try:
+                    ctx = self.context_engine.get_train_context(
+                        train_no=train_no,
+                        run_date=run_date,
+                        current_station_code=station_code,
+                        current_km=current_km,
+                        as_of_time=as_of_time or self.clock.now(),
+                    )
+                except Exception:
+                    ctx = None
+            else:
+                try:
+                    from engine.context import get_context_engine
+                    ctx = get_context_engine(self.db).get_train_context(
+                        train_no=train_no,
+                        run_date=run_date,
+                        current_station_code=station_code,
+                        current_km=current_km,
+                        as_of_time=as_of_time or self.clock.now(),
+                    )
+                except Exception:
+                    ctx = None
 
         resolved_stn = station_code or (getattr(ctx, "current_station_code", None) if ctx else None) or "CNB"
         remaining = delta

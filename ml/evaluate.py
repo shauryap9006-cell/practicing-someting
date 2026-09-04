@@ -263,9 +263,9 @@ class Evaluator:
                         "crps": round(crps, 2),
                     })
                 else:
-                    fold_info.update({"samples": 0, "mae": 0.0, "coverage_80": 80.0, "winkler_score": 0.0, "crps": 0.0})
+                    fold_info.update({"samples": 0, "mae": None, "coverage_80": None, "winkler_score": None, "crps": None})
             except Exception as e:
-                fold_info.update({"error": str(e), "samples": 0, "mae": 0.0, "coverage_80": 80.0, "winkler_score": 0.0, "crps": 0.0})
+                fold_info.update({"error": str(e), "samples": 0, "mae": None, "coverage_80": None, "winkler_score": None, "crps": None})
 
             folds.append(fold_info)
 
@@ -397,7 +397,12 @@ class Evaluator:
 
         # Run 6-fold rolling-origin CV
         cv_folds = self.run_rolling_origin_cv(num_folds=6, embargo_days=2)
-        valid_fold_maes = [f["mae"] for f in cv_folds if f.get("mae", 0.0) > 0.0]
+        valid_folds = [
+            f
+            for f in cv_folds
+            if not f.get("error") and isinstance(f.get("samples"), int) and f.get("samples", 0) > 0 and f.get("mae") is not None
+        ]
+        valid_fold_maes = [float(f["mae"]) for f in valid_folds]
         cv_mean_mae = float(np.mean(valid_fold_maes)) if valid_fold_maes else overall_mae
         cv_std_mae = float(np.std(valid_fold_maes)) if valid_fold_maes else 0.0
 
