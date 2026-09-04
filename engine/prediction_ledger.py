@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import threading
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -17,6 +18,7 @@ from engine.clocks import get_clock
 
 
 GENESIS_HASH = "0000000000000000000000000000000000000000000000000000000000000000"
+_LEDGER_LOCK = threading.Lock()
 
 
 class PredictionLedger:
@@ -66,36 +68,38 @@ class PredictionLedger:
         q_ts = query_timestamp or clock.now_iso()
         now_iso = clock.now_iso()
 
-        with self.db.transaction() as cur:
-            cur.execute("SELECT receipt_hash FROM eta_prediction_ledger ORDER BY id DESC LIMIT 1;")
-            row = cur.fetchone()
-            prev_hash = row["receipt_hash"] if row else GENESIS_HASH
+        with _LEDGER_LOCK:
+            with self.db.transaction() as cur:
+                cur.execute("BEGIN IMMEDIATE")
+                cur.execute("SELECT receipt_hash FROM eta_prediction_ledger ORDER BY id DESC LIMIT 1;")
+                row = cur.fetchone()
+                prev_hash = row["receipt_hash"] if row else GENESIS_HASH
 
-            raw_block = f"{prev_hash}:{train_no}:{target_station}:{p10:.2f}:{p50:.2f}:{p90:.2f}:{q_ts}"
-            receipt_hash = hashlib.sha256(raw_block.encode("utf-8")).hexdigest()
+                raw_block = f"{prev_hash}:{train_no}:{target_station}:{p10:.2f}:{p50:.2f}:{p90:.2f}:{q_ts}"
+                receipt_hash = hashlib.sha256(raw_block.encode("utf-8")).hexdigest()
 
-            cur.execute(
-                """
-                INSERT OR IGNORE INTO eta_prediction_ledger (
-                    receipt_hash, prev_hash, train_no, target_station, query_timestamp,
-                    p10_delay, p50_delay, p90_delay, created_at
+                cur.execute(
+                    """
+                    INSERT INTO eta_prediction_ledger (
+                        receipt_hash, prev_hash, train_no, target_station, query_timestamp,
+                        p10_delay, p50_delay, p90_delay, created_at
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+                    """,
+                    (
+                        receipt_hash,
+                        prev_hash,
+                        train_no,
+                        target_station.upper(),
+                        q_ts,
+                        round(float(p10), 2),
+                        round(float(p50), 2),
+                        round(float(p90), 2),
+                        now_iso,
+                    ),
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
-                """,
-                (
-                    receipt_hash,
-                    prev_hash,
-                    train_no,
-                    target_station.upper(),
-                    q_ts,
-                    round(float(p10), 2),
-                    round(float(p50), 2),
-                    round(float(p90), 2),
-                    now_iso,
-                ),
-            )
 
-        return receipt_hash
+            return receipt_hash
 
     def grade_actual_arrival(
         self,
