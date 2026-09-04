@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import json
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from config import settings
 from data.db import Database, get_db
@@ -15,6 +15,7 @@ from engine.clocks import get_clock
 from engine.ops import PlatformManager, CrewDutyEngine, ConnectionCustodyEngine
 from engine.simulator import CascadeSimulator
 from api.predictor import PredictorService, get_predictor_service
+from api.auth import assert_station_scope, get_current_user, require_role
 from api.schemas import (
     TrainEtaResponse,
     TrainJourneyResponse,
@@ -35,6 +36,7 @@ from api.schemas import (
     CrewAlertItem,
     ModelsMetaResponse,
     HealthResponse,
+    StationSummaryResponse,
 )
 
 router = APIRouter(prefix="/v1")
@@ -308,6 +310,9 @@ def get_pnr_status(pnr_no: str):
     platform_num = (pnr_hash % 5) + 1
 
     return {
+        "data_source": "synthetic_demo",
+        "authoritative": False,
+        "warning": "Synthetic demonstration data; this build is not connected to a reservation system.",
         "pnr_no": clean_pnr,
         "train_no": selected_train_no,
         "train_name": train_name,
@@ -557,6 +562,61 @@ def get_network_state():
     )
 
 
+@router.get("/stations/{code}", response_model=StationSummaryResponse)
+def get_station_summary(code: str):
+    """Returns the station contract consumed by the authenticated dashboard shell."""
+    station_code = code.strip().upper()
+    db = get_db()
+    clock = get_clock()
+    with db.transaction() as cur:
+        cur.execute("SELECT code, name, zone, platforms FROM stations WHERE code = ?", (station_code,))
+        station = cur.fetchone()
+        if not station:
+            raise HTTPException(status_code=404, detail={"code": "STATION_NOT_FOUND", "message": f"Station {station_code} not found", "retryable": False})
+        cur.execute("SELECT COUNT(DISTINCT train_no) AS count FROM route_stations WHERE station_code = ?", (station_code,))
+        active_trains = int(cur.fetchone()["count"])
+        cur.execute(
+            "SELECT AVG(COALESCE(delay_arr_min, delay_dep_min, 0)) AS avg_delay FROM station_events WHERE station_code = ?",
+            (station_code,),
+        )
+        avg_delay_row = cur.fetchone()
+        cur.execute(
+            "SELECT COUNT(*) AS count FROM notifications WHERE target_role IN ('station_master', 'dy_sm') AND state IN ('queued', 'sent', 'escalated')",
+        )
+        advisories_row = cur.fetchone()
+        cur.execute(
+            "SELECT COUNT(*) AS count FROM crew_rosters WHERE station_code = ? AND status = 'BREACH_WARNING'",
+            (station_code,),
+        )
+        crew_row = cur.fetchone()
+
+    conflicts = 0
+    try:
+        _, conflicts_list = PlatformManager(db).get_station_gantt(station_code)
+        conflicts = len(conflicts_list)
+    except Exception:
+        # A station summary remains useful when optional platform data is absent.
+        conflicts = 0
+
+    zone = station["zone"] or "Railway"
+    name = station["name"]
+    return StationSummaryResponse(
+        code=station["code"],
+        name=name,
+        fullName=f"{name} Junction",
+        division=f"{zone} Division",
+        zone=zone,
+        platformsCount=int(station["platforms"] or 0),
+        activeTrainsCount=active_trains,
+        platformConflictsCount=conflicts,
+        pendingAdvisoriesCount=int(advisories_row["count"] if advisories_row else 0),
+        crewWarningsCount=int(crew_row["count"] if crew_row else 0),
+        corridorAvgDelayMinutes=round(float(avg_delay_row["avg_delay"] or 0.0), 1) if avg_delay_row else 0.0,
+        updated_at=clock.now_iso(),
+        clock_mode=clock.mode,
+    )
+
+
 # ----------------------------------------------------
 # 5. Station Platform Gantt (F8)
 # ----------------------------------------------------
@@ -592,9 +652,14 @@ def get_station_gantt(code: str):
 # 6. Station Platform Re-Optimize (F9)
 # ----------------------------------------------------
 @router.post("/stations/{code}/reoptimize", response_model=ReoptimizeResponse)
-def reoptimize_station_platforms(code: str, body: Optional[ReoptimizeRequest] = None):
+def reoptimize_station_platforms(
+    code: str,
+    body: Optional[ReoptimizeRequest] = None,
+    current_user: dict = Depends(require_role(["station_master", "dy_sm", "admin"])),
+):
     """One-click self-healing platform re-optimizer resolving all conflicts in <2s."""
     station_code = code.upper()
+    assert_station_scope(current_user, station_code)
     db = get_db()
     clock = get_clock()
     pm = PlatformManager(db)
@@ -619,10 +684,14 @@ def reoptimize_station_platforms(code: str, body: Optional[ReoptimizeRequest] = 
 # 7. What-If Cascade Simulation (F6)
 # ----------------------------------------------------
 @router.post("/simulate/what-if", response_model=WhatIfResponse)
-def simulate_what_if(req: WhatIfRequest):
+def simulate_what_if(
+    req: WhatIfRequest,
+    current_user: dict = Depends(require_role(["station_master", "dy_sm", "section_controller", "admin"])),
+):
     """Simulates injection of operational shock and computes network cascade ripple."""
     db = get_db()
     clock = get_clock()
+    assert_station_scope(current_user, req.station_code)
     simulator = CascadeSimulator(db)
 
     # Convert active TSRs
@@ -780,33 +849,54 @@ def get_models_meta():
 
 
 @router.get("/meta/stations")
-def get_meta_stations():
-    """Returns all stations in the database."""
+def get_meta_stations(
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+):
+    """Returns a bounded page of stations in the database."""
     db = get_db()
     with db.transaction() as cur:
-        cur.execute("SELECT code, name, is_junction, platforms, lat, lon FROM stations ORDER BY rowid ASC")
+        cur.execute("SELECT COUNT(*) AS count FROM stations")
+        total = int(cur.fetchone()["count"])
+        cur.execute(
+            "SELECT code, name, is_junction, platforms, lat, lon FROM stations ORDER BY rowid ASC LIMIT ? OFFSET ?",
+            (limit, offset),
+        )
         rows = cur.fetchall()
-    return {"stations": [dict(r) for r in rows]}
+    return {"stations": [dict(r) for r in rows], "total": total, "limit": limit, "offset": offset}
 
 
 @router.get("/meta/trains")
-def get_meta_trains():
-    """Returns all 150 trains in the database."""
+def get_meta_trains(
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+):
+    """Returns a bounded page of trains in the database."""
     db = get_db()
     with db.transaction() as cur:
-        cur.execute("SELECT train_no, name, class, priority FROM trains ORDER BY priority ASC, train_no ASC")
+        cur.execute("SELECT COUNT(*) AS count FROM trains")
+        total = int(cur.fetchone()["count"])
+        cur.execute(
+            "SELECT train_no, name, class, priority FROM trains ORDER BY priority ASC, train_no ASC LIMIT ? OFFSET ?",
+            (limit, offset),
+        )
         rows = cur.fetchall()
-    return {"trains": [dict(r) for r in rows]}
+    return {"trains": [dict(r) for r in rows], "total": total, "limit": limit, "offset": offset}
 
 
 @router.post("/advise")
-def post_brain_advise(payload: dict):
+def post_brain_advise(
+    payload: dict,
+    current_user: dict = Depends(require_role(["station_master", "section_controller", "admin"])),
+):
     """Executes the full perception -> ML inference -> Safety Interlock -> Conflict Scan pipeline."""
     from api.brain import BrainOrchestrator
     train_no = payload.get("train_no")
     target_station = payload.get("target_station")
     if not train_no:
         raise HTTPException(status_code=400, detail={"code": "MISSING_TRAIN_NO", "message": "train_no is required in request payload", "retryable": False})
+    if target_station:
+        assert_station_scope(current_user, str(target_station))
 
     orchestrator = BrainOrchestrator()
     return orchestrator.advise(train_no=str(train_no), target_station_code=target_station)
@@ -831,7 +921,6 @@ def get_train_conflicts(train_no: str):
 # Phase 5: Dispatcher ACK Endpoint & Service Helper
 # ----------------------------------------------------
 from api.schemas import DispatcherAckRequest, DispatcherAckResponse, WhatsAppWebhookResponse
-from fastapi import Request
 from notifications.health import get_health_tracker
 from notifications.webhook_verify import verify_hmac
 
@@ -898,7 +987,11 @@ def record_advisory_ack(
 
 
 @router.post("/advise/{adv_id}/ack", response_model=DispatcherAckResponse)
-def post_advisory_ack(adv_id: str, payload: DispatcherAckRequest):
+def post_advisory_ack(
+    adv_id: str,
+    payload: DispatcherAckRequest,
+    current_user: dict = Depends(require_role(["station_master", "dy_sm", "section_controller", "admin"])),
+):
     """Records dispatcher acknowledgement (accept/reject) for an advisory.
 
     Stores the decision in the advisory_ack_log table for audit trail.
@@ -917,7 +1010,7 @@ def post_advisory_ack(adv_id: str, payload: DispatcherAckRequest):
     res = record_advisory_ack(
         adv_id=adv_id,
         decision=payload.decision,
-        dispatcher_id=payload.dispatcher_id,
+        dispatcher_id=current_user["id"],
         comment=payload.comment,
         channel="web",
     )
@@ -944,7 +1037,7 @@ async def whatsapp_inbound_webhook(request: Request):
     2. message.received: parses 'ACK <id>' and 'ESC <id>' to close advisory loops.
     """
     body = await request.body()
-    if not verify_hmac(body, request.headers, settings.OPENWA_WEBHOOK_SECRET):
+    if not verify_hmac(body, request.headers, settings.OPENWA_WEBHOOK_SECRET, require_timestamp=True):
         raise HTTPException(
             status_code=401,
             detail={"code": "UNAUTHORIZED_WEBHOOK", "message": "Invalid HMAC signature", "retryable": False},
@@ -1040,27 +1133,97 @@ def get_health():
     db = get_db()
     health = get_health_tracker()
 
+    db_ready = True
     try:
         counts = db.table_counts()
         db_status = f"connected ({counts.get('station_events', 0):,} events)"
         live_pos_count = counts.get("live_positions", 0)
     except Exception as err:
+        db_ready = False
         db_status = f"error: {err}"
         live_pos_count = 0
 
-    models_exist = (settings.ARTIFACTS_DIR / "model_direct_q50.txt").exists()
-    models_status = "loaded" if models_exist else "pending_training"
+    required_artifacts = [
+        settings.ARTIFACTS_DIR / "manifest.json",
+        settings.ARTIFACTS_DIR / "model_direct_q10.txt",
+        settings.ARTIFACTS_DIR / "model_direct_q50.txt",
+        settings.ARTIFACTS_DIR / "model_direct_q90.txt",
+        settings.ARTIFACTS_DIR / "artifact_integrity.json",
+        settings.ARTIFACTS_DIR / "metrics.json",
+    ]
+    missing_artifacts = [path.name for path in required_artifacts if not path.is_file()]
+    from ml.artifact_integrity import verify_artifacts
+    integrity_ready, integrity_failures = verify_artifacts(settings.ARTIFACTS_DIR)
+
+    # Evaluation metrics fold analysis (honest reporting: partial evaluation is transparent, not fatal)
+    metrics_ready = False
+    metrics_failures: list[str] = []
+    evaluation_status = "unverified"
+    valid_folds_count = 0
+    total_folds_count = 0
+    metrics_path = settings.ARTIFACTS_DIR / "metrics.json"
+    if metrics_path.is_file():
+        try:
+            with metrics_path.open("r", encoding="utf-8") as stream:
+                metrics = json.load(stream)
+            folds = metrics.get("rolling_origin_cv", {}).get("folds", [])
+            total_folds_count = len(folds)
+            valid_folds = [
+                f for f in folds
+                if not f.get("error") and isinstance(f.get("samples"), int) and f.get("samples", 0) > 0
+            ]
+            valid_folds_count = len(valid_folds)
+            if total_folds_count > 0:
+                if valid_folds_count == total_folds_count:
+                    evaluation_status = "complete"
+                elif valid_folds_count > 0:
+                    evaluation_status = "partial"
+                else:
+                    evaluation_status = "failed"
+            metrics_ready = valid_folds_count > 0
+        except (OSError, ValueError, TypeError, AttributeError) as exc:
+            metrics_failures.append(f"invalid metrics.json: {exc}")
+
+    # Real inference smoke test through PredictorService
+    smoke_test_ready = False
+    smoke_test_error: Optional[str] = None
+    try:
+        from api.predictor import get_predictor_service
+        ps = get_predictor_service()
+        test_pred = ps.predict_train_eta("12301", "CNB")
+        if test_pred and ("pred_delay_p50" in test_pred or "predicted_delay_min" in test_pred):
+            smoke_test_ready = True
+        else:
+            smoke_test_error = "smoke test prediction missing expected delay fields"
+    except Exception as exc:
+        smoke_test_error = str(exc)
+
+    models_ready = not missing_artifacts and integrity_ready and smoke_test_ready
+    model_failures = missing_artifacts + integrity_failures + ([f"smoke_test: {smoke_test_error}"] if not smoke_test_ready else [])
+    models_status = "loaded and verified" if models_ready else f"unavailable: {', '.join(model_failures)}"
+
+    migrations_ready = False
+    migration_status = "missing"
+    try:
+        with db.transaction() as cur:
+            cur.execute("SELECT COUNT(*) AS count FROM schema_migrations")
+            migration_count = int(cur.fetchone()["count"])
+        migrations_ready = migration_count > 0
+        migration_status = f"applied ({migration_count})"
+    except Exception:
+        migration_status = "not initialized"
 
     # Inspect live tracker liveness
     try:
         from engine.live_tracker import get_live_tracker
+        from api.sse_limits import active_sse_connections
         tracker = get_live_tracker(db)
         last_tick = tracker.last_tick_time
         if last_tick:
             age_sec = max(0.0, (clock.now() - last_tick).total_seconds())
         else:
             age_sec = 0.0
-        active_sse = len(getattr(tracker, "_queues", []))
+        active_sse = active_sse_connections()
     except Exception:
         age_sec = None
         active_sse = 0
@@ -1078,18 +1241,37 @@ def get_health():
         except Exception:
             pass
 
-    return HealthResponse(
-        status="healthy",
+    ready = db_ready and models_ready and migrations_ready
+    response = HealthResponse(
+        status="healthy" if ready else "not_ready",
+        ready=ready,
         db=db_status,
         models=models_status,
+        migrations=migration_status,
+        components={
+            "database": db_ready,
+            "models": models_ready,
+            "model_artifacts_integrity": integrity_ready,
+            "inference_smoke_test": smoke_test_ready,
+            "evaluation": {
+                "status": evaluation_status,
+                "valid_folds": valid_folds_count,
+                "total_folds": total_folds_count,
+            },
+            "evaluation_metrics": metrics_ready,
+            "migrations": migrations_ready,
+        },
         whatsapp=health.whatsapp_status,
         clock_mode=clock.mode,
         updated_at=clock.now_iso(),
         live_tracker_last_tick_age_seconds=round(age_sec, 1) if age_sec is not None else None,
         active_sse_clients=active_sse,
-        adapter_tier_in_use="Tier 3 (MockReplaySource)" if clock.mode == "replay" else "Tier 1 (RapidAPI)",
+        adapter_tier_in_use="replay_synthetic" if clock.mode == "replay" else "live_provider_chain",
         live_positions_count=live_pos_count,
         drift_status=drift_val,
         model_trust=trust_val,
     )
-
+    if not ready:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=503, content=response.model_dump())
+    return response
