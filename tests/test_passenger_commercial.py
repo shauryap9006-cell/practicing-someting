@@ -50,7 +50,7 @@ def test_delay_certificate_lifecycle(auth_headers):
     assert data["delay_min"] >= 0
 
     # 2. Get Certificate by cert_no
-    get_resp = client.get(f"/api/commercial/delay-certificate/{cert_no}")
+    get_resp = client.get(f"/api/commercial/delay-certificate/{cert_no}", headers=auth_headers)
     assert get_resp.status_code == 200
     assert get_resp.json()["cert_no"] == cert_no
 
