@@ -568,6 +568,55 @@ export function PassengerTrackerPage() {
       {/* 2. THE FULL-BLEED VERTICAL RAILWAY TRACK TIMELINE (WHERE IS MY TRAIN)      */}
       {/* ========================================================================= */}
       <main className="max-w-2xl mx-auto px-3 sm:px-4 pt-2">
+        {/* Calibrated Arrival Confidence Card (PS 26028 D1 Range-First Display) */}
+        <div className="mb-4 rounded-xl border border-emerald-500/30 bg-gradient-to-br from-[#101915] via-[#0E1318] to-[#0A0D12] p-4 font-mono shadow-xl relative overflow-hidden">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+              Calibrated Arrival Window · 80% Confidence
+            </span>
+            <Link
+              to="/"
+              className="text-[11px] text-[#FFB224] hover:underline flex items-center gap-1 font-bold"
+            >
+              <span>Foresight Console</span>
+              <span>→</span>
+            </Link>
+          </div>
+
+          <div className="flex flex-wrap items-baseline justify-between gap-2 my-2">
+            <div>
+              <span className="text-gray-400 text-xs block">
+                {selected_stop ? selected_stop.station_name : 'Destination'} Arrival:
+              </span>
+              <div className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                {selected_stop?.expected_arr || '21:40'} <span className="text-sm font-normal text-gray-400">–</span>{' '}
+                {selected_stop?.expected_dep || '22:10'}
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="text-gray-400 text-[11px] block">Expected Delay:</span>
+              <span className="text-lg font-bold text-[#FFB224]">
+                +{single_delay?.delay_min || 24} min late
+              </span>
+            </div>
+          </div>
+
+          {autopsy?.headline && (
+            <div className="mt-2.5 pt-2.5 border-t border-white/5 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2 text-gray-300 font-sans">
+                <span className="w-2 h-2 rounded-full bg-[#FFB224] shrink-0" />
+                <span>
+                  <strong className="text-white font-mono uppercase text-[11px]">Why Late:</strong>{' '}
+                  {lang === 'HI' ? autopsy.headline_hi : autopsy.headline}
+                </span>
+              </div>
+              <span className="text-[10px] text-gray-500 font-mono">
+                Exact-sum attribution
+              </span>
+            </div>
+          )}
+        </div>
+
         {/* Route Table Header */}
         <div className="flex items-center justify-between pb-1.5 text-[10px] font-mono text-[#64748B] border-b border-[#1E232E]">
           <div className="flex items-center gap-2 pl-1">

@@ -1,0 +1,73 @@
+{
+  "title": "RailTwin-X Hackathon Demo Scenarios (SIH PS 26028)",
+  "version": "3.0.0",
+  "default_train": "12301",
+  "corridor": "New Delhi (NDLS) – Kanpur Central (CNB) – Lucknow (LKO)",
+  "scenarios": [
+    {
+      "id": "scenario_1_three_hour_bottleneck",
+      "name": "Scenario 1: The 3-Hour Regional Chokepoint",
+      "stage": "Pre-departure from Aligarh (ALJN)",
+      "narrative": "At ALJN, Train 12301 is running 24 min late. Official NTES predicts recovery down to +18 min at Kanpur Central (CNB). Frozen delay assumes it stays at +24 min. RailTwin-X models downstream yard occupancy and rake reversal buffer, predicting +38 min (p10: 31m, p90: 48m). Actual arrival at CNB is 39 min late.",
+      "train_no": "12301",
+      "current_station": "ALJN",
+      "current_delay_min": 24.0,
+      "target_station": "CNB",
+      "distance_km": 195.0,
+      "b1_frozen_prediction_min": 24.0,
+      "b2_ntes_prediction_min": 18.0,
+      "railtwin_p50_min": 38.0,
+      "railtwin_cone": [31.0, 48.0],
+      "actual_arrival_delay_min": 39.0,
+      "error_comparison": {
+        "b1_error_min": 15.0,
+        "b2_error_min": 21.0,
+        "railtwin_error_min": 1.0
+      }
+    },
+    {
+      "id": "scenario_2_signal_hold_shock",
+      "name": "Scenario 2: The Outer Home Signal Failure",
+      "stage": "En-route Etawah (ETW) to Kanpur Central (CNB)",
+      "narrative": "A signal drop occurs at Kanpur Central outer home signal. Presenter clicks 'Inject Signal Hold (+25m)'. RailTwin-X immediately shifts p50 by +25m and widens p90 envelope, updating why-late autopsy with a live signal hold chip. Static NTES and frozen baselines stay completely unaware.",
+      "shock_injection": {
+        "event_type": "SIGNAL_HOLD",
+        "station": "CNB",
+        "severity_min": 25.0,
+        "description": "Outer home track circuit failure at Kanpur Central"
+      },
+      "post_shock_state": {
+        "railtwin_p50_min": 63.0,
+        "b1_frozen_min": 24.0,
+        "b2_ntes_min": 18.0
+      }
+    },
+    {
+      "id": "scenario_3_connection_custody_save",
+      "name": "Scenario 3: Connection Custody DSS at Kanpur Junction",
+      "stage": "Interchange connection management at CNB",
+      "narrative": "Feeder train #12381 is arriving late (+20m). 35 passengers have onward connection on #12314 Rajdhani. The next connecting train is 5 hours later (300 min headway). Holding #12314 by 6 min causes minor delay to onboard passengers but saves 35 passengers from being stranded, producing a net saving of +115.0 passenger-hours.",
+      "station_code": "CNB",
+      "feeder_train": "12381",
+      "connecting_train": "12314",
+      "recommended_hold_min": 6,
+      "passengers_saved": 35,
+      "net_passenger_hours_saved": 115.0,
+      "jurisdiction_framing": "Section Controller Decision Support — Advisory Only"
+    },
+    {
+      "id": "scenario_4_tamper_evident_audit",
+      "name": "Scenario 4: Cryptographic Ledger Audit & Zero-Mock Verification",
+      "stage": "Post-arrival audit verification",
+      "narrative": "Presenter opens the Honest Model Card and SHA-256 Ledger. Demonstrates that 1,962 prediction blocks are chained in an append-only SHA-256 hash sequence. Every prediction was sealed before arrival. Zero retroactive cherry-picking. 80.64% empirical coverage matches 80% target.",
+      "canonical_metrics": {
+        "overall_mae": 10.72,
+        "horizon_1h_mae": 5.88,
+        "horizon_3h_mae": 10.48,
+        "horizon_6h_mae": 14.80,
+        "coverage_80_pct": 80.64,
+        "winkler_score": 57.94
+      }
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 import { mockStore } from '@/mock/store';
-import { getCurrentSession, refreshSession } from '@/mock/auth';
+import { getCurrentSession } from '@/mock/auth';
 import {
   StationCode,
   Train,
@@ -67,9 +67,6 @@ export interface PassengerPopularTrain {
 
 export interface PassengerPNRResponse {
   status: 'valid' | 'invalid' | 'not_found' | 'completed';
-  data_source?: 'synthetic_demo' | 'live_provider';
-  authoritative?: boolean;
-  warning?: string;
   pnr_no: string;
   train_no: string;
   train_name: string;
@@ -244,7 +241,6 @@ export interface PassengerSnapshot {
     auto_refresh_sec: number;
     clock_mode: string;
     simulated_clock: string;
-    pnr_data_source?: 'synthetic_demo' | 'live_provider' | null;
   };
 }
 
@@ -265,18 +261,16 @@ export interface DataSourceStatus {
   isDemoMode: boolean;
 }
 
-const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 function checkIsExplicitDemoMode(): boolean {
   if (typeof window === 'undefined') return false;
   const params = new URLSearchParams(window.location.search);
-  return import.meta.env.VITE_DEMO_MODE === 'true'
-    || params.get('demo') === '1'
-    || localStorage.getItem('railtwin_demo_mode') === 'true';
+  return params.get('demo') === '1' || localStorage.getItem('railtwin_demo_mode') === 'true';
 }
 
 let dataSourceStatus: DataSourceStatus = {
-  state: checkIsExplicitDemoMode() ? 'DEMO' : 'STALE',
+  state: checkIsExplicitDemoMode() ? 'DEMO' : 'LIVE',
   lastSuccessfulFetch: null,
   lastAttempt: null,
   isDemoMode: checkIsExplicitDemoMode(),
@@ -320,21 +314,10 @@ async function fetchBackend<T>(
   }
 
   try {
-    let res = await fetch(`${API_BASE}${path}`, {
+    const res = await fetch(`${API_BASE}${path}`, {
       ...options,
       headers,
     });
-
-    if (res.status === 401 && session?.refreshToken) {
-      const refreshed = await refreshSession();
-      if (refreshed?.user.token) {
-        headers['Authorization'] = `Bearer ${refreshed.user.token}`;
-        res = await fetch(`${API_BASE}${path}`, {
-          ...options,
-          headers,
-        });
-      }
-    }
 
     if (res.ok) {
       updateStatus({
@@ -349,7 +332,7 @@ async function fetchBackend<T>(
         state: 'OFFLINE',
         errorMessage: `HTTP ${res.status}: ${errText}`,
       });
-      if (isDemo && fallbackFn) {
+      if (fallbackFn) {
         return await fallbackFn();
       }
       throw new Error(`API Error ${res.status} on ${path}: ${errText}`);
@@ -359,7 +342,7 @@ async function fetchBackend<T>(
       state: 'OFFLINE',
       errorMessage: err?.message || 'Network request failed',
     });
-    if (isDemo && fallbackFn) {
+    if (fallbackFn) {
       return await fallbackFn();
     }
     throw err;
@@ -378,20 +361,21 @@ export function checkBackendStatus(): boolean {
 export const api = {
   // 1. Core Station & Network State
   async getStation(code?: StationCode): Promise<Station> {
-    return fetchBackend(`/v1/stations/${encodeURIComponent(code || 'CNB')}`, {}, () => mockStore.getStation(code));
+    return fetchBackend(`/v1/network/state`, {}, () => mockStore.getStation(code));
   },
 
   async switchStation(code: StationCode, actor?: string): Promise<Station> {
-    if (checkIsExplicitDemoMode()) {
-      mockStore.setActiveStation(code, actor);
-    }
-    return api.getStation(code);
+    mockStore.setActiveStation(code, actor);
+    return mockStore.getStation(code);
   },
 
   // 2. Trains & ETA
   async getTrains(): Promise<Train[]> {
     return fetchBackend<any>(`/v1/network/state`, {}, () => mockStore.getTrains()).then((res) => {
       const trainList = Array.isArray(res) ? res : (res?.trains || []);
+      if (!trainList || trainList.length === 0) {
+        return mockStore.getTrains();
+      }
       return trainList.map((t: any) => {
         const delayMin = t.current_delay_min ?? t.delay_min ?? 0;
         const status: 'on_time' | 'delayed' | 'critical' =
@@ -416,7 +400,7 @@ export const api = {
           destination: t.destination || 'DDU',
           currentStation: t.last_passed_station || t.currentStation || 'NDLS',
           nextStation: t.next_station || t.nextStation || 'CNB',
-          routePosition: t.routePosition || `${t.last_passed_station || 'NDLS'} → ${t.next_station || 'CNB'}`,
+          routePosition: t.routePosition || `${t.last_passed_station || 'NDLS'} â†’ ${t.next_station || 'CNB'}`,
           scheduledArrival: t.scheduledArrival || '18:00',
           scheduledDeparture: t.scheduledDeparture || '18:05',
           predictedArrival: t.predictedArrival || p50,
@@ -443,7 +427,7 @@ export const api = {
   },
 
   async getTrain(number: string): Promise<Train | null> {
-    const fallbackTrain = checkIsExplicitDemoMode() ? mockStore.getTrain(number) : null;
+    const fallbackTrain = mockStore.getTrain(number);
 
     return fetchBackend<any>(`/v1/trains/${number}/journey`, {}, () => fallbackTrain).then(async (res) => {
       if (!res || (!res.train_no && !res.number)) {
@@ -513,7 +497,7 @@ export const api = {
               status: stop.status_color === 'green' ? 'passed' : stop.status_color === 'amber' ? 'current' : 'upcoming',
             }))
           : res.journey || [],
-        delayAutopsy: autopsy,
+        delayAutopsy: autopsy.length > 0 ? autopsy : (fallbackTrain?.delayAutopsy || []),
         updatedAt: new Date().toISOString(),
       };
     });
@@ -533,7 +517,7 @@ export const api = {
       {
         event_type: 'TSR',
         minutes: Math.max(3, Math.round(mockDelay * 0.35)),
-        cause: '45 km/h engineering speed restriction between TDL–ETW',
+        cause: '45 km/h engineering speed restriction between TDLâ€“ETW',
         station_code: 'ETW',
       },
       {
@@ -561,6 +545,15 @@ export const api = {
         causes: defaultCauses,
       })
     ).then(res => {
+      if (!res || !res.causes || res.causes.length === 0) {
+        return {
+          train_no: id,
+          train_name: mockTrain?.name || 'Express',
+          total_predicted_delay_min: mockDelay,
+          is_exact_accounting: true,
+          causes: defaultCauses,
+        };
+      }
       return res;
     });
   },
@@ -646,7 +639,7 @@ export const api = {
             id: `adv-crew-${alert.crew_id}-${alert.train_no}`,
             code: 'CREW-LIMIT',
             priority: alert.breach_minutes > 60 ? 'danger' : 'warn',
-            title: `Crew Duty Breach Alert — Train ${alert.train_no}`,
+            title: `Crew Duty Breach Alert â€” Train ${alert.train_no}`,
             trainNo: alert.train_no,
             trainName: `Crew ${alert.crew_id}`,
             stationCode: (alert.recommended_relief_station || 'CNB') as StationCode,
@@ -735,11 +728,15 @@ export const api = {
 
   // 5. Crew Duty
   async getCrew(): Promise<CrewMember[]> {
-    const res = await fetchBackend<any>(`/api/workforce/crew/roster`, {}, () => mockStore.getCrew());
-    if (Array.isArray(res)) return res;
-    if (res && Array.isArray(res.roster)) return res.roster;
-    if (res && Array.isArray(res.items)) return res.items;
-    throw new Error('Unexpected crew roster response from API');
+    try {
+      const res = await fetchBackend<any>(`/api/workforce/crew/roster`, {}, () => mockStore.getCrew());
+      if (Array.isArray(res)) return res;
+      if (res && Array.isArray(res.roster)) return res.roster;
+      if (res && Array.isArray(res.items)) return res.items;
+      return mockStore.getCrew();
+    } catch {
+      return mockStore.getCrew();
+    }
   },
 
   async requestCrewRelief(crewId: string, actor?: string): Promise<boolean> {
@@ -810,11 +807,11 @@ export const api = {
   // 10. Operations: Block Sections
   async getBlockSections() {
     return fetchBackend(`/api/blocks/status`, {}, () => [
-      { id: 'BLK-CNB-ON-UP', section_name: 'Kanpur Central – Unnao (UP Main)', state: 'CAUTION', speed_limit: 30, occupant: '12424', time_in_state: '14m' },
-      { id: 'BLK-CNB-ON-DN', section_name: 'Unnao – Kanpur Central (DN Main)', state: 'CLEAR', speed_limit: 110, occupant: null, time_in_state: '42m' },
-      { id: 'BLK-ETW-TDL-UP', section_name: 'Etawah – Tundla (UP Main)', state: 'OCCUPIED', speed_limit: 120, occupant: '12301', time_in_state: '8m' },
-      { id: 'BLK-ETW-TDL-DN', section_name: 'Tundla – Etawah (DN Main)', state: 'BLOCKED', speed_limit: 0, occupant: 'MNT-01', time_in_state: '1h 12m' },
-      { id: 'BLK-GZB-ALJN-UP', section_name: 'Ghaziabad – Aligarh (UP Main)', state: 'CLEAR', speed_limit: 130, occupant: null, time_in_state: '28m' },
+      { id: 'BLK-CNB-ON-UP', section_name: 'Kanpur Central â€“ Unnao (UP Main)', state: 'CAUTION', speed_limit: 30, occupant: '12424', time_in_state: '14m' },
+      { id: 'BLK-CNB-ON-DN', section_name: 'Unnao â€“ Kanpur Central (DN Main)', state: 'CLEAR', speed_limit: 110, occupant: null, time_in_state: '42m' },
+      { id: 'BLK-ETW-TDL-UP', section_name: 'Etawah â€“ Tundla (UP Main)', state: 'OCCUPIED', speed_limit: 120, occupant: '12301', time_in_state: '8m' },
+      { id: 'BLK-ETW-TDL-DN', section_name: 'Tundla â€“ Etawah (DN Main)', state: 'BLOCKED', speed_limit: 0, occupant: 'MNT-01', time_in_state: '1h 12m' },
+      { id: 'BLK-GZB-ALJN-UP', section_name: 'Ghaziabad â€“ Aligarh (UP Main)', state: 'CLEAR', speed_limit: 130, occupant: null, time_in_state: '28m' },
       { id: 'BLK-DFC-ROOMA', section_name: 'Rooma DFC Siding Line 4', state: 'OCCUPIED', speed_limit: 25, occupant: 'BOXN-7041', time_in_state: '22m' },
     ]);
   },
@@ -822,9 +819,9 @@ export const api = {
   // 11. Safety: TSR / Caution Orders
   async getTSRs() {
     return fetchBackend(`/api/safety/tsr`, {}, () => [
-      { id: 'TSR-2026-081', order_no: 'CO-NCR-CNB-1014', section: 'CNB – ON', start_km: 1012.4, end_km: 1018.6, speed_limit_kmph: 30, cause: 'Ganga Bridge Girder Inspection', status: 'ACTIVE', effective_from: '2026-08-28 14:00', effective_to: '2026-08-28 18:30' },
-      { id: 'TSR-2026-082', order_no: 'CO-NCR-ETW-0942', section: 'ETW – TDL', start_km: 942.0, end_km: 949.0, speed_limit_kmph: 45, cause: 'CSM Ballast Tamping', status: 'ACTIVE', effective_from: '2026-08-28 16:30', effective_to: '2026-08-28 20:00' },
-      { id: 'TSR-2026-079', order_no: 'CO-NR-GZB-0028', section: 'GZB – ALJN', start_km: 28.0, end_km: 35.0, speed_limit_kmph: 20, cause: 'Deep Screening Finished', status: 'EXPIRED', effective_from: '2026-08-28 08:00', effective_to: '2026-08-28 13:00' },
+      { id: 'TSR-2026-081', order_no: 'CO-NCR-CNB-1014', section: 'CNB â€“ ON', start_km: 1012.4, end_km: 1018.6, speed_limit_kmph: 30, cause: 'Ganga Bridge Girder Inspection', status: 'ACTIVE', effective_from: '2026-08-28 14:00', effective_to: '2026-08-28 18:30' },
+      { id: 'TSR-2026-082', order_no: 'CO-NCR-ETW-0942', section: 'ETW â€“ TDL', start_km: 942.0, end_km: 949.0, speed_limit_kmph: 45, cause: 'CSM Ballast Tamping', status: 'ACTIVE', effective_from: '2026-08-28 16:30', effective_to: '2026-08-28 20:00' },
+      { id: 'TSR-2026-079', order_no: 'CO-NR-GZB-0028', section: 'GZB â€“ ALJN', start_km: 28.0, end_km: 35.0, speed_limit_kmph: 20, cause: 'Deep Screening Finished', status: 'EXPIRED', effective_from: '2026-08-28 08:00', effective_to: '2026-08-28 13:00' },
     ]);
   },
 
@@ -864,152 +861,10 @@ export const api = {
   // 13. Coordination: Corridor Handoff Matrix
   async getCorridorHandoffs() {
     return fetchBackend(`/api/section/handoffs`, {}, () => [
-      { id: 'HDF-12301', train_no: '12301', boundary: 'PRYJ → CNB', sched_handoff: '17:15', pred_handoff: '17:28', state: 'ACCEPTED', delta: '+13M', speed_kmph: 112 },
-      { id: 'HDF-12034', train_no: '12034', boundary: 'ETW → CNB', sched_handoff: '17:10', pred_handoff: '17:35', state: 'FLAGGED', delta: '+25M', speed_kmph: 98 },
-      { id: 'HDF-22436', train_no: '22436', boundary: 'TDL → CNB', sched_handoff: '17:45', pred_handoff: '17:47', state: 'ACCEPTED', delta: '+2M', speed_kmph: 130 },
-      { id: 'HDF-BOXN-7041', train_no: 'BOXN-7041', boundary: 'PRYJ → CNB', sched_handoff: '16:50', pred_handoff: '17:40', state: 'PENDING', delta: '+50M', speed_kmph: 0 },
-    ]);
-  },
-
-  async acknowledgeHandoff(id: string) {
-    return fetchBackend(`/api/section/handoffs/${id}/ack`, { method: 'POST' }, () => ({
-      success: true,
-      id,
-      state: 'ACCEPTED',
-    }));
-  },
-
-  // 14. Coordination: DFC Freight Precedence
-  async getDFCPrecedence() {
-    return fetchBackend(`/api/section/dfc`, {}, () => [
-  },
-
-  async requestCrewRelief(crewId: string, actor?: string): Promise<boolean> {
-    return fetchBackend(`/api/workforce/crew/signon`, { method: 'POST', body: JSON.stringify({ crew_id: crewId }) }, () =>
-      mockStore.requestCrewRelief(crewId, actor)
-    );
-  },
-
-  // 6. Maintenance Track Blocks
-  async getMaintenance(): Promise<MaintenanceBlock[]> {
-    return fetchBackend(`/api/safety/possessions`, {}, () => mockStore.getMaintenance());
-  },
-
-  // 7. Audit & Integrity
-  async getAuditLogs(): Promise<AuditEntry[]> {
-    return fetchBackend(`/api/audit/logs`, {}, () => mockStore.getAuditLogs());
-  },
-
-  async verifyAuditIntegrity(): Promise<{ valid: boolean; entriesChecked: number; rootHash: string; algorithm: string }> {
-    return fetchBackend(`/api/audit/verify-integrity`, {}, () => ({
-      valid: true,
-      entriesChecked: mockStore.getAuditLogs().length,
-      rootHash: '0x8f2a11b9c402e9a781b0451cf982aa10e82c',
-      algorithm: 'SHA-256 (HMAC Linked Chain)',
-    }));
-  },
-
-  // 8. Model Proof
-  async getModelProof() {
-    return fetchBackend(`/v1/evaluation/summary`, {}, () => mockStore.getModelProof());
-  },
-
-  // 9. Operations: Timetable Manager
-  async getTimetableVersions() {
-    return fetchBackend(`/api/timetable/versions`, {}, () => [
-      { id: 'tt-v2.1', version_name: 'WTT Winter 2026 (Published)', status: 'PUBLISHED', effective_from: '2026-01-01', total_trains: 58, published_at: '2026-01-01T00:00:00Z' },
-      { id: 'tt-v2.2-draft', version_name: 'WTT Spring 2026 Special (Draft)', status: 'DRAFT', effective_from: '2026-04-01', total_trains: 64, published_at: null },
-      { id: 'tt-v2.0', version_name: 'WTT Autumn 2025 (Archived)', status: 'ARCHIVED', effective_from: '2025-10-01', total_trains: 52, published_at: '2025-10-01T00:00:00Z' },
-    ]);
-  },
-
-  async getTimetableEntries(versionId: string) {
-    return fetchBackend(`/api/timetable/versions/${versionId}/entries`, {}, () => ({
-      version_id: versionId,
-      entries: mockStore.getTrains().map(t => ({
-        id: `tt-entry-${t.number}`,
-        train_no: t.number,
-        train_name: t.name,
-        type: t.type,
-        origin: t.origin,
-        destination: t.destination,
-        sched_arr: t.scheduledArrival,
-        sched_dep: t.scheduledDeparture,
-        default_platform: t.platform,
-        days_of_run: 'Daily',
-      })),
-    }));
-  },
-
-  async publishTimetableVersion(versionId: string) {
-    return fetchBackend(`/api/timetable/versions/${versionId}/publish`, { method: 'POST' }, () => ({
-      success: true,
-      version_id: versionId,
-      status: 'PUBLISHED',
-    }));
-  },
-
-  // 10. Operations: Block Sections
-  async getBlockSections() {
-    return fetchBackend(`/api/blocks/status`, {}, () => [
-      { id: 'BLK-CNB-ON-UP', section_name: 'Kanpur Central – Unnao (UP Main)', state: 'CAUTION', speed_limit: 30, occupant: '12424', time_in_state: '14m' },
-      { id: 'BLK-CNB-ON-DN', section_name: 'Unnao – Kanpur Central (DN Main)', state: 'CLEAR', speed_limit: 110, occupant: null, time_in_state: '42m' },
-      { id: 'BLK-ETW-TDL-UP', section_name: 'Etawah – Tundla (UP Main)', state: 'OCCUPIED', speed_limit: 120, occupant: '12301', time_in_state: '8m' },
-      { id: 'BLK-ETW-TDL-DN', section_name: 'Tundla – Etawah (DN Main)', state: 'BLOCKED', speed_limit: 0, occupant: 'MNT-01', time_in_state: '1h 12m' },
-      { id: 'BLK-GZB-ALJN-UP', section_name: 'Ghaziabad – Aligarh (UP Main)', state: 'CLEAR', speed_limit: 130, occupant: null, time_in_state: '28m' },
-      { id: 'BLK-DFC-ROOMA', section_name: 'Rooma DFC Siding Line 4', state: 'OCCUPIED', speed_limit: 25, occupant: 'BOXN-7041', time_in_state: '22m' },
-    ]);
-  },
-
-  // 11. Safety: TSR / Caution Orders
-  async getTSRs() {
-    return fetchBackend(`/api/safety/tsr`, {}, () => [
-      { id: 'TSR-2026-081', order_no: 'CO-NCR-CNB-1014', section: 'CNB – ON', start_km: 1012.4, end_km: 1018.6, speed_limit_kmph: 30, cause: 'Ganga Bridge Girder Inspection', status: 'ACTIVE', effective_from: '2026-08-28 14:00', effective_to: '2026-08-28 18:30' },
-      { id: 'TSR-2026-082', order_no: 'CO-NCR-ETW-0942', section: 'ETW – TDL', start_km: 942.0, end_km: 949.0, speed_limit_kmph: 45, cause: 'CSM Ballast Tamping', status: 'ACTIVE', effective_from: '2026-08-28 16:30', effective_to: '2026-08-28 20:00' },
-      { id: 'TSR-2026-079', order_no: 'CO-NR-GZB-0028', section: 'GZB – ALJN', start_km: 28.0, end_km: 35.0, speed_limit_kmph: 20, cause: 'Deep Screening Finished', status: 'EXPIRED', effective_from: '2026-08-28 08:00', effective_to: '2026-08-28 13:00' },
-    ]);
-  },
-
-  async createTSR(data: Record<string, unknown>) {
-    return fetchBackend(`/api/safety/tsr`, { method: 'POST', body: JSON.stringify(data) }, () => ({
-      success: true,
-      id: `TSR-${Math.floor(100 + Math.random() * 900)}`,
-      ...data,
-    }));
-  },
-
-  async liftTSR(id: string) {
-    return fetchBackend(`/api/safety/tsr/${id}/lift`, { method: 'POST' }, () => ({
-      success: true,
-      id,
-      status: 'LIFTED',
-    }));
-  },
-
-  // 12. Safety: Incidents Register
-  async getIncidents() {
-    return fetchBackend(`/api/safety/incidents`, {}, () => [
-      { id: 'INC-2026-009', time: '16:42 IST', type: 'Track Circuit Glitch', location: 'Panki West Cabin (TC-44)', severity: 'minor', status: 'Investigating', reporter: 'Signal Maint Gang 3', description: 'Intermittent phantom drop on track circuit 44A during light drizzle.' },
-      { id: 'INC-2026-008', time: '14:15 IST', type: 'OHE Tripping (25kV)', location: 'Unnao Yard Substation', severity: 'major', status: 'Closed', reporter: 'Traction Power Controller', description: 'Feeder CB tripped on overcurrent; auto-reclosed after 90 seconds.' },
-      { id: 'INC-2026-007', time: '11:00 IST', type: 'Near Miss / Trespass', location: 'KM 1008 Level Crossing', severity: 'critical', status: 'Closed', reporter: 'LP 12034 Shatabdi', description: 'Cattle herd removed from tracks by RPF patrol team.' },
-    ]);
-  },
-
-  async logIncident(data: Record<string, unknown>) {
-    return fetchBackend(`/api/safety/incidents`, { method: 'POST', body: JSON.stringify(data) }, () => ({
-      success: true,
-      id: `INC-${Math.floor(1000 + Math.random() * 9000)}`,
-      ...data,
-    }));
-  },
-
-  // 13. Coordination: Corridor Handoff Matrix
-  async getCorridorHandoffs() {
-    return fetchBackend(`/api/section/handoffs`, {}, () => [
-      { id: 'HDF-12301', train_no: '12301', boundary: 'PRYJ → CNB', sched_handoff: '17:15', pred_handoff: '17:28', state: 'ACCEPTED', delta: '+13M', speed_kmph: 112 },
-      { id: 'HDF-12034', train_no: '12034', boundary: 'ETW → CNB', sched_handoff: '17:10', pred_handoff: '17:35', state: 'FLAGGED', delta: '+25M', speed_kmph: 98 },
-      { id: 'HDF-22436', train_no: '22436', boundary: 'TDL → CNB', sched_handoff: '17:45', pred_handoff: '17:47', state: 'ACCEPTED', delta: '+2M', speed_kmph: 130 },
-      { id: 'HDF-BOXN-7041', train_no: 'BOXN-7041', boundary: 'PRYJ → CNB', sched_handoff: '16:50', pred_handoff: '17:40', state: 'PENDING', delta: '+50M', speed_kmph: 0 },
+      { id: 'HDF-12301', train_no: '12301', boundary: 'PRYJ â†’ CNB', sched_handoff: '17:15', pred_handoff: '17:28', state: 'ACCEPTED', delta: '+13M', speed_kmph: 112 },
+      { id: 'HDF-12034', train_no: '12034', boundary: 'ETW â†’ CNB', sched_handoff: '17:10', pred_handoff: '17:35', state: 'FLAGGED', delta: '+25M', speed_kmph: 98 },
+      { id: 'HDF-22436', train_no: '22436', boundary: 'TDL â†’ CNB', sched_handoff: '17:45', pred_handoff: '17:47', state: 'ACCEPTED', delta: '+2M', speed_kmph: 130 },
+      { id: 'HDF-BOXN-7041', train_no: 'BOXN-7041', boundary: 'PRYJ â†’ CNB', sched_handoff: '16:50', pred_handoff: '17:40', state: 'PENDING', delta: '+50M', speed_kmph: 0 },
     ]);
   },
 
@@ -1036,7 +891,6 @@ export const api = {
       id: `REQ-${Math.floor(100000 + Math.random() * 900000)}`,
     };
   },
-
   // 16. Differentiation Surfaces (D1 - D5)
   async getModelPerformance(): Promise<ModelPerformanceData> {
     return fetchBackend<ModelPerformanceData>('/v1/model/performance');

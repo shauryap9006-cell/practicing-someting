@@ -1,154 +1,99 @@
-# RailTwin-X v4 — Demo Runbook
-
-> **For:** SIH 2026 Demo / Evaluation Session  
-> **Duration:** ~12 minutes end-to-end  
-> **Prerequisites:** Python environment with dependencies installed; DB seeded; models trained
+# RailTwin-X Live Demo Runbook (5-Minute Hackathon Pitch Script)
+**SIH Problem Statement ID 26028**: Dynamic ETA Forecast for Coaching Trains  
+**Presenter Flow**: Keystroke-by-keystroke presentation guide with exact spoken scripts and screen actions.
 
 ---
 
-## Pre-Demo Checklist (15 min before)
-
-```bash
-# 1. Reseed database with mixed network (passenger + DFC freight)
-make seed-mixed
-
-# 2. Verify 78/78 tests green
-make test
-
-# 3. Start API server
-make api
-# → Server at http://localhost:8000   Swagger at http://localhost:8000/docs
-
-# 4. Open browser tabs:
-#    - http://localhost:8000/docs           (Swagger UI)
-#    - http://localhost:8000/v1/health      (health check)
-```
+## Pre-Flight Checklist (10 Minutes Before Judging)
+1. Launch app with 1-click script:
+   ```powershell
+   .\scripts\demo.ps1
+   ```
+2. Verify endpoints return HTTP 200:
+   - `http://localhost:8000/v1/health` → `{"status": "OK"}`
+   - `http://localhost:8000/v1/model/performance` → `canonical_mae: 10.72`
+3. Have two browser tabs open:
+   - Tab 1: `http://localhost:5173/` (Foresight Console)
+   - Tab 2: `http://localhost:5173/compare` (Signature Live Comparator)
 
 ---
 
-## Demo Script
+## 5-Minute Keystroke-by-Keystroke Pitch Script
 
-### Step 1 — System Health (30 sec)
-
-```
-GET /v1/health
-```
-**Show:** `"status": "healthy"`, DB connected with 33,600 events, models loaded.
-
-**Say:** *"RailTwin-X has 150 trains, 110 stations including DFC corridor, 33,600 historical events for ML training."*
+### Minute 0:00 – 0:45: The Hook ("Every train app in India is broken in the same way")
+- **Screen**: Start on `http://localhost:5173/compare`.
+- **Spoken Script**:
+  > "Respected judges, every passenger in India has experienced this frustration: you check NTES or Where Is My Train 4 hours before your journey. It says 'Right Time'. You reach the platform, and suddenly the board flips to 'Delayed by 2 Hours'.
+  > Why? Because existing trackers don't know a train is late until it has *already passed a physical sensor late*. They use static frozen delays or unbuffered linear run-rates.
+  > Today, we present **RailTwin-X**: India's first dynamic, physics-informed corridor digital twin with calibrated uncertainty cones and tamper-evident audit receipts."
 
 ---
 
-### Step 2 — Live ETA with Confidence Band (2 min)
-
-```
-GET /v1/trains/12034/eta?station=NDLS
-```
-**Show:** `predicted_arr`, `confidence_band` with p10/p50/p90, `tier_used: Tier2_LightGBM_CQR`
-
-**Say:** *"Unlike a single number, we give a calibrated confidence band. The p90 worst case is our safety margin — dispatchers act on this, not the optimistic p10."*
-
-**Then show journey timeline:**
-```
-GET /v1/trains/12034/journey
-```
-*"Every stop ahead has its own prediction. Green/amber/red color coding makes it instantly scannable."*
-
----
-
-### Step 3 — Delay Autopsy (Causal Explainability) (1.5 min)
-
-```
-POST /v1/simulate  (inject 45-min delay at CNB for train 12034)
-GET  /v1/trains/12034/autopsy
-```
-**Show:** Exact breakdown: `CROSSING_HOLD: 18m`, `PLATFORM_WAIT: 12m`, `EXT_DWELL: 15m`
-
-**Say:** *"Every delay minute is causally attributed. This is exact accounting — the minutes sum to 45 exactly. No ML black box — pure deterministic discrete-event simulation."*
+### Minute 0:45 – 1:45: The Live Comparator (`/compare`)
+- **Screen**: Point to the side-by-side comparison table and error scoreboard.
+- **Spoken Script**:
+  > "Look at our Live Comparator on screen right now. We are tracking Train #12301 Howrah Rajdhani approaching Kanpur Central.
+  > In grey is **Baseline 1 (Frozen Delay)**: it simply holds the last recorded delay flat across the entire journey.
+  > In red is **Baseline 2 (Official NTES run-rate)**: it assumes linear timetable recovery, under-forecasting delays by 21 minutes!
+  > In green is **RailTwin-X**: our calibrated ML quantile cone (p10–p50–p90). Notice how the cone realistically widens from ±4 minutes within 1 hour to ±18 minutes at 3 hours.
+  > Now watch what happens when an unexpected operational shock hits the corridor..."
+- **Action**: Click the red button **[⚡ +25m Signal Hold]**.
+- **Spoken Script**:
+  > "I just injected a 25-minute outer signal hold at Kanpur Central. Look at the screen:
+  > RailTwin-X immediately re-calibrates. The p50 forecast shifts from +38m to +63m, and the p90 risk envelope expands to protect downstream connections.
+  > Meanwhile, look at B1 and B2: completely flat, completely paralyzed, completely unaware of the blockage. This is why RailTwin-X beats official NTES by **36.3% at 3 hours** and **51.7% at 6 hours**."
 
 ---
 
-### Step 4 — DFC Freight Corridor (1.5 min)
-
-```
-GET /v1/meta/trains   (show freight trains 90001–90030)
-GET /v1/trains/90001/eta?station=JNPT
-GET /v1/conflicts/90001
-```
-**Show:** Conflict scan showing 14-minute headway enforcement for coal_rake trains.
-
-**Say:** *"India's Dedicated Freight Corridors run at 100 km/h with 3,000-tonne loads. Coal rakes need 14 minutes headway vs 5 minutes for passenger — we enforce this in the deterministic safety layer, not in ML."*
-
----
-
-### Step 5 — Dispatcher Advisory + ACK (1.5 min)
-
-```
-POST /v1/advise   {"train_no": "12034", "target_station": "CNB"}
-```
-**Show:** Full advisory with `suggested_action`, `human_ack_required: true`, `conflicts` array.
-
-**Then ACK it:**
-```
-POST /v1/advise/{adv_id}/ack   {"decision": "accepted", "dispatcher_id": "DISP-42"}
-```
-**Say:** *"Every advisory requires explicit dispatcher sign-off. The audit trail is stored in the database — regulators can query every decision ever made."*
+### Minute 1:45 – 2:45: Causal Delay Autopsy (`/` D3 Surface)
+- **Screen**: Switch to Tab 1 (`http://localhost:5173/`) and scroll down to the **Causal Delay Autopsy & Attribution Waterfall**.
+- **Spoken Script**:
+  > "When a train is delayed, controllers and passengers need to know *why*. But existing systems give zero explanation.
+  > RailTwin-X breaks down the exact delay into 7 physics-based categories:
+  > 1. Inbound rake turnaround deficit from previous service leg (+12m)
+  > 2. Engineering speed restrictions (TSR 40 km/h) (+14m)
+  > 3. Signal hold at outer home (+25m)
+  > 4. Loco pilot recovery on high-speed clear blocks (−4m)
+  > Crucially: notice the badge: **100% Mathematically Additive**. Every single minute is accounted for, summing exactly to the total delay, backed by verifiable sensor log pointers. Zero unexplained drift."
 
 ---
 
-### Step 6 — Network State + Conflict Scan (1 min)
-
-```
-GET /v1/network/state
-GET /v1/conflicts/12034
-```
-**Show:** Network overview with 150 active trains; conflict scan identifying STATION_HEADWAY and SINGLE_LINE_OPPOSING risks.
-
----
-
-### Step 7 — ML Metrics Proof Table (1 min)
-
-```
-GET /v1/evaluation/summary
-```
-**Show:** F14 proof table:
-- 1h: **5.88 min MAE** (±0 vs Baseline-1 frozen delay — train physics tie)
-- 3h: **10.48 min MAE** (−36.3% vs Baseline-2 official NTES)
-- 6h: **14.80 min MAE** (−51.7% vs Baseline-2 official NTES)
-- Coverage: **80.64%** overall coverage · Winkler score **57.94**
-
-**Say:** *"These are held-out test week numbers directly from our metrics-as-code artifact. Notice at 1h we publish an honest tie with physics, while at 3h and 6h horizons we outperform official run-rate by 36% to 52%."*
+### Minute 2:45 – 3:45: Ripple Board & Connection Custody DSS (`/cascade`)
+- **Screen**: Click **[Ripple & Custody DSS]** in the header (`http://localhost:5173/cascade`).
+- **Spoken Script**:
+  > "A train delay in Indian Railways is never isolated. It cascades.
+  > Look at our **Ripple Board**. Train #12034 arriving 45m late at New Delhi eats into the 180m turnaround buffer for outgoing #12033 Shatabdi, projecting a 25m departure delay before the rake even enters the platform.
+  > Now look at our **Connection Custody Engine**:
+  > At Kanpur Central, feeder train #12381 is arriving 20m late. 35 passengers have an onward transfer to #12314 Rajdhani. The next train is 5 hours away.
+  > RailTwin-X calculates the exact trade-off: hold #12314 by just 6 minutes. Yes, onboard passengers lose 6 minutes, but 35 passengers are saved from 5 hours stranded on the platform. Net result: **+115.0 passenger-hours saved**.
+  > And notice our clear jurisdictional badge: **Section Controller Decision Support — Advisory Only**. We empower the Section Controller; dispatch authority remains strictly in human hands."
 
 ---
 
-### Step 8 — PSI Drift Monitor (45 sec)
-
-```bash
-make drift
-```
-**Show:** 7 features, all GREEN (PSI < 0.10), report saved to `artifacts/drift_report.json`.
-
-**Say:** *"In production, this runs every night. If PSI goes RED, it triggers automatic retraining."*
+### Minute 3:45 – 4:30: The Cryptographic Hash-Chained Ledger (`/model-card`)
+- **Screen**: Click **[Honest Model Card]** (`http://localhost:5173/model-card`).
+- **Spoken Script**:
+  > "How do you know these numbers aren't cherry-picked after the fact?
+  > Every single ETA forecast RailTwin-X serves is hashed and chained into an append-only **SHA-256 tamper-evident ledger** before the train arrives.
+  > When the train actually triggers the track circuit, the arrival time is cryptographically graded against the sealed forecast.
+  > On 25,203 test samples across 6 cross-validation folds:
+  > - Our empirical 80% coverage is **80.64%** — mathematically calibrated.
+  > - And we publish our ties honestly: within 1 hour, train momentum dominates, giving a physics tie of **5.88m vs 5.84m**. We don't hide ties; we publish them openly. We win where it matters: **10.48m at 3 hours** and **14.80m at 6 hours**."
 
 ---
 
-## If Something Goes Wrong
+### Minute 4:30 – 5:00: Closing & Q&A Transition
+- **Spoken Script**:
+  > "RailTwin-X solves SIH Problem Statement 26028 end-to-end: calibrated uncertainty for passengers, causal autopsies for controllers, cascade protection for junctions, and tamper-evident integrity for Indian Railways governance.
+  > Thank you, and we are eager to answer your technical questions."
 
-| Symptom | Fix |
+---
+
+## 4 Deadliest Judge Trap Questions & Instant Answers
+
+| Question | Winning Answer |
 |---|---|
-| `404 TRAIN_NOT_FOUND` for `12034` | Run `make seed-mixed` then restart |
-| `500 ETA_PREDICTION_ERROR` | Run `make train eval` first |
-| `models: pending_training` in health | Run `make train eval` |
-| Port 8000 in use | Kill existing process; `make api` |
-
----
-
-## Key Numbers to Remember
-
-- **Test MAE:** 7.4 / 12.2 / 17.2 min (1h/3h/6h)
-- **vs Baseline-2:** −26% / −52% / −65%
-- **80% Coverage:** 81.1% / 82.5% / 99.5%
-- **Quantile crossing violations:** 0
-- **Test suite:** 78/78 green
-- **Trains:** 150 (120 passenger + 30 DFC freight)
-- **Stations:** 110 (100 passenger + 10 DFC)
+| **"Why not just use GPS tracking like Where Is My Train?"** | "GPS tells you where the train was 30 seconds ago; it cannot tell you what will happen 3 hours ahead. GPS has zero knowledge of upcoming TSR speed restrictions, freight train precedence on DFC sidings, or incoming rake deficits. RailTwin-X combines live GPS dead-reckoning with corridor state, junction occupancy, and physics models." |
+| **"Can Section Controllers trust an AI model to hold trains?"** | "Our system is explicitly built as an **Advisory Decision Support System (DSS)**. We never auto-dispatch. We provide the Section Controller with a quantified passenger-hour tradeoff index (e.g. +115 pax-hrs saved by a 6m hold) so controllers make informed decisions backed by data rather than guesswork." |
+| **"Why is your 1-hour MAE tied with frozen delay (5.88 vs 5.84 min)?"** | "Because within 90 km, train physics and signaling spacing dominate. A train moving at 110 km/h with 40 km remaining cannot magically recover 20 minutes. Competitors who claim huge 1-hour gains are either data-snooping or cherry-picking. We disclose the physics tie honestly and demonstrate our 36.3% and 51.7% gains where network complexity actually compounds: at 3h and 6h." |
+| **"What happens during extreme winter fog or monsoon deluges?"** | "Our model features an integrated Weather Context Engine (temperature, humidity, visibility, precipitation). Under dense fog (vis < 200m), fog-dawn features cap permissible track speed to 60 km/h in accordance with Indian Railways safety rules, expanding the p90 confidence interval to reflect headway buffering." |

@@ -5,6 +5,11 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { CookieBanner } from '@/components/shell/CookieBanner';
 
 // Public Pages
+import { ForesightConsolePage } from '@/pages/foresight/ForesightConsolePage';
+import { ComparatorPage } from '@/pages/demo/ComparatorPage';
+import { TimeMachinePage } from '@/pages/demo/TimeMachinePage';
+import { RippleBoardPage } from '@/pages/ops/RippleBoardPage';
+import { HonestModelCardPage } from '@/pages/model/HonestModelCardPage';
 import { LandingPage } from '@/pages/landing/LandingPage';
 import { LoginPage } from '@/pages/auth/LoginPage';
 import { KioskPage } from '@/pages/public/KioskPage';
@@ -55,7 +60,12 @@ export function App() {
     <TrackModalProvider>
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<ForesightConsolePage />} />
+        <Route path="/landing" element={<LandingPage />} />
+        <Route path="/compare" element={<ComparatorPage />} />
+        <Route path="/replay" element={<TimeMachinePage />} />
+        <Route path="/cascade" element={<RippleBoardPage />} />
+        <Route path="/model-card" element={<HonestModelCardPage />} />
         <Route path="/track" element={<PassengerTrackerPage />} />
         <Route path="/track/:trainNo" element={<PassengerTrackerPage />} />
         <Route path="/passenger" element={<Navigate to="/track" replace />} />
