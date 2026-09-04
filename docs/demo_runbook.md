@@ -112,12 +112,12 @@ GET /v1/conflicts/12034
 GET /v1/evaluation/summary
 ```
 **Show:** F14 proof table:
-- 1h: **7.4 min MAE** (−26% vs Baseline-2, −19% vs Baseline-3)
-- 3h: **12.2 min MAE** (−52% vs Baseline-2)
-- 6h: **17.2 min MAE** (−65% vs Baseline-2)
-- Coverage: 81–99% across horizons
+- 1h: **5.88 min MAE** (±0 vs Baseline-1 frozen delay — train physics tie)
+- 3h: **10.48 min MAE** (−36.3% vs Baseline-2 official NTES)
+- 6h: **14.80 min MAE** (−51.7% vs Baseline-2 official NTES)
+- Coverage: **80.64%** overall coverage · Winkler score **57.94**
 
-**Say:** *"These are held-out test week numbers — not training scores. The Wilcoxon test confirms our GRU champion is statistically significantly better than the LightGBM challenger."*
+**Say:** *"These are held-out test week numbers directly from our metrics-as-code artifact. Notice at 1h we publish an honest tie with physics, while at 3h and 6h horizons we outperform official run-rate by 36% to 52%."*
 
 ---
 

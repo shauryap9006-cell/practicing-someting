@@ -76,8 +76,8 @@ A: The current seeded dataset: 150 trains, 110 stations, 33,600 events. The ML t
 
 ## Likely Follow-Up Challenge Questions
 
-**Q: Your test MAE is 7.4 min at 1h. Is that good enough for dispatchers?**  
-A: Indian Railways typically targets ±15 minutes as "on time." Our 7.4 min MAE with a p90 worst case of ~18 min covers 81% of trains correctly. More importantly, the *direction* of the prediction (getting worse vs recovering) is what matters for dispatcher decisions, and our GRU captures trajectory.
+**Q: Your test MAE is 5.88 min at 1h. Is that good enough for dispatchers?**  
+A: Indian Railways typically targets ±15 minutes as "on time." Our 5.88 min MAE with an 80% confidence band covers trains with rigorous calibrated certainty. More importantly, at 3h and 6h horizons (10.48 min and 14.80 min MAE), we outperform official methods by 36% to 52%, providing the foresight required for dispatcher and section controller decisions.
 
 **Q: Can you prove no data leakage in the train/test split?**  
 A: Yes — the split is strictly temporal. Training data ends at `max_date - 7 days`, test data starts at `max_date - 7 days`. All feature computations (historical averages, congestion counts) use only data available at the snapshot timestamp, not future data.
