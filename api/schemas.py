@@ -142,6 +142,20 @@ class NetworkStateResponse(BaseResponse):
     active_tsrs: List[dict]
 
 
+class StationSummaryResponse(BaseResponse):
+    code: str
+    name: str
+    fullName: str
+    division: str
+    zone: str
+    platformsCount: int
+    activeTrainsCount: int
+    platformConflictsCount: int
+    pendingAdvisoriesCount: int
+    crewWarningsCount: int
+    corridorAvgDelayMinutes: float
+
+
 class PlatformGanttBlock(BaseModel):
     train_no: str
     train_name: str = ""
@@ -227,8 +241,11 @@ class ModelsMetaResponse(BaseResponse):
 
 class HealthResponse(BaseModel):
     status: str
+    ready: bool = True
     db: str
     models: str
+    migrations: str = "applied"
+    components: Dict[str, Any] = Field(default_factory=dict)
     whatsapp: str = "connected"
     clock_mode: str
     updated_at: str

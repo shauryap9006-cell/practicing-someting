@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from api.auth import get_current_user, require_role
+from api.auth import assert_station_scope, effective_station_scope, get_current_user, require_role
 from data.audit import record_audit
 from data.db import Database, get_db
 
@@ -43,6 +43,7 @@ def issue_delay_certificate(
     db: Database = Depends(get_db),
 ):
     """Issues a cryptographically verifiable Delay Certificate for airline missed connection, insurance, or refund."""
+    assert_station_scope(current_user, req.station_code)
     now_iso = datetime.now(timezone.utc).isoformat()
     now_date = datetime.now(timezone.utc).strftime("%Y%m%d")
 
@@ -129,13 +130,18 @@ def issue_delay_certificate(
 
 
 @router.get("/delay-certificate/{cert_no}", response_model=Dict[str, Any])
-def get_delay_certificate(cert_no: str, db: Database = Depends(get_db)):
+def get_delay_certificate(
+    cert_no: str,
+    current_user: Dict[str, Any] = Depends(get_current_user),
+    db: Database = Depends(get_db),
+):
     """Retrieves full details of an issued delay certificate for printing."""
     with db.transaction() as cur:
         cur.execute("SELECT * FROM delay_certificates WHERE cert_no = ?;", (cert_no,))
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Delay certificate not found.")
+        assert_station_scope(current_user, row["station_code"])
         return dict(row)
 
 
@@ -262,6 +268,7 @@ def register_commercial_stall(
     db: Database = Depends(get_db),
 ):
     """Registers a commercial stall and vendor lease agreement."""
+    assert_station_scope(current_user, req.station_code)
     with db.transaction() as cur:
         cur.execute(
             """
@@ -308,10 +315,13 @@ def register_commercial_stall(
 def list_commercial_stalls(
     station_code: Optional[str] = Query(None, description="Station filter"),
     platform_number: Optional[int] = Query(None, description="Platform filter"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     current_user: Dict[str, Any] = Depends(get_current_user),
     db: Database = Depends(get_db),
 ):
     """Lists station commercial stalls and lease standings."""
+    station_code = effective_station_scope(current_user, station_code)
     with db.transaction() as cur:
         # Seed default sample stalls if empty
         cur.execute("SELECT COUNT(*) as count FROM commercial_stalls;")
@@ -344,7 +354,8 @@ def list_commercial_stalls(
         if platform_number:
             query += " AND platform_number = ?"
             params.append(platform_number)
-        query += " ORDER BY platform_number ASC, stall_code ASC;"
+        query += " ORDER BY platform_number ASC, stall_code ASC LIMIT ? OFFSET ?;"
+        params.extend([limit, offset])
         cur.execute(query, tuple(params))
         rows = [dict(r) for r in cur.fetchall()]
     return rows
@@ -375,6 +386,7 @@ def register_lost_item(
     db: Database = Depends(get_db),
 ):
     """Registers a passenger lost item deposited into station custody."""
+    assert_station_scope(current_user, req.station_code)
     now_iso = datetime.now(timezone.utc).isoformat()
     with db.transaction() as cur:
         cur.execute(
@@ -415,10 +427,13 @@ def register_lost_item(
 def list_lost_items(
     station_code: Optional[str] = Query(None, description="Station filter"),
     status: Optional[str] = Query("UNCLAIMED", description="UNCLAIMED, CLAIMED, ALL"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     current_user: Dict[str, Any] = Depends(get_current_user),
     db: Database = Depends(get_db),
 ):
     """Lists registered lost and found articles."""
+    station_code = effective_station_scope(current_user, station_code)
     with db.transaction() as cur:
         query = "SELECT * FROM lost_and_found WHERE 1=1"
         params: List[Any] = []
@@ -428,7 +443,8 @@ def list_lost_items(
         if status and status.upper() != "ALL":
             query += " AND status = ?"
             params.append(status.upper())
-        query += " ORDER BY id DESC;"
+        query += " ORDER BY id DESC LIMIT ? OFFSET ?;"
+        params.extend([limit, offset])
         cur.execute(query, tuple(params))
         rows = [dict(r) for r in cur.fetchall()]
     return rows
@@ -448,6 +464,7 @@ def claim_lost_item(
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Lost item not found.")
+        assert_station_scope(current_user, row["station_code"])
         if row["status"] != "UNCLAIMED":
             raise HTTPException(status_code=400, detail=f"Item is already {row['status']}.")
 

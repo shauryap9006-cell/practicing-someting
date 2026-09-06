@@ -7,7 +7,7 @@ interface DataFreshnessBadgeProps {
 
 export const DataFreshnessBadge: React.FC<DataFreshnessBadgeProps> = ({ dataUpdatedAt }) => {
   const [status, setStatus] = useState<DataSourceStatus>({
-    state: 'LIVE',
+    state: dataUpdatedAt ? 'LIVE' : 'STALE',
     lastSuccessfulFetch: dataUpdatedAt || null,
     lastAttempt: null,
     isDemoMode: false,
@@ -32,7 +32,7 @@ export const DataFreshnessBadge: React.FC<DataFreshnessBadgeProps> = ({ dataUpda
     };
   }, [dataUpdatedAt, status.lastSuccessfulFetch]);
 
-  const isStale = secondsAgo > 30 && status.state === 'LIVE';
+  const isStale = status.state === 'STALE' || (secondsAgo > 30 && status.state === 'LIVE');
   const isDead = secondsAgo > 120 && status.state === 'LIVE';
 
   if (status.isDemoMode || status.state === 'DEMO') {

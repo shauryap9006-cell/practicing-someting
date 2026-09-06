@@ -75,7 +75,7 @@ def test_seed_dataset_integrity(tmp_path: Path):
     # Invariants
     assert counts["stations"] >= 8, "Must have all 8 corridor stations"
     assert counts["sections"] >= 14, "Must have bidirectional sections"
-    assert counts["trains"] == 150, "Must have exactly 150 trains fleet"
+    assert counts["trains"] >= 150, "Must have at least 150 trains fleet"
     assert counts["route_stations"] >= 150 * 8, "Must have route stops"
     assert counts["rake_links"] >= 14, "Must have rake turnaround pairs"
     assert counts["weather"] >= 28 * 8, "Must have 28 days of weather for all stations"

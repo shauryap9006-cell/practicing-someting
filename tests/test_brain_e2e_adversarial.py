@@ -18,16 +18,18 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api.main import app
+from api.auth import create_access_token
 from api.brain import BrainOrchestrator
 from data.db import Database, get_db
 
 
 client = TestClient(app)
+AUTH_HEADERS = {"Authorization": f"Bearer {create_access_token({'sub': 'admin', 'role_id': 'admin'})}"}
 
 
 def test_e2e_1_missing_train_number():
     """Drill 1: Empty or missing train_no returns 400."""
-    resp = client.post("/v1/advise", json={})
+    resp = client.post("/v1/advise", headers=AUTH_HEADERS, json={})
     assert resp.status_code == 400
     data = resp.json()
     assert "detail" in data
@@ -35,7 +37,7 @@ def test_e2e_1_missing_train_number():
 
 def test_e2e_2_non_existent_train():
     """Drill 2: Non-existent train returns honest graceful degradation."""
-    resp = client.post("/v1/advise", json={"train_no": "999999_NON_EXISTENT"})
+    resp = client.post("/v1/advise", headers=AUTH_HEADERS, json={"train_no": "999999_NON_EXISTENT"})
     assert resp.status_code == 200
     data = resp.json()
     assert data["status"] == "NOT_FOUND"
@@ -157,10 +159,10 @@ def test_e2e_10_nominal_live_advisory():
     train_no = row["train_no"]
 
     # Warmup to pre-cache historical DB baselines
-    client.post("/v1/advise", json={"train_no": train_no})
+    client.post("/v1/advise", headers=AUTH_HEADERS, json={"train_no": train_no})
 
     # Benchmark steady-state execution
-    resp = client.post("/v1/advise", json={"train_no": train_no})
+    resp = client.post("/v1/advise", headers=AUTH_HEADERS, json={"train_no": train_no})
     assert resp.status_code == 200
     data = resp.json()
 
@@ -171,4 +173,3 @@ def test_e2e_10_nominal_live_advisory():
     assert "advisory_recommendations" in data
     assert data["human_ack_required"] is True
     assert data["latency_ms"] < 2000.0, "Must satisfy < 2000 ms latency budget."
-

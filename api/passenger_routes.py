@@ -164,12 +164,57 @@ async def stream_passenger_train(
     clock = get_clock()
 
     async def event_generator():
-        base_km = 187.0 if target_train_no == "12003" else 150.0
-        base_speed = 112.0 if target_train_no == "12003" else 85.0
-        is_completed = target_train_no == "12004"
-        next_halt_km = 209.0  # TDL
-        next_halt_code = "TDL"
-        next_halt_name = "Tundla Junction"
+        # Dynamically resolve route and live telemetry from tracker and database
+        with db.transaction() as cur:
+            cur.execute(
+                """
+                SELECT rs.seq, rs.station_code, s.name as station_name, rs.distance_km
+                FROM route_stations rs
+                JOIN stations s ON rs.station_code = s.code
+                WHERE rs.train_no = ?
+                ORDER BY rs.seq ASC
+                """,
+                (target_train_no,),
+            )
+            route_stops = [dict(r) for r in cur.fetchall()]
+
+            cur.execute(
+                "SELECT * FROM live_positions WHERE train_no = ? ORDER BY updated_at DESC LIMIT 1",
+                (target_train_no,),
+            )
+            lp_row = cur.fetchone()
+
+        pos = getattr(tracker, "positions", {}).get(target_train_no) if tracker else None
+
+        if route_stops and len(route_stops) >= 2:
+            curr_code = getattr(pos, "current_station_code", None) or (lp_row["current_station_code"] if lp_row else None)
+            next_code = getattr(pos, "next_station_code", None) or (lp_row["next_station_code"] if lp_row else None)
+
+            curr_match = next((s for s in route_stops if s["station_code"] == curr_code), route_stops[0])
+            next_match = next((s for s in route_stops if s["station_code"] == next_code), (route_stops[1] if len(route_stops) > 1 else route_stops[0]))
+
+            base_km = float(curr_match["distance_km"] or 0.0) + (10.0 if curr_match != next_match else 0.0)
+            base_speed = float(getattr(pos, "speed_kmh", 0) or (lp_row["speed_kmh"] if lp_row else 85.0)) or 85.0
+            next_halt_km = float(next_match["distance_km"] or (base_km + 45.0))
+            next_halt_code = next_match["station_code"]
+            next_halt_name = next_match["station_name"]
+            delay_val = float(getattr(pos, "delay_minutes", 0) or (lp_row["delay_minutes"] if lp_row else 0))
+        elif target_train_no == "12003":
+            base_km = 187.0
+            base_speed = 112.0
+            next_halt_km = 209.0
+            next_halt_code = "TDL"
+            next_halt_name = "Tundla Junction"
+            delay_val = 25.0
+        else:
+            base_km = 0.0
+            base_speed = 85.0
+            next_halt_km = 50.0
+            next_halt_code = "NDLS"
+            next_halt_name = "New Delhi"
+            delay_val = 0.0
+
+        is_completed = (target_train_no == "12004") or (getattr(pos, "status", "") == "TERMINATED")
 
         seq = 0
         loop = asyncio.get_event_loop()
@@ -213,7 +258,7 @@ async def stream_passenger_train(
                     "eta": "02:41",
                 },
                 "dwell_s": dwell_s,
-                "delay_min": 25 if target_train_no == "12003" else 0,
+                "delay_min": round(delay_val, 1),
                 "at": clock.now().isoformat(),
                 "seq": seq,
             }

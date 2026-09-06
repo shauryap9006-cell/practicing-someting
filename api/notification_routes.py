@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from api.auth import get_current_user, require_role
+from api.auth import assert_station_scope, get_current_user, require_role
 from data.audit import record_audit
 from data.db import Database, get_db
 from notifications.dispatcher import (
@@ -47,6 +47,7 @@ class NotificationItem(BaseModel):
     title: str
     message: str
     payload_json: Optional[str]
+    station_code: Optional[str]
     state: str
     created_at: str
     escalated_at: Optional[str] = None
@@ -65,7 +66,7 @@ def get_active_notifications(
     user_role = current_user.get("role_id", "viewer")
     
     query = """
-        SELECT id, event_type, target_role, severity, title, message, payload_json, state,
+        SELECT id, event_type, target_role, severity, title, message, payload_json, station_code, state,
                created_at, escalated_at, acked_at, acked_by
         FROM notifications
         WHERE state IN ('sent', 'escalated', 'queued')
@@ -75,6 +76,8 @@ def get_active_notifications(
     if user_role != "admin":
         query += " AND (target_role LIKE ? OR target_role = '*' OR target_role IS NULL)"
         params.append(f"%{user_role}%")
+        query += " AND station_code = ?"
+        params.append(str(current_user.get("station_code") or "").upper())
 
     if severity:
         query += " AND severity = ?"
@@ -96,6 +99,7 @@ def get_active_notifications(
             title=r["title"],
             message=r["message"],
             payload_json=r["payload_json"],
+            station_code=r["station_code"],
             state=r["state"],
             created_at=r["created_at"],
             escalated_at=r["escalated_at"],
@@ -118,6 +122,13 @@ def ack_notification_endpoint(
     notes = req.notes if req else ""
 
     try:
+        with db.transaction() as cur:
+            cur.execute("SELECT station_code FROM notifications WHERE id = ?", (notification_id,))
+            notification = cur.fetchone()
+        if not notification:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Notification not found.")
+        if current_user.get("role_id") not in {"admin", "section_controller"}:
+            assert_station_scope(current_user, notification["station_code"] or "")
         res = acknowledge_notification(
             notif_id=notification_id,
             user_id=current_user["id"],
@@ -150,6 +161,7 @@ def emit_notification_endpoint(
     db: Database = Depends(get_db),
 ):
     """Emits an operational notification event to the central event bus."""
+    assert_station_scope(current_user, req.station_code)
     result = notify(
         event_type=req.event_type,
         target_roles=req.target_roles,

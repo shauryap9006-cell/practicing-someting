@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from api.auth import get_current_user, require_role
+from api.auth import assert_station_scope, effective_station_scope, get_current_user, require_role
 from data.audit import record_audit
 from data.db import Database, get_db
 from notifications.dispatcher import notify
@@ -111,6 +111,8 @@ def record_breathalyzer_test(
 @router.get("/breathalyzer", response_model=List[Dict[str, Any]])
 def list_breathalyzer_tests(
     failed_only: bool = Query(False, description="Filter for failed tests only"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     current_user: Dict[str, Any] = Depends(get_current_user),
     db: Database = Depends(get_db),
 ):
@@ -119,8 +121,8 @@ def list_breathalyzer_tests(
         query = "SELECT * FROM breathalyzer_tests WHERE 1=1"
         if failed_only:
             query += " AND passed = 0"
-        query += " ORDER BY id DESC LIMIT 100;"
-        cur.execute(query)
+        query += " ORDER BY id DESC LIMIT ? OFFSET ?;"
+        cur.execute(query, (limit, offset))
         rows = [dict(r) for r in cur.fetchall()]
     return rows
 
@@ -144,6 +146,7 @@ def crew_sign_on(
     db: Database = Depends(get_db),
 ):
     """Signs on train running crew (Loco Pilot, ALP, Guard) and starts duty hours tracking."""
+    assert_station_scope(current_user, req.station_code)
     now_iso = datetime.now(timezone.utc).isoformat()
     with db.transaction() as cur:
         # Check latest breathalyzer pass
@@ -212,6 +215,7 @@ def crew_sign_off(
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Crew roster record not found.")
+        assert_station_scope(current_user, row["station_code"])
 
         sign_on_dt = datetime.fromisoformat(row["sign_on_time"].replace("Z", "+00:00"))
         duration_hours = (now_dt - sign_on_dt).total_seconds() / 3600.0
@@ -251,10 +255,13 @@ def crew_sign_off(
 @router.get("/crew/roster", response_model=List[Dict[str, Any]])
 def list_crew_roster(
     station_code: Optional[str] = Query(None, description="Station filter"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     current_user: Dict[str, Any] = Depends(get_current_user),
     db: Database = Depends(get_db),
 ):
     """Lists current crew roster with elapsed duty hours."""
+    station_code = effective_station_scope(current_user, station_code)
     now_dt = datetime.now(timezone.utc)
     with db.transaction() as cur:
         # Seed default sample crew if empty
@@ -285,7 +292,8 @@ def list_crew_roster(
         if station_code:
             query += " AND station_code = ?"
             params.append(station_code.upper())
-        query += " ORDER BY id DESC;"
+        query += " ORDER BY id DESC LIMIT ? OFFSET ?"
+        params.extend([limit, offset])
         cur.execute(query, tuple(params))
         rows = [dict(r) for r in cur.fetchall()]
 
@@ -340,6 +348,7 @@ def assign_staff_shift(
     db: Database = Depends(get_db),
 ):
     """Assigns station staff to an operational shift."""
+    assert_station_scope(current_user, req.station_code)
     now_iso = datetime.now(timezone.utc).isoformat()
     with db.transaction() as cur:
         cur.execute(
@@ -379,10 +388,13 @@ def assign_staff_shift(
 def list_staff_shifts(
     station_code: Optional[str] = Query(None, description="Station filter"),
     shift_date: Optional[str] = Query(None, description="YYYY-MM-DD"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     current_user: Dict[str, Any] = Depends(get_current_user),
     db: Database = Depends(get_db),
 ):
     """Lists staff shift roster."""
+    station_code = effective_station_scope(current_user, station_code)
     with db.transaction() as cur:
         # Seed default sample shifts if empty
         cur.execute("SELECT COUNT(*) as count FROM staff_shifts;")
@@ -416,7 +428,8 @@ def list_staff_shifts(
         if shift_date:
             query += " AND shift_date = ?"
             params.append(shift_date)
-        query += " ORDER BY shift_date DESC, id ASC;"
+        query += " ORDER BY shift_date DESC, id ASC LIMIT ? OFFSET ?;"
+        params.extend([limit, offset])
         cur.execute(query, tuple(params))
         rows = [dict(r) for r in cur.fetchall()]
     return rows
@@ -429,10 +442,13 @@ def list_staff_shifts(
 def list_sahayak_roster(
     station_code: Optional[str] = Query(None, description="Station filter"),
     on_duty_only: bool = Query(False, description="Filter on-duty only"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     current_user: Dict[str, Any] = Depends(get_current_user),
     db: Database = Depends(get_db),
 ):
     """Lists registered Sahayak (licensed porters) and their platform allocations."""
+    station_code = effective_station_scope(current_user, station_code)
     with db.transaction() as cur:
         # Seed default sample sahayak if empty
         cur.execute("SELECT COUNT(*) as count FROM sahayak_roster;")
@@ -465,7 +481,8 @@ def list_sahayak_roster(
             params.append(station_code.upper())
         if on_duty_only:
             query += " AND on_duty = 1"
-        query += " ORDER BY assigned_platform ASC, badge_number ASC;"
+        query += " ORDER BY assigned_platform ASC, badge_number ASC LIMIT ? OFFSET ?;"
+        params.extend([limit, offset])
         cur.execute(query, tuple(params))
         rows = [dict(r) for r in cur.fetchall()]
     return rows
@@ -484,6 +501,7 @@ def toggle_sahayak_duty(
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Sahayak record not found.")
+        assert_station_scope(current_user, row["station_code"])
 
         new_duty = 0 if row["on_duty"] == 1 else 1
         cur.execute(

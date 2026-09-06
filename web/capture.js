@@ -52,11 +52,63 @@ function parseRgb(colorStr) {
   return [255, 255, 255];
 }
 
+async function waitForPageFullyLoaded(page, screenId = '') {
+  // 1. Wait for document fonts to be ready
+  await page.evaluate(() => document.fonts.ready).catch(() => {});
+
+  // 2. Dismiss cookie banners or informational overlays if present
+  await page.evaluate(() => {
+    const bannerBtns = Array.from(document.querySelectorAll('button')).filter((b) =>
+      /accept|dismiss|got it|agree/i.test(b.textContent || '')
+    );
+    for (const btn of bannerBtns) {
+      if (btn.offsetWidth > 0 && btn.offsetHeight > 0) {
+        btn.click();
+      }
+    }
+  }).catch(() => {});
+
+  // 3. Wait for loading spinners or temporary loading text to disappear
+  await page.waitForFunction(() => {
+    const text = document.body ? document.body.innerText : '';
+    const isLoadingText = /Loading operational module|Connecting to Live Signal|Loading Train Telemetry|Loading\.\.\./i.test(text);
+    const spinners = Array.from(document.querySelectorAll('.animate-spin'));
+    const isSpinnerVisible = spinners.some((s) => s.offsetWidth > 0 && s.offsetHeight > 0);
+    return !isLoadingText && !isSpinnerVisible;
+  }, { timeout: 12000 }).catch(() => {});
+
+  // 4. Screen-specific data-readiness checks
+  if (screenId === '05_live_map') {
+    await page.waitForFunction(() => {
+      return document.querySelectorAll('svg g, canvas').length > 0;
+    }, { timeout: 8000 }).catch(() => {});
+  } else if (screenId === '08_train_detail') {
+    await page.waitForFunction(() => {
+      const text = document.body ? document.body.innerText : '';
+      return text.includes('12301') && !text.includes('Connecting to Live Signal');
+    }, { timeout: 8000 }).catch(() => {});
+  } else if (screenId === '06_gantt') {
+    await page.waitForFunction(() => {
+      return document.querySelectorAll('.space-y-2.relative > div, div[class*="absolute bg-"], .border.rounded-lg').length > 0;
+    }, { timeout: 8000 }).catch(() => {});
+  } else if (['04_overview', '07_trains', '10_timetable', '11_blocks', '14_tsr', '15_incidents', '16_crew', '17_maintenance', '20_audit'].includes(screenId)) {
+    await page.waitForFunction(() => {
+      const rows = document.querySelectorAll('table tbody tr, .divide-y > div, [role="row"], .grid > div');
+      return rows.length > 0;
+    }, { timeout: 8000 }).catch(() => {});
+  }
+
+  // 5. Additional stabilization settle time for animations, layout rendering, and charts
+  await new Promise((r) => setTimeout(r, 1500));
+}
+
 async function run() {
   if (fs.existsSync(SCREENSHOTS_DIR)) {
+    console.log(`[CLEAN] Removing existing screenshots in ${SCREENSHOTS_DIR}...`);
     fs.rmSync(SCREENSHOTS_DIR, { recursive: true, force: true });
   }
   fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
+  console.log(`[CLEAN] Fresh directory ready: ${SCREENSHOTS_DIR}`);
 
   const auditReport = {
     timestamp: new Date().toISOString(),
@@ -102,29 +154,49 @@ async function run() {
   console.log('S6 Verdict:', auditReport.suspects.S6.verdict);
   await unauthPage.close();
 
-  // 2. Authenticated Session Setup
+  // 2. Authenticated Session Setup with genuine backend JWT token
+  console.log('\n--- Authenticating session with backend API ---');
+  let authToken = 'demo-jwt-token-sih-2026';
+  try {
+    const authRes = await fetch('http://127.0.0.1:8000/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: 'sm_ndls', password: 'StationMaster2026!' }),
+    });
+    if (authRes.ok) {
+      const authData = await authRes.json();
+      if (authData?.access_token) {
+        authToken = authData.access_token;
+        console.log('[AUTH] Successfully authenticated with backend API as sm_ndls');
+      }
+    }
+  } catch (e) {
+    console.warn('[AUTH] Could not login via API, using fallback token:', e.message);
+  }
+
   const page = await browser.newPage();
-  await page.evaluateOnNewDocument(() => {
-    localStorage.setItem(
-      'rtx-session',
-      JSON.stringify({
-        user: {
-          id: 'usr-sm-ndls-01',
-          username: 'sm_ndls',
-          email: 'sm@cnb.railtwin.app',
-          name: 'Rajesh Kumar (Station Master)',
-          role: 'station_master',
-          roleName: 'Station Master (SM)',
-          station: 'CNB',
-          stationName: 'Kanpur Central (CNB)',
-          token: 'demo-jwt-token-sih-2026',
-        },
-        expiresAt: Date.now() + 86400000,
-      })
-    );
+  await page.evaluateOnNewDocument((token) => {
+    const sessionObj = {
+      user: {
+        id: 'usr-sm-ndls-01',
+        username: 'sm_ndls',
+        email: 'sm@cnb.railtwin.app',
+        name: 'Rajesh Kumar (Station Master)',
+        role: 'station_master',
+        roleName: 'Station Master (SM)',
+        station: 'CNB',
+        stationName: 'Kanpur Central (CNB)',
+        token: token,
+      },
+      refreshToken: 'demo-refresh-token',
+      expiresAt: Date.now() + 86400000,
+    };
+    sessionStorage.setItem('rtx-session', JSON.stringify(sessionObj));
+    localStorage.setItem('rtx-session', JSON.stringify(sessionObj));
+    localStorage.setItem('railtwin_demo_mode', 'true');
     localStorage.setItem('rtx-theme', 'dark');
     sessionStorage.setItem('rtx_boot_preloaded_session', '1');
-  });
+  }, authToken);
 
   const VIEWPORTS = [
     { name: 'desktop_1440', width: 1440, height: 900 },
@@ -146,17 +218,8 @@ async function run() {
 
     // A. Desktop 1440px
     await page.setViewport(VIEWPORTS[0]);
-    await page.goto(`${BASE_URL}${screen.path}`, { waitUntil: 'domcontentloaded', timeout: 15000 });
-    await new Promise((r) => setTimeout(r, 1200));
-
-    // Dismiss cookie banner
-    await page.evaluate(() => {
-      const bannerBtn = Array.from(document.querySelectorAll('button')).find((b) =>
-        /accept|dismiss|got it|agree/i.test(b.textContent || '')
-      );
-      if (bannerBtn) bannerBtn.click();
-    });
-    await new Promise((r) => setTimeout(r, 200));
+    await page.goto(`${BASE_URL}${screen.path}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await waitForPageFullyLoaded(page, screen.id);
 
     const shot1440 = path.join(SCREENSHOTS_DIR, `${screen.id}_desktop_1440.png`);
     await page.screenshot({ path: shot1440 });
@@ -268,18 +331,18 @@ async function run() {
       tabularNums: metrics.numCheck,
     };
 
-    // B. Laptop 1366x768 (Projector view)
+    // B. Laptop 1366x768 (Projector view) - resize and settle
     await page.setViewport(VIEWPORTS[1]);
-    await page.goto(`${BASE_URL}${screen.path}`, { waitUntil: 'domcontentloaded' });
-    await new Promise((r) => setTimeout(r, 600));
+    await page.evaluate(() => window.dispatchEvent(new Event('resize')));
+    await new Promise((r) => setTimeout(r, 800));
     const shot1366 = path.join(SCREENSHOTS_DIR, `${screen.id}_laptop_1366x768.png`);
     await page.screenshot({ path: shot1366 });
     screenAudit.screenshots.laptop_1366x768 = shot1366;
 
-    // C. Mobile 375x812 (Touch target view)
+    // C. Mobile 375x812 (Touch target view) - resize and settle
     await page.setViewport(VIEWPORTS[2]);
-    await page.goto(`${BASE_URL}${screen.path}`, { waitUntil: 'domcontentloaded' });
-    await new Promise((r) => setTimeout(r, 600));
+    await page.evaluate(() => window.dispatchEvent(new Event('resize')));
+    await new Promise((r) => setTimeout(r, 800));
     const shotMobile = path.join(SCREENSHOTS_DIR, `${screen.id}_mobile_375x812.png`);
     await page.screenshot({ path: shotMobile });
     screenAudit.screenshots.mobile_375x812 = shotMobile;
@@ -300,8 +363,8 @@ async function run() {
 
     // D. Keyboard-Focus View (Capture tab focus states)
     await page.setViewport(VIEWPORTS[0]);
-    await page.goto(`${BASE_URL}${screen.path}`, { waitUntil: 'domcontentloaded' });
-    await new Promise((r) => setTimeout(r, 600));
+    await page.evaluate(() => window.dispatchEvent(new Event('resize')));
+    await new Promise((r) => setTimeout(r, 500));
     for (let k = 0; k < 4; k++) {
       await page.keyboard.press('Tab');
       await new Promise((r) => setTimeout(r, 80));
@@ -319,14 +382,14 @@ async function run() {
   // S1: Overview KPI vs Live Radar
   await page.setViewport(VIEWPORTS[0]);
   await page.goto(`${BASE_URL}/dashboard`, { waitUntil: 'domcontentloaded' });
-  await new Promise((r) => setTimeout(r, 1000));
+  await waitForPageFullyLoaded(page, '04_overview');
   const overviewTrainNum = await page.evaluate(() => {
-    const card = Array.from(document.querySelectorAll('a, div')).find(el => /Active Corridor Trains/i.test(el.textContent || ''));
+    const card = Array.from(document.querySelectorAll('a, div')).find(el => /Active Corridor Trains|Active Fleet/i.test(el.textContent || ''));
     return card ? (card.querySelector('.text-2xl, .text-xl')?.textContent?.trim() || 'N/A') : 'N/A';
   });
 
   await page.goto(`${BASE_URL}/dashboard/live-map`, { waitUntil: 'domcontentloaded' });
-  await new Promise((r) => setTimeout(r, 1200));
+  await waitForPageFullyLoaded(page, '05_live_map');
   const radarTrainNum = await page.evaluate(() => {
     const badge = Array.from(document.querySelectorAll('span, div')).find(el => /Active Trains:/i.test(el.textContent || ''));
     return badge ? badge.textContent.trim() : 'N/A';
@@ -343,7 +406,7 @@ async function run() {
   const footerStatuses = {};
   for (const pathStr of ['/dashboard', '/dashboard/live-map', '/dashboard/gantt', '/dashboard/trains']) {
     await page.goto(`${BASE_URL}${pathStr}`, { waitUntil: 'domcontentloaded' });
-    await new Promise((r) => setTimeout(r, 500));
+    await waitForPageFullyLoaded(page, pathStr);
     footerStatuses[pathStr] = await page.evaluate(() => {
       const f = document.querySelector('footer');
       return f ? f.innerText.replace(/\n/g, ' · ') : 'NONE';
@@ -356,7 +419,7 @@ async function run() {
 
   // S3: Loading / Missing Train Telemetry Error Handling
   await page.goto(`${BASE_URL}/dashboard/trains/99999`, { waitUntil: 'domcontentloaded' });
-  await new Promise((r) => setTimeout(r, 1200));
+  await new Promise((r) => setTimeout(r, 1500));
   const s3Handling = await page.evaluate(() => {
     const text = document.body.innerText;
     return {
@@ -369,7 +432,7 @@ async function run() {
 
   // S4: Platform Gantt Empty Rows
   await page.goto(`${BASE_URL}/dashboard/gantt`, { waitUntil: 'domcontentloaded' });
-  await new Promise((r) => setTimeout(r, 1200));
+  await waitForPageFullyLoaded(page, '06_gantt');
   const s4Rows = await page.evaluate(() => {
     const rows = Array.from(document.querySelectorAll('.space-y-2.relative > div'));
     return rows.map(r => ({
@@ -386,7 +449,7 @@ async function run() {
 
   // S5: Live Radar SVG Overlap & Clipping
   await page.goto(`${BASE_URL}/dashboard/live-map`, { waitUntil: 'domcontentloaded' });
-  await new Promise((r) => setTimeout(r, 1500));
+  await waitForPageFullyLoaded(page, '05_live_map');
   const s5Radar = await page.evaluate(() => {
     const trainRects = Array.from(document.querySelectorAll('svg g rect')).map(r => ({
       x: parseFloat(r.getAttribute('x') || '0'),
@@ -403,7 +466,7 @@ async function run() {
 
   // S7: Live Feed Ticker on Landing Page
   await page.goto(`${BASE_URL}/`, { waitUntil: 'domcontentloaded' });
-  await new Promise((r) => setTimeout(r, 1200));
+  await waitForPageFullyLoaded(page, '01_landing');
   const s7Marquee = await page.evaluate(() => {
     const ticker = document.querySelector('.animate-marquee');
     if (!ticker) return { hasTicker: false };
@@ -421,7 +484,7 @@ async function run() {
   console.log('\n--- Auditing Hero Section Deep-Dive ---');
   await page.setViewport({ width: 1366, height: 768 });
   await page.goto(`${BASE_URL}/`, { waitUntil: 'domcontentloaded' });
-  await new Promise((r) => setTimeout(r, 1200));
+  await waitForPageFullyLoaded(page, '01_landing');
 
   const heroDetails = await page.evaluate(() => {
     const vh = window.innerHeight; // 768

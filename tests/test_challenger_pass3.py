@@ -165,6 +165,11 @@ def test_router_mounting_no_404s_or_double_prefixes():
             resp = client.get(path, headers=headers)
         elif method == "POST":
             resp = client.post(path, headers=headers, json={})
+        if path in ("/v1/health", "/api/v1/health"):
+            assert resp.status_code in (200, 503), (
+                f"Endpoint {method} {path} returned status {resp.status_code}: {resp.text}"
+            )
+            continue
         assert resp.status_code == expected_status, (
             f"Endpoint {method} {path} returned status {resp.status_code} (expected {expected_status}): {resp.text}"
         )
@@ -256,24 +261,26 @@ def test_delay_autopsy_edge_cases():
 
 def test_dispatcher_ack_validation_and_rejection():
     """Verify POST /v1/advise/{adv_id}/ack validation on decisions and schemas."""
+    headers = get_admin_headers()
+
     # Case A: Valid 'accepted'
-    resp_acc = client.post("/v1/advise/adv-test-101/ack", json={"decision": "accepted", "dispatcher_id": "D1"})
+    resp_acc = client.post("/v1/advise/adv-test-101/ack", headers=headers, json={"decision": "accepted", "dispatcher_id": "D1"})
     assert resp_acc.status_code == 200
     assert resp_acc.json()["decision"] == "accepted"
 
     # Case B: Valid 'rejected'
-    resp_rej = client.post("/v1/advise/adv-test-102/ack", json={"decision": "rejected", "comment": "Conflict manual override"})
+    resp_rej = client.post("/v1/advise/adv-test-102/ack", headers=headers, json={"decision": "rejected", "comment": "Conflict manual override"})
     assert resp_rej.status_code == 200
     assert resp_rej.json()["decision"] == "rejected"
 
     # Case C: Invalid decision string value -> 400 rejection (or 422)
-    resp_inv = client.post("/v1/advise/adv-test-103/ack", json={"decision": "maybe_later"})
+    resp_inv = client.post("/v1/advise/adv-test-103/ack", headers=headers, json={"decision": "maybe_later"})
     assert resp_inv.status_code in (400, 422), f"Expected 400 or 422, got {resp_inv.status_code}: {resp_inv.text}"
 
     # Case D: Missing required decision field -> 422 Unprocessable Entity
-    resp_missing = client.post("/v1/advise/adv-test-104/ack", json={"comment": "No decision provided"})
+    resp_missing = client.post("/v1/advise/adv-test-104/ack", headers=headers, json={"comment": "No decision provided"})
     assert resp_missing.status_code == 422, f"Expected 422 for missing required field, got {resp_missing.status_code}"
 
     # Case E: Extra fields forbidden -> 422 Unprocessable Entity
-    resp_extra = client.post("/v1/advise/adv-test-105/ack", json={"decision": "accepted", "unsupported_field": 123})
+    resp_extra = client.post("/v1/advise/adv-test-105/ack", headers=headers, json={"decision": "accepted", "unsupported_field": 123})
     assert resp_extra.status_code == 422, f"Expected 422 for extra forbidden field, got {resp_extra.status_code}"

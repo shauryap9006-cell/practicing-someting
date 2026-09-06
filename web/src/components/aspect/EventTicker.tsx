@@ -63,7 +63,7 @@ export const EventTicker: React.FC<EventTickerProps> = ({
       <div className="flex items-center gap-2 pr-4 border-r border-[#23272F] shrink-0">
         <span className="w-2 h-2 rounded-full bg-[#F5A524] shadow-[0_0_8px_rgba(245,165,36,0.6)] animate-pulse" />
         <span className="font-bold text-[#E9EBEE] uppercase tracking-wider text-[10px]">
-          LIVE TELEMETRY FEED
+          ILLUSTRATIVE FEED
         </span>
       </div>
 

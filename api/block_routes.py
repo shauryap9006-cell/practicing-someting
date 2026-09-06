@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from api.auth import get_current_user, require_role
+from api.auth import assert_station_scope, effective_station_scope, get_current_user, require_role
 from data.audit import record_audit
 from data.db import Database, get_db
 from notifications.dispatcher import notify
@@ -38,6 +38,7 @@ def get_block_statuses(
     db: Database = Depends(get_db),
 ):
     """Returns corridor block sections with active state, train occupancy, and caution restrictions."""
+    station_code = effective_station_scope(current_user, station_code)
     with db.transaction() as cur:
         # Fetch sections (distance_km, max_speed_kmph, single_line)
         cur.execute("SELECT from_code, to_code, distance_km, max_speed_kmph, single_line FROM sections;")
@@ -112,6 +113,7 @@ def update_block_state(
     parts = block_id.replace("BLK-", "").split("-")
     f_code = parts[0] if len(parts) > 0 else "NDLS"
     t_code = parts[1] if len(parts) > 1 else "GZB"
+    assert_station_scope(current_user, f_code)
 
     with db.transaction() as cur:
         cur.execute(
@@ -152,6 +154,7 @@ def grant_line_clear(
     parts = block_id.replace("BLK-", "").split("-")
     f_code = parts[0] if len(parts) > 0 else "NDLS"
     t_code = parts[1] if len(parts) > 1 else "GZB"
+    assert_station_scope(current_user, f_code)
 
     with db.transaction() as cur:
         cur.execute("SELECT state FROM block_status WHERE block_id = ?;", (block_id,))

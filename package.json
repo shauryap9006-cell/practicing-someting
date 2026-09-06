@@ -7,8 +7,5 @@
     "build": "npm --prefix web run build",
     "start": "npm --prefix web run start",
     "lint": "npm --prefix web run lint"
-  },
-  "dependencies": {
-    "mermaid": "^11.17.2"
   }
 }

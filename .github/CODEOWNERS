@@ -1,0 +1,3 @@
+# Require repository-owner review for operational and security-sensitive changes.
+# The owner is the repository account; split into teams after those teams exist.
+* @shauryap9006-cell

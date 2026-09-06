@@ -1,27 +1,37 @@
 """RailTwin-X Role-Based Access Control (RBAC) & Authentication Module (Module I1).
 
-Provides secure JWT token management, PBKDF2 password hashing, and endpoint-level
+Provides secure JWT token management, Argon2id password hashing, and endpoint-level
 FastAPI dependency role guards (default-deny policy).
 """
 
 from __future__ import annotations
 
 import hashlib
-import hmac
-import os
 import secrets
+from uuid import uuid4
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Sequence, Union
 
 import jwt
+from argon2 import PasswordHasher
+from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from data.db import Database, get_db
+from config import settings
 
-SECRET_KEY = os.getenv("RAILTWIN_SECRET_KEY", "railtwin_dev_secret_key_sih_2026_super_secure")
+if settings.ENV.strip().lower() == "production" and len(settings.JWT_SECRET_KEY.strip()) < 32:
+    raise RuntimeError("RAILTWIN_JWT_SECRET_KEY must be configured before starting in production")
+
+# Development/test processes get an ephemeral key rather than a known reusable secret.
+# Production is rejected above and by Settings.validate_runtime_safety when no key is set.
+SECRET_KEY = settings.JWT_SECRET_KEY.strip() or secrets.token_urlsafe(48)
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+REFRESH_TOKEN_EXPIRE_DAYS = settings.REFRESH_TOKEN_EXPIRE_DAYS
+
+PASSWORD_HASHER = PasswordHasher(time_cost=3, memory_cost=65536, parallelism=2)
 
 security_bearer = HTTPBearer(auto_error=False)
 
@@ -83,21 +93,24 @@ STANDARD_ROLES = {
 
 
 def hash_password(password: str, salt: Optional[str] = None) -> str:
-    """Hashes a plaintext password using PBKDF2-HMAC-SHA256."""
-    if not salt:
-        salt = secrets.token_hex(16)
-    key = hashlib.pbkdf2_hmac(
-        "sha256",
-        password.encode("utf-8"),
-        salt.encode("utf-8"),
-        100_000,
-    )
-    return f"pbkdf2_sha256$100000${salt}${key.hex()}"
+    """Hashes a plaintext password with memory-hard Argon2id.
+
+    ``salt`` is retained only for source compatibility with the old helper. Argon2
+    generates and stores a cryptographically random salt in its encoded hash.
+    """
+    if not password:
+        raise ValueError("Password must not be empty")
+    return PASSWORD_HASHER.hash(password)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verifies a plaintext password against a stored PBKDF2 hash."""
+    """Verifies Argon2id hashes and accepts legacy PBKDF2 only for migration."""
     try:
+        if hashed_password.startswith("$argon2"):
+            return PASSWORD_HASHER.verify(hashed_password, plain_password)
+
+        # Legacy hashes are accepted during login so existing accounts can be
+        # transparently upgraded by auth_routes.login; new hashes are Argon2id.
         parts = hashed_password.split("$")
         if len(parts) != 4 or parts[0] != "pbkdf2_sha256":
             return False
@@ -110,16 +123,44 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
             salt.encode("utf-8"),
             iterations,
         )
-        return hmac.compare_digest(key.hex(), expected_hex)
-    except Exception:
+        return secrets.compare_digest(key.hex(), expected_hex)
+    except (InvalidHashError, VerificationError, VerifyMismatchError, ValueError, TypeError):
         return False
+
+
+def needs_rehash(hashed_password: str) -> bool:
+    """Returns whether a stored password should be upgraded on successful login."""
+    if not hashed_password.startswith("$argon2"):
+        return True
+    try:
+        return PASSWORD_HASHER.check_needs_rehash(hashed_password)
+    except (InvalidHashError, VerificationError, ValueError, TypeError):
+        return True
 
 
 def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
     """Encodes a JWT access token with expiration."""
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    to_encode.update({"exp": expire, "iat": datetime.now(timezone.utc)})
+    to_encode.update({
+        "exp": expire,
+        "iat": datetime.now(timezone.utc),
+        "jti": to_encode.get("jti", str(uuid4())),
+        "typ": "access",
+    })
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def create_refresh_token(data: Dict[str, Any]) -> str:
+    """Creates a rotating, server-revocable refresh token."""
+    now = datetime.now(timezone.utc)
+    to_encode = data.copy()
+    to_encode.update({
+        "exp": now + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
+        "iat": now,
+        "jti": str(uuid4()),
+        "typ": "refresh",
+    })
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -127,6 +168,8 @@ def decode_access_token(token: str) -> Dict[str, Any]:
     """Decodes and verifies a JWT access token."""
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("typ", "access") != "access" or not payload.get("sub"):
+            raise jwt.InvalidTokenError("not an access token")
         return payload
     except jwt.ExpiredSignatureError:
         raise HTTPException(
@@ -138,6 +181,27 @@ def decode_access_token(token: str) -> Dict[str, Any]:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
+def decode_refresh_token(token: str) -> Dict[str, Any]:
+    """Decodes a refresh token and rejects access-token substitution."""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("typ") != "refresh" or not payload.get("sub") or not payload.get("jti"):
+            raise jwt.InvalidTokenError("not a refresh token")
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token has expired. Please log in again.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except jwt.InvalidTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -154,11 +218,8 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    if auth.credentials == "demo-jwt-token-sih-2026":
-        username = "admin"
-    else:
-        payload = decode_access_token(auth.credentials)
-        username = payload.get("sub", "admin")
+    payload = decode_access_token(auth.credentials)
+    username = payload["sub"]
 
     with db.transaction() as cur:
         cur.execute(
@@ -175,16 +236,11 @@ def get_current_user(
         row = cur.fetchone()
 
     if not row:
-        return {
-            "id": "usr-admin-01",
-            "username": "admin",
-            "email": "admin@railtwin.app",
-            "role_id": "admin",
-            "role_name": "System Administrator",
-            "station_code": "NDLS",
-            "full_name": "Chief System Administrator",
-            "permissions_json": '["*"]',
-        }
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     return {
         "id": row["id"],
@@ -218,3 +274,42 @@ def require_role(allowed_roles: Union[str, Sequence[str]]):
         return current_user
 
     return role_checker
+
+
+def assert_station_scope(current_user: Dict[str, Any], station_code: str) -> None:
+    """Reject station-scoped mutations outside the operator's assigned station."""
+    role = current_user.get("role_id")
+    if role in {"admin", "section_controller"}:
+        return
+    assigned = str(current_user.get("station_code") or "").strip().upper()
+    requested = str(station_code or "").strip().upper()
+    if not assigned or not requested or assigned != requested:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "STATION_SCOPE_DENIED",
+                "message": "This account is not authorized for the requested station.",
+                "retryable": False,
+            },
+        )
+
+
+def effective_station_scope(current_user: Dict[str, Any], requested_station: Optional[str] = None) -> Optional[str]:
+    """Returns the permitted station filter, or ``None`` for global roles."""
+    requested = str(requested_station or "").strip().upper() or None
+    if current_user.get("role_id") in {"admin", "section_controller"}:
+        return requested
+
+    assigned = str(current_user.get("station_code") or "").strip().upper() or None
+    if requested and requested != assigned:
+        assert_station_scope(current_user, requested)
+    if not assigned:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "STATION_SCOPE_MISSING",
+                "message": "This account has no assigned station scope.",
+                "retryable": False,
+            },
+        )
+    return assigned

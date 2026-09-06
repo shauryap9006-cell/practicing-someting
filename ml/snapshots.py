@@ -622,12 +622,38 @@ class SnapshotGenerator:
         return res
 
     def _get_station_weather(self, station_code: str, date_str: str) -> Tuple[int, float]:
-        """Fetches observed weather flags from weather table with memory cache."""
+        """Fetches observed weather flags from weather table with memory cache and climatology fallback."""
         if not hasattr(self, "_weather_cache"):
             with self.db.transaction() as cur:
                 cur.execute("SELECT station_code, date, fog_flag, precip_mm FROM weather")
                 self._weather_cache = {(r["station_code"], r["date"]): (int(r["fog_flag"]), float(r["precip_mm"])) for r in cur.fetchall()}
-        return self._weather_cache.get((station_code, date_str), (0, 0.0))
+                cur.execute(
+                    """
+                    SELECT station_code, fog_flag, precip_mm, MAX(date) as max_date
+                    FROM weather
+                    GROUP BY station_code
+                    """
+                )
+                self._weather_station_latest = {
+                    r["station_code"]: (int(r["fog_flag"]), float(r["precip_mm"])) for r in cur.fetchall()
+                }
+
+        if (station_code, date_str) in self._weather_cache:
+            return self._weather_cache[(station_code, date_str)]
+
+        if station_code in getattr(self, "_weather_station_latest", {}):
+            return self._weather_station_latest[station_code]
+
+        try:
+            month = int(date_str.split("-")[1])
+            if month in (12, 1):
+                return (1, 0.0)
+            elif month in (7, 8):
+                return (0, 5.0)
+        except Exception:
+            pass
+
+        return (0, 0.0)
 
     def _count_active_trains(self, date_str: str, query_time_iso: str) -> int:
         """Counts active trains in corridor at snapshot time with fast memoization."""

@@ -50,6 +50,51 @@ const OPENRAILWAYMAP_TILES = [
   'https://c.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png',
 ];
 
+function makeElement<K extends keyof HTMLElementTagNameMap>(
+  tag: K,
+  className: string,
+  text?: string,
+): HTMLElementTagNameMap[K] {
+  const element = document.createElement(tag);
+  element.className = className;
+  if (text !== undefined) element.textContent = text;
+  return element;
+}
+
+function createStationMarkerElement(stop: RouteStopGeo, isSelected: boolean, isPassed: boolean, isCurrent: boolean) {
+  const root = makeElement('div', 'cursor-pointer select-none group');
+  const stack = makeElement('div', 'flex flex-col items-center');
+  const badgeClass = isSelected
+    ? 'bg-[#E9EBEE] text-[#0A0B0D] border-white scale-110 ring-2 ring-[#F5A524]'
+    : isCurrent
+    ? 'bg-[#F5A524] text-[#0A0B0D] border-[#F5A524] animate-pulse'
+    : isPassed
+    ? 'bg-[#101216]/95 text-[#3DDC97] border-[#3DDC97]/40'
+    : 'bg-[#101216]/95 text-[#E9EBEE] border-[#23272F]';
+  const badge = makeElement('div', `px-2 py-0.5 rounded text-[10px] font-mono font-bold shadow-lg border transition-all ${badgeClass}`);
+  badge.appendChild(makeElement('span', '', stop.stationCode));
+  if (stop.platform) badge.appendChild(makeElement('span', 'opacity-75 text-[9px] ml-1', `PF${stop.platform}`));
+  const dotClass = isCurrent ? 'bg-[#F5A524] animate-ping' : isPassed ? 'bg-[#3DDC97]' : 'bg-[#E9EBEE]';
+  const dot = makeElement('div', `w-2.5 h-2.5 rounded-full mt-0.5 border border-[#101216] ${dotClass}`);
+  stack.append(badge, dot);
+  root.appendChild(stack);
+  return root;
+}
+
+function createTrainMarkerElement(trainNo: string, trainSpeed: number) {
+  const root = makeElement('div', 'cursor-pointer select-none z-30');
+  const stack = makeElement('div', 'relative flex flex-col items-center group');
+  stack.appendChild(makeElement('span', 'absolute -top-1 w-10 h-10 rounded-full bg-[#F5A524]/25 animate-ping'));
+  const beacon = makeElement('div', 'relative px-2.5 py-1 rounded-full bg-[#0A0B0D] border-2 border-[#F5A524] text-[#E9EBEE] shadow-2xl flex items-center gap-1.5 font-mono text-[11px] font-bold');
+  beacon.appendChild(makeElement('span', 'w-2.5 h-2.5 rounded-full bg-[#3DDC97] animate-pulse'));
+  beacon.appendChild(makeElement('span', '', `🚆 ${trainNo}`));
+  beacon.appendChild(makeElement('span', 'text-[#F5A524] text-[10px] tabular-nums', `${Math.round(trainSpeed)} km/h`));
+  stack.appendChild(beacon);
+  stack.appendChild(makeElement('div', 'w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[6px] border-t-[#F5A524] -mt-0.5'));
+  root.appendChild(stack);
+  return root;
+}
+
 export const PassengerSatelliteMap: React.FC<PassengerSatelliteMapProps> = ({
   trainNo,
   trainName,
@@ -226,27 +271,7 @@ export const PassengerSatelliteMap: React.FC<PassengerSatelliteMapProps> = ({
       const isPassed = stop.status === 'passed';
       const isCurrent = stop.status === 'current';
 
-      const el = document.createElement('div');
-      el.className = 'cursor-pointer select-none group';
-      el.innerHTML = `
-        <div class="flex flex-col items-center">
-          <div class="px-2 py-0.5 rounded text-[10px] font-mono font-bold shadow-lg border transition-all ${
-            isSelected
-              ? 'bg-[#E9EBEE] text-[#0A0B0D] border-white scale-110 ring-2 ring-[#F5A524]'
-              : isCurrent
-              ? 'bg-[#F5A524] text-[#0A0B0D] border-[#F5A524] animate-pulse'
-              : isPassed
-              ? 'bg-[#101216]/95 text-[#3DDC97] border-[#3DDC97]/40'
-              : 'bg-[#101216]/95 text-[#E9EBEE] border-[#23272F]'
-          }">
-            <span>${stop.stationCode}</span>
-            ${stop.platform ? `<span class="opacity-75 text-[9px] ml-1">PF${stop.platform}</span>` : ''}
-          </div>
-          <div class="w-2.5 h-2.5 rounded-full mt-0.5 border border-[#101216] ${
-            isCurrent ? 'bg-[#F5A524] animate-ping' : isPassed ? 'bg-[#3DDC97]' : 'bg-[#E9EBEE]'
-          }"></div>
-        </div>
-      `;
+      const el = createStationMarkerElement(stop, isSelected, isPassed, isCurrent);
 
       el.addEventListener('click', () => {
         if (onSelectStation) onSelectStation(stop.stationCode);
@@ -266,24 +291,7 @@ export const PassengerSatelliteMap: React.FC<PassengerSatelliteMapProps> = ({
       trainMarkerRef.current = null;
     }
 
-    const trainEl = document.createElement('div');
-    trainEl.className = 'cursor-pointer select-none z-30';
-    trainEl.innerHTML = `
-      <div class="relative flex flex-col items-center group">
-        <!-- Live Ripple Aura -->
-        <span class="absolute -top-1 w-10 h-10 rounded-full bg-[#F5A524]/25 animate-ping"></span>
-        
-        <!-- Train Instrument Beacon -->
-        <div class="relative px-2.5 py-1 rounded-full bg-[#0A0B0D] border-2 border-[#F5A524] text-[#E9EBEE] shadow-2xl flex items-center gap-1.5 font-mono text-[11px] font-bold">
-          <span class="w-2.5 h-2.5 rounded-full bg-[#3DDC97] animate-pulse"></span>
-          <span>🚆 ${trainNo}</span>
-          <span class="text-[#F5A524] text-[10px] tabular-nums">${Math.round(trainSpeed)} km/h</span>
-        </div>
-        
-        <!-- Down Pointer Arrow -->
-        <div class="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[6px] border-t-[#F5A524] -mt-0.5"></div>
-      </div>
-    `;
+    const trainEl = createTrainMarkerElement(trainNo, trainSpeed);
 
     trainEl.addEventListener('click', () => {
       map.flyTo({ center: [trainLon, trainLat], zoom: 13, essential: true });

@@ -25,6 +25,7 @@ from data.db import Database, get_db
 from engine.clocks import get_clock
 from engine.position_resolver import PositionResolver, PositionRecord
 from ml.features import FEATURE_NAMES
+from ml.artifact_integrity import verify_artifacts
 from ml.model_seq import NonCrossingGRUQuantileModel
 from ml.snapshots import SnapshotGenerator
 
@@ -110,11 +111,18 @@ class PredictorService:
         with open(file_path, "rb") as f:
             for chunk in iter(lambda: f.read(8192), b""):
                 h.update(chunk)
-        return h.hexdigest()[:16]
+        return h.hexdigest()
 
     def _try_load_models(self) -> bool:
         """Attempts to load champion and challenger models from disk with registry pinning."""
         try:
+            integrity_ok, integrity_failures = verify_artifacts(self.artifacts_dir)
+            if not integrity_ok:
+                message = "; ".join(integrity_failures)
+                if settings.ENV.strip().lower() == "production":
+                    raise RuntimeError(f"Model artifact integrity check failed: {message}")
+                print(f"[WARN] Model artifact integrity check failed: {message}")
+
             # 1. Read Model Registry
             registry_path = self.artifacts_dir / "registry.json"
             if registry_path.exists():

@@ -296,13 +296,15 @@ class LivePositionTracker:
                     delay_jump = curr_delay - prev_delay
 
                     if delay_jump >= self.attribution_delta_min:
+                        t_route = self._get_cached_route(t_no)
+                        tot_route_dist = float(t_route[-1]["distance_km"]) if t_route else 785.0
                         attr_res = self.attribution_engine.evaluate_delay_jump(
                             train_no=t_no,
                             run_date=target_date,
                             previous_delay_min=prev_delay,
                             current_delay_min=curr_delay,
                             station_code=pos.current_station_code,
-                            current_km=pos.progress_pct * 7.85,
+                            current_km=(pos.progress_pct / 100.0) * tot_route_dist,
                             as_of_time=t_now,
                         )
                         if attr_res:

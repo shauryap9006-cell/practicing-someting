@@ -13,12 +13,22 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from api.auth import get_current_user, require_role
+from api.auth import assert_station_scope, effective_station_scope, get_current_user, require_role
 from data.audit import record_audit
 from data.db import Database, get_db
 from notifications.dispatcher import notify
 
 router = APIRouter(tags=["Multi-Station & Section Coordination (Phase 6)"])
+
+
+def _assert_handoff_scope(current_user: Dict[str, Any], from_station: str, to_station: str) -> None:
+    """Allow station operators to act only on handoffs touching their station."""
+    if current_user.get("role_id") in {"admin", "section_controller"}:
+        return
+    assigned = str(current_user.get("station_code") or "").strip().upper()
+    if assigned not in {from_station.upper(), to_station.upper()}:
+        # Reuse the canonical error contract for station-scope failures.
+        assert_station_scope(current_user, from_station)
 
 
 # ----------------------------------------------------
@@ -74,6 +84,7 @@ def request_cross_station_handoff(
     db: Database = Depends(get_db),
 ):
     """Requests inter-station block slot reservation / Line Clear handshake from upstream to downstream station."""
+    _assert_handoff_scope(current_user, req.from_station, req.to_station)
     with db.transaction() as cur:
         cur.execute(
             """
@@ -130,6 +141,7 @@ def grant_cross_station_handoff(
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Handoff request not found.")
+        _assert_handoff_scope(current_user, row["from_station"], row["to_station"])
 
         cur.execute(
             """
@@ -167,6 +179,7 @@ def release_cross_station_handoff(
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Handoff record not found.")
+        _assert_handoff_scope(current_user, row["from_station"], row["to_station"])
 
         cur.execute(
             """
@@ -194,6 +207,8 @@ def release_cross_station_handoff(
 def list_cross_station_handoffs(
     section_id: Optional[str] = Query(None, description="Section filter"),
     lock_state: Optional[str] = Query(None, description="REQUESTED, GRANTED, RELEASED"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
     current_user: Dict[str, Any] = Depends(get_current_user),
     db: Database = Depends(get_db),
 ):
@@ -207,7 +222,12 @@ def list_cross_station_handoffs(
         if lock_state:
             query += " AND lock_state = ?"
             params.append(lock_state.upper())
-        query += " ORDER BY id DESC LIMIT 50;"
+        station = effective_station_scope(current_user)
+        if station:
+            query += " AND (from_station = ? OR to_station = ?)"
+            params.extend([station, station])
+        query += " ORDER BY id DESC LIMIT ? OFFSET ?;"
+        params.extend([limit, offset])
         cur.execute(query, tuple(params))
         rows = [dict(r) for r in cur.fetchall()]
     return rows

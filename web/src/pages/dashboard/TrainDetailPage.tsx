@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -33,6 +33,8 @@ export const TrainDetailPage: React.FC = () => {
   const targetTrainNo = trainNo || id || '';
   const navigate = useNavigate();
 
+  const [runDate, setRunDate] = useState<string>('');
+
   // 1. Live Train Journey & Telemetry Query (polling every 5s for live movement)
   const { data: train, isLoading, dataUpdatedAt } = useQuery({
     queryKey: queryKeys.train(targetTrainNo),
@@ -41,12 +43,12 @@ export const TrainDetailPage: React.FC = () => {
     refetchInterval: 5000,
   });
 
-  // 2. Live Causal Delay Autopsy Query (polling every 5s for live attribution deltas)
+  // 2. Live / Historical Causal Delay Autopsy Query (polling if live, one-shot if historical)
   const { data: autopsyData } = useQuery({
-    queryKey: queryKeys.trainAutopsy(targetTrainNo),
-    queryFn: () => api.getTrainAutopsy(targetTrainNo),
+    queryKey: ['trainAutopsy', targetTrainNo, runDate],
+    queryFn: () => api.getTrainAutopsy(targetTrainNo, runDate || undefined),
     enabled: !!targetTrainNo,
-    refetchInterval: 5000,
+    refetchInterval: runDate ? false : 5000,
   });
 
   if (isLoading) {
@@ -205,6 +207,41 @@ export const TrainDetailPage: React.FC = () => {
             highlightTrainNo={train.number}
             interactive={false}
           />
+        </div>
+      </div>
+
+      {/* Historical Why-Late Run Date Selector (F1 Feature) */}
+      <div className="bg-[#101216] border border-[#23272F] rounded-lg p-3 flex flex-wrap items-center justify-between gap-3 font-mono text-xs">
+        <div className="flex items-center gap-2 text-[#E9EBEE]">
+          <Clock className="w-4 h-4 text-[#FFB224]" />
+          <span className="font-bold">Causal Autopsy Run Date:</span>
+          {runDate ? (
+            <span className="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[11px] font-bold">
+              HISTORICAL REPLAY · {runDate}
+            </span>
+          ) : (
+            <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold">
+              LIVE TODAY (REAL-TIME)
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input
+            type="date"
+            value={runDate}
+            onChange={(e) => setRunDate(e.target.value)}
+            className="bg-[#0A0B0D] border border-[#23272F] rounded px-2.5 py-1 text-xs text-white focus:border-[#FFB224] focus:outline-none transition-colors"
+          />
+          {runDate && (
+            <button
+              type="button"
+              onClick={() => setRunDate('')}
+              className="px-2 py-1 rounded bg-[#1B2232] hover:bg-[#253046] text-[#A3ABB6] hover:text-white border border-[#23272F] text-[11px] transition-colors"
+            >
+              Reset to Live
+            </button>
+          )}
         </div>
       </div>
 

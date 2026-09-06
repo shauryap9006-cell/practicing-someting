@@ -9,7 +9,7 @@ for p in Path("ml/artifacts").glob("*"):
 champ_pt = Path("ml/artifacts/model_gru_champion.pt")
 if champ_pt.exists():
     print(f"\nInspecting {champ_pt}:")
-    sd = torch.load(champ_pt, map_location="cpu", weights_only=False)
+    sd = torch.load(champ_pt, map_location="cpu", weights_only=True)
     if isinstance(sd, dict):
         print("Keys in state_dict:")
         for k, v in sd.items():

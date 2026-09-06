@@ -55,11 +55,11 @@ export const PrivacyPage: React.FC = () => {
             2. Data We Collect & Store
           </h2>
           <p className="text-text-dim">
-            RailTwin-X operates under strict privacy-first principles. We do not collect personal identifiers, track across third-party websites, or sell any telemetry:
+            RailTwin-X operates under strict privacy-first principles. We collect only the information needed for access requests, authenticated operations, safety audit trails, and explicitly consented aggregate analytics. We do not track across third-party websites or sell telemetry:
           </p>
           <ul className="space-y-2 pl-4 list-disc text-text-dim font-sans">
             <li>
-              <strong className="text-text-main">Local Storage Tokens:</strong> Your browser stores theme preferences (<code className="font-mono text-accent">rtx-theme</code>), telemetry consent choices (<code className="font-mono text-accent">rtx-consent</code>), and your local 12-hour session credentials (<code className="font-mono text-accent">rtx-session</code>).
+              <strong className="text-text-main">Browser Storage:</strong> Your browser stores theme preferences (<code className="font-mono text-accent">rtx-theme</code>) and telemetry consent choices (<code className="font-mono text-accent">rtx-consent</code>) in local storage. Production authentication material is kept in memory only; the <code className="font-mono text-accent">rtx-session</code> session-storage entry is used only for the explicitly enabled demo mode.
             </li>
             <li>
               <strong className="text-text-main">Access Requests:</strong> Station access requests submitted through our form are processed for access provisioning and stored in secured test stores.

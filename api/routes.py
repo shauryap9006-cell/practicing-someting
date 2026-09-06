@@ -146,12 +146,19 @@ def get_model_performance():
 @router.get("/trains/{train_no}/eta", response_model=TrainEtaResponse)
 def get_train_eta(
     train_no: str,
-    station: str = Query(..., description="Target station code"),
+    station: Optional[str] = Query(None, description="Target station code"),
+    target_station: Optional[str] = Query(None, description="Target station code alias"),
 ):
     """Returns calibrated ETA with best/likely/worst confidence band."""
+    target_code = (station or target_station or "").upper().strip()
+    if not target_code:
+        raise HTTPException(
+            status_code=422,
+            detail=[{"loc": ["query", "station"], "msg": "Field required: 'station' or 'target_station'", "type": "value_error.missing"}]
+        )
     predictor = get_predictor_service()
     try:
-        res = predictor.predict_train_eta(train_no=train_no, target_station_code=station.upper())
+        res = predictor.predict_train_eta(train_no=train_no, target_station_code=target_code)
         return res
     except ValueError as err:
         raise HTTPException(status_code=404, detail={"code": "TRAIN_OR_STATION_NOT_FOUND", "message": str(err), "retryable": False})

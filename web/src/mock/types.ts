@@ -223,6 +223,7 @@ export interface UserSession {
     stationName: string;
     token?: string;
   };
+  refreshToken?: string;
   expiresAt: number; // Unix timestamp ms
 }
 

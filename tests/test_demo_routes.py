@@ -123,3 +123,35 @@ def test_cascade_ripple_endpoint(client):
     assert len(data["rake_turnarounds"]) > 0
     assert data["summary"]["total_rake_links_monitored"] > 0
     assert "total_net_pax_hours_saved" in data["summary"]
+
+
+def test_time_machine_endpoint(client):
+    """Verifies /v1/demo/time-machine serves dynamic historical snapshots from real ML & DB."""
+    resp = client.get("/v1/demo/time-machine?train_no=12301&target_station=LKO")
+    assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
+    data = resp.json()
+
+    assert data["status"] == "OK"
+    assert data["train_no"] == "12301"
+    assert "destination" in data
+    assert "snapshots" in data
+
+    snaps = data["snapshots"]
+    assert "t6" in snaps and "t3" in snaps and "t1" in snaps and "truth" in snaps
+
+    # Verify T-6h, T-3h, T-1h have real prediction strings
+    for stage_id in ("t6", "t3", "t1"):
+        s = snaps[stage_id]
+        assert "ntes_prediction" in s
+        assert "railtwin_p50" in s
+        assert "railtwin_range" in s
+        assert "cone_width" in s
+        assert "full_receipt_hash" in s
+        assert len(s["full_receipt_hash"]) == 64
+
+    # Verify Truth arrival
+    truth = snaps["truth"]
+    assert "actual_arrival" in truth
+    assert truth["actual_delay_min"] >= 0
+    assert "GRADED_VERIFIED" in truth["ledger_state"]
+

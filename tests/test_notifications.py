@@ -29,6 +29,21 @@ from notifications.dispatcher import NotificationDispatcher
 from notifications.webhook_verify import verify_hmac, generate_hmac_signature
 
 client = TestClient(app)
+WEBHOOK_TEST_SECRET = "webhook-test-secret-with-sufficient-entropy"
+
+
+@pytest.fixture(autouse=True)
+def webhook_secret(monkeypatch):
+    monkeypatch.setattr(settings, "OPENWA_WEBHOOK_SECRET", WEBHOOK_TEST_SECRET)
+
+
+def signed_webhook_headers(body: bytes) -> dict[str, str]:
+    timestamp = str(int(time.time()))
+    return {
+        "Content-Type": "application/json",
+        "X-OpenWA-Timestamp": timestamp,
+        "X-OpenWA-Signature": generate_hmac_signature(body, WEBHOOK_TEST_SECRET, timestamp),
+    }
 
 
 # ----------------------------------------------------
@@ -195,9 +210,7 @@ def test_webhook_session_status():
 
     payload = {"event": "session.status", "status": "connected"}
     body = json.dumps(payload).encode("utf-8")
-    headers = {"Content-Type": "application/json"}
-    if settings.OPENWA_WEBHOOK_SECRET:
-        headers["X-OpenWA-Signature"] = generate_hmac_signature(body, settings.OPENWA_WEBHOOK_SECRET)
+    headers = signed_webhook_headers(body)
 
     resp = client.post("/v1/hooks/whatsapp", content=body, headers=headers)
     assert resp.status_code == 200
@@ -215,9 +228,7 @@ def test_webhook_reply_ack_accepted():
         "from": "919415011001@c.us",
     }
     body = json.dumps(payload).encode("utf-8")
-    headers = {"Content-Type": "application/json"}
-    if settings.OPENWA_WEBHOOK_SECRET:
-        headers["X-OpenWA-Signature"] = generate_hmac_signature(body, settings.OPENWA_WEBHOOK_SECRET)
+    headers = signed_webhook_headers(body)
 
     resp = client.post("/v1/hooks/whatsapp", content=body, headers=headers)
     assert resp.status_code == 200
@@ -244,9 +255,7 @@ def test_webhook_reply_ack_rejected():
         "from": "919415011002@c.us",
     }
     body = json.dumps(payload).encode("utf-8")
-    headers = {"Content-Type": "application/json"}
-    if settings.OPENWA_WEBHOOK_SECRET:
-        headers["X-OpenWA-Signature"] = generate_hmac_signature(body, settings.OPENWA_WEBHOOK_SECRET)
+    headers = signed_webhook_headers(body)
 
     resp = client.post("/v1/hooks/whatsapp", content=body, headers=headers)
     assert resp.status_code == 200

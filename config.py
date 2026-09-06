@@ -10,7 +10,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from typing import List
-from pydantic import Field, AliasChoices
+from pydantic import AliasChoices, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -29,6 +29,13 @@ class Settings(BaseSettings):
     # 1. Environment & Paths
     APP_NAME: str = Field(default="RailTwin-X", validation_alias=AliasChoices("RAILTWIN_APP_NAME", "APP_NAME"))
     ENV: str = Field(default="development", validation_alias=AliasChoices("RAILTWIN_ENV", "ENV"), description="'development', 'production', 'test'")
+    JWT_SECRET_KEY: str = Field(
+        default="",
+        validation_alias=AliasChoices("RAILTWIN_JWT_SECRET_KEY", "JWT_SECRET_KEY", "RAILTWIN_SECRET_KEY"),
+        description="Signing key for access and refresh tokens; required and >=32 characters in production",
+    )
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30, ge=5, le=120)
+    REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7, ge=1, le=30)
     DATA_DIR: Path = BASE_DIR / "data"
     DB_PATH: Path = BASE_DIR / "data" / "railtwin.db"
     SCHEMA_PATH: Path = BASE_DIR / "data" / "schema.sql"
@@ -40,6 +47,11 @@ class Settings(BaseSettings):
     TIMEZONE_NAME: str = "Asia/Kolkata"
     TIMEZONE_OFFSET_HOURS: float = 5.5
     DEFAULT_CLOCK_MODE: str = Field(default="live", validation_alias=AliasChoices("RAILTWIN_DEFAULT_CLOCK_MODE", "DEFAULT_CLOCK_MODE"), description="'live' or 'replay'")
+    ALLOW_SYNTHETIC_FALLBACK: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("RAILTWIN_ALLOW_SYNTHETIC_FALLBACK", "ALLOW_SYNTHETIC_FALLBACK"),
+        description="Permit mock replay only for an explicitly configured demo/replay environment",
+    )
 
     # 3. External API Settings
     RAPIDAPI_KEY: str = Field(default="", validation_alias=AliasChoices("RAILTWIN_RAPIDAPI_KEY", "RAPIDAPI_KEY"), description="RapidAPI Indian Railways API Key (optional)")
@@ -173,6 +185,28 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("RAILTWIN_DEAD_RECKON_MIN_CONFIDENCE", "DEAD_RECKON_MIN_CONFIDENCE"),
         description="Confidence threshold below which position is marked STALE",
     )
+
+    # 11. Shared-stream and request-safety limits
+    MAX_SSE_CONNECTIONS: int = Field(default=250, ge=1, le=10000)
+    SSE_MAX_DURATION_SECONDS: int = Field(default=1800, ge=30, le=86400)
+
+    @model_validator(mode="after")
+    def validate_runtime_safety(self) -> "Settings":
+        """Reject deployment configurations that would silently weaken security."""
+        environment = self.ENV.strip().lower()
+        if environment == "production":
+            if self.ALLOW_SYNTHETIC_FALLBACK:
+                raise ValueError("RAILTWIN_ALLOW_SYNTHETIC_FALLBACK must be false in production")
+            secret = self.JWT_SECRET_KEY.strip()
+            if len(secret) < 32 or secret.lower() in {"changeme", "secret", "development"}:
+                raise ValueError("RAILTWIN_JWT_SECRET_KEY must be a unique secret of at least 32 characters in production")
+            if self.DEFAULT_CLOCK_MODE != "live":
+                raise ValueError("RAILTWIN_DEFAULT_CLOCK_MODE must be 'live' in production")
+            if not self.CORS_ORIGINS or any("localhost" in origin or "127.0.0.1" in origin for origin in self.CORS_ORIGINS):
+                raise ValueError("Production CORS_ORIGINS must contain only explicitly configured public origins")
+            if self.WHATSAPP_PROVIDER == "openwa" and not self.OPENWA_WEBHOOK_SECRET.strip():
+                raise ValueError("RAILTWIN_OPENWA_WEBHOOK_SECRET is required when the OpenWA webhook is enabled")
+        return self
 
 
 # Singleton instance

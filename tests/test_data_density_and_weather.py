@@ -17,10 +17,11 @@ from ml.features import FEATURE_NAMES
 def test_passage_time_weather_fog_shift():
     """Asserts that delay pushing arrival into morning peak (04:00-10:00) triggers fog flag (F24)."""
     sg = SnapshotGenerator()
+    train_no = "12301"  # Seeded fixture train present in the test database.
 
     # Case 1: On-time arrival at 02:00 (outside peak fog window) -> fog=0
     vec_on_time = sg.extract_features_at_snapshot(
-        train_no="2421",
+        train_no=train_no,
         current_seq=1,
         target_seq=2,
         run_date_str="2026-08-15",
@@ -31,7 +32,7 @@ def test_passage_time_weather_fog_shift():
 
     # Case 2: 180 min delay pushing arrival from 02:00 to 05:00 (inside peak fog window) -> fog evaluated at 05:00
     vec_delayed = sg.extract_features_at_snapshot(
-        train_no="2421",
+        train_no=train_no,
         current_seq=1,
         target_seq=2,
         run_date_str="2026-08-15",
@@ -71,7 +72,7 @@ def test_spatial_track_context_active_density():
     """Asserts that track graph returns non-zero spatial context in dense corridor operations (F23)."""
     sg = SnapshotGenerator()
     tc = sg.track_graph.compute_track_context_features(
-        train_no="2421",
+        train_no="12301",
         current_seq=2,
         target_seq=4,
         run_date_str="2026-08-15",

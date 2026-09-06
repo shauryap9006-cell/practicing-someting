@@ -387,7 +387,24 @@ class EnsemblePredictor:
         cqr_map = self.mondrian_cqr.calibrate_ensemble(
             gbm_fit_p50 - 5.0, gbm_fit_p50 + 10.0, y_fit, hops_fit, km_fit
         )
-        ens_cov = 80.0
+        # Measure coverage on the held-out evaluation window. A nominal target
+        # must never be reported as an observed result.
+        if len(y_eval) > 0:
+            eval_lo: list[float] = []
+            eval_hi: list[float] = []
+            for p50, h, km in zip(ens_eval_p50, hops_vec[n_fit:n_align], km_vec[n_fit:n_align]):
+                lo, hi, _ = self.mondrian_cqr.adjust_interval(
+                    float(p50) - 5.0,
+                    float(p50) + 10.0,
+                    raw_p50=float(p50),
+                    hops=float(h),
+                    km=float(km),
+                )
+                eval_lo.append(float(lo))
+                eval_hi.append(float(hi))
+            ens_cov = float(np.mean((y_eval >= np.asarray(eval_lo)) & (y_eval <= np.asarray(eval_hi))) * 100.0)
+        else:
+            ens_cov = 0.0
 
         # Statistical significance on OUT-OF-SAMPLE evaluation errors (Bug 9)
         from scipy import stats

@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from api.auth import get_current_user, require_role
+from api.auth import assert_station_scope, effective_station_scope, get_current_user, require_role
 from data.audit import record_audit
 from data.db import Database, get_db
 from engine.simulator import CascadeSimulator
@@ -46,6 +46,7 @@ def simulate_day_changeset(
 ):
     """Runs a SimPy discrete-event cascade simulation comparing baseline vs proposed plan."""
     stn = req.station_code.upper()
+    assert_station_scope(current_user, stn)
     sim = CascadeSimulator(db)
 
     # 1. Run baseline simulation
@@ -104,6 +105,7 @@ def apply_day_changeset(
 ):
     """Validates batch mutations against Safety Interlock and commits versioned changeset."""
     stn = req.station_code.upper()
+    assert_station_scope(current_user, stn)
     now_iso = datetime.now(timezone.utc).isoformat()
     safety = SafetyInterlockEngine(db)
 
@@ -180,6 +182,7 @@ def list_planner_changesets(
     db: Database = Depends(get_db),
 ):
     """Lists applied day planning changesets."""
+    station_code = effective_station_scope(current_user, station_code)
     query = "SELECT * FROM planner_changesets WHERE 1=1"
     params: List[Any] = []
 

@@ -9,9 +9,9 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from api.auth import hash_password, require_role
@@ -62,8 +62,83 @@ class BackupRecord(BaseModel):
     checksum_sha256: str
 
 
+class AccessRequestReview(BaseModel):
+    status: Literal["approved", "rejected"]
+
+
+class AccessRequestRecord(BaseModel):
+    request_id: str
+    station_code: str
+    full_name: str
+    email: str
+    organization: Optional[str]
+    status: str
+    requested_at: str
+    reviewed_at: Optional[str]
+    reviewed_by: Optional[str]
+
+
+@router.get("/access-requests", response_model=List[AccessRequestRecord])
+def list_access_requests(
+    status_filter: Optional[str] = Query(None, alias="status"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    admin_user: Dict[str, Any] = Depends(require_role("admin")),
+    db: Database = Depends(get_db),
+):
+    """Lists bounded access requests for administrator review."""
+    query = "SELECT * FROM access_requests WHERE 1=1"
+    params: List[Any] = []
+    if status_filter:
+        query += " AND status = ?"
+        params.append(status_filter.lower())
+    query += " ORDER BY requested_at DESC LIMIT ? OFFSET ?"
+    params.extend([limit, offset])
+    with db.transaction() as cur:
+        cur.execute(query, tuple(params))
+        return [AccessRequestRecord(**dict(row)) for row in cur.fetchall()]
+
+
+@router.put("/access-requests/{request_id}", response_model=AccessRequestRecord)
+def review_access_request(
+    request_id: str,
+    req: AccessRequestReview,
+    admin_user: Dict[str, Any] = Depends(require_role("admin")),
+    db: Database = Depends(get_db),
+):
+    """Approves or rejects an access request without silently provisioning an account."""
+    reviewed_at = datetime.now(timezone.utc).isoformat()
+    with db.transaction() as cur:
+        cur.execute("SELECT * FROM access_requests WHERE request_id = ?", (request_id,))
+        existing = cur.fetchone()
+        if not existing:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Access request not found.")
+        cur.execute(
+            """
+            UPDATE access_requests
+            SET status = ?, reviewed_at = ?, reviewed_by = ?
+            WHERE request_id = ?
+            """,
+            (req.status, reviewed_at, admin_user["id"], request_id),
+        )
+        record_audit(
+            db_or_cursor=cur,
+            actor_id=admin_user["id"],
+            actor_role=admin_user["role_id"],
+            action="ACCESS_REQUEST_REVIEWED",
+            table_name="access_requests",
+            record_id=request_id,
+            before_state={"status": existing["status"]},
+            after_state={"status": req.status},
+        )
+        cur.execute("SELECT * FROM access_requests WHERE request_id = ?", (request_id,))
+        return AccessRequestRecord(**dict(cur.fetchone()))
+
+
 @router.get("/users", response_model=List[UserDetailResponse])
 def list_users(
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     admin_user: Dict[str, Any] = Depends(require_role("admin")),
     db: Database = Depends(get_db),
 ):
@@ -75,8 +150,10 @@ def list_users(
                    u.is_active, u.created_at, r.name as role_name
             FROM users u
             JOIN roles r ON u.role_id = r.id
-            ORDER BY u.created_at DESC;
+            ORDER BY u.created_at DESC
+            LIMIT ? OFFSET ?;
             """
+            , (limit, offset)
         )
         rows = cur.fetchall()
 
@@ -270,6 +347,8 @@ def update_user(
 
 @router.get("/backups", response_model=List[BackupRecord])
 def list_backups(
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     admin_user: Dict[str, Any] = Depends(require_role("admin")),
     db: Database = Depends(get_db),
 ):
@@ -279,8 +358,10 @@ def list_backups(
             """
             SELECT id, filename, backup_ts, size_bytes, row_counts_json, status, checksum_sha256
             FROM backups
-            ORDER BY id DESC;
+            ORDER BY id DESC
+            LIMIT ? OFFSET ?;
             """
+            , (limit, offset)
         )
         rows = cur.fetchall()
 

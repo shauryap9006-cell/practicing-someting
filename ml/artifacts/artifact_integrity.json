@@ -1,0 +1,14 @@
+{
+  "algorithm": "sha256",
+  "generated_at": "2026-09-04T00:00:00+00:00",
+  "files": {
+    "model_direct_q10.txt": "9e9cefb50093926a71b77cf93e0bd1a2d6afcd28736205beaf9e6c941d6ae7cb",
+    "model_direct_q50.txt": "4137ec0a3d3fb6d19b77295d17ae037422f8ba8fe4103b3257936d4e476c98da",
+    "model_direct_q90.txt": "f11a8aff281b6123e5849a76df698ff4107ad18f152f5f959fcbdd6c9d4b55f8",
+    "model_delta_q10.txt": "b44af5414899b15dcf75aa651171772459bc31fda4b46c0fe685a434453ebd59",
+    "model_delta_q50.txt": "9df2e7c7e2cbe22902db78a34ab171320163fe8d76c49c5e6998fbb9c4745db3",
+    "model_delta_q90.txt": "e639ba107f33cf29a97fc7719cd8631fa169df357100ef25727cc3bb92589c61",
+    "model_gru_challenger.pt": "411ab286e10168f3c8feba6055d395c859a2785a3cd40db053fac48843dc365a",
+    "model_lr_benchmark.pkl": "63b8bd9a78a8b0e922ebd09d8ca99851e4d7e924420821ca95ab3de3160c7f81"
+  }
+}

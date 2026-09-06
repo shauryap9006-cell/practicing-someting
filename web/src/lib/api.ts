@@ -503,7 +503,7 @@ export const api = {
     });
   },
 
-  async getTrainAutopsy(id: string): Promise<DelayAutopsyResponse> {
+  async getTrainAutopsy(id: string, runDate?: string): Promise<DelayAutopsyResponse> {
     const mockTrain = mockStore.getTrain(id);
     const mockDelay = mockTrain?.delayMinutes || 18;
 
@@ -517,7 +517,7 @@ export const api = {
       {
         event_type: 'TSR',
         minutes: Math.max(3, Math.round(mockDelay * 0.35)),
-        cause: '45 km/h engineering speed restriction between TDLâ€“ETW',
+        cause: '45 km/h engineering speed restriction between TDL–ETW',
         station_code: 'ETW',
       },
       {
@@ -534,8 +534,12 @@ export const api = {
       },
     ];
 
+    const url = runDate
+      ? `/v1/trains/${id}/why-late?run_date=${encodeURIComponent(runDate)}`
+      : `/v1/trains/${id}/autopsy`;
+
     return fetchBackend<DelayAutopsyResponse>(
-      `/v1/trains/${id}/autopsy`,
+      url,
       {},
       () => ({
         train_no: id,
@@ -921,6 +925,52 @@ export const api = {
     if (runDate) url += `&run_date=${encodeURIComponent(runDate)}`;
     return fetchBackend<CascadeRippleData>(url);
   },
+
+  async getTimeMachineData(trainNo = '12301', targetStation = 'LKO', runDate?: string): Promise<TimeMachineData> {
+    let url = `/v1/demo/time-machine?train_no=${encodeURIComponent(trainNo)}&target_station=${encodeURIComponent(targetStation)}`;
+    if (runDate) url += `&run_date=${encodeURIComponent(runDate)}`;
+    return fetchBackend<TimeMachineData>(url);
+  },
+
+  async getLedgerScoreboard(): Promise<LedgerScoreboardResponse> {
+    return fetchBackend<LedgerScoreboardResponse>('/v1/ledger/scoreboard', {}, () => ({
+      status: 'OK',
+      scoreboard: {
+        total_served_predictions: 2331,
+        verified_arrivals_count: 430,
+        empirical_80pct_coverage: 80.6,
+        target_coverage_pct: 80.0,
+        mean_absolute_error_min: 10.72,
+        mean_winkler_score: 57.94,
+        chain_integrity_verified: true,
+        total_blocks_verified: 2331,
+        chain_tip_hash: '6ffbe6ab4550951b0b79bea38aa3b181927805e68d27d2f9298ff0bd6fb3031e',
+        as_of: new Date().toISOString(),
+      },
+    }));
+  },
+
+  async verifyLedgerChain(): Promise<LedgerVerifyResponse> {
+    return fetchBackend<LedgerVerifyResponse>('/v1/ledger/verify', {}, () => ({
+      status: 'OK',
+      chain_integrity_verified: true,
+      total_blocks_verified: 2331,
+      broken_at_block_id: null,
+    }));
+  },
+
+  async getCorridorCongestionRadar(): Promise<CorridorRadarResponse> {
+    return fetchBackend<CorridorRadarResponse>('/v1/corridor/congestion-radar', {}, () => ({
+      status: 'OK',
+      corridor: 'NCR Mainline (NDLS – DDU 785km)',
+      as_of: new Date().toISOString(),
+      horizons: ['T+0h (Now)', 'T+1h', 'T+2h', 'T+4h', 'T+6h'],
+      sections_count: 9,
+      active_monitored_trains: 14,
+      radar: [],
+      highest_chokepoints: [],
+    }));
+  },
 };
 
 export interface HorizonCard {
@@ -1027,3 +1077,111 @@ export interface CascadeRippleData {
   all_interchange_connections_count: number;
   as_of: string;
 }
+
+export interface TimeMachineSnapshot {
+  stage: string;
+  label: string;
+  checkpoint_station: {
+    code: string;
+    name: string;
+    seq: number;
+    distance_from_origin_km: number;
+    remaining_km: number;
+    recorded_delay_min: number;
+  };
+  ntes_prediction: string;
+  ntes_delay_min?: number;
+  ntes_status: string;
+  railtwin_p50: string;
+  railtwin_p50_delay_min?: number;
+  railtwin_range: string;
+  cone_width: string;
+  receipt_hash: string;
+  full_receipt_hash?: string;
+  ledger_state: string;
+  actual_arrival?: string;
+  actual_delay_min?: number;
+  tier_used?: string;
+}
+
+export interface TimeMachineData {
+  status: string;
+  train_no: string;
+  run_date: string;
+  destination: {
+    code: string;
+    name: string;
+    distance_km: number;
+    sched_arr: string;
+  };
+  snapshots: {
+    t6: TimeMachineSnapshot;
+    t3: TimeMachineSnapshot;
+    t1: TimeMachineSnapshot;
+    truth: TimeMachineSnapshot;
+  };
+  as_of: string;
+}
+
+export interface LedgerScoreboardData {
+  total_served_predictions: number;
+  verified_arrivals_count: number;
+  empirical_80pct_coverage: number;
+  target_coverage_pct: number;
+  mean_absolute_error_min: number;
+  mean_winkler_score: number;
+  chain_integrity_verified: boolean;
+  total_blocks_verified: number;
+  chain_tip_hash: string;
+  as_of: string;
+}
+
+export interface LedgerScoreboardResponse {
+  status: string;
+  scoreboard: LedgerScoreboardData;
+}
+
+export interface LedgerVerifyResponse {
+  status: string;
+  chain_integrity_verified: boolean;
+  total_blocks_verified: number;
+  broken_at_block_id: number | null;
+}
+
+export interface CorridorRadarHorizonMetric {
+  horizon: string;
+  active_trains: number;
+  capacity: number;
+  occupancy_pct: number;
+  congestion_level: 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL';
+  total_delay_min: number;
+}
+
+export interface CorridorRadarSection {
+  section_id: string;
+  section_name: string;
+  from_km: number;
+  to_km: number;
+  length_km: number;
+  chokepoint_station: string;
+  peak_occupancy_pct: number;
+  horizons: Record<string, CorridorRadarHorizonMetric>;
+}
+
+export interface CorridorRadarResponse {
+  status: string;
+  corridor: string;
+  as_of: string;
+  horizons: string[];
+  sections_count: number;
+  active_monitored_trains: number;
+  radar: CorridorRadarSection[];
+  highest_chokepoints: Array<{
+    section: string;
+    chokepoint: string;
+    peak_occupancy: number;
+    recommended_action: string;
+  }>;
+}
+
+

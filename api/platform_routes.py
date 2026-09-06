@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from api.auth import get_current_user, require_role
+from api.auth import assert_station_scope, get_current_user, require_role
 from data.audit import record_audit
 from data.db import Database, get_db
 from engine.ops import PlatformManager
@@ -49,6 +49,7 @@ def get_platform_states(
     db: Database = Depends(get_db),
 ):
     """Returns real-time occupancy and maintenance state for all station platforms."""
+    assert_station_scope(current_user, station_code)
     stn = station_code.upper()
     with db.transaction() as cur:
         # Get platform count for station
@@ -94,6 +95,7 @@ def set_platform_block(
 ):
     """Sets a platform state to BLOCKED_MAINT or OUT_OF_SERVICE or releases back to FREE."""
     stn = req.station_code.upper()
+    assert_station_scope(current_user, stn)
     now_iso = datetime.now(timezone.utc).isoformat()
 
     with db.transaction() as cur:
@@ -151,6 +153,7 @@ def assign_platform(
 ):
     """Manually assigns or reallocates a train to a platform with conflict interlock validation."""
     stn = req.station_code.upper()
+    assert_station_scope(current_user, stn)
     now_iso = datetime.now(timezone.utc).isoformat()
 
     # 1. Conflict Check: verify platform is not blocked
@@ -250,6 +253,7 @@ def toggle_assignment_lock(
         existing = cur.fetchone()
         if not existing:
             raise HTTPException(status_code=404, detail="Platform assignment not found.")
+        assert_station_scope(current_user, existing["station_code"])
 
         cur.execute(
             """
@@ -286,6 +290,7 @@ def reoptimize_station_platforms(
 ):
     """Executes AI platform conflict resolution & Gantt re-optimization."""
     stn = (payload.station_code if payload and payload.station_code else "CNB").upper()
+    assert_station_scope(current_user, stn)
     target_date = payload.target_date if payload else None
     pm = PlatformManager(db)
     blocks, _ = pm.get_station_gantt(stn, target_date=target_date)

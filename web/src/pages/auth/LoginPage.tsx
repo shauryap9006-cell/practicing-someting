@@ -1,14 +1,24 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { loginWithMockAuth, DEMO_USERS } from '@/mock/auth';
+import { isExplicitDemoMode, loginWithMockAuth, DEMO_USERS } from '@/mock/auth';
 import { SEO } from '@/lib/seo';
 import { SITE } from '@/config/site';
 import { ArrowRight, KeyRound, Check, ShieldCheck } from 'lucide-react';
 
+function getSafeNextPath(rawNext: string | null): string {
+  if (!rawNext) return '/dashboard';
+  try {
+    const decoded = decodeURIComponent(rawNext);
+    return decoded.startsWith('/') && !decoded.startsWith('//') ? decoded : '/dashboard';
+  } catch {
+    return '/dashboard';
+  }
+}
+
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const nextPath = searchParams.get('next') ? decodeURIComponent(searchParams.get('next')!) : '/dashboard';
+  const nextPath = getSafeNextPath(searchParams.get('next'));
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -76,17 +86,20 @@ export const LoginPage: React.FC = () => {
               STATION CONTROLLER SIGN-IN
             </h1>
             <p className="text-xs font-sans text-[#A3ABB6]">
-              Enter divisional credentials or select a 1-click simulation persona.
+              {isExplicitDemoMode()
+                ? 'Enter divisional credentials or select a 1-click simulation persona.'
+                : 'Enter your divisional credentials to continue.'}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <div>
-              <label className="block text-[10px] uppercase text-[#6B7480] mb-1">
+              <label htmlFor="login-username" className="block text-[10px] uppercase text-[#6B7480] mb-1">
                 Official Email
               </label>
               <input
                 type="email"
+                id="login-username"
                 value={email}
                 onChange={e => {
                   setEmail(e.target.value);
@@ -100,11 +113,12 @@ export const LoginPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-[10px] uppercase text-[#6B7480] mb-1">
+              <label htmlFor="login-password" className="block text-[10px] uppercase text-[#6B7480] mb-1">
                 Security Password
               </label>
               <input
                 type="password"
+                id="login-password"
                 value={password}
                 onChange={e => {
                   setPassword(e.target.value);
@@ -118,7 +132,7 @@ export const LoginPage: React.FC = () => {
             </div>
 
             {error && (
-              <div className="p-2.5 bg-[rgba(244,80,106,0.13)] border border-[#F4506A]/40 text-[#F4506A] text-xs rounded-sm">
+              <div role="alert" aria-live="assertive" className="p-2.5 bg-[rgba(244,80,106,0.13)] border border-[#F4506A]/40 text-[#F4506A] text-xs rounded-sm">
                 {error}
               </div>
             )}
@@ -134,7 +148,7 @@ export const LoginPage: React.FC = () => {
           </form>
 
           {/* Quick Demo Fill Accounts */}
-          <div className="pt-4 border-t border-[#23272F] space-y-2">
+          {isExplicitDemoMode() && <div className="pt-4 border-t border-[#23272F] space-y-2">
             <span className="text-[10px] uppercase text-[#6B7480] block">
               1-Click Role Personas
             </span>
@@ -152,7 +166,7 @@ export const LoginPage: React.FC = () => {
                 </button>
               ))}
             </div>
-          </div>
+          </div>}
         </div>
       </main>
 

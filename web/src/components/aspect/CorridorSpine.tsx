@@ -108,7 +108,9 @@ export const CorridorSpine: React.FC<CorridorSpineProps> = ({
   animateCrawl = false,
   className = '',
 }) => {
-  const [trains, setTrains] = useState<SpineTrain[]>(initialTrains || DEFAULT_SPINE_TRAINS);
+  // Empty means no live positions have been supplied. Demo surfaces must pass
+  // DEFAULT_SPINE_TRAINS explicitly so operational views never invent a fleet.
+  const [trains, setTrains] = useState<SpineTrain[]>(initialTrains || []);
   const [hoveredTrain, setHoveredTrain] = useState<SpineTrain | null>(null);
 
   useEffect(() => {

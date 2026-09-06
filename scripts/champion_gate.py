@@ -67,7 +67,7 @@ def load_champion_model(device: torch.device) -> Optional[NonCrossingGRUQuantile
         num_layers=2,
         dropout=0.2,
     )
-    state = torch.load(champ_pt, map_location=device, weights_only=False)
+    state = torch.load(champ_pt, map_location=device, weights_only=True)
     model.load_state_dict(state)
     model.to(device)
     model.eval()

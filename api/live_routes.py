@@ -106,12 +106,16 @@ def get_train_live(
     """Returns live kinematic position, enriched operational context, and why-late attribution summary."""
     clean_no = train_no.strip()
 
-    # 1. Validate train existence
+    # 1. Validate train existence and resolve route distance
     with db.transaction() as cur:
         cur.execute("SELECT train_no, name, class FROM trains WHERE train_no = ?", (clean_no,))
         train_row = cur.fetchone()
         if not train_row:
             raise HTTPException(status_code=404, detail=f"Train '{clean_no}' not found in timetable registry.")
+
+        cur.execute("SELECT MAX(distance_km) as max_km FROM route_stations WHERE train_no = ?", (clean_no,))
+        max_dist_row = cur.fetchone()
+        total_route_dist = float(max_dist_row["max_km"] or 785.0) if max_dist_row else 785.0
 
     clock = get_clock()
     target_date = run_date or clock.today_str()
@@ -162,12 +166,13 @@ def get_train_live(
             "updated_at": clock.now().isoformat(),
         }
 
-    # 3. Enrich with Context Engine
+    # 3. Enrich with Context Engine using route-derived kilometer position
+    calc_km = (float(pos.get("progress_pct", 0.0)) / 100.0) * total_route_dist
     ctx = context_engine.enrich(
         train_no=clean_no,
         run_date=target_date,
         current_station=pos.get("current_station_code"),
-        current_km=float(pos.get("progress_pct", 0.0)) * 7.85,
+        current_km=calc_km,
         as_of_time=clock.now(),
     )
 

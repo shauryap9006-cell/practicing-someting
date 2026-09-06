@@ -1,24 +1,21 @@
 /**
  * Shared API configuration for RailTwin-X cockpit pages.
- * Reads NEXT_PUBLIC_API_URL from environment; falls back to localhost:8000.
+ * Reads the Vite API URL. An empty value keeps same-origin deployments same-origin.
  */
+import { getCurrentSession, refreshSession } from '@/mock/auth';
 
 export const API_BASE =
-  (typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_URL) ||
-  "http://localhost:8000";
+  (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
 /**
- * authFetch - auto-attaches Bearer token from localStorage to every request.
+ * authFetch - auto-attaches the active session's Bearer token.
  * Throws on non-ok HTTP responses with the backend detail message.
  */
 export async function authFetch(
   url: string,
   options: RequestInit = {}
 ): Promise<Response> {
-  const token =
-    typeof window !== "undefined"
-      ? localStorage.getItem("railtwin_token")
-      : null;
+  const token = getCurrentSession()?.user?.token || null;
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -29,13 +26,21 @@ export async function authFetch(
     headers["Authorization"] = "Bearer " + token;
   }
 
-  const res = await fetch(url, { ...options, headers });
+  let res = await fetch(url, { ...options, headers });
+
+  if (res.status === 401 && getCurrentSession()?.refreshToken) {
+    const refreshed = await refreshSession();
+    if (refreshed?.user.token) {
+      headers["Authorization"] = "Bearer " + refreshed.user.token;
+      res = await fetch(url, { ...options, headers });
+    }
+  }
 
   if (!res.ok) {
     let detail = "HTTP " + res.status;
     try {
       const body = await res.json();
-      detail = body?.detail || body?.message || detail;
+      detail = body?.error?.message || body?.detail?.message || body?.detail || body?.message || detail;
     } catch {}
     throw new Error(detail);
   }

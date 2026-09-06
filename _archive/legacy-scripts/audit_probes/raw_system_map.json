@@ -1,0 +1,6186 @@
+{
+  "mounted_routes": [
+    {
+      "path": "/healthz",
+      "methods": [
+        "GET"
+      ],
+      "name": "liveness_probe",
+      "endpoint": "api.main.liveness_probe",
+      "is_async": false
+    },
+    {
+      "path": "/readyz",
+      "methods": [
+        "GET"
+      ],
+      "name": "readiness_probe",
+      "endpoint": "api.main.readiness_probe",
+      "is_async": false
+    },
+    {
+      "path": "/",
+      "methods": [
+        "GET"
+      ],
+      "name": "root_redirect",
+      "endpoint": "api.main.root_redirect",
+      "is_async": false
+    }
+  ],
+  "source_routes": [
+    {
+      "file": "api\\access_routes.py",
+      "line": 31,
+      "name": "create_access_request",
+      "is_async": false,
+      "decorator": "router.post('', response_model=AccessRequestResponse, status_code=201)"
+    },
+    {
+      "file": "api\\admin_routes.py",
+      "line": 82,
+      "name": "list_access_requests",
+      "is_async": false,
+      "decorator": "router.get('/access-requests', response_model=List[AccessRequestRecord])"
+    },
+    {
+      "file": "api\\admin_routes.py",
+      "line": 103,
+      "name": "review_access_request",
+      "is_async": false,
+      "decorator": "router.put('/access-requests/{request_id}', response_model=AccessRequestRecord)"
+    },
+    {
+      "file": "api\\admin_routes.py",
+      "line": 139,
+      "name": "list_users",
+      "is_async": false,
+      "decorator": "router.get('/users', response_model=List[UserDetailResponse])"
+    },
+    {
+      "file": "api\\admin_routes.py",
+      "line": 177,
+      "name": "create_user",
+      "is_async": false,
+      "decorator": "router.post('/users', response_model=UserDetailResponse, status_code=status.HTTP_201_CREATED)"
+    },
+    {
+      "file": "api\\admin_routes.py",
+      "line": 255,
+      "name": "update_user",
+      "is_async": false,
+      "decorator": "router.put('/users/{user_id}', response_model=UserDetailResponse)"
+    },
+    {
+      "file": "api\\admin_routes.py",
+      "line": 349,
+      "name": "list_backups",
+      "is_async": false,
+      "decorator": "router.get('/backups', response_model=List[BackupRecord])"
+    },
+    {
+      "file": "api\\admin_routes.py",
+      "line": 383,
+      "name": "trigger_backup",
+      "is_async": false,
+      "decorator": "router.post('/backups/create', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\admin_routes.py",
+      "line": 402,
+      "name": "verify_latest_backup",
+      "is_async": false,
+      "decorator": "router.post('/backups/verify', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\audit_routes.py",
+      "line": 49,
+      "name": "get_audit_logs",
+      "is_async": false,
+      "decorator": "router.get('/logs', response_model=AuditQueryResponse)"
+    },
+    {
+      "file": "api\\audit_routes.py",
+      "line": 107,
+      "name": "verify_audit_trail_integrity",
+      "is_async": false,
+      "decorator": "router.get('/verify-integrity', response_model=IntegrityVerifyResponse)"
+    },
+    {
+      "file": "api\\auth_routes.py",
+      "line": 55,
+      "name": "login",
+      "is_async": false,
+      "decorator": "router.post('/login', response_model=LoginResponse)"
+    },
+    {
+      "file": "api\\auth_routes.py",
+      "line": 142,
+      "name": "get_current_user_profile",
+      "is_async": false,
+      "decorator": "router.get('/me', response_model=UserProfile)"
+    },
+    {
+      "file": "api\\auth_routes.py",
+      "line": 157,
+      "name": "refresh_token",
+      "is_async": false,
+      "decorator": "router.post('/refresh', response_model=LoginResponse)"
+    },
+    {
+      "file": "api\\auth_routes.py",
+      "line": 229,
+      "name": "logout",
+      "is_async": false,
+      "decorator": "router.post('/logout', status_code=status.HTTP_204_NO_CONTENT)"
+    },
+    {
+      "file": "api\\block_routes.py",
+      "line": 35,
+      "name": "get_block_statuses",
+      "is_async": false,
+      "decorator": "router.get('/status', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\block_routes.py",
+      "line": 105,
+      "name": "update_block_state",
+      "is_async": false,
+      "decorator": "router.post('/{block_id}/state', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\block_routes.py",
+      "line": 146,
+      "name": "grant_line_clear",
+      "is_async": false,
+      "decorator": "router.post('/{block_id}/line-clear', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\board_routes.py",
+      "line": 40,
+      "name": "get_live_board",
+      "is_async": false,
+      "decorator": "router.get('/live', response_model=None)"
+    },
+    {
+      "file": "api\\board_routes.py",
+      "line": 207,
+      "name": "get_kiosk_board",
+      "is_async": false,
+      "decorator": "router.get('/kiosk', response_model=None)"
+    },
+    {
+      "file": "api\\board_routes.py",
+      "line": 255,
+      "name": "stream_live_board",
+      "is_async": true,
+      "decorator": "router.get('/stream')"
+    },
+    {
+      "file": "api\\commercial_routes.py",
+      "line": 40,
+      "name": "issue_delay_certificate",
+      "is_async": false,
+      "decorator": "router.post('/delay-certificate', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\commercial_routes.py",
+      "line": 133,
+      "name": "get_delay_certificate",
+      "is_async": false,
+      "decorator": "router.get('/delay-certificate/{cert_no}', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\commercial_routes.py",
+      "line": 149,
+      "name": "verify_delay_certificate",
+      "is_async": false,
+      "decorator": "router.get('/delay-certificate/verify/{qr_token}', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\commercial_routes.py",
+      "line": 180,
+      "name": "generate_platform_announcement",
+      "is_async": false,
+      "decorator": "router.get('/announcements/generate', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\commercial_routes.py",
+      "line": 265,
+      "name": "register_commercial_stall",
+      "is_async": false,
+      "decorator": "router.post('/stalls', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\commercial_routes.py",
+      "line": 315,
+      "name": "list_commercial_stalls",
+      "is_async": false,
+      "decorator": "router.get('/stalls', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\commercial_routes.py",
+      "line": 383,
+      "name": "register_lost_item",
+      "is_async": false,
+      "decorator": "router.post('/lost-found', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\commercial_routes.py",
+      "line": 427,
+      "name": "list_lost_items",
+      "is_async": false,
+      "decorator": "router.get('/lost-found', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\commercial_routes.py",
+      "line": 454,
+      "name": "claim_lost_item",
+      "is_async": false,
+      "decorator": "router.put('/lost-found/{item_id}/claim', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\handover_routes.py",
+      "line": 139,
+      "name": "get_current_handover_summary",
+      "is_async": false,
+      "decorator": "router.get('/current', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\handover_routes.py",
+      "line": 166,
+      "name": "create_or_update_draft",
+      "is_async": false,
+      "decorator": "router.post('/draft', response_model=HandoverResponse, status_code=status.HTTP_201_CREATED)"
+    },
+    {
+      "file": "api\\handover_routes.py",
+      "line": 258,
+      "name": "sign_out_shift",
+      "is_async": false,
+      "decorator": "router.post('/{handover_id}/sign-out', response_model=HandoverResponse)"
+    },
+    {
+      "file": "api\\handover_routes.py",
+      "line": 311,
+      "name": "acknowledge_incoming_shift",
+      "is_async": false,
+      "decorator": "router.post('/{handover_id}/ack-in', response_model=HandoverResponse)"
+    },
+    {
+      "file": "api\\handover_routes.py",
+      "line": 371,
+      "name": "list_handover_history",
+      "is_async": false,
+      "decorator": "router.get('/history', response_model=List[HandoverResponse])"
+    },
+    {
+      "file": "api\\infra_routes.py",
+      "line": 42,
+      "name": "register_rake_bpc",
+      "is_async": false,
+      "decorator": "router.post('/rakes', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\infra_routes.py",
+      "line": 92,
+      "name": "list_rakes",
+      "is_async": false,
+      "decorator": "router.get('/rakes', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\infra_routes.py",
+      "line": 152,
+      "name": "register_station_asset",
+      "is_async": false,
+      "decorator": "router.post('/assets', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\infra_routes.py",
+      "line": 198,
+      "name": "list_station_assets",
+      "is_async": false,
+      "decorator": "router.get('/assets', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\infra_routes.py",
+      "line": 260,
+      "name": "create_work_order",
+      "is_async": false,
+      "decorator": "router.post('/work-orders', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\infra_routes.py",
+      "line": 320,
+      "name": "list_work_orders",
+      "is_async": false,
+      "decorator": "router.get('/work-orders', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\infra_routes.py",
+      "line": 351,
+      "name": "resolve_work_order",
+      "is_async": false,
+      "decorator": "router.put('/work-orders/{wo_id}/resolve', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\infra_routes.py",
+      "line": 408,
+      "name": "record_cleaning_log",
+      "is_async": false,
+      "decorator": "router.post('/cleaning-logs', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\infra_routes.py",
+      "line": 443,
+      "name": "list_cleaning_logs",
+      "is_async": false,
+      "decorator": "router.get('/cleaning-logs', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\infra_routes.py",
+      "line": 443,
+      "name": "list_cleaning_logs",
+      "is_async": false,
+      "decorator": "router.get('/feedback', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\live_routes.py",
+      "line": 48,
+      "name": "get_meta_config",
+      "is_async": false,
+      "decorator": "router.get('/v1/meta/config', response_model=None, operation_id='get_meta_config_v1')"
+    },
+    {
+      "file": "api\\live_routes.py",
+      "line": 48,
+      "name": "get_meta_config",
+      "is_async": false,
+      "decorator": "router.get('/api/v1/meta/config', response_model=None, operation_id='get_meta_config_api_v1')"
+    },
+    {
+      "file": "api\\live_routes.py",
+      "line": 98,
+      "name": "get_train_live",
+      "is_async": false,
+      "decorator": "router.get('/v1/trains/{train_no}/live', response_model=None, operation_id='get_train_live_v1')"
+    },
+    {
+      "file": "api\\live_routes.py",
+      "line": 98,
+      "name": "get_train_live",
+      "is_async": false,
+      "decorator": "router.get('/api/v1/trains/{train_no}/live', response_model=None, operation_id='get_train_live_api_v1')"
+    },
+    {
+      "file": "api\\live_routes.py",
+      "line": 198,
+      "name": "get_train_why_late",
+      "is_async": false,
+      "decorator": "router.get('/v1/trains/{train_no}/why-late', response_model=None, operation_id='get_train_why_late_v1')"
+    },
+    {
+      "file": "api\\live_routes.py",
+      "line": 198,
+      "name": "get_train_why_late",
+      "is_async": false,
+      "decorator": "router.get('/api/v1/trains/{train_no}/why-late', response_model=None, operation_id='get_train_why_late_api_v1')"
+    },
+    {
+      "file": "api\\live_routes.py",
+      "line": 253,
+      "name": "get_live_positions",
+      "is_async": false,
+      "decorator": "router.get('/v1/live/positions', response_model=None, operation_id='get_live_positions_v1')"
+    },
+    {
+      "file": "api\\live_routes.py",
+      "line": 253,
+      "name": "get_live_positions",
+      "is_async": false,
+      "decorator": "router.get('/api/v1/live/positions', response_model=None, operation_id='get_live_positions_api_v1')"
+    },
+    {
+      "file": "api\\live_routes.py",
+      "line": 272,
+      "name": "stream_live_positions",
+      "is_async": true,
+      "decorator": "router.get('/v1/live/stream', response_model=None, operation_id='stream_live_positions_v1')"
+    },
+    {
+      "file": "api\\live_routes.py",
+      "line": 272,
+      "name": "stream_live_positions",
+      "is_async": true,
+      "decorator": "router.get('/api/v1/live/stream', response_model=None, operation_id='stream_live_positions_api_v1')"
+    },
+    {
+      "file": "api\\main.py",
+      "line": 252,
+      "name": "liveness_probe",
+      "is_async": false,
+      "decorator": "app.get('/healthz', include_in_schema=False)"
+    },
+    {
+      "file": "api\\main.py",
+      "line": 258,
+      "name": "readiness_probe",
+      "is_async": false,
+      "decorator": "app.get('/readyz', include_in_schema=False)"
+    },
+    {
+      "file": "api\\main.py",
+      "line": 265,
+      "name": "root_redirect",
+      "is_async": false,
+      "decorator": "app.get('/')"
+    },
+    {
+      "file": "api\\notification_routes.py",
+      "line": 59,
+      "name": "get_active_notifications",
+      "is_async": false,
+      "decorator": "router.get('/active', response_model=List[NotificationItem])"
+    },
+    {
+      "file": "api\\notification_routes.py",
+      "line": 114,
+      "name": "ack_notification_endpoint",
+      "is_async": false,
+      "decorator": "router.post('/{notification_id}/ack', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\notification_routes.py",
+      "line": 156,
+      "name": "emit_notification_endpoint",
+      "is_async": false,
+      "decorator": "router.post('/emit', response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)"
+    },
+    {
+      "file": "api\\notification_routes.py",
+      "line": 190,
+      "name": "trigger_escalation_ladder",
+      "is_async": false,
+      "decorator": "router.post('/escalate', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\ops_routes.py",
+      "line": 56,
+      "name": "record_set_in",
+      "is_async": false,
+      "decorator": "router.post('/setin/{train_no}', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\ops_routes.py",
+      "line": 158,
+      "name": "record_set_out",
+      "is_async": false,
+      "decorator": "router.post('/setout/{train_no}', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\ops_routes.py",
+      "line": 241,
+      "name": "list_ad_events",
+      "is_async": false,
+      "decorator": "router.get('/ad-events', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\ops_routes.py",
+      "line": 288,
+      "name": "create_shunting_move",
+      "is_async": false,
+      "decorator": "router.post('/shunting', response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)"
+    },
+    {
+      "file": "api\\ops_routes.py",
+      "line": 357,
+      "name": "list_shunting_moves",
+      "is_async": false,
+      "decorator": "router.get('/shunting', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\ops_routes.py",
+      "line": 404,
+      "name": "update_shunting_status",
+      "is_async": false,
+      "decorator": "router.put('/shunting/{move_id}/status', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\passenger_routes.py",
+      "line": 157,
+      "name": "stream_passenger_train",
+      "is_async": true,
+      "decorator": "router.get('/stream', response_model=None)"
+    },
+    {
+      "file": "api\\passenger_routes.py",
+      "line": 242,
+      "name": "search_trains",
+      "is_async": false,
+      "decorator": "router.get('/search', response_model=None)"
+    },
+    {
+      "file": "api\\passenger_routes.py",
+      "line": 331,
+      "name": "get_popular_trains",
+      "is_async": false,
+      "decorator": "router.get('/popular', response_model=None)"
+    },
+    {
+      "file": "api\\passenger_routes.py",
+      "line": 455,
+      "name": "get_pnr",
+      "is_async": false,
+      "decorator": "router.get('/pnr/{pnr}', response_model=None)"
+    },
+    {
+      "file": "api\\passenger_routes.py",
+      "line": 471,
+      "name": "get_passenger_snapshot",
+      "is_async": false,
+      "decorator": "router.get('/snapshot', response_model=None)"
+    },
+    {
+      "file": "api\\planner_routes.py",
+      "line": 42,
+      "name": "simulate_day_changeset",
+      "is_async": false,
+      "decorator": "router.post('/simulate', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\planner_routes.py",
+      "line": 101,
+      "name": "apply_day_changeset",
+      "is_async": false,
+      "decorator": "router.post('/apply', response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)"
+    },
+    {
+      "file": "api\\planner_routes.py",
+      "line": 177,
+      "name": "list_planner_changesets",
+      "is_async": false,
+      "decorator": "router.get('/changesets', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\platform_routes.py",
+      "line": 46,
+      "name": "get_platform_states",
+      "is_async": false,
+      "decorator": "router.get('/states', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\platform_routes.py",
+      "line": 91,
+      "name": "set_platform_block",
+      "is_async": false,
+      "decorator": "router.post('/block', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\platform_routes.py",
+      "line": 149,
+      "name": "assign_platform",
+      "is_async": false,
+      "decorator": "router.post('/assign', response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)"
+    },
+    {
+      "file": "api\\platform_routes.py",
+      "line": 244,
+      "name": "toggle_assignment_lock",
+      "is_async": false,
+      "decorator": "router.post('/assignments/{assign_id}/lock', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\platform_routes.py",
+      "line": 286,
+      "name": "reoptimize_station_platforms",
+      "is_async": false,
+      "decorator": "router.post('/reoptimize', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\routes.py",
+      "line": 46,
+      "name": "get_evaluation_summary",
+      "is_async": false,
+      "decorator": "router.get('/evaluation/summary')"
+    },
+    {
+      "file": "api\\routes.py",
+      "line": 69,
+      "name": "get_train_eta",
+      "is_async": false,
+      "decorator": "router.get('/trains/{train_no}/eta', response_model=TrainEtaResponse)"
+    },
+    {
+      "file": "api\\routes.py",
+      "line": 88,
+      "name": "get_train_journey",
+      "is_async": false,
+      "decorator": "router.get('/trains/{train_no}/journey', response_model=TrainJourneyResponse)"
+    },
+    {
+      "file": "api\\routes.py",
+      "line": 199,
+      "name": "get_train_autopsy",
+      "is_async": false,
+      "decorator": "router.get('/trains/{train_no}/autopsy', response_model=DelayAutopsyResponse)"
+    },
+    {
+      "file": "api\\routes.py",
+      "line": 237,
+      "name": "get_pnr_status",
+      "is_async": false,
+      "decorator": "router.get('/pnr/{pnr_no}')"
+    },
+    {
+      "file": "api\\routes.py",
+      "line": 373,
+      "name": "passenger_search",
+      "is_async": false,
+      "decorator": "router.get('/passenger/search')"
+    },
+    {
+      "file": "api\\routes.py",
+      "line": 417,
+      "name": "get_network_state",
+      "is_async": false,
+      "decorator": "router.get('/network/state', response_model=NetworkStateResponse)"
+    },
+    {
+      "file": "api\\routes.py",
+      "line": 566,
+      "name": "get_station_summary",
+      "is_async": false,
+      "decorator": "router.get('/stations/{code}', response_model=StationSummaryResponse)"
+    },
+    {
+      "file": "api\\routes.py",
+      "line": 624,
+      "name": "get_station_gantt",
+      "is_async": false,
+      "decorator": "router.get('/stations/{code}/gantt', response_model=StationGanttResponse)"
+    },
+    {
+      "file": "api\\routes.py",
+      "line": 655,
+      "name": "reoptimize_station_platforms",
+      "is_async": false,
+      "decorator": "router.post('/stations/{code}/reoptimize', response_model=ReoptimizeResponse)"
+    },
+    {
+      "file": "api\\routes.py",
+      "line": 687,
+      "name": "simulate_what_if",
+      "is_async": false,
+      "decorator": "router.post('/simulate/what-if', response_model=WhatIfResponse)"
+    },
+    {
+      "file": "api\\routes.py",
+      "line": 744,
+      "name": "get_crew_alerts",
+      "is_async": false,
+      "decorator": "router.get('/crew/alerts', response_model=CrewAlertsResponse)"
+    },
+    {
+      "file": "api\\routes.py",
+      "line": 763,
+      "name": "get_station_connections",
+      "is_async": false,
+      "decorator": "router.get('/stations/{code}/connections', response_model=None)"
+    },
+    {
+      "file": "api\\routes.py",
+      "line": 797,
+      "name": "get_prediction_ledger_scoreboard",
+      "is_async": false,
+      "decorator": "router.get('/ledger/scoreboard', response_model=None)"
+    },
+    {
+      "file": "api\\routes.py",
+      "line": 809,
+      "name": "verify_prediction_ledger_chain",
+      "is_async": false,
+      "decorator": "router.get('/ledger/verify', response_model=None)"
+    },
+    {
+      "file": "api\\routes.py",
+      "line": 827,
+      "name": "get_models_meta",
+      "is_async": false,
+      "decorator": "router.get('/meta/models', response_model=ModelsMetaResponse)"
+    },
+    {
+      "file": "api\\routes.py",
+      "line": 852,
+      "name": "get_meta_stations",
+      "is_async": false,
+      "decorator": "router.get('/meta/stations')"
+    },
+    {
+      "file": "api\\routes.py",
+      "line": 870,
+      "name": "get_meta_trains",
+      "is_async": false,
+      "decorator": "router.get('/meta/trains')"
+    },
+    {
+      "file": "api\\routes.py",
+      "line": 888,
+      "name": "post_brain_advise",
+      "is_async": false,
+      "decorator": "router.post('/advise')"
+    },
+    {
+      "file": "api\\routes.py",
+      "line": 906,
+      "name": "get_train_conflicts",
+      "is_async": false,
+      "decorator": "router.get('/conflicts/{train_no}')"
+    },
+    {
+      "file": "api\\routes.py",
+      "line": 990,
+      "name": "post_advisory_ack",
+      "is_async": false,
+      "decorator": "router.post('/advise/{adv_id}/ack', response_model=DispatcherAckResponse)"
+    },
+    {
+      "file": "api\\routes.py",
+      "line": 1032,
+      "name": "whatsapp_inbound_webhook",
+      "is_async": true,
+      "decorator": "router.post('/hooks/whatsapp', response_model=WhatsAppWebhookResponse)"
+    },
+    {
+      "file": "api\\routes.py",
+      "line": 1130,
+      "name": "get_health",
+      "is_async": false,
+      "decorator": "router.get('/health', response_model=HealthResponse)"
+    },
+    {
+      "file": "api\\safety_routes.py",
+      "line": 44,
+      "name": "create_speed_restriction",
+      "is_async": false,
+      "decorator": "router.post('/tsr', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\safety_routes.py",
+      "line": 116,
+      "name": "list_speed_restrictions",
+      "is_async": false,
+      "decorator": "router.get('/tsr', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\safety_routes.py",
+      "line": 143,
+      "name": "cancel_speed_restriction",
+      "is_async": false,
+      "decorator": "router.delete('/tsr/{tsr_id}', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\safety_routes.py",
+      "line": 188,
+      "name": "request_possession",
+      "is_async": false,
+      "decorator": "router.post('/possession/request', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\safety_routes.py",
+      "line": 234,
+      "name": "grant_possession",
+      "is_async": false,
+      "decorator": "router.post('/possession/{possession_id}/grant', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\safety_routes.py",
+      "line": 315,
+      "name": "restore_possession",
+      "is_async": false,
+      "decorator": "router.post('/possession/{possession_id}/restore', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\safety_routes.py",
+      "line": 380,
+      "name": "list_possessions",
+      "is_async": false,
+      "decorator": "router.get('/possessions', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\safety_routes.py",
+      "line": 420,
+      "name": "report_incident",
+      "is_async": false,
+      "decorator": "router.post('/incidents', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\safety_routes.py",
+      "line": 477,
+      "name": "list_incidents",
+      "is_async": false,
+      "decorator": "router.get('/incidents', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\safety_routes.py",
+      "line": 546,
+      "name": "get_sop_templates",
+      "is_async": false,
+      "decorator": "router.get('/sop/templates', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\safety_routes.py",
+      "line": 557,
+      "name": "start_sop_run",
+      "is_async": false,
+      "decorator": "router.post('/sop/start', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\safety_routes.py",
+      "line": 618,
+      "name": "complete_sop_step",
+      "is_async": false,
+      "decorator": "router.post('/sop/{run_id}/step', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\safety_routes.py",
+      "line": 676,
+      "name": "list_active_sop_runs",
+      "is_async": false,
+      "decorator": "router.get('/sop/active', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\safety_routes.py",
+      "line": 709,
+      "name": "list_level_crossings",
+      "is_async": false,
+      "decorator": "router.get('/lc/status', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\safety_routes.py",
+      "line": 754,
+      "name": "update_lc_status",
+      "is_async": false,
+      "decorator": "router.put('/lc/{lc_id}/status', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\section_routes.py",
+      "line": 38,
+      "name": "get_corridor_topology",
+      "is_async": false,
+      "decorator": "router.get('/corridor', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\section_routes.py",
+      "line": 81,
+      "name": "request_cross_station_handoff",
+      "is_async": false,
+      "decorator": "router.post('/handoff/request', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\section_routes.py",
+      "line": 132,
+      "name": "grant_cross_station_handoff",
+      "is_async": false,
+      "decorator": "router.put('/handoff/{lock_id}/grant', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\section_routes.py",
+      "line": 170,
+      "name": "release_cross_station_handoff",
+      "is_async": false,
+      "decorator": "router.put('/handoff/{lock_id}/release', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\section_routes.py",
+      "line": 207,
+      "name": "list_cross_station_handoffs",
+      "is_async": false,
+      "decorator": "router.get('/handoffs', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\section_routes.py",
+      "line": 241,
+      "name": "generate_precedence_advisories",
+      "is_async": false,
+      "decorator": "router.get('/advisories/generate', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\section_routes.py",
+      "line": 241,
+      "name": "generate_precedence_advisories",
+      "is_async": false,
+      "decorator": "router.get('/precedence', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\section_routes.py",
+      "line": 284,
+      "name": "execute_precedence_advisory",
+      "is_async": false,
+      "decorator": "router.post('/advisories/{adv_id}/execute', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\section_routes.py",
+      "line": 316,
+      "name": "get_dfc_precedence",
+      "is_async": false,
+      "decorator": "router.get('/dfc', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\system_routes.py",
+      "line": 21,
+      "name": "get_system_status",
+      "is_async": false,
+      "decorator": "router.get('/status', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\system_routes.py",
+      "line": 90,
+      "name": "get_system_model_info",
+      "is_async": false,
+      "decorator": "router.get('/model-info', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\timetable_routes.py",
+      "line": 60,
+      "name": "list_timetable_versions",
+      "is_async": false,
+      "decorator": "router.get('/versions', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\timetable_routes.py",
+      "line": 100,
+      "name": "create_timetable_version",
+      "is_async": false,
+      "decorator": "router.post('/versions', response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)"
+    },
+    {
+      "file": "api\\timetable_routes.py",
+      "line": 151,
+      "name": "get_version_entries",
+      "is_async": false,
+      "decorator": "router.get('/versions/{version_id}/entries', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\timetable_routes.py",
+      "line": 210,
+      "name": "create_timetable_entry",
+      "is_async": false,
+      "decorator": "router.post('/entries', response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)"
+    },
+    {
+      "file": "api\\timetable_routes.py",
+      "line": 265,
+      "name": "update_timetable_entry",
+      "is_async": false,
+      "decorator": "router.put('/entries/{entry_id}', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\timetable_routes.py",
+      "line": 324,
+      "name": "delete_timetable_entry",
+      "is_async": false,
+      "decorator": "router.delete('/entries/{entry_id}', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\timetable_routes.py",
+      "line": 353,
+      "name": "validate_timetable_version",
+      "is_async": false,
+      "decorator": "router.get('/versions/{version_id}/validate', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\timetable_routes.py",
+      "line": 395,
+      "name": "import_seed_timetable",
+      "is_async": false,
+      "decorator": "router.post('/versions/{version_id}/import-seed', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\timetable_routes.py",
+      "line": 451,
+      "name": "publish_timetable_version",
+      "is_async": false,
+      "decorator": "router.post('/versions/{version_id}/publish', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\workforce_routes.py",
+      "line": 40,
+      "name": "record_breathalyzer_test",
+      "is_async": false,
+      "decorator": "router.post('/breathalyzer', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\workforce_routes.py",
+      "line": 112,
+      "name": "list_breathalyzer_tests",
+      "is_async": false,
+      "decorator": "router.get('/breathalyzer', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\workforce_routes.py",
+      "line": 143,
+      "name": "crew_sign_on",
+      "is_async": false,
+      "decorator": "router.post('/crew/sign-on', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\workforce_routes.py",
+      "line": 204,
+      "name": "crew_sign_off",
+      "is_async": false,
+      "decorator": "router.post('/crew/{roster_id}/sign-off', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\workforce_routes.py",
+      "line": 256,
+      "name": "list_crew_roster",
+      "is_async": false,
+      "decorator": "router.get('/crew/roster', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\workforce_routes.py",
+      "line": 321,
+      "name": "check_crew_breaches",
+      "is_async": false,
+      "decorator": "router.get('/crew/breaches', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\workforce_routes.py",
+      "line": 345,
+      "name": "assign_staff_shift",
+      "is_async": false,
+      "decorator": "router.post('/shifts', response_model=Dict[str, Any])"
+    },
+    {
+      "file": "api\\workforce_routes.py",
+      "line": 388,
+      "name": "list_staff_shifts",
+      "is_async": false,
+      "decorator": "router.get('/shifts', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\workforce_routes.py",
+      "line": 442,
+      "name": "list_sahayak_roster",
+      "is_async": false,
+      "decorator": "router.get('/sahayak', response_model=List[Dict[str, Any]])"
+    },
+    {
+      "file": "api\\workforce_routes.py",
+      "line": 492,
+      "name": "toggle_sahayak_duty",
+      "is_async": false,
+      "decorator": "router.put('/sahayak/{sahayak_id}/duty', response_model=Dict[str, Any])"
+    }
+  ],
+  "schema": {
+    "access_requests": {
+      "columns": [
+        {
+          "name": "request_id",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "full_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "organization",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "requested_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "reviewed_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "reviewed_by",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_access_requests_status_time",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_access_requests_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ],
+      "row_count": 0
+    },
+    "ad_events": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "run_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "event_kind",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "actual_ts",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "platform",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "predicted_ts",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "discrepancy_min",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "discrepancy_flag",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "source",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "confirmed_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_ad_events_stn_ts",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "idx_ad_events_run",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 8
+    },
+    "advisory_ack_log": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "adv_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "decision",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "dispatcher_id",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "comment",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "recorded_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_ack_log_adv",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 85
+    },
+    "audit_log": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "ts",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "actor_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "actor_role",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "action",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "table_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "record_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "before_state",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "after_state",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "row_hash",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "prev_hash",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_audit_log_actor",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "idx_audit_log_ts",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 2,
+          "name": "idx_audit_log_table",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 51
+    },
+    "auth_sessions": {
+      "columns": [
+        {
+          "name": "token_id",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "token_hash",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "expires_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "last_used_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "revoked_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "replaced_by",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_auth_sessions_expiry",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "idx_auth_sessions_user",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 2,
+          "name": "sqlite_autoindex_auth_sessions_2",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0
+        },
+        {
+          "seq": 3,
+          "name": "sqlite_autoindex_auth_sessions_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ],
+      "row_count": 11
+    },
+    "backups": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "filename",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "backup_ts",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "size_bytes",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "row_counts_json",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "checksum_sha256",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [],
+      "row_count": 36
+    },
+    "block_status": {
+      "columns": [
+        {
+          "name": "block_id",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "from_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "to_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "state",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "occupied_by_train",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "line_clear_granted_to",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "granted_by",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "since",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_block_status_section",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_block_status_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ],
+      "row_count": 1
+    },
+    "brain_advisory_audit": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "query_timestamp",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "input_delay_min",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "predicted_delay_min",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "confidence_tier",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "checks_passed",
+          "type": "INT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "conflicts_count",
+          "type": "INT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "suggested_action",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "model_version",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "raw_payload",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_brain_audit_train",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 47
+    },
+    "breathalyzer_tests": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "staff_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "staff_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "role",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "duty_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "reading_mg_100ml",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "passed",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "verified_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "test_time",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_ba_staff",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 8
+    },
+    "cleaning_logs": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "area_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "platform_number",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "cleaned_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "inspected_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "score_1_to_5",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "contractor_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_clean_stn",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 7
+    },
+    "commercial_stalls": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "stall_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "platform_number",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "stall_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "vendor_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "contact_phone",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "monthly_rent_inr",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "lease_start_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "lease_expiry_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_stalls_station",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_commercial_stalls_1",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0
+        }
+      ],
+      "row_count": 1
+    },
+    "conformal_pid_state": {
+      "columns": [
+        {
+          "name": "group_key",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "target_alpha",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "current_alpha",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "integral",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "prev_error",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "steps",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_conformal_pid_state_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ],
+      "row_count": 0
+    },
+    "corridor_sections": {
+      "columns": [
+        {
+          "name": "section_id",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "from_station",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "to_station",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "length_km",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "max_speed_kmph",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "is_electrified",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "signaling_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_corr_sec_stns",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_corridor_sections_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ],
+      "row_count": 4
+    },
+    "crew_rosters": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "crew_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "staff_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "role",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "sign_on_time",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "sign_off_time",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "duty_hours_limit",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "consecutive_night_shifts",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "rest_hours_due",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_crew_stn_status",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 8
+    },
+    "cross_station_locks": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "section_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "from_station",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "to_station",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "lock_state",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "requested_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "granted_by",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "granted_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "released_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_cross_locks_sec",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 4
+    },
+    "delay_certificates": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "cert_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "pnr_no",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "train_name",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "scheduled_arr",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "actual_arr",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "delay_min",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "issued_to_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "issued_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "issued_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "qr_token",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_delay_certs_qr",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "idx_delay_certs_train",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 2,
+          "name": "sqlite_autoindex_delay_certificates_2",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0
+        },
+        {
+          "seq": 3,
+          "name": "sqlite_autoindex_delay_certificates_1",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0
+        }
+      ],
+      "row_count": 6
+    },
+    "eta_prediction_ledger": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "receipt_hash",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "prev_hash",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "target_station",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "query_timestamp",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "p10_delay",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "p50_delay",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "p90_delay",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "actual_delay",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "actual_timestamp",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "error_min",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "in_band",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "winkler_score",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_ledger_hash",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "idx_ledger_train",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 2,
+          "name": "sqlite_autoindex_eta_prediction_ledger_1",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0
+        }
+      ],
+      "row_count": 1963
+    },
+    "handover_log": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "shift_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "shift_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "outgoing_user_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "incoming_user_id",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "outgoing_signed_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "incoming_acked_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "open_incidents_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "active_srs_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "active_possessions_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "crew_exceptions_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "operational_notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_handover_station_date",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 5
+    },
+    "hist_baselines": {
+      "columns": [
+        {
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 1
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 2
+        },
+        {
+          "name": "avg_delay",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "p90_delay",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "chronic_delay_flag",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "sample_count",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_hist_baselines",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_hist_baselines_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ],
+      "row_count": 1200
+    },
+    "incidents": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "incident_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "severity",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "location_km",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "summary",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "investigation_status",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "action_taken",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "reported_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "reported_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_incidents_stn",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 4
+    },
+    "level_crossings": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "lc_number",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "km",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "gate_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "last_inspected",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "gateman_name",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "contact_phone",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_lc_stn",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_level_crossings_1",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0
+        }
+      ],
+      "row_count": 4
+    },
+    "live_delay_ledger": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "run_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "timestamp",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "delay_change_min",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "previous_delay_min",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "current_delay_min",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "primary_cause",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "secondary_cause",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "confidence",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "evidence_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "is_exact_accounting",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_live_delay_ledger_timestamp",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "idx_live_delay_ledger_train",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 196
+    },
+    "live_ingest_events": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "scheduled_time",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "actual_time",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "delay_min",
+          "type": "INT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "collected_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_live_ingest_lookup",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 0
+    },
+    "live_positions": {
+      "columns": [
+        {
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 1
+        },
+        {
+          "name": "run_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 2
+        },
+        {
+          "name": "lat",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "lng",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "current_station_code",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "next_station_code",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "section_id",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "speed_kmh",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "delay_minutes",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "confidence",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "progress_pct",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "is_dead_reckoned",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "source",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "last_event_time",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "last_gps_fix",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_live_positions_updated",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "idx_live_positions_station",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 2,
+          "name": "sqlite_autoindex_live_positions_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ],
+      "row_count": 611
+    },
+    "lost_and_found": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "item_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "found_location",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "found_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "found_by_staff",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "custody_location",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "claimant_name",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "claimant_id_proof",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "claimant_phone",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "claimed_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_lost_found_stn",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 6
+    },
+    "notification_ack": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "notif_id",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "channel",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "ack_ts",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_notif_ack_notif",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 4
+    },
+    "notification_log": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "staff_id",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "event_type",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "severity",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "channel",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "payload",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "sent_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "ack_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_notif_log_sent",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "idx_notif_log_staff",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 40
+    },
+    "notifications": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "event_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "target_role",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "severity",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "title",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "message",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "payload_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "state",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "escalated_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "acked_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "acked_by",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_notifications_station_state",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "idx_notifications_created",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 2,
+          "name": "idx_notifications_role_state",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 91
+    },
+    "planner_changesets": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "plan_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "changeset_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "sim_result_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "interlock_passed",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "applied_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_planner_changesets_stn",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 4
+    },
+    "platform_assignments": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "run_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "platform",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "assigned_arr",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "assigned_dep",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "is_locked",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "locked_by",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_pf_assign_stn",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 12
+    },
+    "platform_states": {
+      "columns": [
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 1
+        },
+        {
+          "name": "platform",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 2
+        },
+        {
+          "name": "state",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "occupied_by_train",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "since",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "reason",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_platform_states_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ],
+      "row_count": 2
+    },
+    "possessions": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "possession_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "element_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "start_time",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "end_time",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "work_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "requesting_dept",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "granted_by",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "granted_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "restored_by",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "restored_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_possessions_stn_time",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 4
+    },
+    "rake_links": {
+      "columns": [
+        {
+          "name": "incoming_train",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 1
+        },
+        {
+          "name": "outgoing_train",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 2
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "turnaround_min",
+          "type": "INT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_rake_links_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ],
+      "row_count": 14
+    },
+    "rakes": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "rake_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "bpc_number",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "bpc_issue_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "bpc_valid_until",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "bpc_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "brake_power_percent",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "air_brake_pressure_kg",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "coach_count",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_rakes_train",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_rakes_2",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0
+        },
+        {
+          "seq": 2,
+          "name": "sqlite_autoindex_rakes_1",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0
+        }
+      ],
+      "row_count": 4
+    },
+    "roles": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "permissions_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_roles_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ],
+      "row_count": 9
+    },
+    "route_stations": {
+      "columns": [
+        {
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 1
+        },
+        {
+          "name": "seq",
+          "type": "INT",
+          "notnull": 1,
+          "pk": 2
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "sched_arr",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "sched_dep",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "halt_min",
+          "type": "INT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "distance_km",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_route_stations_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ],
+      "row_count": 1205
+    },
+    "run_snapshots": {
+      "columns": [
+        {
+          "name": "snapshot_id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "run_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "ts",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "sch_arr",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "sch_dep",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "exp_arr",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "exp_dep",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "delay_min",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "last_loc_station",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "lat",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "lng",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "raw_json",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "source",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_snapshots_ts",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "idx_snapshots_run_ts",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 15
+    },
+    "sahayak_roster": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "badge_number",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "phone",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "assigned_platform",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "shift",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "on_duty",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "tariff_fixed_inr",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "last_active",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_sahayak_stn",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_sahayak_roster_1",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0
+        }
+      ],
+      "row_count": 5
+    },
+    "schema_migrations": {
+      "columns": [
+        {
+          "name": "version",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "applied_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [],
+      "row_count": 14
+    },
+    "section_advisories": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "section_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "overtaking_train_no",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "advisory_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "recommended_station",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "recommended_loop_line",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "priority_score",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "details",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "executed_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_sec_adv_stn",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 0
+    },
+    "sections": {
+      "columns": [
+        {
+          "name": "from_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 1
+        },
+        {
+          "name": "to_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 2
+        },
+        {
+          "name": "distance_km",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "single_line",
+          "type": "INT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "max_speed_kmph",
+          "type": "INT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "is_dfc",
+          "type": "INT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "loop_length_m",
+          "type": "INT",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_sections_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ],
+      "row_count": 14
+    },
+    "shadow_log": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "target_station",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "champion_model",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "challenger_model",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "champion_p50",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "challenger_p50",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "abs_delta",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "latency_ms",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [],
+      "row_count": 0
+    },
+    "shunting_moves": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "move_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "loco_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "rake_id",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "from_track",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "to_track",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "start_time",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "end_time",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_shunting_stn_time",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 4
+    },
+    "sim_ledger": {
+      "columns": [
+        {
+          "name": "run_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "sim_time",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "event_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "minutes",
+          "type": "INT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "cause",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "counterparty",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_ledger_run_train",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 2399
+    },
+    "sop_runs": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "template_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "title",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "severity",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "steps_completed_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "started_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "started_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "completed_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_sop_runs_stn",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 4
+    },
+    "speed_restrictions": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "from_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "to_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "start_km",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "end_km",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "speed_limit_kmph",
+          "type": "INT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "cause",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "permanent_or_temp",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "effective_from",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "effective_to",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "issued_by",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "is_active",
+          "type": "INT",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_tsr_section_status",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 9
+    },
+    "staff": {
+      "columns": [
+        {
+          "name": "staff_id",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "role",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "phone",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "pin_hash",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "on_duty",
+          "type": "BOOLEAN",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_staff_lookup",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_staff_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ],
+      "row_count": 10
+    },
+    "staff_shifts": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "staff_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "staff_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "role_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "shift_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "shift_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "attendance_status",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_shifts_stn_date",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 4
+    },
+    "station_assets": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "asset_tag",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "asset_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "platform_or_track",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "last_serviced_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "next_service_due",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_assets_stn_type",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_station_assets_1",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0
+        }
+      ],
+      "row_count": 6
+    },
+    "station_events": {
+      "columns": [
+        {
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 1
+        },
+        {
+          "name": "run_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 2
+        },
+        {
+          "name": "seq",
+          "type": "INT",
+          "notnull": 1,
+          "pk": 3
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "sched_arr",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "actual_arr",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "sched_dep",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "actual_dep",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "delay_arr_min",
+          "type": "INT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "delay_dep_min",
+          "type": "INT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "collected_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "event_time",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "source",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_events_train_event_time",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "idx_events_station_date",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 2,
+          "name": "idx_events_train_date",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 3,
+          "name": "idx_events_date",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 4,
+          "name": "idx_events_lookup",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 5,
+          "name": "sqlite_autoindex_station_events_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ],
+      "row_count": 33601
+    },
+    "stations": {
+      "columns": [
+        {
+          "name": "code",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "lat",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "lon",
+          "type": "REAL",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "zone",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "category",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "is_junction",
+          "type": "INT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "platforms",
+          "type": "INT",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_stations_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ],
+      "row_count": 112
+    },
+    "timetable_entries": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "version_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "train_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "train_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "direction",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "stop_seq",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "sched_arr",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "sched_dep",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "halt_min",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "platform_default",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "days_of_run",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "is_cancelled",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "cancellation_reason",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_tt_entries_stn",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "idx_tt_entries_version",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 4
+    },
+    "timetable_versions": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "version_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "effective_from",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "effective_to",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "published_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_timetable_versions_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ],
+      "row_count": 4
+    },
+    "train_runs": {
+      "columns": [
+        {
+          "name": "run_id",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "run_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "origin",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "dest",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "source",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_train_runs_train_date",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_train_runs_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ],
+      "row_count": 5
+    },
+    "trains": {
+      "columns": [
+        {
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "class",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "priority",
+          "type": "INT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "trailing_tonnage",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "is_freight",
+          "type": "INT",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_trains_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ],
+      "row_count": 151
+    },
+    "user_roles": {
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 1
+        },
+        {
+          "name": "role_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 2
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_user_roles_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ],
+      "row_count": 10
+    },
+    "users": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "username",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "password_hash",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "role_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "full_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "is_active",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_users_station",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "idx_users_role",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 2,
+          "name": "idx_users_username",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 3,
+          "name": "sqlite_autoindex_users_3",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0
+        },
+        {
+          "seq": 4,
+          "name": "sqlite_autoindex_users_2",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0
+        },
+        {
+          "seq": 5,
+          "name": "sqlite_autoindex_users_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ],
+      "row_count": 10
+    },
+    "weather": {
+      "columns": [
+        {
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 1
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 2
+        },
+        {
+          "name": "temp",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "precip_mm",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "humidity",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "fog_flag",
+          "type": "INT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "ts_ist",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "visibility",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "wind_speed_10m",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "relative_humidity_2m",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "temperature_2m",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "precipitation",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_weather_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ],
+      "row_count": 3080
+    },
+    "weather_hourly": {
+      "columns": [
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 1
+        },
+        {
+          "name": "ts_ist",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 2
+        },
+        {
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "hour",
+          "type": "INTEGER",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "temperature_2m",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "precipitation",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "visibility",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "wind_speed_10m",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "relative_humidity_2m",
+          "type": "REAL",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "fog_flag",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_weather_hourly_ts",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 1,
+          "name": "idx_weather_hourly_date",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        },
+        {
+          "seq": 2,
+          "name": "sqlite_autoindex_weather_hourly_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0
+        }
+      ],
+      "row_count": 1
+    },
+    "work_orders": {
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "pk": 1
+        },
+        {
+          "name": "asset_tag",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "issue_description",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "priority",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "reported_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "assigned_to",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "pk": 0
+        },
+        {
+          "name": "resolved_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        },
+        {
+          "name": "resolution_notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_work_orders_stn",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0
+        }
+      ],
+      "row_count": 4
+    }
+  },
+  "code_tables": {
+    "access_requests": [
+      "api\\admin_routes.py",
+      "api\\access_routes.py"
+    ],
+    "users": [
+      "api\\admin_routes.py",
+      "api\\auth_routes.py",
+      "data\\seed_users.py"
+    ],
+    "user_roles": [
+      "api\\admin_routes.py"
+    ],
+    "auth_sessions": [
+      "api\\auth_routes.py"
+    ],
+    "block_status": [
+      "api\\block_routes.py",
+      "api\\safety_routes.py"
+    ],
+    "brain_advisory_audit": [
+      "api\\brain.py"
+    ],
+    "delay_certificates": [
+      "api\\commercial_routes.py"
+    ],
+    "commercial_stalls": [
+      "api\\commercial_routes.py"
+    ],
+    "lost_and_found": [
+      "api\\commercial_routes.py"
+    ],
+    "handover_log": [
+      "api\\handover_routes.py"
+    ],
+    "rakes": [
+      "api\\infra_routes.py"
+    ],
+    "station_assets": [
+      "api\\infra_routes.py"
+    ],
+    "work_orders": [
+      "api\\infra_routes.py"
+    ],
+    "cleaning_logs": [
+      "api\\infra_routes.py"
+    ],
+    "ad_events": [
+      "api\\ops_routes.py"
+    ],
+    "platform_states": [
+      "api\\platform_routes.py",
+      "api\\ops_routes.py",
+      "api\\safety_routes.py"
+    ],
+    "shunting_moves": [
+      "api\\ops_routes.py"
+    ],
+    "platform_assignments": [
+      "api\\platform_routes.py",
+      "api\\planner_routes.py"
+    ],
+    "planner_changesets": [
+      "api\\planner_routes.py"
+    ],
+    "advisory_ack_log": [
+      "scripts\\demo_replay.py",
+      "api\\routes.py"
+    ],
+    "notification_log": [
+      "api\\routes.py",
+      "notifications\\channels\\inapp.py"
+    ],
+    "speed_restrictions": [
+      "tests\\test_attribution_audit.py",
+      "tests\\test_t82_dynamism.py",
+      "api\\safety_routes.py"
+    ],
+    "possessions": [
+      "api\\safety_routes.py"
+    ],
+    "incidents": [
+      "api\\safety_routes.py"
+    ],
+    "sop_runs": [
+      "api\\safety_routes.py"
+    ],
+    "level_crossings": [
+      "api\\safety_routes.py"
+    ],
+    "corridor_sections": [
+      "api\\section_routes.py"
+    ],
+    "cross_station_locks": [
+      "api\\section_routes.py"
+    ],
+    "timetable_versions": [
+      "api\\timetable_routes.py"
+    ],
+    "timetable_entries": [
+      "api\\timetable_routes.py"
+    ],
+    "breathalyzer_tests": [
+      "api\\workforce_routes.py"
+    ],
+    "crew_rosters": [
+      "api\\workforce_routes.py"
+    ],
+    "staff_shifts": [
+      "api\\workforce_routes.py"
+    ],
+    "sahayak_roster": [
+      "api\\workforce_routes.py"
+    ],
+    "train_runs": [
+      "collector\\snapshot_cron.py"
+    ],
+    "run_snapshots": [
+      "collector\\snapshot_cron.py"
+    ],
+    "audit_log": [
+      "tests\\test_audit.py",
+      "data\\audit.py"
+    ],
+    "live_positions": [
+      "data\\db.py"
+    ],
+    "live_delay_ledger": [
+      "data\\db.py"
+    ],
+    "stations": [
+      "migrations\\006_station_code_aliases.sql",
+      "tests\\test_track_features_leakage.py",
+      "tests\\test_data_leakage.py",
+      "data\\seed.py",
+      "tests\\test_conflicts.py"
+    ],
+    "trains": [
+      "tests\\test_challenger_pass3.py",
+      "tests\\test_track_features_leakage.py",
+      "tests\\test_data_leakage.py",
+      "data\\seed.py",
+      "tests\\test_conflicts.py"
+    ],
+    "roles": [
+      "data\\seed_users.py"
+    ],
+    "eta_prediction_ledger": [
+      "engine\\prediction_ledger.py",
+      "scripts\\repair_ledger.py",
+      "tests\\test_prediction_ledger.py"
+    ],
+    "sim_ledger": [
+      "engine\\simulator.py"
+    ],
+    "conformal_pid_state": [
+      "ml\\conformal.py"
+    ],
+    "notifications": [
+      "tests\\test_notification_center.py",
+      "ml\\drift.py",
+      "notifications\\dispatcher.py"
+    ],
+    "feature_snapshots_v3": [
+      "ml\\materialize_v3.py"
+    ],
+    "notification_ack": [
+      "notifications\\dispatcher.py"
+    ],
+    "backups": [
+      "scripts\\backup_db.py"
+    ],
+    "sqlite": [
+      "scripts\\ingest_historical_weather.py"
+    ],
+    "route_cum_km": [
+      "scripts\\precompute_cum_km.py"
+    ],
+    "station_events": [
+      "migrations\\006_station_code_aliases.sql",
+      "tests\\test_track_features_leakage.py",
+      "scripts\\replay_proof.py",
+      "tests\\test_data_leakage.py",
+      "tests\\test_conflicts.py"
+    ],
+    "sections": [
+      "tests\\test_track_features_leakage.py",
+      "migrations\\005_split_long_sections.sql",
+      "tests\\test_conflicts.py",
+      "tests\\test_data_leakage.py"
+    ],
+    "route_stations": [
+      "migrations\\006_station_code_aliases.sql",
+      "migrations\\004_fix_route_stations_seq_gaps.sql",
+      "tests\\test_track_features_leakage.py",
+      "tests\\test_data_leakage.py",
+      "tests\\test_conflicts.py"
+    ],
+    "rake_links": [
+      "tests\\test_data_leakage.py"
+    ]
+  },
+  "artifacts": [
+    {
+      "name": "artifact_integrity.json",
+      "size_bytes": 862,
+      "usages": [
+        "api\\routes.py",
+        "ml\\artifact_integrity.py"
+      ]
+    },
+    {
+      "name": "candidate0_manifest.json",
+      "size_bytes": 3125,
+      "usages": []
+    },
+    {
+      "name": "candidate0_metrics.json",
+      "size_bytes": 7220,
+      "usages": [
+        "scripts\\candidate_shootout.py",
+        "scripts\\read_c0.py"
+      ]
+    },
+    {
+      "name": "drift_report.json",
+      "size_bytes": 1755,
+      "usages": [
+        "api\\routes.py",
+        "ml\\drift.py",
+        "scripts\\nightly_pipeline.py"
+      ]
+    },
+    {
+      "name": "gru_config.json",
+      "size_bytes": 364,
+      "usages": [
+        "ml\\audit.py",
+        "ml\\model_seq.py"
+      ]
+    },
+    {
+      "name": "manifest.json",
+      "size_bytes": 2696,
+      "usages": [
+        "api\\predictor.py",
+        "api\\routes.py",
+        "api\\system_routes.py",
+        "ml\\audit.py",
+        "ml\\ensemble.py",
+        "ml\\evaluate.py",
+        "ml\\train.py",
+        "ml\\train_v2.py",
+        "scripts\\champion_gate_v3.py",
+        "scripts\\closing_c245.py",
+        "scripts\\closing_evidence.py",
+        "scripts\\final_onepager.py",
+        "scripts\\gate_v3_features.py"
+      ]
+    },
+    {
+      "name": "metrics.json",
+      "size_bytes": 9855,
+      "usages": [
+        "api\\routes.py",
+        "ml\\evaluate.py",
+        "scripts\\candidate_shootout.py",
+        "scripts\\factcheck.py",
+        "scripts\\final_onepager.py",
+        "scripts\\generate_metrics.py",
+        "scripts\\nightly_loop.py",
+        "scripts\\nightly_pipeline.py",
+        "scripts\\read_c0.py",
+        "scripts\\render_metrics_doc.py",
+        "tests\\test_doc_metric_consistency.py",
+        "tests\\test_eval_protocol.py"
+      ]
+    },
+    {
+      "name": "model_delta_q10.txt",
+      "size_bytes": 4208090,
+      "usages": [
+        "ml\\artifact_integrity.py"
+      ]
+    },
+    {
+      "name": "model_delta_q50.txt",
+      "size_bytes": 4178791,
+      "usages": [
+        "ml\\artifact_integrity.py"
+      ]
+    },
+    {
+      "name": "model_delta_q90.txt",
+      "size_bytes": 4163736,
+      "usages": [
+        "ml\\artifact_integrity.py"
+      ]
+    },
+    {
+      "name": "model_direct_q10.txt",
+      "size_bytes": 4192390,
+      "usages": [
+        "api\\routes.py",
+        "ml\\artifact_integrity.py",
+        "scripts\\closing_c245.py",
+        "scripts\\closing_evidence.py",
+        "scripts\\factcheck.py"
+      ]
+    },
+    {
+      "name": "model_direct_q50.txt",
+      "size_bytes": 4167743,
+      "usages": [
+        "api\\predictor.py",
+        "api\\routes.py",
+        "api\\system_routes.py",
+        "ml\\artifact_integrity.py",
+        "ml\\audit.py",
+        "scripts\\closing_c245.py",
+        "scripts\\closing_evidence.py",
+        "scripts\\factcheck.py"
+      ]
+    },
+    {
+      "name": "model_direct_q90.txt",
+      "size_bytes": 4176807,
+      "usages": [
+        "api\\routes.py",
+        "ml\\artifact_integrity.py",
+        "scripts\\closing_c245.py",
+        "scripts\\closing_evidence.py",
+        "scripts\\factcheck.py"
+      ]
+    },
+    {
+      "name": "model_gru_challenger.pt",
+      "size_bytes": 937363,
+      "usages": [
+        "api\\predictor.py",
+        "api\\system_routes.py",
+        "ml\\artifact_integrity.py",
+        "ml\\audit.py",
+        "ml\\ensemble.py",
+        "ml\\model_seq.py",
+        "scripts\\champion_gate.py",
+        "scripts\\factcheck.py",
+        "scripts\\diagnostics\\p1_10_baseline_autopsy.py"
+      ]
+    },
+    {
+      "name": "model_lr_benchmark.pkl",
+      "size_bytes": 1791,
+      "usages": [
+        "ml\\artifact_integrity.py",
+        "ml\\ensemble.py",
+        "ml\\evaluate.py",
+        "ml\\train.py"
+      ]
+    },
+    {
+      "name": "perf_bench.json",
+      "size_bytes": 407,
+      "usages": [
+        "scripts\\perf_bench.py"
+      ]
+    },
+    {
+      "name": "registry.json",
+      "size_bytes": 909,
+      "usages": [
+        "api\\predictor.py",
+        "ml\\audit.py",
+        "ml\\ensemble.py",
+        "ml\\train_v2.py",
+        "scripts\\champion_gate.py",
+        "scripts\\factcheck.py",
+        "scripts\\final_onepager.py",
+        "tests\\test_serving_pinning.py"
+      ]
+    },
+    {
+      "name": "shootout_results.json",
+      "size_bytes": 3432,
+      "usages": [
+        "scripts\\candidate_shootout.py"
+      ]
+    }
+  ],
+  "frontend_calls": [
+    {
+      "file": "web\\src\\lib\\api.ts",
+      "line": 274,
+      "raw": "demo"
+    },
+    {
+      "file": "web\\src\\lib\\api.ts",
+      "line": 323,
+      "raw": "${API_BASE}${path}"
+    },
+    {
+      "file": "web\\src\\lib\\api.ts",
+      "line": 332,
+      "raw": "${API_BASE}${path}"
+    },
+    {
+      "file": "web\\src\\mock\\auth.ts",
+      "line": 11,
+      "raw": "demo"
+    },
+    {
+      "file": "web\\src\\mock\\auth.ts",
+      "line": 196,
+      "raw": "${API_BASE}/api/auth/login"
+    },
+    {
+      "file": "web\\src\\mock\\auth.ts",
+      "line": 267,
+      "raw": "${API_BASE}/api/auth/refresh"
+    },
+    {
+      "file": "web\\src\\mock\\auth.ts",
+      "line": 353,
+      "raw": "${API_BASE}/api/auth/logout"
+    },
+    {
+      "file": "web\\src\\pages\\auth\\LoginPage.tsx",
+      "line": 21,
+      "raw": "next"
+    },
+    {
+      "file": "web\\src\\pages\\dashboard\\LiveMapPage.tsx",
+      "line": 82,
+      "raw": "${API_BASE}/v1/live/positions"
+    },
+    {
+      "file": "web\\src\\pages\\landing\\LandingPage.tsx",
+      "line": 64,
+      "raw": "${API_BASE}/api/access-requests"
+    },
+    {
+      "file": "web\\src\\pages\\public\\PassengerTrackerPage.tsx",
+      "line": 40,
+      "raw": "stop"
+    },
+    {
+      "file": "web\\src\\pages\\public\\PassengerTrackerPage.tsx",
+      "line": 41,
+      "raw": "pnr"
+    }
+  ]
+}

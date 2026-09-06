@@ -9,6 +9,8 @@ on:
 jobs:
   collect:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -29,10 +31,13 @@ jobs:
         run: |
           python -m collector.collect
 
-      - name: Commit & Push Updated SQLite Database
+      - name: Publish collector output as a short-lived artifact
         run: |
-          git config user.name "RailTwin-X Bot"
-          git config user.email "bot@railtwin.org"
-          git add data/railtwin.db
-          git commit -m "chore(data): automated corridor running status snapshot [skip ci]" || echo "No changes to commit"
-          git push
+          test -f data/railtwin.db
+
+      - name: Upload collector snapshot for controlled ingestion
+        uses: actions/upload-artifact@v4
+        with:
+          name: corridor-collector-${{ github.run_id }}
+          path: data/railtwin.db
+          retention-days: 7

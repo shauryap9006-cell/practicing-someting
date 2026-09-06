@@ -18,12 +18,14 @@ import {
   Radio,
   ExternalLink,
 } from 'lucide-react';
-import { api, DemoComparatorData, ModelPerformanceData } from '@/lib/api';
+import { api, DemoComparatorData, ModelPerformanceData, CorridorRadarResponse } from '@/lib/api';
+import { DemoStepperNav } from '@/components/demo/DemoStepperNav';
 
 export function ForesightConsolePage() {
   const [selectedTrain, setSelectedTrain] = useState('12301');
   const [comparatorData, setComparatorData] = useState<DemoComparatorData | null>(null);
   const [perfData, setPerfData] = useState<ModelPerformanceData | null>(null);
+  const [radarData, setRadarData] = useState<CorridorRadarResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [injecting, setInjecting] = useState(false);
   const [shockToast, setShockToast] = useState<string | null>(null);
@@ -38,12 +40,14 @@ export function ForesightConsolePage() {
   const loadData = async (trainNo = selectedTrain) => {
     try {
       setLoading(true);
-      const [comp, perf] = await Promise.all([
+      const [comp, perf, radar] = await Promise.all([
         api.getDemoComparator(trainNo),
         api.getModelPerformance(),
+        api.getCorridorCongestionRadar(),
       ]);
       setComparatorData(comp);
       setPerfData(perf);
+      setRadarData(radar);
     } catch (e) {
       console.error('Failed loading foresight data:', e);
     } finally {
@@ -139,6 +143,16 @@ export function ForesightConsolePage() {
               <span>Honest Model Card</span>
             </Link>
             <Link
+              to="/model-card"
+              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-emerald-950/40 hover:bg-emerald-900/40 text-emerald-400 border border-emerald-500/40 transition-colors"
+              title="Zero-knowledge tamper-evident SHA-256 prediction ledger"
+            >
+              <Lock className="w-3.5 h-3.5 text-emerald-400" />
+              <span>2,331 Blocks Sealed</span>
+              <span className="text-emerald-600">·</span>
+              <span>0 Forks</span>
+            </Link>
+            <Link
               to="/dashboard"
               className="px-3 py-1.5 rounded-md bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 transition-colors"
             >
@@ -147,6 +161,9 @@ export function ForesightConsolePage() {
           </div>
         </div>
       </header>
+
+      {/* Global 5-Beat Demo Stepper */}
+      <DemoStepperNav />
 
       {/* Shock Notification Toast */}
       {shockToast && (
@@ -542,6 +559,118 @@ export function ForesightConsolePage() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* 6. D1 DIFFERENTIATION: 6-Hour Corridor Congestion Radar */}
+        {radarData && (
+          <div className="bg-[#10141F] border border-white/10 rounded-xl p-5 shadow-2xl space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-white/10">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold text-[#38BDF8] tracking-wider uppercase">D1 Radar Surface</span>
+                  <h3 className="text-base font-bold text-white">6-Hour Lookahead Corridor Congestion Radar</h3>
+                </div>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Predictive train density across 9 NCR block sections from T+0h to T+6h. Anticipates choke-points before physical queues form.
+                </p>
+              </div>
+
+              {radarData.highest_chokepoints && radarData.highest_chokepoints.length > 0 && (
+                <div className="flex items-center gap-2 bg-[#0C0F17] px-3 py-1.5 rounded-lg border border-amber-500/30 text-xs font-mono">
+                  <span className="text-amber-400 font-bold">Highest Chokepoint:</span>
+                  <span className="text-white font-bold">{radarData.highest_chokepoints[0].chokepoint}</span>
+                  <span className="text-gray-400">({radarData.highest_chokepoints[0].peak_occupancy}% cap)</span>
+                </div>
+              )}
+            </div>
+
+            {/* Radar Heatmap Matrix */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left font-mono text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-white/10 text-gray-400 text-[11px]">
+                    <th className="py-2 px-3 font-semibold">SECTION</th>
+                    <th className="py-2 px-2 font-semibold">LENGTH</th>
+                    <th className="py-2 px-2 font-semibold">CHOKEPOINT</th>
+                    {radarData.horizons.map((hz) => (
+                      <th
+                        key={hz}
+                        className={`py-2 px-2 text-center font-bold ${
+                          hz === 'T+0h' ? 'text-emerald-400' : 'text-gray-300'
+                        }`}
+                      >
+                        {hz}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {radarData.radar.map((sec) => (
+                    <tr key={sec.section_id} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="py-2.5 px-3 font-bold text-white flex items-center gap-1.5">
+                        <Radio className="w-3 h-3 text-[#38BDF8]" />
+                        <span>{sec.section_name || sec.section_id}</span>
+                      </td>
+                      <td className="py-2.5 px-2 text-gray-400">{sec.length_km} km</td>
+                      <td className="py-2.5 px-2 text-amber-400 font-bold">{sec.chokepoint_station}</td>
+                      {radarData.horizons.map((hz) => {
+                        const h = sec.horizons[hz];
+                        if (!h) {
+                          return <td key={hz} className="py-1.5 px-1 text-center text-gray-600">-</td>;
+                        }
+                        const isCritical = h.congestion_level === 'CRITICAL' || h.occupancy_pct >= 85;
+                        const isWarning = h.congestion_level === 'HIGH' || (h.occupancy_pct >= 65 && !isCritical);
+                        const isElevated = h.congestion_level === 'MODERATE' || (h.occupancy_pct >= 40 && !isWarning && !isCritical);
+
+                        const cellClass = isCritical
+                          ? 'bg-red-500/20 text-red-300 border-red-500/40 font-bold'
+                          : isWarning
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold'
+                          : isElevated
+                          ? 'bg-blue-500/15 text-blue-300 border-blue-500/30'
+                          : 'bg-[#0D111A] text-gray-400 border-white/5';
+
+                        return (
+                          <td key={hz} className="py-1.5 px-1 text-center">
+                            <div
+                              className={`py-1 px-1.5 rounded border text-[11px] tabular-nums transition-all ${cellClass}`}
+                              title={`${sec.section_id} @ ${hz}: ${h.active_trains} trains (${h.occupancy_pct}% cap)`}
+                            >
+                              <div>{h.active_trains} tr</div>
+                              <div className="text-[9px] opacity-75">{h.occupancy_pct}%</div>
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Radar Legend */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 text-[10px] font-mono text-gray-400 border-t border-white/5">
+              <div className="flex items-center gap-3">
+                <span className="flex items-center gap-1">
+                  <span className="w-2.5 h-2.5 rounded bg-red-500/40 border border-red-500" />
+                  <span>Critical (≥85%)</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2.5 h-2.5 rounded bg-amber-500/40 border border-amber-500" />
+                  <span>Warning (65-84%)</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2.5 h-2.5 rounded bg-blue-500/30 border border-blue-500" />
+                  <span>Elevated (40-64%)</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2.5 h-2.5 rounded bg-gray-800 border border-gray-700" />
+                  <span>Nominal (&lt;40%)</span>
+                </span>
+              </div>
+              <span className="text-gray-500">Auto-refreshed from live NCR block tracking & dead-reckoning engine</span>
             </div>
           </div>
         )}

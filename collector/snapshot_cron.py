@@ -16,6 +16,7 @@ from collector.adapters.base import LiveSource, StationEvent
 from collector.adapters.mock_replay import MockReplaySource
 from collector.adapters.rapidapi import RapidAPISource
 from collector.adapters.scrape import ScrapeSource
+from config import settings
 from data.db import Database, get_db
 from engine.clocks import get_clock
 
@@ -52,8 +53,11 @@ class SnapshotCollector:
             except Exception:
                 continue
 
-        mock_src = MockReplaySource(self.db)
-        return mock_src.fetch_running_status(train_no, run_date), "synthetic"
+        if settings.DEFAULT_CLOCK_MODE == "replay" or settings.ALLOW_SYNTHETIC_FALLBACK:
+            mock_src = MockReplaySource(self.db)
+            return mock_src.fetch_running_status(train_no, run_date), "synthetic"
+
+        return [], "unavailable"
 
     def record_snapshot_cycle(
         self,

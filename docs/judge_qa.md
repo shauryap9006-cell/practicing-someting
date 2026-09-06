@@ -7,7 +7,7 @@
 ## ML & Model Questions
 
 **Q: Why LightGBM + GRU? Why not just one model?**  
-A: LightGBM is the 1–6 hour ensemble backbone with CQR calibration. The GRU adds temporal sequence memory across the station trajectory — a train's delay pattern evolves over time, not just at one snapshot. Our champion GRU beats LGB on MAE (7.29 vs 11.46). The 3-tier design gives graceful degradation: if GRU is offline, LGB fires; if LGB fails, historical lookup serves.
+A: LightGBM is the 1–6 hour ensemble backbone with CQR calibration. The GRU adds temporal sequence memory across the station trajectory — a train's delay pattern evolves over time, not just at one snapshot. Our full calibrated ensemble achieves canonical Test MAE of 10.72 min across 25,203 held-out test samples (down to 5.9 min at 1h, and beating the official NTES baseline by 51.7% at 6h). The 3-tier design gives graceful degradation: if GRU is offline, LGB fires; if LGB fails, historical lookup serves.
 
 **Q: How do you avoid quantile crossing? (p10 > p50 is invalid)**  
 A: We use a CQR Crossing Guard in `ml/ensemble.py` that enforces `p10 ≤ p50 ≤ p90` by clamping at predict time. Result: **0 crossing violations** in the test set.

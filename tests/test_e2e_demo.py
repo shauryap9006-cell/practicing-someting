@@ -14,8 +14,10 @@ from fastapi.testclient import TestClient
 import pytest
 
 from api.main import app
+from api.auth import create_access_token
 
 client = TestClient(app)
+AUTH_HEADERS = {"Authorization": f"Bearer {create_access_token({'sub': 'admin', 'role_id': 'admin'})}"}
 
 
 def test_full_hackathon_demo_pipeline():
@@ -33,7 +35,7 @@ def test_full_hackathon_demo_pipeline():
         "station_code": "CNB",
         "injected_delay_min": 120,
     }
-    resp2 = client.post("/v1/simulate/what-if", json=payload)
+    resp2 = client.post("/v1/simulate/what-if", headers=AUTH_HEADERS, json=payload)
     assert resp2.status_code == 200
     cascade = resp2.json()
 
@@ -48,7 +50,7 @@ def test_full_hackathon_demo_pipeline():
     resp_gantt = client.get("/v1/stations/NDLS/gantt")
     assert resp_gantt.status_code == 200
 
-    resp_reopt = client.post("/v1/stations/NDLS/reoptimize", json={})
+    resp_reopt = client.post("/v1/stations/NDLS/reoptimize", headers=AUTH_HEADERS, json={})
     assert resp_reopt.status_code == 200
     reopt_data = resp_reopt.json()
     assert reopt_data["execution_time_seconds"] < 2.0, "Re-optimization must complete in <2 seconds"

@@ -1,6 +1,6 @@
 """RailTwin-X Data Collector Service & Cron Entrypoint.
 
-Orchestrates multi-adapter failover (RapidAPI -> WebScrape -> MockReplay),
+    Orchestrates multi-adapter failover (RapidAPI -> WebScrape -> optional MockReplay),
 validates quality gates, and idempotently upserts running status into SQLite.
 """
 
@@ -48,9 +48,12 @@ class DataCollector:
                 # Silently proceed to next adapter in chain
                 continue
 
-        # If all fail, mock source guaranteed
-        mock_src = MockReplaySource(self.db)
-        return mock_src.fetch_running_status(train_no, run_date), mock_src.source_name
+        if settings.DEFAULT_CLOCK_MODE == "replay" or settings.ALLOW_SYNTHETIC_FALLBACK:
+            mock_src = MockReplaySource(self.db)
+            return mock_src.fetch_running_status(train_no, run_date), mock_src.source_name
+
+        # Live mode must never turn a provider outage into apparently real data.
+        return [], "unavailable"
 
     def run_collection_cycle(
         self, target_date: Optional[datetime.date] = None, train_limit: Optional[int] = None

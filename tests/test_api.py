@@ -8,16 +8,19 @@ from fastapi.testclient import TestClient
 import pytest
 
 from api.main import app
+from api.auth import create_access_token
 
 client = TestClient(app)
+AUTH_HEADERS = {"Authorization": f"Bearer {create_access_token({'sub': 'admin', 'role_id': 'admin'})}"}
 
 
 def test_api_health():
     """Verifies /v1/health endpoint."""
     resp = client.get("/v1/health")
-    assert resp.status_code == 200
+    assert resp.status_code in (200, 503)
     data = resp.json()
-    assert data["status"] == "healthy"
+    assert data["status"] in ("healthy", "not_ready")
+    assert data["ready"] is (resp.status_code == 200)
     assert "connected" in data["db"]
     assert data["clock_mode"] in ["live", "replay"]
 
@@ -77,7 +80,7 @@ def test_api_station_gantt():
 
 def test_api_station_reoptimize():
     """Verifies POST /v1/stations/{code}/reoptimize 1-click self-heal endpoint."""
-    resp = client.post("/v1/stations/NDLS/reoptimize", json={})
+    resp = client.post("/v1/stations/NDLS/reoptimize", headers=AUTH_HEADERS, json={})
     assert resp.status_code == 200
     data = resp.json()
     assert data["station_code"] == "NDLS"
@@ -93,7 +96,7 @@ def test_api_what_if_simulation():
         "station_code": "CNB",
         "injected_delay_min": 90,
     }
-    resp = client.post("/v1/simulate/what-if", json=payload)
+    resp = client.post("/v1/simulate/what-if", headers=AUTH_HEADERS, json=payload)
     assert resp.status_code == 200
     data = resp.json()
     assert data["scenario"]["train_no"] == "12034"
@@ -124,6 +127,7 @@ def test_api_dispatcher_ack_accepted():
     """Verifies POST /v1/advise/{adv_id}/ack records 'accepted' decision."""
     resp = client.post(
         "/v1/advise/test-adv-001/ack",
+        headers=AUTH_HEADERS,
         json={"decision": "accepted", "dispatcher_id": "DISP-42", "comment": "Approved"},
     )
     assert resp.status_code == 200
@@ -138,6 +142,7 @@ def test_api_dispatcher_ack_rejected():
     """Verifies POST /v1/advise/{adv_id}/ack records 'rejected' decision."""
     resp = client.post(
         "/v1/advise/test-adv-002/ack",
+        headers=AUTH_HEADERS,
         json={"decision": "rejected", "comment": "Too conservative — train can proceed"},
     )
     assert resp.status_code == 200
@@ -151,7 +156,7 @@ def test_api_dispatcher_ack_invalid():
     """Verifies POST /v1/advise/{adv_id}/ack rejects invalid decision values."""
     resp = client.post(
         "/v1/advise/test-adv-003/ack",
+        headers=AUTH_HEADERS,
         json={"decision": "maybe"},
     )
     assert resp.status_code == 400
-

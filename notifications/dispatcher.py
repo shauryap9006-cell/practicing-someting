@@ -84,7 +84,7 @@ class NotificationDispatcher:
             for r in rows
         ]
 
-        if not raw_recipients:
+        if not raw_recipients and (settings.ALLOW_SYNTHETIC_FALLBACK or settings.DEFAULT_CLOCK_MODE.lower() == "replay"):
             raw_recipients = [
                 StaffRecipient(
                     staff_id="STF-CNB-01",
@@ -256,8 +256,8 @@ def notify(
             """
             INSERT INTO notifications (
                 event_type, target_role, severity, title, message, payload_json,
-                state, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, 'sent', ?);
+                station_code, state, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'sent', ?);
             """,
             (
                 event_type,
@@ -266,6 +266,7 @@ def notify(
                 title,
                 message,
                 payload_json,
+                station_code.upper() if station_code else None,
                 now_iso,
             ),
         )

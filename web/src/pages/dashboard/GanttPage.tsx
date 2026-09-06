@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { queryKeys } from '@/lib/queryKeys';
+import { isExplicitDemoMode } from '@/mock/auth';
 import { StationCode } from '@/mock/types';
 import {
   AspectLamp,
@@ -109,9 +110,10 @@ const MOCK_TIME_SLOTS: TimeSlot[] = [
 export const GanttPage: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const demoMode = isExplicitDemoMode();
   const [stationCode, setStationCode] = useState<StationCode>('CNB');
   const [isSolving, setIsSolving] = useState(false);
-  const [slots, setSlots] = useState<TimeSlot[]>(MOCK_TIME_SLOTS);
+  const [slots, setSlots] = useState<TimeSlot[]>(() => (isExplicitDemoMode() ? MOCK_TIME_SLOTS : []));
   const [reoptHistory, setReoptHistory] = useState<TimeSlot[] | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
 
@@ -183,11 +185,11 @@ export const GanttPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#F5A524] shadow-[0_0_8px_rgba(245,165,36,0.6)] animate-pulse" />
               <h1 className="text-lg font-bold text-[#E9EBEE] uppercase tracking-wider font-display">
-                PLATFORM TIMERULER · KANPUR CENTRAL (CNB)
+                PLATFORM TIMELINE · {stationData?.name || stationCode} ({stationCode})
               </h1>
             </div>
             <p className="text-xs font-sans text-[#A3ABB6] mt-1">
-              Time-window: 17:00 – 21:00 IST · 6 Platforms · Outlined: Scheduled · Filled: Live Signal Telemetry
+              Time-window: 17:00 – 21:00 IST · {stationData?.platformsCount || '—'} Platforms · {demoMode ? 'Illustrative replay slots' : 'Awaiting authoritative timetable'}
             </p>
           </div>
 
@@ -239,20 +241,29 @@ export const GanttPage: React.FC = () => {
 
           <div className="text-xs text-[#3DDC97] flex items-center gap-1.5 font-semibold">
             <span className="w-1.5 h-1.5 rounded-full bg-[#3DDC97] animate-pulse" />
-            <span>SOLVER READY (MILP &lt;50MS)</span>
+            <span>{demoMode ? 'DEMO SOLVER PREVIEW' : 'SOLVER AWAITING LIVE TIMETABLE'}</span>
           </div>
         </div>
       </div>
 
       {/* Main Platform TimeRuler Canvas */}
-      <TimeRuler
-        slots={slots}
-        platformsCount={6}
-        startHour={17}
-        hoursSpan={4}
-        selectedSlotId={selectedSlot?.id}
-        onSelectSlot={slot => setSelectedSlot(slot)}
-      />
+      {slots.length > 0 ? (
+        <TimeRuler
+          slots={slots}
+          platformsCount={stationData?.platformsCount || 6}
+          startHour={17}
+          hoursSpan={4}
+          selectedSlotId={selectedSlot?.id}
+          onSelectSlot={slot => setSelectedSlot(slot)}
+        />
+      ) : (
+        <div className="bg-[#101216] border border-[#23272F] rounded-lg p-8 text-center">
+          <p className="text-sm font-bold text-[#E9EBEE]">Authoritative timetable data unavailable</p>
+          <p className="mt-2 text-xs font-sans text-[#A3ABB6]">
+            No platform schedule was loaded from the operations API. Enable the explicit demo mode only when illustrative data is needed.
+          </p>
+        </div>
+      )}
 
       {/* Selected Platform Slot Telemetry Card */}
       {selectedSlot && (
@@ -294,7 +305,7 @@ export const GanttPage: React.FC = () => {
 
       {/* Provenance Card Footer */}
       <div className="bg-[#101216] border border-[#23272F] rounded-lg p-4">
-        <Provenance updatedAt={dataUpdatedAt} source="MILP PLATFORM SOLVER + F14 LEDGER" />
+        <Provenance updatedAt={dataUpdatedAt} source={demoMode ? 'EXPLICIT DEMO TIMETABLE PREVIEW' : 'OPERATIONS API · AUTHORITATIVE TIMETABLE PENDING'} />
       </div>
     </div>
   );

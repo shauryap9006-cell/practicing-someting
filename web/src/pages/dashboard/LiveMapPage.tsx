@@ -32,7 +32,7 @@ import {
   ATTRIBUTION_COLORS,
 } from '@/config';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
 interface LivePosition {
   train_no: string;
@@ -65,103 +65,10 @@ const LINE_STATIONS = [
 
 const TOTAL_CORRIDOR_KM = 785;
 
-const MOCK_RADAR_FLEET: LivePosition[] = [
-  {
-    train_no: '12034',
-    train_name: 'Kanpur Shatabdi Express',
-    km: 140,
-    speed_kmh: 110,
-    delay_minutes: 18,
-    direction: 'UP',
-    confidence_p10_km: 120,
-    confidence_p90_km: 165,
-    current_station_code: 'ALJN',
-    next_station_code: 'GZB',
-    train_class: 'SHATABDI',
-  },
-  {
-    train_no: '22436',
-    train_name: 'Vande Bharat Express',
-    km: 260,
-    speed_kmh: 130,
-    delay_minutes: 2,
-    direction: 'DN',
-    confidence_p10_km: 250,
-    confidence_p90_km: 270,
-    current_station_code: 'TDL',
-    next_station_code: 'ETW',
-    train_class: 'VANDE_BHARAT',
-  },
-  {
-    train_no: '12301',
-    train_name: 'Howrah Rajdhani Express',
-    km: 610,
-    speed_kmh: 95,
-    delay_minutes: 27,
-    direction: 'UP',
-    confidence_p10_km: 580,
-    confidence_p90_km: 645,
-    current_station_code: 'PRYJ',
-    next_station_code: 'CNB',
-    train_class: 'RAJDHANI',
-  },
-  {
-    train_no: '12424',
-    train_name: 'Dibrugarh Rajdhani',
-    km: 430,
-    speed_kmh: 65,
-    delay_minutes: 45,
-    direction: 'DN',
-    confidence_p10_km: 390,
-    confidence_p90_km: 460,
-    current_station_code: 'CNB',
-    next_station_code: 'PRYJ',
-    train_class: 'RAJDHANI',
-  },
-  {
-    train_no: '12555',
-    train_name: 'Gorakhdham Superfast',
-    km: 310,
-    speed_kmh: 88,
-    delay_minutes: 12,
-    direction: 'DN',
-    confidence_p10_km: 295,
-    confidence_p90_km: 330,
-    current_station_code: 'ETW',
-    next_station_code: 'CNB',
-    train_class: 'SUPERFAST',
-  },
-  {
-    train_no: '12876',
-    train_name: 'Neelachal Express',
-    km: 690,
-    speed_kmh: 75,
-    delay_minutes: 38,
-    direction: 'UP',
-    confidence_p10_km: 660,
-    confidence_p90_km: 720,
-    current_station_code: 'PRYJ',
-    next_station_code: 'DDU',
-    train_class: 'MAIL_EXPRESS',
-  },
-  {
-    train_no: '22823',
-    train_name: 'Bhubaneswar Tejas Rajdhani',
-    km: 80,
-    speed_kmh: 125,
-    delay_minutes: 4,
-    direction: 'DN',
-    confidence_p10_km: 70,
-    confidence_p90_km: 90,
-    current_station_code: 'GZB',
-    next_station_code: 'ALJN',
-    train_class: 'RAJDHANI',
-  },
-];
-
 export const LiveMapPage: React.FC = () => {
-  const [fleet, setFleet] = useState<LivePosition[]>(MOCK_RADAR_FLEET);
-  const [selectedTrain, setSelectedTrain] = useState<LivePosition | null>(MOCK_RADAR_FLEET[0]);
+  const [fleet, setFleet] = useState<LivePosition[]>([]);
+  const [selectedTrain, setSelectedTrain] = useState<LivePosition | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'radar' | 'gis'>('radar');
   const [filterDelay, setFilterDelay] = useState<'all' | 'severe' | 'ontime'>('all');
   const [filterDir, setFilterDir] = useState<'all' | 'UP' | 'DN'>('all');
@@ -175,8 +82,9 @@ export const LiveMapPage: React.FC = () => {
         const res = await fetch(`${API_BASE}/v1/live/positions`);
         if (res.ok) {
           const data = await res.json();
-          if (Array.isArray(data) && data.length > 0) {
-            const mapped = data.map((d: any) => ({
+          const positions = Array.isArray(data) ? data : data?.positions;
+          if (Array.isArray(positions)) {
+            const mapped = positions.map((d: any) => ({
               train_no: d.train_no,
               train_name: d.train_name,
               km: d.km || (d.progress_pct ? (d.progress_pct / 100) * TOTAL_CORRIDOR_KM : 300),
@@ -190,10 +98,22 @@ export const LiveMapPage: React.FC = () => {
               train_class: d.train_class || 'SUPERFAST',
             }));
             setFleet(mapped);
+            setSelectedTrain(current => current ? mapped.find(t => t.train_no === current.train_no) || mapped[0] || null : mapped[0] || null);
+            setLoadError(null);
+          } else {
+            setFleet([]);
+            setSelectedTrain(null);
+            setLoadError('The telemetry service returned an invalid response.');
           }
+        } else {
+          setFleet([]);
+          setSelectedTrain(null);
+          setLoadError(`Telemetry service returned HTTP ${res.status}.`);
         }
-      } catch (err) {
-        // Keep resilient fallback
+      } catch {
+        setFleet([]);
+        setSelectedTrain(null);
+        setLoadError('Telemetry service is offline.');
       }
     };
 
@@ -379,8 +299,8 @@ export const LiveMapPage: React.FC = () => {
           {/* Lane Per Train Rows */}
           {filteredFleet.length === 0 ? (
             <EmptyState
-              title="No trains matched your filter"
-              description="Adjust search query or delay threshold filters."
+              title={loadError ? 'Live telemetry unavailable' : 'No trains matched your filter'}
+              description={loadError || 'Adjust search query or delay threshold filters.'}
               onRetry={() => {
                 setFilterDelay('all');
                 setFilterDir('all');

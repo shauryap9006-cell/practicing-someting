@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from api.auth import get_current_user, require_role
+from api.auth import assert_station_scope, effective_station_scope, get_current_user, require_role
 from data.audit import record_audit
 from data.db import Database, get_db
 
@@ -142,6 +142,7 @@ def get_current_handover_summary(
     db: Database = Depends(get_db),
 ):
     """Auto-aggregates operational data to prepare the current shift handover log."""
+    assert_station_scope(current_user, station_code)
     summary = auto_aggregate_station_state(station_code, db)
     now = datetime.now(timezone.utc)
     hour = now.hour
@@ -168,6 +169,7 @@ def create_or_update_draft(
     db: Database = Depends(get_db),
 ):
     """Initializes or updates a draft shift handover logbook entry."""
+    assert_station_scope(current_user, req.station_code)
     state = auto_aggregate_station_state(req.station_code, db)
     open_incidents_json = json.dumps(state["open_incidents"])
     active_srs_json = json.dumps(state["active_srs"])
@@ -266,6 +268,7 @@ def sign_out_shift(
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Handover log not found.")
+        assert_station_scope(current_user, row["station_code"])
 
         notes = req.operational_notes or row["operational_notes"]
         cur.execute(
@@ -318,6 +321,7 @@ def acknowledge_incoming_shift(
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Handover log not found.")
+        assert_station_scope(current_user, row["station_code"])
 
         if row["status"] != "signed":
             raise HTTPException(
@@ -371,6 +375,9 @@ def list_handover_history(
     db: Database = Depends(get_db),
 ):
     """Fetches past shift handover records for the station."""
+    station_code = effective_station_scope(current_user, station_code)
+    if station_code is None:
+        raise HTTPException(status_code=403, detail="A station filter is required for handover history.")
     with db.transaction() as cur:
         cur.execute(
             """

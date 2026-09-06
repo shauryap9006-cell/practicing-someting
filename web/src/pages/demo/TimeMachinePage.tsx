@@ -13,19 +13,25 @@ import {
   TrendingDown,
   Sparkles,
 } from 'lucide-react';
-import { api, DemoComparatorData } from '@/lib/api';
+import { api, DemoComparatorData, TimeMachineData, TimeMachineSnapshot } from '@/lib/api';
+import { DemoStepperNav } from '@/components/demo/DemoStepperNav';
 
 export function TimeMachinePage() {
   const [stage, setStage] = useState<'t6' | 't3' | 't1' | 'truth'>('t6');
   const [data, setData] = useState<DemoComparatorData | null>(null);
+  const [tmData, setTmData] = useState<TimeMachineData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
-        const res = await api.getDemoComparator('12301');
+        const [res, tm] = await Promise.all([
+          api.getDemoComparator('12301'),
+          api.getTimeMachineData('12301', 'LKO'),
+        ]);
         setData(res);
+        setTmData(tm);
       } catch (e) {
         console.error(e);
       } finally {
@@ -45,56 +51,37 @@ export function TimeMachinePage() {
   const currentStageInfo = stages.find((s) => s.id === stage)!;
 
   // Snapshot values for destination station (e.g. LKO or CNB)
-  const destStation = data?.stations[data.stations.length - 1] || {
+  const destStation = tmData?.destination || data?.stations[data.stations.length - 1] || {
     station_code: 'LKO',
-    station_name: 'Lucknow Charbagh',
+    name: 'Lucknow Charbagh',
     distance_km: 440,
     sched_arr: '04:43',
   };
 
-  const getSnapshotMetrics = () => {
-    switch (stage) {
-      case 't6':
-        return {
-          ntes_prediction: '04:45 (+2m)',
-          ntes_status: 'On Time / Minor Delay',
-          railtwin_p50: '05:18 (+35m)',
-          railtwin_range: '05:05 – 05:32 (p10–p90)',
-          cone_width: '±14m',
-          receipt_hash: '3f7a18b...92e1 (Sealed at 22:45)',
-          ledger_state: 'PENDING_ARRIVAL',
-        };
-      case 't3':
-        return {
-          ntes_prediction: '04:52 (+9m)',
-          ntes_status: 'Gradual Slide Under-forecasted',
-          railtwin_p50: '05:22 (+39m)',
-          railtwin_range: '05:14 – 05:30 (p10–p90)',
-          cone_width: '±8m',
-          receipt_hash: '9a4c82e...11df (Sealed at 01:45)',
-          ledger_state: 'PENDING_ARRIVAL',
-        };
-      case 't1':
-        return {
-          ntes_prediction: '05:15 (+32m)',
-          ntes_status: 'Sudden Catch-Up Panic',
-          railtwin_p50: '05:24 (+41m)',
-          railtwin_range: '05:20 – 05:28 (p10–p90)',
-          cone_width: '±4m',
-          receipt_hash: '7e2b10a...654c (Sealed at 03:45)',
-          ledger_state: 'PENDING_ARRIVAL',
-        };
-      case 'truth':
-        return {
-          ntes_prediction: '05:15 (Off by 9m)',
-          ntes_status: 'B2 MAE: 14.8m',
-          railtwin_p50: '05:24 (Actual: 05:24)',
-          railtwin_range: 'Inside 80% Band (Graded IN_BAND)',
-          cone_width: 'Error: 0.0 min (Clean Hit)',
-          receipt_hash: 'Block #1963 Graded · SHA-256 Chain Intact',
-          ledger_state: 'GRADED_VERIFIED',
-        };
+  const getSnapshotMetrics = (): TimeMachineSnapshot => {
+    if (tmData && tmData.snapshots && tmData.snapshots[stage]) {
+      return tmData.snapshots[stage];
     }
+    // Fallback while loading
+    return {
+      stage,
+      label: currentStageInfo.label,
+      checkpoint_station: {
+        code: 'NDLS',
+        name: 'New Delhi',
+        seq: 1,
+        distance_from_origin_km: 0,
+        remaining_km: 440,
+        recorded_delay_min: 5,
+      },
+      ntes_prediction: '04:45 (+2m)',
+      ntes_status: 'Optimistic Timetable Slack',
+      railtwin_p50: '05:18 (+35m)',
+      railtwin_range: '05:05 – 05:32 (p10–p90)',
+      cone_width: '±14m',
+      receipt_hash: 'Sealing block in SHA-256 chain...',
+      ledger_state: 'PENDING_ARRIVAL',
+    };
   };
 
   const m = getSnapshotMetrics();
@@ -134,6 +121,9 @@ export function TimeMachinePage() {
           </div>
         </div>
       </header>
+
+      {/* Global 5-Beat Demo Stepper */}
+      <DemoStepperNav />
 
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
         {/* Time Travel Stepper Controls */}

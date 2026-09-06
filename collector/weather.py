@@ -29,7 +29,8 @@ class WeatherEngine:
     ) -> dict:
         """Fetches weather metrics for a coordinate on a given date.
 
-        Falls back gracefully to a realistic physical model if offline.
+        Returns an explicit unavailable result when the live provider cannot
+        supply data. Synthetic weather is only permitted in replay/demo mode.
         """
         date_str = date.strftime("%Y-%m-%d")
         today = datetime.date.today()
@@ -69,9 +70,23 @@ class WeatherEngine:
                         "humidity": avg_humid,
                         "precip_mm": total_precip,
                         "fog_flag": fog_flag,
+                        "source": "observed",
+                        "authoritative": True,
                     }
         except Exception:
-            pass  # Fall back to offline physical estimate
+            pass
+
+        synthetic_allowed = settings.ALLOW_SYNTHETIC_FALLBACK or settings.DEFAULT_CLOCK_MODE.lower() == "replay"
+        if not synthetic_allowed:
+            return {
+                "date": date_str,
+                "temp": None,
+                "humidity": None,
+                "precip_mm": None,
+                "fog_flag": None,
+                "source": "unavailable",
+                "authoritative": False,
+            }
 
         # Offline deterministic fallback
         day_of_year = date.timetuple().tm_yday
@@ -86,6 +101,8 @@ class WeatherEngine:
             "humidity": humidity,
             "precip_mm": 0.0,
             "fog_flag": fog_flag,
+            "source": "synthetic_fallback",
+            "authoritative": False,
         }
 
     def sync_corridor_weather(self, target_date: datetime.date, limit: Optional[int] = None) -> int:

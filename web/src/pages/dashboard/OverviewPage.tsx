@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { queryKeys } from '@/lib/queryKeys';
-import { Train, Advisory, CrewMember, Station } from '@/mock/types';
+import { Train, Advisory, CrewMember } from '@/mock/types';
 import {
   AspectLamp,
   CorridorSpine,
@@ -25,20 +25,7 @@ import {
   Command,
 } from 'lucide-react';
 import { toast } from 'sonner';
-
-const DEFAULT_STATION: Station = {
-  code: 'CNB',
-  name: 'Kanpur Central',
-  fullName: 'Kanpur Central Junction',
-  division: 'Prayagraj',
-  zone: 'NCR',
-  platformsCount: 10,
-  activeTrainsCount: 8,
-  platformConflictsCount: 1,
-  pendingAdvisoriesCount: 3,
-  crewWarningsCount: 2,
-  corridorAvgDelayMinutes: 14,
-};
+import { DataFreshnessBadge } from '@/components/common/DataFreshnessBadge';
 
 export const OverviewPage: React.FC = () => {
   const navigate = useNavigate();
@@ -49,7 +36,7 @@ export const OverviewPage: React.FC = () => {
     queryKey: queryKeys.station('CNB'),
     queryFn: () => api.getStation('CNB'),
   });
-  const station = stationData || DEFAULT_STATION;
+  const station = stationData;
 
   const { data: trains = [] } = useQuery({
     queryKey: queryKeys.board('CNB'),
@@ -94,14 +81,13 @@ export const OverviewPage: React.FC = () => {
           <div className="flex items-center gap-2.5">
             <span className="w-2.5 h-2.5 rounded-full bg-[#F4506A] shadow-[0_0_8px_rgba(244,80,106,0.7)] animate-pulse" />
             <span className="font-bold text-xs uppercase tracking-widest text-[#E9EBEE]">
-              NEEDS ATTENTION · {activeConflicts.length + (criticalCrew.length > 0 ? 1 : 0)}
+              {activeConflicts.length + (criticalCrew.length > 0 ? 1 : 0) > 0
+                ? `NEEDS ATTENTION · ${activeConflicts.length + (criticalCrew.length > 0 ? 1 : 0)}`
+                : 'NO ACTIVE EXCEPTIONS'}
             </span>
           </div>
           <div className="flex items-center gap-3 text-xs">
-            <span className="text-[#3DDC97] flex items-center gap-1.5 font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#3DDC97] animate-ping" />
-              LIVE TELEMETRY (5S)
-            </span>
+            <DataFreshnessBadge dataUpdatedAt={dataUpdatedAt} />
             <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 bg-[#15181D] border border-[#23272F] text-[10px] text-[#A3ABB6] rounded-sm">
               <Command className="w-3 h-3" /> K
             </kbd>
@@ -116,10 +102,14 @@ export const OverviewPage: React.FC = () => {
               <span className="w-2 h-2 rounded-full bg-[#F4506A]" />
               <div>
                 <span className="font-bold text-xs text-[#E9EBEE]">
-                  PF-2 Headway Conflict 19:42 — 12301 Howrah vs 12424 Dibrugarh
+                  {activeConflicts.length > 0
+                    ? `Platform conflict detected · ${activeConflicts.length} active`
+                    : 'No active platform conflicts reported'}
                 </span>
                 <span className="block text-[11px] font-sans text-[#A3ABB6] mt-0.5">
-                  Simultaneous 15-min dwell on single berth. MILP solver proposes swapping 12301 to PF-4.
+                  {activeConflicts.length > 0
+                    ? 'Inspect the live Gantt before approving a re-optimization.'
+                    : 'The latest platform state contains no reported overlaps.'}
                 </span>
               </div>
             </div>
@@ -147,10 +137,14 @@ export const OverviewPage: React.FC = () => {
               <span className="w-2 h-2 rounded-full bg-[#F5A524]" />
               <div>
                 <span className="font-bold text-xs text-[#E9EBEE]">
-                  LP Sharma (12301) — 1h 20m to 10-Hour Statutory Duty Expiry
+                  {criticalCrew.length > 0
+                    ? `Crew roster requires attention · ${criticalCrew.length} alert${criticalCrew.length === 1 ? '' : 's'}`
+                    : 'Crew duty roster within configured limits'}
                 </span>
                 <span className="block text-[11px] font-sans text-[#A3ABB6] mt-0.5">
-                  Running duty hours: 08h 40m. Requires relief crew handover at Kanpur Central.
+                  {criticalCrew.length > 0
+                    ? 'Review the current roster and coordinate relief before the configured duty limit.'
+                    : 'No active duty-limit warnings were returned by the API.'}
                 </span>
               </div>
             </div>
@@ -181,7 +175,7 @@ export const OverviewPage: React.FC = () => {
             {trains.length}
           </div>
           <div className="text-[10px] text-[#6B7480] mt-0.5">
-            {station.code} Corridor Division
+            {station ? `${station.code} · ${station.division}` : 'Station telemetry unavailable'}
           </div>
         </Link>
 
@@ -253,10 +247,10 @@ export const OverviewPage: React.FC = () => {
             Corridor Avg Delay
           </div>
           <div className="text-2xl font-bold text-[#F5A524] mt-1 tabular-nums">
-            +14.2m
+            {station ? `+${station.corridorAvgDelayMinutes.toFixed(1)}m` : '—'}
           </div>
           <div className="text-[10px] text-[#3DDC97] mt-0.5">
-            ▼ 38.7% vs NTES Baseline
+            {station ? 'Current station event average' : 'Awaiting station telemetry'}
           </div>
         </div>
       </div>

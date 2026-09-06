@@ -101,6 +101,46 @@ export function PassengerTrackerPage() {
   const isCompleted = snapshot?.train.run_status === 'COMPLETED';
   const isNotRunningToday = snapshot?.train.run_status === 'NOT_RUNNING_TODAY';
 
+  // Rake turnaround ripple query for B2b capability flip
+  const { data: rippleData } = useQuery({
+    queryKey: ['passenger-rake-ripple', activeTrainNo],
+    queryFn: () => api.getCascadeRipple(snapshot?.train?.origin?.code || 'NDLS'),
+    enabled: !!activeTrainNo,
+    staleTime: 60000,
+  });
+
+  const rakeWarning = useMemo(() => {
+    if (rippleData?.rake_turnarounds && activeTrainNo) {
+      const match = rippleData.rake_turnarounds.find(
+        (r: any) => r.outgoing_train === activeTrainNo || r.incoming_train === activeTrainNo
+      );
+      if (match && (match.buffer_deficit_min > 0 || match.status === 'CRITICAL_DEFICIT' || match.status === 'AT_RISK')) {
+        return {
+          incomingTrain: match.incoming_train,
+          incomingName: match.incoming_name,
+          turnaroundStation: match.turnaround_station,
+          incomingDelayMin: match.incoming_delay_min,
+          bufferDeficitMin: match.buffer_deficit_min,
+          projectedDelayMin: match.projected_outgoing_delay_min,
+          status: match.status,
+        };
+      }
+    }
+    const inherited = snapshot?.autopsy?.causes?.find((c: any) => c.event_type === 'INHERITED');
+    if (inherited && inherited.minutes >= 10) {
+      return {
+        incomingTrain: 'Inbound Rake',
+        incomingName: 'Inbound Service',
+        turnaroundStation: snapshot?.train?.origin?.code || 'NDLS',
+        incomingDelayMin: inherited.minutes,
+        bufferDeficitMin: inherited.minutes,
+        projectedDelayMin: inherited.minutes,
+        status: 'CRITICAL_DEFICIT',
+      };
+    }
+    return null;
+  }, [rippleData, activeTrainNo, snapshot]);
+
   // Client Live Motion Engine (Layer 2, 3 & 4)
   const motion = useLiveMotionEngine({
     trainNo: activeTrainNo,
@@ -568,6 +608,42 @@ export function PassengerTrackerPage() {
       {/* 2. THE FULL-BLEED VERTICAL RAILWAY TRACK TIMELINE (WHERE IS MY TRAIN)      */}
       {/* ========================================================================= */}
       <main className="max-w-2xl mx-auto px-3 sm:px-4 pt-2">
+        {/* Rake Turnaround Deficit Doom Warning Card (B2b Capability Flip) */}
+        {rakeWarning && (
+          <div className="mb-4 rounded-xl border-2 border-red-500/60 bg-gradient-to-br from-red-950/40 via-[#180E10] to-[#0D090B] p-4 font-mono shadow-2xl relative overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-red-400 bg-red-500/20 px-2 py-0.5 rounded border border-red-500/40 flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-red-400 animate-pulse" />
+                <span>Turnaround Deficit · Physical Invariant Violation</span>
+              </span>
+              <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                NTES BLIND SPOT
+              </span>
+            </div>
+
+            <div className="space-y-1.5 text-xs">
+              <div className="flex items-baseline justify-between gap-2 text-white">
+                <span className="font-bold text-red-200">
+                  ⚠️ Incoming Rake #{rakeWarning.incomingTrain} Delayed +{rakeWarning.incomingDelayMin}m
+                </span>
+                <span className="text-red-400 font-bold tabular-nums">
+                  Deficit: -{rakeWarning.bufferDeficitMin}m
+                </span>
+              </div>
+              <p className="text-[#CBD5E1] text-[11px] leading-relaxed font-sans">
+                {lang === 'HI'
+                  ? `आने वाली रेक #${rakeWarning.incomingTrain} के विलंब के कारण ${rakeWarning.turnaroundStation} पर न्यूनतम टर्नअराउंड बफर समाप्त हो गया है। NTES इसे 'समय पर' दिखा रहा है क्योंकि निर्धारित प्रस्थान समय भविष्य में है, लेकिन भौतिक रूप से इस ट्रेन का समय पर चलना असंभव है।`
+                  : `Incoming rake #${rakeWarning.incomingTrain} arrived late at ${rakeWarning.turnaroundStation}, completely wiping out cleaning & safety inspection buffers. Official NTES shows "On Time" because scheduled departure is still in the future, but physical rake turnaround makes departure before +${rakeWarning.projectedDelayMin}m impossible.`}
+              </p>
+            </div>
+
+            <div className="mt-2.5 pt-2 border-t border-red-500/20 flex items-center justify-between text-[10px] text-red-300/80">
+              <span>Station: {rakeWarning.turnaroundStation} Primary Maintenance</span>
+              <span className="text-emerald-400 font-semibold">RailTwin-X Physical Truth DSS</span>
+            </div>
+          </div>
+        )}
+
         {/* Calibrated Arrival Confidence Card (PS 26028 D1 Range-First Display) */}
         <div className="mb-4 rounded-xl border border-emerald-500/30 bg-gradient-to-br from-[#101915] via-[#0E1318] to-[#0A0D12] p-4 font-mono shadow-xl relative overflow-hidden">
           <div className="flex items-center justify-between gap-2 mb-2">

@@ -2,6 +2,20 @@ import { UserSession, StationCode } from './types';
 
 export const SESSION_KEY = 'rtx-session';
 const SESSION_DURATION_MS = 12 * 60 * 60 * 1000; // 12 hours
+let inMemorySession: UserSession | null = null;
+
+export function isExplicitDemoMode(): boolean {
+  if (typeof window === 'undefined') return false;
+  const params = new URLSearchParams(window.location.search);
+  return import.meta.env.VITE_DEMO_MODE === 'true'
+    || params.get('demo') === '1'
+    || localStorage.getItem('railtwin_demo_mode') === 'true';
+}
+
+function sessionStorageAvailable(): Storage | null {
+  if (typeof window === 'undefined') return null;
+  return window.sessionStorage;
+}
 
 export type UserRole =
   | 'admin'
@@ -172,9 +186,12 @@ export const DEMO_USERS: Array<AuthUser & { password: string }> = [
 export async function loginWithMockAuth(usernameOrEmail: string, password: string): Promise<UserSession> {
   const cleanInput = usernameOrEmail.trim().toLowerCase();
 
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+  const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
-  // Try real FastAPI backend first
+  if (isExplicitDemoMode()) {
+    return loginDemoUser(cleanInput, password);
+  }
+
   try {
     const res = await fetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
@@ -183,39 +200,41 @@ export async function loginWithMockAuth(usernameOrEmail: string, password: strin
     });
 
 
-    if (res.ok) {
-      const data = await res.json();
-      const session: UserSession = {
-        user: {
-          id: data.user.id,
-          username: data.user.username,
-          email: data.user.email || `${data.user.username}@railtwin.app`,
-          name: data.user.full_name,
-          role: (data.user.role_id as UserRole) || 'station_master',
-          roleName: data.user.role_name || 'Station Master',
-          station: (data.user.station_code as StationCode) || 'CNB',
-          stationName: `${data.user.station_code} Station`,
-          token: data.access_token,
-        },
-        expiresAt: Date.now() + SESSION_DURATION_MS,
-      };
-
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-      }
-      return session;
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data?.error?.message || data?.detail || 'Invalid username or password.');
     }
-  } catch {
-    // FastAPI server not reachable or network error -> use deterministic fallback
+    const data = await res.json();
+    const session: UserSession = {
+      user: {
+        id: data.user.id,
+        username: data.user.username,
+        email: data.user.email || `${data.user.username}@railtwin.app`,
+        name: data.user.full_name,
+        role: (data.user.role_id as UserRole) || 'station_master',
+        roleName: data.user.role_name || 'Station Master',
+        station: (data.user.station_code as StationCode) || 'CNB',
+        stationName: `${data.user.station_code} Station`,
+        token: data.access_token,
+      },
+      refreshToken: data.refresh_token,
+      expiresAt: Date.now() + SESSION_DURATION_MS,
+    };
+    inMemorySession = session;
+    return session;
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    throw new Error('Authentication service is unavailable.');
   }
+}
 
-  // Fallback to local demo users
+async function loginDemoUser(cleanInput: string, password: string): Promise<UserSession> {
   await new Promise(resolve => setTimeout(resolve, 300));
   const user = DEMO_USERS.find(
     u => u.username.toLowerCase() === cleanInput || u.email.toLowerCase() === cleanInput
   );
 
-  if (!user) {
+  if (!user || user.password !== password) {
     throw new Error('Invalid credentials. Select a demo role above.');
   }
 
@@ -229,33 +248,74 @@ export async function loginWithMockAuth(usernameOrEmail: string, password: strin
       roleName: user.roleName,
       station: user.station,
       stationName: user.stationName,
-      token: 'demo-jwt-token-sih-2026',
     },
     expiresAt: Date.now() + SESSION_DURATION_MS,
   };
 
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  }
+  inMemorySession = session;
+  sessionStorageAvailable()?.setItem(SESSION_KEY, JSON.stringify(session));
 
   return session;
+}
+
+export async function refreshSession(): Promise<UserSession | null> {
+  const current = getCurrentSession();
+  if (!current?.refreshToken) return null;
+
+  const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/refresh`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${current.refreshToken}` },
+    });
+    if (!res.ok) {
+      logoutMockAuth();
+      return null;
+    }
+
+    const data = await res.json();
+    const refreshed: UserSession = {
+      ...current,
+      user: { ...current.user, token: data.access_token },
+      refreshToken: data.refresh_token,
+      expiresAt: Date.now() + SESSION_DURATION_MS,
+    };
+    inMemorySession = refreshed;
+    if (isExplicitDemoMode()) {
+      sessionStorageAvailable()?.setItem(SESSION_KEY, JSON.stringify(refreshed));
+    }
+    return refreshed;
+  } catch {
+    return null;
+  }
 }
 
 export function getCurrentSession(): UserSession | null {
   if (typeof window === 'undefined') return null;
 
-  const raw = localStorage.getItem(SESSION_KEY);
+  if (inMemorySession) {
+    if (!inMemorySession.expiresAt || Date.now() > inMemorySession.expiresAt) {
+      inMemorySession = null;
+      return null;
+    }
+    return inMemorySession;
+  }
+
+  if (!isExplicitDemoMode()) return null;
+
+  const raw = sessionStorageAvailable()?.getItem(SESSION_KEY);
   if (!raw) return null;
 
   try {
     const session = JSON.parse(raw) as UserSession;
     if (!session || !session.expiresAt || Date.now() > session.expiresAt) {
-      localStorage.removeItem(SESSION_KEY);
+      sessionStorageAvailable()?.removeItem(SESSION_KEY);
       return null;
     }
-    return session;
+    inMemorySession = session;
+    return inMemorySession;
   } catch {
-    localStorage.removeItem(SESSION_KEY);
+    sessionStorageAvailable()?.removeItem(SESSION_KEY);
     return null;
   }
 }
@@ -278,7 +338,8 @@ export function switchUserRole(roleId: UserRole): UserSession | null {
   };
 
   if (typeof window !== 'undefined') {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(updatedSession));
+    inMemorySession = updatedSession;
+    sessionStorageAvailable()?.setItem(SESSION_KEY, JSON.stringify(updatedSession));
     window.dispatchEvent(new Event('storage'));
   }
   return updatedSession;
@@ -286,5 +347,14 @@ export function switchUserRole(roleId: UserRole): UserSession | null {
 
 export function logoutMockAuth(): void {
   if (typeof window === 'undefined') return;
-  localStorage.removeItem(SESSION_KEY);
+  const refreshToken = inMemorySession?.refreshToken;
+  const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+  if (refreshToken && !isExplicitDemoMode()) {
+    void fetch(`${API_BASE}/api/auth/logout`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${refreshToken}` },
+    }).catch(() => undefined);
+  }
+  inMemorySession = null;
+  sessionStorageAvailable()?.removeItem(SESSION_KEY);
 }

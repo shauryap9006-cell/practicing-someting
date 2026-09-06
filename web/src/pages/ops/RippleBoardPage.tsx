@@ -14,6 +14,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { api, CascadeRippleData } from '@/lib/api';
+import { DemoStepperNav } from '@/components/demo/DemoStepperNav';
 
 export function RippleBoardPage() {
   const [stationCode, setStationCode] = useState('CNB');
@@ -76,6 +77,9 @@ export function RippleBoardPage() {
           </div>
         </div>
       </header>
+
+      {/* Global 5-Beat Demo Stepper */}
+      <DemoStepperNav />
 
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
         {/* Metric Summary Scoreboard */}

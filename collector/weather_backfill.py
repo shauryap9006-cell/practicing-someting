@@ -19,6 +19,7 @@ import requests
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from data.db import Database, get_db
+from config import settings
 
 STATIONS = {  # code: (lat, lon)
     "NDLS": (28.6428, 77.2191),
@@ -172,9 +173,16 @@ def fetch_station(code: str, lat: float, lon: float, start: str = "2025-01-01", 
             pass
 
         if not fetched:
-            # Fallback to physical synthetic chunk if API fails
-            chunk_out = _generate_synthetic_physical_chunk(code, lat, lon, cursor, chunk_end)
-            out.extend(chunk_out)
+            synthetic_allowed = settings.ALLOW_SYNTHETIC_FALLBACK or settings.DEFAULT_CLOCK_MODE.lower() == "replay"
+            if synthetic_allowed:
+                chunk_out = _generate_synthetic_physical_chunk(code, lat, lon, cursor, chunk_end)
+                out.extend(chunk_out)
+            else:
+                print(
+                    f"[WARN] No authoritative weather for {code} {cursor}..{chunk_end}; "
+                    "leaving the interval absent instead of fabricating observations.",
+                    flush=True,
+                )
 
         cursor = (dt.date.fromisoformat(chunk_end) + dt.timedelta(days=1)).isoformat()
         time.sleep(0.1)

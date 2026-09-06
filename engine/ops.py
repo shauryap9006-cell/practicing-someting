@@ -498,6 +498,17 @@ class ConnectionCustodyEngine:
             )
             live_delays = {r["train_no"]: float(r["delay_arr_min"] if r["delay_arr_min"] is not None else (r["delay_dep_min"] or 0.0)) for r in cur.fetchall()}
 
+            # Query historical baselines for delay variance
+            cur.execute(
+                """
+                SELECT train_no, avg_delay, p90_delay
+                FROM hist_baselines
+                WHERE station_code = ?
+                """,
+                (stn,),
+            )
+            hist_map = {r["train_no"]: dict(r) for r in cur.fetchall()}
+
         arriving_trains = [r for r in rows if r["sched_arr"]]
         departing_trains = [r for r in rows if r["sched_dep"]]
 
@@ -518,11 +529,18 @@ class ConnectionCustodyEngine:
             f_name = f["train_name"]
             f_arr_m = _to_mins(f["sched_arr"])
 
-            # Compute estimated delay quantiles for feeder
+            # Compute estimated delay quantiles for feeder from live telemetry + historical variance
             f_delay = live_delays.get(f_no, 0.0)
-            p10_delay = max(0.0, f_delay - 5.0)
-            p50_delay = max(0.0, f_delay)
-            p90_delay = max(0.0, f_delay + 15.0)
+            hb_info = hist_map.get(f_no)
+            if hb_info and hb_info.get("p90_delay") is not None:
+                p90_stat = float(hb_info["p90_delay"])
+                spread = max(4.0, p90_stat - f_delay if p90_stat > f_delay else 8.0)
+            else:
+                spread = max(6.0, f_delay * 0.25)
+
+            p10_delay = max(0.0, round(f_delay - spread * 0.4, 1))
+            p50_delay = round(max(0.0, f_delay), 1)
+            p90_delay = round(f_delay + spread * 0.6, 1)
 
             p10_arr_m = f_arr_m + p10_delay
             p50_arr_m = f_arr_m + p50_delay
@@ -564,9 +582,18 @@ class ConnectionCustodyEngine:
                 if prob < 85.0:
                     needed_hold_m = max(0, int(p50_arr_m + min_connection_time_min - c_dep_m))
                     if 0 < needed_hold_m <= 20:
-                        est_transfer_pax = 35
-                        onboard_pax = 600
-                        next_train_headway_m = 300  # 5 hours
+                        c_class = str(c.get("class", "express")).lower()
+                        # Dynamic capacity based on train class
+                        capacity = 1100 if ("rajdhani" in c_class or "shatabdi" in c_class or "vande" in c_class) else 1650
+                        onboard_pax = int(capacity * 0.82)
+                        est_transfer_pax = max(12, int(onboard_pax * 0.04))
+
+                        # Scheduled headway to next departing service
+                        later_departures = [
+                            _to_mins(other["sched_dep"]) for other in departing_trains
+                            if str(other["train_no"]) != c_no and _to_mins(other["sched_dep"]) > c_dep_m
+                        ]
+                        next_train_headway_m = (min(later_departures) - c_dep_m) if later_departures else 240
                         pax_hours_saved = round((est_transfer_pax * next_train_headway_m - onboard_pax * needed_hold_m) / 60.0, 1)
 
                         if pax_hours_saved > 0:

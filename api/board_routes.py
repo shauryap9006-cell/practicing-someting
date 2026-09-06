@@ -19,7 +19,9 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, R
 from fastapi.responses import StreamingResponse
 
 from api.auth import get_current_user
+from config import settings
 from api.predictor import PredictorService, get_predictor_service
+from api.sse_limits import acquire_sse_slot, release_sse_slot
 from data.db import Database, get_db
 
 router = APIRouter(prefix="/api/board", tags=["Live Train Board (A2, F18, F32)"])
@@ -41,6 +43,7 @@ def get_live_board(
     date: Optional[str] = Query(None, description="YYYY-MM-DD (defaults to today)"),
     hours: int = Query(6, ge=1, le=24, description="Lookahead window in hours"),
     kind: str = Query("all", description="all, arrivals, departures"),
+    limit: int = Query(200, ge=1, le=500, description="Maximum board entries"),
     if_none_match: Optional[str] = Header(None),
     current_user: Optional[Dict[str, Any]] = Depends(get_current_user),
     db: Database = Depends(get_db),
@@ -54,7 +57,7 @@ def get_live_board(
     actual_hours = hours if isinstance(hours, int) else 6
     target_date = actual_date or datetime.now().strftime("%Y-%m-%d")
 
-    cache_key = f"{stn}_{target_date}_{actual_kind}_{actual_hours}"
+    cache_key = f"{stn}_{target_date}_{actual_kind}_{actual_hours}_{limit}"
 
     cached = _BOARD_CACHE.get(cache_key)
     if cached and (datetime.now().timestamp() - cached.get("cached_at", 0)) < 4.0:
@@ -84,6 +87,7 @@ def get_live_board(
                 rs.seq,
                 CASE WHEN CAST(t.train_no AS INTEGER) % 2 != 0 THEN 'UP' ELSE 'DOWN' END as direction,
                 COALESCE(hb.avg_delay, 0.0) as hist_avg_delay,
+                COALESCE(hb.p90_delay, 0.0) as hist_p90_delay,
                 COALESCE(ad.event_kind, '') as ad_event_kind,
                 COALESCE(ad.platform, 1) as ad_platform,
                 COALESCE(se.delay_arr_min, se.delay_dep_min, 0.0) as live_delay
@@ -103,9 +107,10 @@ def get_live_board(
             ) se ON rs.train_no = se.train_no
             WHERE rs.station_code = ?
             GROUP BY rs.train_no
-            ORDER BY COALESCE(rs.sched_arr, rs.sched_dep) ASC;
+            ORDER BY COALESCE(rs.sched_arr, rs.sched_dep) ASC
+            LIMIT ?;
             """,
-            (stn, target_date, stn, stn),
+            (stn, target_date, stn, stn, limit),
         )
         train_rows = cur.fetchall()
 
@@ -119,15 +124,17 @@ def get_live_board(
         pf = r["ad_platform"] if ad_kind else 1
         live_d = float(r["live_delay"])
         hist_d = float(r["hist_avg_delay"])
+        hist_p90 = float(r["hist_p90_delay"])
 
         has_setin = ad_kind == "setin"
         has_setout = ad_kind == "setout"
 
         # Fast Vectorized Estimation using materialized baseline and live delay
         delay_min = int(round(live_d if live_d > 0 else hist_d * 0.5))
-        p10 = max(0.0, float(delay_min - 4.0))
+        spread = max(4.0, (hist_p90 - hist_d) if (hist_p90 > hist_d) else 6.0)
+        p10 = max(0.0, float(round(delay_min - spread * 0.4, 1)))
         p50 = float(delay_min)
-        p90 = float(delay_min + 8.0)
+        p90 = float(round(delay_min + spread * 0.6, 1))
 
         exp_arr = sch_arr
         exp_dep = sch_dep
@@ -249,20 +256,29 @@ def get_kiosk_board(
 
 @router.get("/stream")
 async def stream_live_board(
-
+    request: Request,
     station_code: str = Query("NDLS"),
     db: Database = Depends(get_db),
     predictor: PredictorService = Depends(get_predictor_service),
 ):
     """Server-Sent Events (SSE) real-time streaming endpoint for station live board (F18)."""
+    if not acquire_sse_slot():
+        raise HTTPException(status_code=503, detail={"code": "SSE_CAPACITY_EXCEEDED", "message": "Live stream capacity is temporarily full.", "retryable": True})
+
     async def event_generator():
-        while True:
-            board_data = get_live_board(
-                station_code=station_code,
-                db=db,
-                predictor=predictor,
-            )
-            yield f"data: {json.dumps(board_data)}\n\n"
-            await asyncio.sleep(5)
+        started = asyncio.get_event_loop().time()
+        try:
+            while True:
+                if await request.is_disconnected() or asyncio.get_event_loop().time() - started >= settings.SSE_MAX_DURATION_SECONDS:
+                    break
+                board_data = get_live_board(
+                    station_code=station_code,
+                    db=db,
+                    predictor=predictor,
+                )
+                yield f"data: {json.dumps(board_data)}\n\n"
+                await asyncio.sleep(5)
+        finally:
+            release_sse_slot()
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")

@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from api.auth import get_current_user, require_role
+from api.auth import assert_station_scope, effective_station_scope, get_current_user, require_role
 from data.audit import record_audit
 from data.db import Database, get_db
 from notifications.dispatcher import notify
@@ -58,6 +58,8 @@ class TimetableEntryUpdate(BaseModel):
 
 @router.get("/versions", response_model=List[Dict[str, Any]])
 def list_timetable_versions(
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     current_user: Dict[str, Any] = Depends(get_current_user),
     db: Database = Depends(get_db),
 ):
@@ -69,8 +71,10 @@ def list_timetable_versions(
             FROM timetable_versions v
             LEFT JOIN timetable_entries e ON v.id = e.version_id
             GROUP BY v.id
-            ORDER BY v.created_at DESC;
+            ORDER BY v.created_at DESC
+            LIMIT ? OFFSET ?;
             """
+            , (limit, offset)
         )
         rows = cur.fetchall()
 
@@ -154,6 +158,7 @@ def get_version_entries(
     db: Database = Depends(get_db),
 ):
     """Retrieves paginated train stop entries for a specific timetable version."""
+    station_code = effective_station_scope(current_user, station_code)
     query = "SELECT * FROM timetable_entries WHERE version_id = ?"
     count_query = "SELECT COUNT(*) FROM timetable_entries WHERE version_id = ?"
     params: List[Any] = [version_id]
@@ -208,6 +213,7 @@ def create_timetable_entry(
     db: Database = Depends(get_db),
 ):
     """Creates a new stop entry in a draft timetable version."""
+    assert_station_scope(current_user, req.station_code)
     with db.transaction() as cur:
         # Verify version is draft
         cur.execute("SELECT status FROM timetable_versions WHERE id = ?;", (req.version_id,))
@@ -268,6 +274,7 @@ def update_timetable_entry(
         existing = cur.fetchone()
         if not existing:
             raise HTTPException(status_code=404, detail=f"Timetable entry with ID {entry_id} not found.")
+        assert_station_scope(current_user, existing["station_code"])
 
         # Check version status
         cur.execute("SELECT status FROM timetable_versions WHERE id = ?;", (existing["version_id"],))
@@ -321,10 +328,11 @@ def delete_timetable_entry(
 ):
     """Deletes an entry from a draft timetable."""
     with db.transaction() as cur:
-        cur.execute("SELECT version_id, train_no FROM timetable_entries WHERE id = ?;", (entry_id,))
+        cur.execute("SELECT version_id, train_no, station_code FROM timetable_entries WHERE id = ?;", (entry_id,))
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Entry not found.")
+        assert_station_scope(current_user, row["station_code"])
 
         cur.execute("DELETE FROM timetable_entries WHERE id = ?;", (entry_id,))
 

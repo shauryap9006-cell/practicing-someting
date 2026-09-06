@@ -84,7 +84,7 @@ champion_model = NonCrossingGRUQuantileModel(
     num_layers=2,
     dropout=0.2,
 )
-state = torch.load(champ_pt, map_location=device, weights_only=False)
+state = torch.load(champ_pt, map_location=device, weights_only=True)
 champion_model.load_state_dict(state)
 champion_model.eval()
 

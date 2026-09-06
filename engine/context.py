@@ -337,6 +337,8 @@ class ContextEngine:
                     return w_ctx
 
         with self.db.transaction() as cur:
+            synthetic_allowed = settings.ALLOW_SYNTHETIC_FALLBACK or settings.DEFAULT_CLOCK_MODE.lower() == "replay"
+            weather_available = False
             # 1. Try hourly micro-weather table first
             cur.execute(
                 """
@@ -350,6 +352,10 @@ class ContextEngine:
             hourly_row = cur.fetchone()
 
             if hourly_row:
+                weather_available = any(
+                    hourly_row[field] is not None
+                    for field in ("temperature_2m", "relative_humidity_2m", "precipitation", "visibility", "fog_flag")
+                )
                 temp = float(hourly_row["temperature_2m"] or 25.0)
                 humid = float(hourly_row["relative_humidity_2m"] or 60.0)
                 precip = float(hourly_row["precipitation"] or 0.0)
@@ -369,27 +375,40 @@ class ContextEngine:
                 daily_row = cur.fetchone()
 
                 if daily_row:
+                    weather_available = any(
+                        daily_row[field] is not None
+                        for field in ("temp", "humidity", "precip_mm", "fog_flag")
+                    )
                     temp = float(daily_row["temp"] or 25.0)
                     humid = float(daily_row["humidity"] or 60.0)
                     precip = float(daily_row["precip_mm"] or 0.0)
                     fog = int(daily_row["fog_flag"] or 0)
                     vis_km = 0.6 if fog else 10.0
                 else:
-                    # Deterministic offline fallback based on month
-                    is_winter = as_of.month in (11, 12, 1, 2)
-                    temp = 14.5 if is_winter else 29.0
-                    humid = 88.0 if is_winter else 55.0
-                    precip = 0.0
-                    fog = 1 if is_winter and (temp < settings.FOG_MAX_TEMP_CELSIUS and humid > settings.FOG_MIN_HUMIDITY_PERCENT) else 0
-                    vis_km = 0.5 if fog else 10.0
+                    if synthetic_allowed:
+                        # Deterministic replay-only fallback based on month.
+                        is_winter = as_of.month in (11, 12, 1, 2)
+                        temp = 14.5 if is_winter else 29.0
+                        humid = 88.0 if is_winter else 55.0
+                        precip = 0.0
+                        fog = 1 if is_winter and (temp < settings.FOG_MAX_TEMP_CELSIUS and humid > settings.FOG_MIN_HUMIDITY_PERCENT) else 0
+                        vis_km = 0.5 if fog else 10.0
+                    else:
+                        temp = humid = precip = 0.0
+                        fog = 0
+                        vis_km = 0.0
 
         is_caution = bool(
+            weather_available or synthetic_allowed
+        ) and bool(
             fog == 1
             or precip >= settings.HEAVY_RAIN_THRESHOLD_MM
             or (temp < settings.FOG_MAX_TEMP_CELSIUS and humid > settings.FOG_MIN_HUMIDITY_PERCENT)
         )
 
-        if fog == 1:
+        if not weather_available and not synthetic_allowed:
+            summary = "Weather unavailable (no authoritative observation)"
+        elif fog == 1:
             summary = f"Dense Fog (Vis: {vis_km:.1f}km, Temp: {temp:.1f}°C, Hum: {humid:.0f}%)"
         elif precip >= settings.HEAVY_RAIN_THRESHOLD_MM:
             summary = f"Heavy Rain ({precip:.1f}mm, Caution Speed Mandatory)"

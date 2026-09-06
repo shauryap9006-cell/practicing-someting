@@ -17,21 +17,14 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 import torch
 import uvicorn
+import torch
+import uvicorn
 
 from config import settings
 from data.db import get_db
 from api.routes import get_health, router as v1_router
 from api.auth_routes import router as auth_router
 from api.access_routes import router as access_router
-from api.audit_routes import router as audit_router
-from api.notification_routes import router as notification_router
-from api.timetable_routes import router as timetable_router
-from api.board_routes import router as board_router
-from api.platform_routes import router as platform_router
-from api.block_routes import router as block_router
-from api.planner_routes import router as planner_router
-from api.system_routes import router as system_router
-from api.safety_routes import router as safety_router
 from api.audit_routes import router as audit_router
 from api.notification_routes import router as notification_router
 from api.timetable_routes import router as timetable_router

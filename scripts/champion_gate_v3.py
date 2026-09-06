@@ -77,7 +77,7 @@ def load_v1_champion(device: torch.device) -> nn.Module:
         vocab_size=2048,
     ).to(device)
 
-    state = torch.load(ckpt_path, map_location=device, weights_only=False)
+    state = torch.load(ckpt_path, map_location=device, weights_only=True)
     if "model_state" in state:
         champ.load_state_dict(state["model_state"], strict=False)
     else:

@@ -1,0 +1,290 @@
+{
+  "P1": {
+    "lgb_feature_count": 25,
+    "serving_feature_count": 25,
+    "lgb_skew_detected": false,
+    "lgb_skew_details": [],
+    "gru_info": {
+      "keys": [
+        "station_embed.weight",
+        "context_encoder.0.weight",
+        "context_encoder.0.bias",
+        "context_encoder.3.weight",
+        "context_encoder.3.bias",
+        "h0_proj.weight",
+        "h0_proj.bias",
+        "gru.weight_ih_l0",
+        "gru.weight_hh_l0",
+        "gru.bias_ih_l0",
+        "gru.bias_hh_l0",
+        "gru.weight_ih_l1",
+        "gru.weight_hh_l1",
+        "gru.bias_ih_l1",
+        "gru.bias_hh_l1",
+        "attn.weight",
+        "attn.bias",
+        "film.fc_gamma.weight",
+        "film.fc_gamma.bias",
+        "film.fc_beta.weight",
+        "film.fc_beta.bias",
+        "fc_shared.0.weight",
+        "fc_shared.0.bias",
+        "head_q10.weight",
+        "head_q10.bias",
+        "head_delta_q50.weight",
+        "head_delta_q50.bias",
+        "head_delta_q90.weight",
+        "head_delta_q90.bias"
+      ],
+      "output_shape": [
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "q10_sample": 1.9006761312484741,
+      "q50_sample": 6.436544418334961,
+      "q90_sample": 19.484188079833984,
+      "is_finite": true
+    },
+    "serving_eta_model_provenance": {
+      "name": "PyTorch_GRU_Quantile",
+      "sha256": "411ab286e10168f3c8feba6055d395c859a2785a3cd40db053fac48843dc365a",
+      "version": "v3.0"
+    },
+    "serving_eta_tier_used": null,
+    "serving_eta_champion_name": "PyTorch_GRU_Quantile",
+    "quantile_violations_out_of_1000": 0,
+    "missing_train_status": 422,
+    "missing_train_body": {
+      "detail": "Request validation failed",
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Request validation failed",
+        "retryable": false,
+        "fields": [
+          {
+            "type": "missing",
+            "loc": [
+              "query",
+              "station"
+            ],
+            "msg": "Field required",
+            "input": null
+          }
+        ]
+      },
+      "request_id": "b76c72e6-14e3-4f3c-bbec-c798ecb34a8c"
+    },
+    "nan_handled_gracefully": true,
+    "oov_status": 422,
+    "oov_body": {
+      "detail": "Request validation failed",
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Request validation failed",
+        "retryable": false,
+        "fields": [
+          {
+            "type": "missing",
+            "loc": [
+              "query",
+              "station"
+            ],
+            "msg": "Field required",
+            "input": null
+          }
+        ]
+      },
+      "request_id": "4b34ac16-56e5-4752-9ab1-046eae3cbd75"
+    },
+    "train_v2_seed_set": true,
+    "train_v2_deterministic_flag": false,
+    "train_v2_target_artifacts": [],
+    "interlock_called_in_predictor": true,
+    "ledger_receipt_in_predictor": true
+  },
+  "P2": {
+    "canonical_mae": 10.72,
+    "total_test_samples": 25203,
+    "overall_coverage_80": 80.63722572709598,
+    "overall_crps": 7.436122808393791,
+    "rolling_origin_total_folds": 6,
+    "rolling_origin_failed_folds": 6,
+    "fold_failure_sample_error": "Feature DataFrame missing required columns: ['current_delay', 'hops_remaining', 'km_remaining', 'hour_of_day', 'day_type', 'train_priority', 'target_is_junction', 'target_is_terminus', 'hist_avg_delay_train_target', 'hist_p90_delay_train_target', 'sched_halt_target_min', 'sched_congestion_target', 'fog_flag_target', 'rain_mm_target', 'active_corridor_trains', 'delay_velocity', 'chronic_baseline', 'trains_ahead_30k', 'trains_behind_30k', 'opposing_trains_30k', 'min_predicted_headway_next_station', 'sum_delay_trains_ahead_30k', 'section_occupancy_pct', 'rake_incoming_delay', 'crew_duty_pressure']",
+    "tests_point_in_time": true,
+    "tests_future_target_leakage": true,
+    "has_temporal_embargo_test": false,
+    "conformal_splits_train_cal_test": false,
+    "conformal_pid_class_present": true,
+    "conformal_pid_live_wiring_sites": []
+  },
+  "P3": {
+    "async_blocking_handlers_count": 1,
+    "async_blocking_handlers": [
+      {
+        "file": "api\\main.py",
+        "line": 58,
+        "function": "lifespan",
+        "blocking_calls": [
+          "get_db()",
+          "torch."
+        ]
+      }
+    ],
+    "concurrency_requests_fired": 50,
+    "concurrency_errors_count": 10,
+    "concurrency_errors": [
+      {
+        "code": 422,
+        "error": null
+      },
+      {
+        "code": 422,
+        "error": null
+      },
+      {
+        "code": 422,
+        "error": null
+      },
+      {
+        "code": 422,
+        "error": null
+      },
+      {
+        "code": 422,
+        "error": null
+      },
+      {
+        "code": 422,
+        "error": null
+      },
+      {
+        "code": 422,
+        "error": null
+      },
+      {
+        "code": 422,
+        "error": null
+      },
+      {
+        "code": 422,
+        "error": null
+      },
+      {
+        "code": 422,
+        "error": null
+      }
+    ],
+    "concurrency_latencies_ms": {
+      "p50": 93.69,
+      "p95": 1102.03,
+      "p99": 1215.91,
+      "max": 1312.26
+    },
+    "post_concurrency_ledger_integrity": {
+      "chain_ok": true,
+      "total_blocks": 2131,
+      "fork": null
+    }
+  },
+  "P4": {
+    "journal_mode": "wal",
+    "busy_timeout": 5000,
+    "synchronous": 2,
+    "eqp_station_events": [
+      [
+        5,
+        0,
+        61,
+        "SEARCH station_events USING INDEX idx_events_lookup (train_no=? AND station_code=?)"
+      ],
+      [
+        32,
+        0,
+        0,
+        "USE TEMP B-TREE FOR ORDER BY"
+      ]
+    ],
+    "eqp_ledger": [
+      [
+        4,
+        0,
+        216,
+        "SCAN eta_prediction_ledger"
+      ]
+    ]
+  },
+  "P5": {
+    "autopsy_keys": [
+      "updated_at",
+      "clock_mode",
+      "train_no",
+      "train_name",
+      "total_predicted_delay_min",
+      "is_exact_accounting",
+      "causes",
+      "narrative",
+      "integrity_status",
+      "integrity_checks",
+      "as_of_ts"
+    ],
+    "model_perf_keys": [
+      "status",
+      "schema_version",
+      "canonical_mae",
+      "overall_mae",
+      "overall_coverage_80",
+      "overall_winkler_score",
+      "overall_crps",
+      "total_test_samples",
+      "horizon_cards",
+      "proof_table",
+      "metrics_by_horizon",
+      "rolling_origin_cv",
+      "audit_note"
+    ],
+    "contract_mismatches": [
+      {
+        "endpoint": "/v1/trains/{no}/eta",
+        "missing_in_api": [
+          "train_no",
+          "target_station",
+          "clock_mode",
+          "predicted_delay_min",
+          "confidence_band",
+          "predicted_arrival",
+          "safety_interlock"
+        ]
+      }
+    ]
+  },
+  "P7": {
+    "unprotected_mutating_routes_count": 0,
+    "unprotected_mutating_routes": [],
+    "hardcoded_secrets_found": []
+  },
+  "P8": {
+    "inference_latency_ms": {
+      "p50": 83.95,
+      "p95": 122.26,
+      "p99": 151.69,
+      "mean": 88.45
+    },
+    "scale_math_10k_trains": {
+      "p50_latency_ms": 83.95,
+      "total_cpu_seconds_per_cycle": 839.5,
+      "refresh_budget_seconds": 60,
+      "parallel_cores_required": 14,
+      "fits_single_core": false
+    }
+  }
+}

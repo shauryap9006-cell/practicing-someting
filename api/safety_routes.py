@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from api.auth import get_current_user, require_role
+from api.auth import assert_station_scope, effective_station_scope, get_current_user, require_role
 from data.audit import record_audit
 from data.db import Database, get_db
 from notifications.dispatcher import notify
@@ -47,6 +47,7 @@ def create_speed_restriction(
     db: Database = Depends(get_db),
 ):
     """Issues a new Caution Order / Speed Restriction on a block section."""
+    assert_station_scope(current_user, req.from_code)
     now_iso = datetime.now(timezone.utc).isoformat()
     with db.transaction() as cur:
         cur.execute(
@@ -115,10 +116,13 @@ def create_speed_restriction(
 def list_speed_restrictions(
     station_code: Optional[str] = Query(None, description="Filter by station code"),
     status: Optional[str] = Query("ACTIVE", description="ACTIVE, CANCELLED, or ALL"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     current_user: Dict[str, Any] = Depends(get_current_user),
     db: Database = Depends(get_db),
 ):
     """Lists all active and historical Caution Orders."""
+    station_code = effective_station_scope(current_user, station_code)
     with db.transaction() as cur:
         query = "SELECT * FROM speed_restrictions WHERE 1=1"
         params: List[Any] = []
@@ -128,7 +132,8 @@ def list_speed_restrictions(
         if station_code:
             query += " AND (from_code = ? OR to_code = ?)"
             params.extend([station_code.upper(), station_code.upper()])
-        query += " ORDER BY id DESC;"
+        query += " ORDER BY id DESC LIMIT ? OFFSET ?;"
+        params.extend([limit, offset])
         cur.execute(query, tuple(params))
         rows = [dict(r) for r in cur.fetchall()]
     return rows
@@ -147,6 +152,7 @@ def cancel_speed_restriction(
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Caution order not found.")
+        assert_station_scope(current_user, row["from_code"])
 
         cur.execute("UPDATE speed_restrictions SET status = 'CANCELLED' WHERE id = ?;", (tsr_id,))
 
@@ -185,6 +191,7 @@ def request_possession(
     db: Database = Depends(get_db),
 ):
     """Submits a Permit-to-Work / Track Possession request."""
+    assert_station_scope(current_user, req.station_code)
     now_iso = datetime.now(timezone.utc).isoformat()
     with db.transaction() as cur:
         cur.execute(
@@ -236,6 +243,7 @@ def grant_possession(
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Possession not found.")
+        assert_station_scope(current_user, row["station_code"])
         if row["status"] not in ("REQUESTED", "GRANTED"):
             raise HTTPException(status_code=400, detail=f"Cannot grant possession with status {row['status']}.")
 
@@ -316,6 +324,7 @@ def restore_possession(
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Possession not found.")
+        assert_station_scope(current_user, row["station_code"])
 
         cur.execute(
             """
@@ -371,10 +380,13 @@ def restore_possession(
 def list_possessions(
     station_code: Optional[str] = Query(None, description="Station filter"),
     status: Optional[str] = Query(None, description="REQUESTED, ACTIVE, RESTORED"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     current_user: Dict[str, Any] = Depends(get_current_user),
     db: Database = Depends(get_db),
 ):
     """Lists track possessions with status and station filters."""
+    station_code = effective_station_scope(current_user, station_code)
     with db.transaction() as cur:
         query = "SELECT * FROM possessions WHERE 1=1"
         params: List[Any] = []
@@ -384,7 +396,8 @@ def list_possessions(
         if status:
             query += " AND status = ?"
             params.append(status.upper())
-        query += " ORDER BY id DESC;"
+        query += " ORDER BY id DESC LIMIT ? OFFSET ?"
+        params.extend([limit, offset])
         cur.execute(query, tuple(params))
         rows = [dict(r) for r in cur.fetchall()]
     return rows
@@ -410,6 +423,7 @@ def report_incident(
     db: Database = Depends(get_db),
 ):
     """Logs a safety incident or near-miss event with immediate multi-role escalation."""
+    assert_station_scope(current_user, req.station_code)
     now_iso = datetime.now(timezone.utc).isoformat()
     with db.transaction() as cur:
         cur.execute(
@@ -463,10 +477,13 @@ def report_incident(
 def list_incidents(
     station_code: Optional[str] = Query(None, description="Station filter"),
     investigation_status: Optional[str] = Query(None, description="OPEN, UNDER_REVIEW, CLOSED"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     current_user: Dict[str, Any] = Depends(get_current_user),
     db: Database = Depends(get_db),
 ):
     """Lists safety incidents in the digital register."""
+    station_code = effective_station_scope(current_user, station_code)
     with db.transaction() as cur:
         query = "SELECT * FROM incidents WHERE 1=1"
         params: List[Any] = []
@@ -476,7 +493,8 @@ def list_incidents(
         if investigation_status:
             query += " AND investigation_status = ?"
             params.append(investigation_status.upper())
-        query += " ORDER BY id DESC;"
+        query += " ORDER BY id DESC LIMIT ? OFFSET ?"
+        params.extend([limit, offset])
         cur.execute(query, tuple(params))
         rows = [dict(r) for r in cur.fetchall()]
     return rows
@@ -542,6 +560,7 @@ def start_sop_run(
     db: Database = Depends(get_db),
 ):
     """Initiates an active emergency checklist run and alerts on-duty staff."""
+    assert_station_scope(current_user, req.station_code)
     template = next((t for t in SOP_TEMPLATES if t["template_id"] == req.template_id), None)
     if not template:
         raise HTTPException(status_code=404, detail="SOP template not found.")
@@ -656,17 +675,21 @@ def complete_sop_step(
 @router.get("/sop/active", response_model=List[Dict[str, Any]])
 def list_active_sop_runs(
     station_code: Optional[str] = Query(None, description="Station filter"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     current_user: Dict[str, Any] = Depends(get_current_user),
     db: Database = Depends(get_db),
 ):
     """Lists ongoing emergency SOP checklist runs."""
+    station_code = effective_station_scope(current_user, station_code)
     with db.transaction() as cur:
         query = "SELECT * FROM sop_runs WHERE status = 'IN_PROGRESS'"
         params: List[Any] = []
         if station_code:
             query += " AND station_code = ?"
             params.append(station_code.upper())
-        query += " ORDER BY id DESC;"
+        query += " ORDER BY id DESC LIMIT ? OFFSET ?;"
+        params.extend([limit, offset])
         cur.execute(query, tuple(params))
         rows = [dict(r) for r in cur.fetchall()]
         for r in rows:
@@ -685,10 +708,13 @@ class LCStatusUpdate(BaseModel):
 @router.get("/lc/status", response_model=List[Dict[str, Any]])
 def list_level_crossings(
     station_code: Optional[str] = Query(None, description="Station filter"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     current_user: Dict[str, Any] = Depends(get_current_user),
     db: Database = Depends(get_db),
 ):
     """Lists Level Crossings and their real-time operational status."""
+    station_code = effective_station_scope(current_user, station_code)
     with db.transaction() as cur:
         # Seed default sample LCs if table is empty
         cur.execute("SELECT COUNT(*) as count FROM level_crossings;")
@@ -717,7 +743,8 @@ def list_level_crossings(
         if station_code:
             query += " AND station_code = ?"
             params.append(station_code.upper())
-        query += " ORDER BY km ASC;"
+        query += " ORDER BY km ASC LIMIT ? OFFSET ?;"
+        params.extend([limit, offset])
         cur.execute(query, tuple(params))
         rows = [dict(r) for r in cur.fetchall()]
     return rows
@@ -737,6 +764,7 @@ def update_lc_status(
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Level crossing not found.")
+        assert_station_scope(current_user, row["station_code"])
 
         cur.execute(
             """

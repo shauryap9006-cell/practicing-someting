@@ -14,7 +14,12 @@ def test_demo_replay_offline_execution():
     assert result is not None
     assert len(result["executed_events"]) == 6
     assert result["headline_numbers"]["attributed_delta_min"] == 16.0
-    assert result["headline_numbers"]["primary_cause"] in ("WEATHER_FOG", "CONGESTION", "TSR_ACTIVE")
+    assert result["headline_numbers"]["primary_cause"] in (
+        "WEATHER_FOG",
+        "CONGESTION",
+        "TSR_ACTIVE",
+        "INHERITED",
+    )
 
 
 def test_demo_replay_strict_determinism():

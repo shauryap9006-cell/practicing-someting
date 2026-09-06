@@ -53,7 +53,12 @@ def test_enrich_5_layers_known_train(context_engine):
     assert isinstance(ctx.weather.humidity_pct, float)
     assert isinstance(ctx.weather.precip_mm, float)
     assert ctx.weather.fog_flag in (0, 1)
-    assert ctx.weather.visibility_km > 0.0
+    # Live mode must not invent weather when no authoritative observation exists.
+    if ctx.weather.summary.startswith("Weather unavailable"):
+        assert ctx.weather.visibility_km == 0.0
+        assert ctx.weather.is_caution is False
+    else:
+        assert ctx.weather.visibility_km > 0.0
     assert len(ctx.weather.summary) > 0
 
     # Layer 2: TSRs

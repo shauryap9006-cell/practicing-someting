@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from api.auth import get_current_user, require_role
+from api.auth import assert_station_scope, effective_station_scope, get_current_user, require_role
 from data.audit import record_audit
 from data.db import Database, get_db
 from notifications.dispatcher import notify
@@ -63,6 +63,7 @@ def record_set_in(
     now_iso = datetime.now(timezone.utc).isoformat()
     actual_time = req.actual_ts or now_iso
     stn = req.station_code.upper()
+    assert_station_scope(current_user, stn)
     run_date = datetime.now().strftime("%Y-%m-%d")
     run_id = f"RUN-{train_no}-{run_date}"
 
@@ -164,6 +165,7 @@ def record_set_out(
     now_iso = datetime.now(timezone.utc).isoformat()
     actual_time = req.actual_ts or now_iso
     stn = req.station_code.upper()
+    assert_station_scope(current_user, stn)
     run_date = datetime.now().strftime("%Y-%m-%d")
     run_id = f"RUN-{train_no}-{run_date}"
 
@@ -244,6 +246,7 @@ def list_ad_events(
     db: Database = Depends(get_db),
 ):
     """Fetches confirmed arrival and departure ground-truth logs."""
+    station_code = effective_station_scope(current_user, station_code)
     query = "SELECT * FROM ad_events WHERE 1=1"
     params: List[Any] = []
 
@@ -290,6 +293,7 @@ def create_shunting_move(
     """Logs a non-timetable shunting move and checks for platform conflicts."""
     now_iso = datetime.now(timezone.utc).isoformat()
     stn = req.station_code.upper()
+    assert_station_scope(current_user, stn)
 
     # Check if target track/platform has overlapping trains in timetable or platform_states
     conflict_warning = None
@@ -358,6 +362,7 @@ def list_shunting_moves(
     db: Database = Depends(get_db),
 ):
     """Lists shunting and non-timetable yard movements."""
+    station_code = effective_station_scope(current_user, station_code)
     query = "SELECT * FROM shunting_moves WHERE 1=1"
     params: List[Any] = []
 
@@ -408,6 +413,7 @@ def update_shunting_status(
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Shunting move not found.")
+        assert_station_scope(current_user, row["station_code"])
 
         cur.execute(
             """

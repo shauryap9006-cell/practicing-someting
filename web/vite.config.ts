@@ -41,16 +41,10 @@ export default defineConfig({
           if (id.includes('three') || id.includes('@react-three')) {
             return 'vendor-three';
           }
-          if (id.includes('gsap') || id.includes('lenis')) {
-            return 'vendor-motion';
-          }
-          if (id.includes('echarts')) {
-            return 'echarts';
-          }
           if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/react-router-dom/')) {
             return 'vendor-react';
           }
-          if (id.includes('@tanstack/react-query') || id.includes('@tanstack/react-table') || id.includes('@tanstack/react-virtual')) {
+          if (id.includes('@tanstack/react-query')) {
             return 'vendor-tanstack';
           }
         },

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import os
 import time
 from typing import Dict, Optional, Tuple
 
@@ -40,8 +41,10 @@ _CACHE_TTL_SEC = 5.0
 
 
 def _cache_key(request: Request) -> str:
-    """Deterministic key from method + path + sorted query string."""
-    raw = f"{request.method}:{request.url.path}?{request.url.query}"
+    """Deterministic key scoped to method, query, and authenticated principal."""
+    auth = request.headers.get("Authorization", "")
+    principal = hashlib.sha256(auth.encode("utf-8")).hexdigest() if auth else "anonymous"
+    raw = f"{principal}:{request.method}:{request.url.path}?{request.url.query}"
     return hashlib.md5(raw.encode()).hexdigest()
 
 
@@ -173,8 +176,18 @@ class TokenBucketRateLimiter(BaseHTTPMiddleware):
 # 3. Mutation Idempotency Middleware (F46)
 # ---------------------------------------------------------------------------
 
-_IDEMPOTENCY_CACHE: Dict[str, Tuple[int, bytes, dict, float]] = {}  # key -> (status, body, headers, timestamp)
+_IDEMPOTENCY_CACHE: Dict[str, Tuple[int, bytes, dict, float]] = {}  # key -> (status, body, headers, expires_at)
+_IDEMPOTENCY_INFLIGHT: Dict[str, asyncio.Event] = {}
 _IDEMPOTENCY_LOCK = asyncio.Lock()
+_IDEMPOTENCY_TTL_SEC = 24 * 60 * 60
+
+
+def _idempotency_key(request: Request, supplied_key: str) -> str:
+    """Scopes a client key to method, route, and authenticated principal."""
+    auth = request.headers.get("Authorization", "")
+    principal = hashlib.sha256(auth.encode("utf-8")).hexdigest() if auth else "anonymous"
+    raw = f"{principal}:{request.method}:{request.url.path}:{supplied_key}"
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
 class IdempotencyMiddleware(BaseHTTPMiddleware):
@@ -187,9 +200,29 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
         idempotency_key = request.headers.get("Idempotency-Key")
         if not idempotency_key:
             return await call_next(request)
+        if len(idempotency_key) > 256:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "error": {
+                        "code": "INVALID_IDEMPOTENCY_KEY",
+                        "message": "Idempotency-Key must be 256 characters or fewer.",
+                        "retryable": False,
+                    }
+                },
+            )
+
+        cache_key = _idempotency_key(request, idempotency_key)
+        waiter: Optional[asyncio.Event] = None
+        is_leader = False
 
         async with _IDEMPOTENCY_LOCK:
-            cached = _IDEMPOTENCY_CACHE.get(idempotency_key)
+            now = time.time()
+            expired = [key for key, value in _IDEMPOTENCY_CACHE.items() if value[3] <= now]
+            for key in expired:
+                _IDEMPOTENCY_CACHE.pop(key, None)
+
+            cached = _IDEMPOTENCY_CACHE.get(cache_key)
             if cached:
                 status_code, body, headers, _ = cached
                 return Response(
@@ -199,27 +232,44 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
                     media_type="application/json",
                 )
 
-        response = await call_next(request)
+            waiter = _IDEMPOTENCY_INFLIGHT.get(cache_key)
+            if waiter is None:
+                waiter = asyncio.Event()
+                _IDEMPOTENCY_INFLIGHT[cache_key] = waiter
+                is_leader = True
 
-        if 200 <= response.status_code < 300:
-            body = b""
-            async for chunk in response.body_iterator:
-                body += chunk
+        # Coalesce concurrent retries for the same principal/operation. The
+        # follower re-enters after the leader stores its response.
+        if not is_leader:
+            await waiter.wait()
+            return await self.dispatch(request, call_next)
 
-            async with _IDEMPOTENCY_LOCK:
-                _IDEMPOTENCY_CACHE[idempotency_key] = (
-                    response.status_code,
-                    body,
-                    dict(response.headers),
-                    time.time(),
+        try:
+            response = await call_next(request)
+
+            if 200 <= response.status_code < 300:
+                body = b""
+                async for chunk in response.body_iterator:
+                    body += chunk
+
+                async with _IDEMPOTENCY_LOCK:
+                    _IDEMPOTENCY_CACHE[cache_key] = (
+                        response.status_code,
+                        body,
+                        dict(response.headers),
+                        time.time() + _IDEMPOTENCY_TTL_SEC,
+                    )
+
+                return Response(
+                    content=body,
+                    status_code=response.status_code,
+                    headers=dict(response.headers),
+                    media_type="application/json",
                 )
 
-            return Response(
-                content=body,
-                status_code=response.status_code,
-                headers=dict(response.headers),
-                media_type="application/json",
-            )
-
-        return response
-
+            return response
+        finally:
+            async with _IDEMPOTENCY_LOCK:
+                current = _IDEMPOTENCY_INFLIGHT.pop(cache_key, None)
+                if current is not None:
+                    current.set()

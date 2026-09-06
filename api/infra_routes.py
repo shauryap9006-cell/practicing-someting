@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from api.auth import get_current_user, require_role
+from api.auth import assert_station_scope, effective_station_scope, get_current_user, require_role
 from data.audit import record_audit
 from data.db import Database, get_db
 from notifications.dispatcher import notify
@@ -92,6 +92,8 @@ def register_rake_bpc(
 def list_rakes(
     train_no: Optional[str] = Query(None, description="Filter by train number"),
     overdue_only: bool = Query(False, description="Filter for overdue BPCs only"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     current_user: Dict[str, Any] = Depends(get_current_user),
     db: Database = Depends(get_db),
 ):
@@ -126,7 +128,8 @@ def list_rakes(
             params.append(train_no)
         if overdue_only:
             query += " AND status = 'OVERDUE'"
-        query += " ORDER BY id DESC;"
+        query += " ORDER BY id DESC LIMIT ? OFFSET ?"
+        params.extend([limit, offset])
         cur.execute(query, tuple(params))
         rows = [dict(r) for r in cur.fetchall()]
     return rows
@@ -152,6 +155,7 @@ def register_station_asset(
     db: Database = Depends(get_db),
 ):
     """Registers or updates a fixed station infrastructure asset."""
+    assert_station_scope(current_user, req.station_code)
     with db.transaction() as cur:
         cur.execute(
             """
@@ -195,10 +199,13 @@ def list_station_assets(
     station_code: Optional[str] = Query(None, description="Station filter"),
     asset_type: Optional[str] = Query(None, description="Asset type filter"),
     status: Optional[str] = Query(None, description="Status filter"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     current_user: Dict[str, Any] = Depends(get_current_user),
     db: Database = Depends(get_db),
 ):
     """Lists station fixed assets."""
+    station_code = effective_station_scope(current_user, station_code)
     with db.transaction() as cur:
         # Seed default sample assets if empty
         cur.execute("SELECT COUNT(*) as count FROM station_assets;")
@@ -234,7 +241,8 @@ def list_station_assets(
         if status:
             query += " AND status = ?"
             params.append(status.upper())
-        query += " ORDER BY asset_type ASC, asset_tag ASC;"
+        query += " ORDER BY asset_type ASC, asset_tag ASC LIMIT ? OFFSET ?;"
+        params.extend([limit, offset])
         cur.execute(query, tuple(params))
         rows = [dict(r) for r in cur.fetchall()]
     return rows
@@ -255,6 +263,7 @@ def create_work_order(
     db: Database = Depends(get_db),
 ):
     """Logs a maintenance work order against a defective asset."""
+    assert_station_scope(current_user, req.station_code)
     now_iso = datetime.now(timezone.utc).isoformat()
     with db.transaction() as cur:
         cur.execute(
@@ -311,10 +320,13 @@ def create_work_order(
 def list_work_orders(
     station_code: Optional[str] = Query(None, description="Station filter"),
     status: Optional[str] = Query(None, description="OPEN, IN_PROGRESS, RESOLVED"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     current_user: Dict[str, Any] = Depends(get_current_user),
     db: Database = Depends(get_db),
 ):
     """Lists maintenance work orders."""
+    station_code = effective_station_scope(current_user, station_code)
     with db.transaction() as cur:
         query = "SELECT * FROM work_orders WHERE 1=1"
         params: List[Any] = []
@@ -324,7 +336,8 @@ def list_work_orders(
         if status:
             query += " AND status = ?"
             params.append(status.upper())
-        query += " ORDER BY id DESC;"
+        query += " ORDER BY id DESC LIMIT ? OFFSET ?;"
+        params.extend([limit, offset])
         cur.execute(query, tuple(params))
         rows = [dict(r) for r in cur.fetchall()]
     return rows
@@ -348,6 +361,7 @@ def resolve_work_order(
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Work order not found.")
+        assert_station_scope(current_user, row["station_code"])
 
         cur.execute(
             """
@@ -397,6 +411,7 @@ def record_cleaning_log(
     db: Database = Depends(get_db),
 ):
     """Records a cleanliness inspection score for a station zone."""
+    assert_station_scope(current_user, req.station_code)
     now_iso = datetime.now(timezone.utc).isoformat()
     with db.transaction() as cur:
         cur.execute(
@@ -427,10 +442,13 @@ def record_cleaning_log(
 @router.get("/feedback", response_model=List[Dict[str, Any]])
 def list_cleaning_logs(
     station_code: Optional[str] = Query(None, description="Station filter"),
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     current_user: Dict[str, Any] = Depends(get_current_user),
     db: Database = Depends(get_db),
 ):
     """Lists cleanliness audit logs."""
+    station_code = effective_station_scope(current_user, station_code)
     with db.transaction() as cur:
         # Seed sample cleaning logs if empty
         cur.execute("SELECT COUNT(*) as count FROM cleaning_logs;")
@@ -459,7 +477,8 @@ def list_cleaning_logs(
         if station_code:
             query += " AND station_code = ?"
             params.append(station_code.upper())
-        query += " ORDER BY id DESC LIMIT 50;"
+        query += " ORDER BY id DESC LIMIT ? OFFSET ?;"
+        params.extend([limit, offset])
         cur.execute(query, tuple(params))
         rows = [dict(r) for r in cur.fetchall()]
     return rows

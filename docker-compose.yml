@@ -11,17 +11,21 @@ services:
       - "8000:8000"
     environment:
       - RAILTWIN_DB_PATH=/app/data/railtwin.db
-      - RAILTWIN_ARTIFACTS_DIR=/app/artifacts
+      - RAILTWIN_ARTIFACTS_DIR=/app/ml/artifacts
       - RAILTWIN_API_HOST=0.0.0.0
       - RAILTWIN_API_PORT=8000
+      - RAILTWIN_ENV=${RAILTWIN_ENV:-development}
+      - RAILTWIN_JWT_SECRET_KEY=${RAILTWIN_JWT_SECRET_KEY:?RAILTWIN_JWT_SECRET_KEY must be set}
+      - RAILTWIN_CORS_ORIGINS=${RAILTWIN_CORS_ORIGINS:-["http://localhost:5173"]}
+      - RAILTWIN_OPENWA_WEBHOOK_SECRET=${RAILTWIN_OPENWA_WEBHOOK_SECRET:-}
     volumes:
-      # Persist database and ML artifacts between restarts
+      # Persist operational data. Model artifacts stay immutable in the image
+      # and are verified at startup rather than being masked by an empty volume.
       - railtwin_db:/app/data
-      - railtwin_artifacts:/app/artifacts
       - railtwin_cache:/app/data/cache
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/v1/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/readyz"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -34,12 +38,10 @@ services:
   #   container_name: railtwin_nightly
   #   volumes:
   #     - railtwin_db:/app/data
-  #     - railtwin_artifacts:/app/artifacts
   #     - railtwin_cache:/app/data/cache
   #   command: ["python", "-m", "scripts.nightly_pipeline", "--network=mixed"]
   #   profiles: ["nightly"]
 
 volumes:
   railtwin_db:
-  railtwin_artifacts:
   railtwin_cache:

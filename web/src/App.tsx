@@ -60,9 +60,11 @@ export function App() {
     <TrackModalProvider>
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<ForesightConsolePage />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/landing" element={<LandingPage />} />
+        <Route path="/foresight" element={<ForesightConsolePage />} />
         <Route path="/compare" element={<ComparatorPage />} />
+        <Route path="/time-machine" element={<TimeMachinePage />} />
         <Route path="/replay" element={<TimeMachinePage />} />
         <Route path="/cascade" element={<RippleBoardPage />} />
         <Route path="/model-card" element={<HonestModelCardPage />} />
