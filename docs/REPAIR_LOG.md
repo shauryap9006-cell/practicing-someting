@@ -71,4 +71,37 @@
 - `engine/prediction_ledger.py`:
   - Added `record_prediction(...)` alias method for API compatibility.
 - Tests: Created `tests/test_passenger_ml.py` testing confidence band presence, cryptographic ledger block increment (+1 block), debounce caching behavior (single predictor call & single ledger receipt across rapid calls), and 404 status on unknown trains.
-- Verification: 284/284 tests green. Ledger verified at 6,394 blocks.
+## Phase 5: Concurrency & Plumbing (D03, D11, D12, RC1)
+- **Gate 5.1 (D03 Audit Chain Race)**:
+  - `scripts/migrations/016_audit_log_index.sql`: Created unique index `idx_audit_prev` on `audit_log(prev_hash)`. Applied to database via `db.apply_migrations()`.
+  - `data/audit.py`:
+    - Added `_AUDIT_LOCK = threading.Lock()` around audit logging.
+    - Used `BEGIN IMMEDIATE` transaction to guarantee process and connection isolation.
+    - Added retry loop (up to 3 attempts with exponential backoff) on `sqlite3.IntegrityError`.
+    - Added `append_audit_entry(*args, **kwargs)` supporting flexible calling patterns.
+    - Added `verify_audit_log(db)` returning `(is_valid, fork_count, total_blocks)`.
+  - Tests: Created `tests/test_audit_concurrency.py` writing 20 concurrent entries across 5 threads; verified `verify_audit_log()` returns `(True, 0, final_count)` and increments count by exactly 20.
+- **SSE Async Plumbing**:
+  - `api/board_routes.py:274`: Wrapped synchronous `get_live_board` call in `await asyncio.to_thread(...)` inside async generator.
+- **Timezone Unification (D11, D12)**:
+  - `engine/clocks.py`: Added `ZoneInfo("Asia/Kolkata")` import and centralized `ist_now()` helper returning current IST time honoring active clock mode (`live` vs `simulated`).
+  - `api/board_routes.py`, `api/ops_routes.py`, `collector/weather.py`, `engine/ops.py`, `engine/live_tracker.py`: Replaced naive `datetime.now()` calls with clock methods (`clock.now_iso()`, `clock.today_str()`) or monotonic timing (`time.monotonic()`).
+- **Route Collision RC1**:
+  - Verified removal of shadowing duplicate `/passenger/search` route from `api/routes.py`.
+
+## Phase 6: Hygiene (D10, D13, D14, D15, D16)
+- **D10**: Added `numpy>=1.26.0` to `requirements.txt`.
+- **D13**: Created `collector/__init__.py` making `collector` a recognized Python package.
+- **D14**: Verified all package directories contain `__init__.py`.
+- **D15 & D16**: Audited dependencies and clean import tree.
+
+## Phase 7: Final Verification & Documentation
+- **Test Suite**: 285 tests passed, 0 failed in 94.15s (`pytest -q tests/`).
+- **Prediction Ledger Integrity**: Unbroken SHA-256 hash chain verified at 6,641 blocks (`(True, 6641, None)`).
+- **Audit Log Integrity**: 0 forks, unbroken SHA-256 hash chain verified (`(True, 0, 71)`).
+- **Forensic Grep Checks**:
+  - 0 occurrences of synthetic fallback strings (`estimated_from_schedule`).
+  - 0 hardcoded train bypasses in `passenger_routes.py` (`12003`, `12040`).
+  - All position payloads carry explicit `source` (`live`, `deadreckoned`, `simulated`, `replay`).
+  - All timestamps adhere to `Asia/Kolkata` via centralized clock architecture.
+- **Documentation**: Created `docs/HEARTBEAT.md` covering twin physics equations, heartbeat rate, event emissions, touchdown conformal PID integration, and roadmap.

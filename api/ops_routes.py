@@ -16,8 +16,8 @@ from pydantic import BaseModel, Field
 from api.auth import assert_station_scope, effective_station_scope, get_current_user, require_role
 from data.audit import record_audit
 from data.db import Database, get_db
+from engine.clocks import get_clock
 from notifications.dispatcher import notify
-
 
 router = APIRouter(prefix="/api/ops", tags=["Station Operations & Actuals (A4 & A6)"])
 
@@ -60,11 +60,12 @@ def record_set_in(
     db: Database = Depends(get_db),
 ):
     """Records human-confirmed ACTUAL train arrival (Set-In) at a platform."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    clock = get_clock()
+    now_iso = clock.now_iso()
     actual_time = req.actual_ts or now_iso
     stn = req.station_code.upper()
     assert_station_scope(current_user, stn)
-    run_date = datetime.now().strftime("%Y-%m-%d")
+    run_date = clock.today_str()
     run_id = f"RUN-{train_no}-{run_date}"
 
     # Calculate discrepancy if predicted_ts or ETA p50 exists
@@ -162,11 +163,12 @@ def record_set_out(
     db: Database = Depends(get_db),
 ):
     """Records human-confirmed ACTUAL train departure (Set-Out) and frees the platform."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    clock = get_clock()
+    now_iso = clock.now_iso()
     actual_time = req.actual_ts or now_iso
     stn = req.station_code.upper()
     assert_station_scope(current_user, stn)
-    run_date = datetime.now().strftime("%Y-%m-%d")
+    run_date = clock.today_str()
     run_id = f"RUN-{train_no}-{run_date}"
 
     with db.transaction() as cur:
@@ -291,7 +293,8 @@ def create_shunting_move(
     db: Database = Depends(get_db),
 ):
     """Logs a non-timetable shunting move and checks for platform conflicts."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    clock = get_clock()
+    now_iso = clock.now_iso()
     stn = req.station_code.upper()
     assert_station_scope(current_user, stn)
 

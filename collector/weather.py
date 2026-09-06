@@ -13,6 +13,7 @@ import requests
 
 from config import settings
 from data.db import Database, get_db
+from engine.clocks import get_clock
 
 
 class WeatherEngine:
@@ -33,7 +34,7 @@ class WeatherEngine:
         supply data. Synthetic weather is only permitted in replay/demo mode.
         """
         date_str = date.strftime("%Y-%m-%d")
-        today = datetime.date.today()
+        today = get_clock().now().date()
 
         url = self.forecast_url if date >= today else self.archive_url
         params = {

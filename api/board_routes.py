@@ -12,6 +12,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import time
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
@@ -23,6 +24,7 @@ from config import settings
 from api.predictor import PredictorService, get_predictor_service
 from api.sse_limits import acquire_sse_slot, release_sse_slot
 from data.db import Database, get_db
+from engine.clocks import get_clock
 
 router = APIRouter(prefix="/api/board", tags=["Live Train Board (A2, F18, F32)"])
 
@@ -51,16 +53,18 @@ def get_live_board(
 ):
 
     """Returns live train arrival & departure board with vectorized prediction and ETag caching."""
+    clock = get_clock()
     stn = (station_code if isinstance(station_code, str) else "NDLS").upper()
     actual_date = date if isinstance(date, str) else None
     actual_kind = kind if isinstance(kind, str) else "all"
     actual_hours = hours if isinstance(hours, int) else 6
-    target_date = actual_date or datetime.now().strftime("%Y-%m-%d")
+    target_date = actual_date or clock.today_str()
 
     cache_key = f"{stn}_{target_date}_{actual_kind}_{actual_hours}_{limit}"
 
+    now_ts = time.time()
     cached = _BOARD_CACHE.get(cache_key)
-    if cached and (datetime.now().timestamp() - cached.get("cached_at", 0)) < 4.0:
+    if cached and (now_ts - cached.get("cached_at", 0)) < 4.0:
         data = cached["data"]
         etag = cached["etag"]
         if if_none_match and if_none_match == etag:
@@ -188,7 +192,7 @@ def get_live_board(
         "station_code": stn,
         "date": target_date,
         "total_trains": len(board_entries),
-        "refreshed_at": datetime.now(timezone.utc).isoformat(),
+        "refreshed_at": clock.now_iso(),
         "entries": board_entries,
     }
 
@@ -196,7 +200,7 @@ def get_live_board(
     _BOARD_CACHE[cache_key] = {
         "data": payload,
         "etag": etag,
-        "cached_at": datetime.now().timestamp(),
+        "cached_at": now_ts,
     }
 
     if response:
@@ -271,7 +275,8 @@ async def stream_live_board(
             while True:
                 if await request.is_disconnected() or asyncio.get_event_loop().time() - started >= settings.SSE_MAX_DURATION_SECONDS:
                     break
-                board_data = get_live_board(
+                board_data = await asyncio.to_thread(
+                    get_live_board,
                     station_code=station_code,
                     db=db,
                     predictor=predictor,

@@ -18,6 +18,7 @@ import asyncio
 import datetime
 import math
 import threading
+import time
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
@@ -100,12 +101,12 @@ class TokenBucket:
         self.capacity = float(capacity)
         self.fill_rate = float(fill_rate_per_second)
         self.tokens = float(capacity)
-        self.last_update = datetime.datetime.now().timestamp()
+        self.last_update = time.monotonic()
         self._lock = threading.Lock()
 
     def consume(self, tokens: float = 1.0) -> bool:
         with self._lock:
-            now = datetime.datetime.now().timestamp()
+            now = time.monotonic()
             elapsed = max(0.0, now - self.last_update)
             self.last_update = now
             self.tokens = min(self.capacity, self.tokens + elapsed * self.fill_rate)

@@ -211,7 +211,8 @@ class PlatformManager:
         self, station_code: str, blocks: List[PlatformBlock]
     ) -> Tuple[List[PlatformBlock], ReoptDiff]:
         """Greedy + Local-Search Re-Optimizer resolving conflicts in <0.05s."""
-        start_time = datetime.datetime.now()
+        import time
+        start_time = time.monotonic()
 
         # Save snapshot for rollback
         self._history_snapshots[station_code] = copy.deepcopy(blocks)
@@ -291,7 +292,7 @@ class PlatformManager:
         for b in working_blocks:
             b.is_conflicted = (b.train_no in conflicted_trains)
 
-        exec_duration = (datetime.datetime.now() - start_time).total_seconds()
+        exec_duration = time.monotonic() - start_time
 
         diff = ReoptDiff(
             station_code=station_code,

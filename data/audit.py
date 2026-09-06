@@ -9,12 +9,16 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
+import threading
+import time
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from data.db import Database, get_db
+from engine.clocks import get_clock
 
 GENESIS_HASH = "0" * 64
+_AUDIT_LOCK = threading.Lock()
 
 
 def compute_audit_hash(
@@ -55,11 +59,11 @@ def record_audit(
     before_state: Optional[Union[Dict[str, Any], str]] = None,
     after_state: Optional[Union[Dict[str, Any], str]] = None,
 ) -> Dict[str, Any]:
-    """Records an append-only, SHA-256 chained audit log entry.
+    """Records an append-only, SHA-256 chained audit log entry with concurrency safety.
     
     Accepts either an active sqlite3.Cursor (inside an existing transaction) or a Database instance.
     """
-    ts = datetime.now(timezone.utc).isoformat()
+    clock = get_clock()
     record_id_str = str(record_id)
     
     before_str = json.dumps(before_state, sort_keys=True) if isinstance(before_state, dict) else before_state
@@ -67,6 +71,7 @@ def record_audit(
 
     def _execute_audit(cur: sqlite3.Cursor) -> Dict[str, Any]:
         prev_hash = get_last_audit_hash(cur)
+        ts = clock.now_iso()
         row_hash = compute_audit_hash(
             prev_hash=prev_hash,
             ts=ts,
@@ -114,11 +119,112 @@ def record_audit(
         }
 
     if isinstance(db_or_cursor, sqlite3.Cursor):
-        return _execute_audit(db_or_cursor)
-    
+        with _AUDIT_LOCK:
+            return _execute_audit(db_or_cursor)
+
     db = db_or_cursor if isinstance(db_or_cursor, Database) else get_db()
-    with db.transaction() as cur:
-        return _execute_audit(cur)
+    for attempt in range(3):
+        try:
+            with _AUDIT_LOCK:
+                with db.transaction() as cur:
+                    cur.execute("BEGIN IMMEDIATE")
+                    return _execute_audit(cur)
+        except sqlite3.IntegrityError:
+            if attempt < 2:
+                time.sleep(0.01 * (attempt + 1))
+                continue
+            raise
+
+
+def append_audit_entry(*args, **kwargs) -> Dict[str, Any]:
+    """Alias for record_audit supporting flexible argument signatures."""
+    if args and (isinstance(args[0], (Database, sqlite3.Cursor)) or args[0] is None):
+        return record_audit(*args, **kwargs)
+
+    actor_id = kwargs.pop("actor_id", args[0] if len(args) > 0 else "system")
+    actor_role = kwargs.pop("actor_role", args[1] if len(args) > 1 else "service")
+    action = kwargs.pop("action", args[2] if len(args) > 2 else "MUTATION")
+    table_name = kwargs.pop("table_name", args[3] if len(args) > 3 else "audit")
+    record_id = kwargs.pop("record_id", args[4] if len(args) > 4 else "0")
+    before_state = kwargs.pop("before_state", args[5] if len(args) > 5 else None)
+    after_state = kwargs.pop("after_state", args[6] if len(args) > 6 else None)
+    db = kwargs.pop("db", kwargs.pop("db_or_cursor", None))
+
+    return record_audit(
+        db_or_cursor=db,
+        actor_id=actor_id,
+        actor_role=actor_role,
+        action=action,
+        table_name=table_name,
+        record_id=record_id,
+        before_state=before_state,
+        after_state=after_state,
+    )
+
+
+def verify_audit_log(db: Optional[Database] = None) -> Tuple[bool, int, int]:
+    """Reads chain, computes SHA-256 for each block, returns (is_valid, fork_count, total_blocks)."""
+    database = db or get_db()
+    with database.transaction() as cur:
+        cur.execute(
+            """
+            SELECT id, ts, actor_id, actor_role, action, table_name, record_id,
+                   before_state, after_state, row_hash, prev_hash
+            FROM audit_log
+            ORDER BY id ASC;
+            """
+        )
+        rows = cur.fetchall()
+
+    if not rows:
+        return True, 0, 0
+
+    seen_prevs = set()
+    fork_count = 0
+    all_valid = True
+    expected_prev = GENESIS_HASH
+
+    for row in rows:
+        (
+            rec_id,
+            ts,
+            actor_id,
+            actor_role,
+            action,
+            table_name,
+            record_id,
+            before_state,
+            after_state,
+            row_hash,
+            prev_hash,
+        ) = row
+
+        if prev_hash in seen_prevs:
+            fork_count += 1
+        seen_prevs.add(prev_hash)
+
+        if prev_hash != expected_prev:
+            all_valid = False
+
+        calculated_hash = compute_audit_hash(
+            prev_hash=prev_hash,
+            ts=ts,
+            actor_id=actor_id,
+            actor_role=actor_role,
+            action=action,
+            table_name=table_name,
+            record_id=str(record_id),
+            before_state=before_state,
+            after_state=after_state,
+        )
+
+        if row_hash != calculated_hash:
+            all_valid = False
+
+        expected_prev = row_hash
+
+    is_valid = all_valid and (fork_count == 0)
+    return is_valid, fork_count, len(rows)
 
 
 def verify_audit_chain_integrity(db: Optional[Database] = None) -> Tuple[bool, int, Optional[str]]:

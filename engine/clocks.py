@@ -12,8 +12,15 @@ from __future__ import annotations
 import datetime
 from abc import ABC, abstractmethod
 from typing import Optional
+from zoneinfo import ZoneInfo
 
-IST_TIMEZONE = datetime.timezone(datetime.timedelta(hours=5, minutes=30), name="IST")
+KOLKATA_TZ = ZoneInfo("Asia/Kolkata")
+IST_TIMEZONE = KOLKATA_TZ
+
+
+def ist_now() -> datetime.datetime:
+    """Centralized helper returning current time in IST (Asia/Kolkata), honoring simulated clock."""
+    return get_clock().now()
 
 
 class TimeProvider(ABC):
