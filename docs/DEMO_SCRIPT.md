@@ -25,7 +25,7 @@
 ### Act 1: The Live Corridor Twin (0:00 – 0:30)
 * **Screen:** `/dashboard/live-map` (Corridor Spatial Twin)
 * **What to Say:**
-  > "Distinguished judges, Indian Railways runs on dynamic physical reality, but legacy dispatchers fly blind between fixed station signals. This is **RailTwin-X** — the neural operational twin for the 785 KM New Delhi to Pt. Deen Dayal Upadhyaya mainline corridor."
+  > "Distinguished judges, Indian Railways runs on dynamic physical reality, but legacy dispatchers fly blind between fixed station signals. This is **RailTwin-X** — the neural operational twin for the 440 KM New Delhi (NDLS) to Lucknow Charbagh (LKO) mainline corridor."
 * **What to Do:**
   1. Open `/dashboard/live-map`.
   2. Point at the live train markers gliding along the polyline.

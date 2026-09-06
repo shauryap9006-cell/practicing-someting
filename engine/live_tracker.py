@@ -183,6 +183,19 @@ class LivePositionTracker:
     def last_tick_time(self) -> Optional[datetime.datetime]:
         return self._last_tick_time
 
+    def snapshot(self) -> Dict[str, LiveTrainPosition]:
+        """Returns a safe copy of the in-memory live train position cache."""
+        with self._lock:
+            return {
+                k.split(":")[0]: pos
+                for k, (pos, ts) in self._position_cache.items()
+            }
+
+    @property
+    def positions(self) -> Dict[str, LiveTrainPosition]:
+        """Public accessor returning snapshot of in-memory live positions."""
+        return self.snapshot()
+
     async def start(self) -> None:
         """Starts the background tracking loop if not already running."""
         if self._is_running:

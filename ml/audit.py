@@ -218,7 +218,7 @@ def run_full_audit():
     q_hat_del = 1.5
     q_hat_gru = 2.0
     if manifest_file.exists():
-        with open(manifest_file, "r") as f:
+        with open(manifest_file, "r", encoding="utf-8") as f:
             m = json.load(f)
             q_hat_dir = float(m.get("conformal_q_hat_direct", m.get("conformal_q_hat", 2.0)))
             q_hat_del = float(m.get("conformal_q_hat_delta", 1.5))

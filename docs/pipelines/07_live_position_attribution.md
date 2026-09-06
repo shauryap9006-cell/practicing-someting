@@ -1,7 +1,7 @@
 # Pipeline 07: Live Position Tracking, Context & Real Delay Attribution
 
 ## 1. Purpose
-Provides continuous, high-precision spatial positioning and causal delay attribution for all active trains along the 785 KM New Delhi (NDLS) to Pt. Deen Dayal Upadhyaya (DDU) trunk corridor. Combines multi-tier station-board polling and rate-budgeted RapidAPI refresh with polyline kinematic dead-reckoning, exponential confidence decay ($\tau = 1800\text{s}$), 5-layer operational context enrichment, and exact mathematical delay attribution ($\sum \text{minutes} = \Delta\text{delay}$) logged to an immutable ledger.
+Provides continuous, high-precision spatial positioning and causal delay attribution for all active trains along the 440 KM New Delhi (NDLS) to Lucknow Charbagh (LKO) trunk corridor. Combines multi-tier station-board polling and rate-budgeted RapidAPI refresh with polyline kinematic dead-reckoning, exponential confidence decay ($\tau = 1800\text{s}$), 5-layer operational context enrichment, and exact mathematical delay attribution ($\sum \text{minutes} = \Delta\text{delay}$) logged to an immutable ledger.
 
 ## 2. Triggers
 - **Master Live Tracker Loop**: `engine/live_tracker.py` `LivePositionTracker.tick()` executing every `LIVE_TRACKER_INTERVAL_SECONDS = 30s` in FastAPI `lifespan()`.

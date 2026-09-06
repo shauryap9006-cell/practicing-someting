@@ -2,7 +2,7 @@
 
 ## 1. System Overview & Core Pipelines (01 – 07)
 
-RailTwin-X is an enterprise-grade cyber-physical operational twin and neural decision support platform engineered for Indian Railways' High-Density Network (HDN) corridor (New Delhi to Pt. Deen Dayal Upadhyaya, 785 KM).
+RailTwin-X is an enterprise-grade cyber-physical operational twin and neural decision support platform engineered for Indian Railways' High-Density Network (HDN) corridor (New Delhi to Lucknow Charbagh, 440 KM).
 
 ### The 7 Core Pipelines
 1. **Pipeline 01: Live Ingestion & Snapshot Telemetry** — 3-tier adapter failover (RapidAPI $\to$ Web Scraping $\to$ MockReplaySource), 4-rule QualityGate validation, UTC-to-IST normalization, and point-in-time snapshot archiving.

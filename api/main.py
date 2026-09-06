@@ -9,14 +9,20 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 import re
+import sys
 from uuid import uuid4
+
+try:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
-import torch
-import uvicorn
 import torch
 import uvicorn
 

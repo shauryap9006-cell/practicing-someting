@@ -572,7 +572,7 @@ def get_demo_time_machine(
             "ntes_status": "Optimistic Timetable Slack" if b2_delay <= 5 else "Gradual Slide Under-forecasted",
             "railtwin_p50": f"{p50_arr} (+{int(round(p50))}m)",
             "railtwin_p50_delay_min": p50,
-            "railtwin_range": f"{p10_arr} – {p90_arr} (p10–p90)",
+            "railtwin_range": f"{p10_arr} - {p90_arr} (p10-p90)",
             "cone_width": f"±{round((p90 - p10) / 2.0, 1)}m",
             "receipt_hash": f"{receipt[:10]}...{receipt[-4:]} (Sealed)",
             "full_receipt_hash": receipt,
@@ -581,9 +581,9 @@ def get_demo_time_machine(
         }
 
     # Compute snapshots
-    s_t6 = _calc_stage(seq_t6, "T−6h Snapshot (Origin)", "t6")
-    s_t3 = _calc_stage(seq_t3, "T−3h Snapshot (Mid-Corridor)", "t3")
-    s_t1 = _calc_stage(seq_t1, "T−1h Snapshot (Approach)", "t1")
+    s_t6 = _calc_stage(seq_t6, "T-6h Snapshot (Origin)", "t6")
+    s_t3 = _calc_stage(seq_t3, "T-3h Snapshot (Mid-Corridor)", "t3")
+    s_t1 = _calc_stage(seq_t1, "T-1h Snapshot (Approach)", "t1")
 
     # Truth Stage
     truth_ev = events_by_seq.get(seq_truth, {})
@@ -654,15 +654,15 @@ def get_corridor_congestion_radar(
     tracker = get_live_tracker()
 
     sections = [
-        {"id": "NDLS-GZB", "name": "Delhi – Ghaziabad", "from_km": 0.0, "to_km": 25.0, "capacity": 8, "chokepoint": "GZB"},
-        {"id": "GZB-ALJN", "name": "Ghaziabad – Aligarh", "from_km": 25.0, "to_km": 131.0, "capacity": 14, "chokepoint": "ALJN"},
-        {"id": "ALJN-TDL", "name": "Aligarh – Tundla", "from_km": 131.0, "to_km": 209.0, "capacity": 12, "chokepoint": "TDL"},
-        {"id": "TDL-ETW", "name": "Tundla – Etawah", "from_km": 209.0, "to_km": 296.0, "capacity": 12, "chokepoint": "ETW"},
-        {"id": "ETW-CNB", "name": "Etawah – Kanpur Central", "from_km": 296.0, "to_km": 435.0, "capacity": 16, "chokepoint": "CNB"},
-        {"id": "CNB-FTP", "name": "Kanpur – Fatehpur", "from_km": 435.0, "to_km": 512.0, "capacity": 10, "chokepoint": "FTP"},
-        {"id": "FTP-PRYJ", "name": "Fatehpur – Prayagraj", "from_km": 512.0, "to_km": 632.0, "capacity": 14, "chokepoint": "PRYJ"},
-        {"id": "PRYJ-MZP", "name": "Prayagraj – Mirzapur", "from_km": 632.0, "to_km": 721.0, "capacity": 10, "chokepoint": "MZP"},
-        {"id": "MZP-DDU", "name": "Mirzapur – Pt Deen Dayal Upadhyaya", "from_km": 721.0, "to_km": 785.0, "capacity": 12, "chokepoint": "DDU"},
+        {"id": "NDLS-GZB", "name": "Delhi - Ghaziabad", "from_km": 0.0, "to_km": 25.0, "capacity": 8, "chokepoint": "GZB"},
+        {"id": "GZB-ALJN", "name": "Ghaziabad - Aligarh", "from_km": 25.0, "to_km": 131.0, "capacity": 14, "chokepoint": "ALJN"},
+        {"id": "ALJN-TDL", "name": "Aligarh - Tundla", "from_km": 131.0, "to_km": 209.0, "capacity": 12, "chokepoint": "TDL"},
+        {"id": "TDL-ETW", "name": "Tundla - Etawah", "from_km": 209.0, "to_km": 296.0, "capacity": 12, "chokepoint": "ETW"},
+        {"id": "ETW-CNB", "name": "Etawah - Kanpur Central", "from_km": 296.0, "to_km": 435.0, "capacity": 16, "chokepoint": "CNB"},
+        {"id": "CNB-FTP", "name": "Kanpur - Fatehpur", "from_km": 435.0, "to_km": 512.0, "capacity": 10, "chokepoint": "FTP"},
+        {"id": "FTP-PRYJ", "name": "Fatehpur - Prayagraj", "from_km": 512.0, "to_km": 632.0, "capacity": 14, "chokepoint": "PRYJ"},
+        {"id": "PRYJ-MZP", "name": "Prayagraj - Mirzapur", "from_km": 632.0, "to_km": 721.0, "capacity": 10, "chokepoint": "MZP"},
+        {"id": "MZP-DDU", "name": "Mirzapur - Pt Deen Dayal Upadhyaya", "from_km": 721.0, "to_km": 785.0, "capacity": 12, "chokepoint": "DDU"},
     ]
 
     station_km_map = {
@@ -680,8 +680,9 @@ def get_corridor_congestion_radar(
         live_rows = [dict(r) for r in cur.fetchall()]
 
     live_trains = []
-    if tracker and hasattr(tracker, "positions"):
-        for t_no, pos in tracker.positions.items():
+    if tracker:
+        snap = tracker.snapshot()
+        for t_no, pos in snap.items():
             curr_code = getattr(pos, "current_station_code", "NDLS")
             live_trains.append({
                 "train_no": t_no,
@@ -724,11 +725,6 @@ def get_corridor_congestion_radar(
                 if s["from_km"] <= proj_km <= s["to_km"]:
                     count += 1
                     tot_delay += t["delay"]
-
-            if count == 0:
-                base_count = max(2, int((s["capacity"] * 0.45) + ((dt_min // 60) % 3)))
-                count = base_count
-                tot_delay = base_count * (12.0 + (s["from_km"] / 80.0))
 
             occ = round(min(100.0, (count / s["capacity"]) * 100.0), 1)
             if occ > max_occ:
@@ -774,11 +770,11 @@ def get_corridor_congestion_radar(
 
     return {
         "status": "OK",
-        "corridor": "NCR Mainline (NDLS – DDU 785km)",
+        "corridor": "NCR Mainline (NDLS-LKO 440km)",
         "as_of": now_dt.isoformat(),
         "horizons": [h["label"] for h in horizons],
         "sections_count": len(sections),
-        "active_monitored_trains": max(len(live_trains), 14),
+        "active_monitored_trains": len(live_trains),
         "radar": radar_data,
         "highest_chokepoints": highest_chokepoints[:3],
     }

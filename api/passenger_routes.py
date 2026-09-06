@@ -186,6 +186,10 @@ async def stream_passenger_train(
 
         pos = getattr(tracker, "positions", {}).get(target_train_no) if tracker else None
 
+        if not (pos or lp_row):
+            yield f"data: {json.dumps({'status': 'unavailable', 'reason': 'no live source', 'train_no': target_train_no})}\n\n"
+            return
+
         if route_stops and len(route_stops) >= 2:
             curr_code = getattr(pos, "current_station_code", None) or (lp_row["current_station_code"] if lp_row else None)
             next_code = getattr(pos, "next_station_code", None) or (lp_row["next_station_code"] if lp_row else None)
@@ -199,22 +203,11 @@ async def stream_passenger_train(
             next_halt_code = next_match["station_code"]
             next_halt_name = next_match["station_name"]
             delay_val = float(getattr(pos, "delay_minutes", 0) or (lp_row["delay_minutes"] if lp_row else 0))
-        elif target_train_no == "12003":
-            base_km = 187.0
-            base_speed = 112.0
-            next_halt_km = 209.0
-            next_halt_code = "TDL"
-            next_halt_name = "Tundla Junction"
-            delay_val = 25.0
         else:
-            base_km = 0.0
-            base_speed = 85.0
-            next_halt_km = 50.0
-            next_halt_code = "NDLS"
-            next_halt_name = "New Delhi"
-            delay_val = 0.0
+            yield f"data: {json.dumps({'status': 'unavailable', 'reason': 'no live source', 'train_no': target_train_no})}\n\n"
+            return
 
-        is_completed = (target_train_no == "12004") or (getattr(pos, "status", "") == "TERMINATED")
+        is_completed = (getattr(pos, "status", "") == "TERMINATED")
 
         seq = 0
         loop = asyncio.get_event_loop()
@@ -279,11 +272,18 @@ async def stream_passenger_train(
 
 @router.get("/search", response_model=None)
 def search_trains(
-    q: str = Query(..., min_length=1, description="Query string: train number, name, or PNR"),
+    q: Optional[str] = Query(None, description="Query string: train number, name, or PNR"),
+    query: Optional[str] = Query(None, description="Alias for q"),
     db: Database = Depends(get_db),
 ) -> List[Dict[str, Any]]:
     """Live passenger train and PNR search with zero static data. Returns max 6 results."""
-    clean_q = q.strip()
+    raw_query = q if q is not None else query
+    if raw_query is None or not raw_query.strip():
+        raise HTTPException(
+            status_code=422,
+            detail=[{"loc": ["query", "q"], "msg": "Field required: specify 'q' or 'query'", "type": "value_error.missing"}],
+        )
+    clean_q = raw_query.strip()
     results: List[Dict[str, Any]] = []
 
     if clean_q.isdigit() and len(clean_q) == 10:
@@ -585,6 +585,22 @@ def get_passenger_snapshot(
     all_stops: List[Dict[str, Any]] = []
     selected_stop_obj: Optional[Dict[str, Any]] = None
 
+    platform_map: Dict[str, str] = {}
+    try:
+        with db.transaction() as cur:
+            cur.execute(
+                """
+                SELECT station_code, platform
+                FROM platform_assignments
+                WHERE train_no = ?
+                """,
+                (target_train_no,),
+            )
+            for r in cur.fetchall():
+                platform_map[r["station_code"]] = str(r["platform"])
+    except Exception:
+        pass
+
     for idx, s in enumerate(stops_rows):
         code = s["station_code"]
         stn_name = s["station_name"]
@@ -601,8 +617,7 @@ def get_passenger_snapshot(
         actual_arr = sched_arr if is_passed and sched_arr else None
         actual_dep = sched_dep if is_passed and sched_dep else None
 
-        has_platform = is_passed or (abs(dist - current_km) < 60)
-        platform_num = str((int(target_train_no) % 4) + 1) if has_platform else None
+        platform_num = platform_map.get(code)
 
         stop_status = "passed" if is_passed else ("current" if abs(dist - current_km) <= 15 else "upcoming")
         if is_completed_journey:

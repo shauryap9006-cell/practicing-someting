@@ -7,7 +7,7 @@
 
 ## 🌟 Executive Summary
 
-**RailTwin-X** is an enterprise AI digital twin and neural operational dispatch copilot for Indian Railways (model corridor: New Delhi `NDLS` $\rightarrow$ Kanpur Central `CNB` $\rightarrow$ Prayagraj `PRYJ` $\rightarrow$ Pt. Deen Dayal Upadhyaya `DDU`).
+**RailTwin-X** is an enterprise AI digital twin and neural operational dispatch copilot for Indian Railways (model corridor: New Delhi (NDLS) → Kanpur Central (CNB) → Lucknow Charbagh (LKO), 440 km, 8 stations).
 
 It replaces legacy static delay trackers with a probabilistic **PyTorch Non-Crossing GRU + LightGBM Quantile Ensemble** bounded by a strict kinematic safety interlock. Every served forecast is cryptographically sealed in an append-only **SHA-256 tamper-evident audit ledger**, ensuring zero retrospective score manipulation and verifiable trust for both passengers and section controllers.
 
