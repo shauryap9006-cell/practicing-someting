@@ -26,3 +26,4 @@ __pycache__/
 .coverage
 web/dist/
 graphify-out/
+.v4-rescue/

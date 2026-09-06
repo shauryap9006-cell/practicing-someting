@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --selection-bg: #C25E00;
+    --selection-ink: #FFFFFF;
+  }
+
+  html {
+    font-family: "Instrument Sans", system-ui, sans-serif;
+    color: #191712;
+    background-color: #F3EFE6;
+    -smooth-scrolling: true;
+  }
+
+  ::selection {
+    background-color: var(--selection-bg);
+    color: var(--selection-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid #C25E00;
+    outline-offset: 2px;
+  }
+}
+
+/* Typography & Print design specifics */
+.font-display {
+  font-family: "Fraunces", Georgia, serif;
+  font-variation-settings: "opsz" 100;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Paper grain texture (fixed overlay at 2.5% opacity, mix-blend-mode: multiply) */
+.paper-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.025;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+}
+
+/* Motion and Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Print stylesheet for /proof and model cards */
+@media print {
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  .paper-overlay {
+    display: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+}

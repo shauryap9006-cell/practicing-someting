@@ -1,1187 +1,315 @@
-import { mockStore } from '@/mock/store';
-import { getCurrentSession } from '@/mock/auth';
-import {
-  StationCode,
-  Train,
-  Station,
-  PlatformInfo,
-  CrewMember,
-  Advisory,
-  MaintenanceBlock,
-  AuditEntry,
-  DelayAutopsyItem,
-} from '@/mock/types';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import type {
+  CauseItem,
+  WhyLateData,
+  PassengerSnapshot,
+  LivePosition,
+  NetworkState,
+  CongestionRadarData,
+  ComparatorData,
+  ModelPerformanceData,
+  LedgerScoreboard,
+  LedgerVerificationResult,
+  CascadeRippleData,
+  TimeMachineData,
+  PopularTrain,
+  SearchResult,
+  PassengerWaypoint,
+} from './types';
 
-export interface DelayCauseItem {
-  event_type: string;
-  minutes: number;
-  cause: string;
-  station_code?: string | null;
-  evidence?: Record<string, any> | null;
-  evidence_pointer?: string | null;
-}
-
-export interface DelayAutopsyResponse {
-  train_no: string;
-  train_name: string;
-  total_predicted_delay_min: number;
-  is_exact_accounting: boolean;
-  causes: DelayCauseItem[];
-  narrative?: string;
-  integrity_status?: 'VERIFIED' | 'WARNING';
-  integrity_checks?: {
-    additivity_pass?: boolean;
-    evidence_resolvable?: boolean;
-    clock_consistent?: boolean;
-  };
-  as_of_ts?: string;
-  updated_at?: string;
-  clock_mode?: string;
-}
-
-export interface PassengerSearchResult {
-  train_no: string;
-  name: string;
-  name_hi?: string;
-  type: string;
-  runs_today: boolean;
-  route_short: string;
-  next_departure: string;
-  status_lamp: 'green' | 'amber' | 'red' | 'blue';
-  delay_min: number;
-  is_pnr?: boolean;
-  pnr_no?: string;
-}
-
-export interface PassengerPopularTrain {
-  train_no: string;
-  name: string;
-  name_hi?: string;
-  type: string;
-  route_short: string;
-  next_departure: string;
-  status_lamp: 'green' | 'amber' | 'red' | 'blue';
-  runs_today: boolean;
-  delay_min: number;
-}
-
-export interface PassengerPNRResponse {
-  status: 'valid' | 'invalid' | 'not_found' | 'completed';
-  pnr_no: string;
-  train_no: string;
-  train_name: string;
-  train_name_hi?: string;
-  boarding: {
-    code: string;
-    name: string;
-    name_hi?: string;
-    sched_dep?: string;
-  };
-  destination: {
-    code: string;
-    name: string;
-    name_hi?: string;
-  };
-  coach: string;
-  berth: string;
-  journey_date: string;
-  run_status: 'RUNNING' | 'COMPLETED' | 'NOT_RUNNING';
-}
-
-export interface PassengerSnapshot {
-  train: {
-    train_no: string;
-    name: string;
-    name_hi?: string;
-    type: string;
-    origin: { code: string; name: string; name_hi?: string };
-    destination: { code: string; name: string; name_hi?: string };
-    runs_today: boolean;
-    run_status: 'RUNNING' | 'COMPLETED' | 'NOT_RUNNING_TODAY';
-    next_run_note?: string;
-    next_run_note_hi?: string;
-  };
-  pnr_info?: {
-    pnr_masked?: string;
-    coach?: string;
-    berth?: string;
-    boarding_station?: { code: string; name: string; name_hi?: string };
-    destination_station?: { code: string; name: string; name_hi?: string };
-  } | null;
-  next_stop?: {
-    station_code: string;
-    station_name: string;
-    station_name_hi: string;
-    distance_km: number;
-    km_away: number;
-    eta_minutes: number;
-    scheduled_time: string;
-    expected_time: string;
-    platform: string | null;
-    status: string;
-  } | null;
-  selected_stop: {
-    station_code: string;
-    station_name: string;
-    station_name_hi?: string;
-    is_boarding_stop: boolean;
-    scheduled_arr?: string | null;
-    scheduled_dep?: string | null;
-    expected_arr: string;
-    expected_dep?: string | null;
-    time_window: { min: string; max: string };
-    platform: string | null;
-    status: 'passed' | 'current' | 'upcoming';
-    actual_arr?: string | null;
-    actual_dep?: string | null;
-  };
-  single_delay: {
-    delay_min: number;
-    status_lamp: 'green' | 'amber' | 'red' | 'blue';
-    label: string;
-    label_hi: string;
-    invariant_checked?: boolean;
-  };
-  position_strip: {
-    total_km: number;
-    current_km: number;
-    progress_pct: number;
-    next_stop_summary?: string | null;
-    next_stop_summary_hi?: string | null;
-    prev_stop_name?: string;
-    prev_stop_name_hi?: string;
-    stations: Array<{
-      code: string;
-      name: string;
-      name_hi?: string;
-      seq: number;
-      distance_km: number;
-      passed: boolean;
-      is_selected_stop: boolean;
-      is_current: boolean;
-      is_next_stop?: boolean;
-      sched_time?: string | null;
-      pred_time?: string | null;
-    }>;
-  };
-  live_status: {
-    summary: string;
-    summary_hi: string;
-    is_halted: boolean;
-    halted_station?: string | null;
-    dwell_time_min?: number | null;
-    between_stations: [string, string];
-    between_stations_hi: [string, string];
-    km_covered: number;
-    speed_kmh: number;
-    speed_from_deltas: number;
-  };
-  autopsy: {
-    headline: string;
-    headline_hi: string;
-    integrity_status: 'VERIFIED' | 'WARNING';
-    total_delay_min: number;
-    causes: Array<{
-      category: string;
-      minutes: number;
-      lamp: 'green' | 'amber' | 'red' | 'blue';
-      plain_text: string;
-      plain_text_hi: string;
-      evidence_ref: string;
-    }>;
-  };
-  map_card: {
-    polyline: Array<[number, number]>;
-    train_marker: {
-      lat: number;
-      lon: number;
-      heading: number;
-      km: number;
-      speed_kmh: number;
-      label: string;
-    };
-    tsr_zones: Array<{
-      order_no: string;
-      speed_limit_kmph: number;
-      start_km: number;
-      end_km: number;
-      lat1: number;
-      lon1: number;
-      lat2: number;
-      lon2: number;
-      label: string;
-      label_hi?: string;
-    }>;
-    track_verified: boolean;
-    displacement_km: number;
-  };
-  all_stops: Array<{
-    station_code: string;
-    station_name: string;
-    station_name_hi?: string;
-    seq: number;
-    distance_km: number;
-    scheduled_arr?: string | null;
-    scheduled_dep?: string | null;
-    predicted_arr?: string | null;
-    predicted_dep?: string | null;
-    actual_arr?: string | null;
-    actual_dep?: string | null;
-    platform?: string | null;
-    delay_min: number;
-    status: 'passed' | 'current' | 'upcoming';
-    status_lamp: 'green' | 'amber' | 'red' | 'blue';
-    is_next_stop?: boolean;
-    lat: number;
-    lon: number;
-  }>;
-  waypoints?: PassengerWaypoint[];
-  provenance: {
-    as_of: string;
-    auto_refresh_sec: number;
-    clock_mode: string;
-    simulated_clock: string;
-  };
-}
-
-export interface PassengerWaypoint {
-  code: string;
-  name: string;
-  name_hi?: string;
-  km: number;
-}
-
-export type DataSourceState = 'LIVE' | 'STALE' | 'OFFLINE' | 'DEMO';
-
-export interface DataSourceStatus {
-  state: DataSourceState;
-  lastSuccessfulFetch: number | null;
-  lastAttempt: number | null;
-  errorMessage?: string;
-  isDemoMode: boolean;
-}
-
-const API_BASE = import.meta.env.VITE_API_URL || '';
-
-function checkIsExplicitDemoMode(): boolean {
-  if (typeof window === 'undefined') return false;
-  const params = new URLSearchParams(window.location.search);
-  return params.get('demo') === '1' || localStorage.getItem('railtwin_demo_mode') === 'true';
-}
-
-let dataSourceStatus: DataSourceStatus = {
-  state: checkIsExplicitDemoMode() ? 'DEMO' : 'LIVE',
-  lastSuccessfulFetch: null,
-  lastAttempt: null,
-  isDemoMode: checkIsExplicitDemoMode(),
+export type {
+  CauseItem,
+  WhyLateData,
+  PassengerSnapshot,
+  LivePosition,
+  NetworkState,
+  CongestionRadarData,
+  ComparatorData,
+  ModelPerformanceData,
+  LedgerScoreboard,
+  LedgerVerificationResult,
+  CascadeRippleData,
+  TimeMachineData,
+  PopularTrain,
+  SearchResult,
+  PassengerWaypoint,
 };
 
-const listeners = new Set<(status: DataSourceStatus) => void>();
+// -----------------------------------------------------------------------
+// CONNECTION STORE (LIVE / STALE / OFFLINE)
+// -----------------------------------------------------------------------
+export type ConnectionStatus = 'LIVE' | 'STALE' | 'OFFLINE';
 
-export function subscribeDataSourceStatus(cb: (status: DataSourceStatus) => void): () => void {
-  listeners.add(cb);
-  cb(dataSourceStatus);
-  return () => listeners.delete(cb);
+export interface ConnectionInfo {
+  status: ConnectionStatus;
+  lastSuccess: number | null;
+  errorMessage: string | null;
+  since: number;
 }
 
-function updateStatus(updates: Partial<DataSourceStatus>) {
-  dataSourceStatus = { ...dataSourceStatus, ...updates };
-  listeners.forEach((cb) => cb(dataSourceStatus));
+type ConnectionListener = (info: ConnectionInfo) => void;
+const listeners = new Set<ConnectionListener>();
+
+let currentConnection: ConnectionInfo = {
+  status: 'LIVE',
+  lastSuccess: Date.now(),
+  errorMessage: null,
+  since: Date.now(),
+};
+
+function updateConnection(next: Partial<ConnectionInfo>): void {
+  currentConnection = { ...currentConnection, ...next };
+  listeners.forEach((fn) => fn(currentConnection));
 }
 
-// Helper to make authenticated backend requests with explicit data-source contract (F22)
-async function fetchBackend<T>(
-  path: string,
-  options: RequestInit = {},
-  fallbackFn?: () => Promise<T> | T
-): Promise<T> {
-  const session = getCurrentSession();
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string>),
-  };
+const ConnectionContext = createContext<ConnectionInfo>(currentConnection);
 
-  if (session?.user?.token) {
-    headers['Authorization'] = `Bearer ${session.user.token}`;
-  }
+export function ConnectionProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<ConnectionInfo>(currentConnection);
 
-  const isDemo = checkIsExplicitDemoMode();
-  updateStatus({ lastAttempt: Date.now(), isDemoMode: isDemo });
-
-  if (isDemo && fallbackFn) {
-    updateStatus({ state: 'DEMO' });
-    return await fallbackFn();
-  }
-
-  try {
-    const res = await fetch(`${API_BASE}${path}`, {
-      ...options,
-      headers,
-    });
-
-    if (res.ok) {
-      updateStatus({
-        state: 'LIVE',
-        lastSuccessfulFetch: Date.now(),
-        errorMessage: undefined,
-      });
-      return await res.json();
-    } else {
-      const errText = await res.text();
-      updateStatus({
-        state: 'OFFLINE',
-        errorMessage: `HTTP ${res.status}: ${errText}`,
-      });
-      if (fallbackFn) {
-        return await fallbackFn();
+  useEffect(() => {
+    const listener: ConnectionListener = (info: ConnectionInfo) => setState(info);
+    listeners.add(listener);
+    const interval = setInterval(() => {
+      if (currentConnection.status === 'LIVE' && currentConnection.lastSuccess) {
+        const age = Date.now() - currentConnection.lastSuccess;
+        if (age > 15000) {
+          updateConnection({ status: 'STALE' });
+        }
       }
-      throw new Error(`API Error ${res.status} on ${path}: ${errText}`);
-    }
-  } catch (err: any) {
-    updateStatus({
-      state: 'OFFLINE',
-      errorMessage: err?.message || 'Network request failed',
+    }, 3000);
+
+    return () => {
+      listeners.delete(listener);
+      clearInterval(interval);
+    };
+  }, []);
+
+  return React.createElement(ConnectionContext.Provider, { value: state }, children);
+}
+
+export function useConnectionState(): ConnectionInfo {
+  return useContext(ConnectionContext);
+}
+
+// -----------------------------------------------------------------------
+// CORE HONEST FETCH CLIENT - NO MOCKS, NO FALLBACKS
+// -----------------------------------------------------------------------
+async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
+  try {
+    const res = await fetch(path, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
     });
-    if (fallbackFn) {
-      return await fallbackFn();
+
+    if (!res.ok) {
+      const message = 'HTTP error ' + res.status + ': ' + res.statusText;
+      updateConnection({
+        status: 'OFFLINE',
+        errorMessage: message,
+        since: Date.now(),
+      });
+      throw new Error(message);
     }
+
+    const data = (await res.json()) as T;
+    updateConnection({
+      status: 'LIVE',
+      lastSuccess: Date.now(),
+      errorMessage: null,
+    });
+    return data;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Network fetch failed';
+    updateConnection({
+      status: 'OFFLINE',
+      errorMessage: msg,
+      since: Date.now(),
+    });
     throw err;
   }
 }
 
-export function getDataSourceStatus(): DataSourceStatus {
-  return dataSourceStatus;
+// -----------------------------------------------------------------------
+// NORMALIZATION HELPERS
+// -----------------------------------------------------------------------
+export function normalizeWhyLate(raw: {
+  narrative?: string;
+  causes?: Array<{ cause_code?: string; event_type?: string; attributed_min?: number; minutes?: number; percentage?: number; plain_text?: string; evidence_ref?: string; category?: string }>;
+  cause_breakdown?: Array<{ cause_code?: string; event_type?: string; attributed_min?: number; minutes?: number; percentage?: number; plain_text?: string; evidence_ref?: string; category?: string }>;
+  total_delay_minutes?: number;
+  total_delay_min?: number;
+  is_exact_accounting?: boolean;
+  integrity_status?: string;
+  events_count?: number;
+}): WhyLateData {
+  const rawList = raw.causes && raw.causes.length > 0 ? raw.causes : raw.cause_breakdown ?? [];
+  const totalMin = raw.total_delay_minutes ?? raw.total_delay_min ?? 0;
+
+  const causes: CauseItem[] = rawList.map((c) => {
+    const minutes = c.attributed_min ?? c.minutes ?? 0;
+    const code = c.cause_code ?? c.event_type ?? c.category ?? 'OTHER';
+    const sharePct = typeof c.percentage === 'number' ? c.percentage : (totalMin > 0 ? Math.round((Math.abs(minutes) / totalMin) * 100) : 0);
+    return {
+      code,
+      label: c.plain_text ?? code.replace(/_/g, ' '),
+      minutes,
+      sharePct,
+      evidence: c.evidence_ref,
+      category: c.category,
+    };
+  });
+
+  const sumMin = causes.reduce((acc, item) => acc + item.minutes, 0);
+  const additiveOk = raw.is_exact_accounting ?? (Math.abs(sumMin - totalMin) < 0.5);
+
+  return {
+    narrative: raw.narrative ?? ('Running ' + Math.round(totalMin) + ' min late across active corridor sections.'),
+    causes,
+    totalMin,
+    additiveOk,
+    integrityStatus: raw.integrity_status,
+    eventsCount: raw.events_count,
+  };
 }
 
-export function checkBackendStatus(): boolean {
-  return dataSourceStatus.state === 'LIVE';
+// -----------------------------------------------------------------------
+// ENDPOINT LIBRARY (All relative paths, proxied)
+// -----------------------------------------------------------------------
+export async function getSnapshot(trainNo: string, stopCode?: string): Promise<PassengerSnapshot> {
+  const params = new URLSearchParams({ train: trainNo.trim() });
+  if (stopCode) params.set('stop', stopCode.trim());
+  return fetchJson<PassengerSnapshot>('/v1/passenger/snapshot?' + params.toString());
 }
 
+export async function getPopularTrains(): Promise<PopularTrain[]> {
+  return fetchJson<PopularTrain[]>('/v1/passenger/popular');
+}
+
+export async function searchTrains(q: string): Promise<SearchResult[]> {
+  const clean = q.trim().toLowerCase();
+  if (!clean) return [];
+  try {
+    return await fetchJson<SearchResult[]>('/v1/passenger/search?q=' + encodeURIComponent(clean));
+  } catch {
+    const pop = await getPopularTrains();
+    return pop
+      .filter((t) => t.train_no.includes(clean) || t.name.toLowerCase().includes(clean))
+      .map((t) => ({
+        train_no: t.train_no,
+        name: t.name,
+        name_hi: t.name_hi,
+        type: t.type,
+        route_short: t.route_short,
+        last_delay: t.delay_min,
+      }));
+  }
+}
+
+export async function getWhyLate(trainNo: string): Promise<WhyLateData> {
+  const raw = await fetchJson<Record<string, unknown>>('/v1/trains/' + encodeURIComponent(trainNo.trim()) + '/why-late');
+  return normalizeWhyLate(raw as Parameters<typeof normalizeWhyLate>[0]);
+}
+
+export async function getLivePositions(): Promise<LivePosition[]> {
+  const res = await fetchJson<{ positions: LivePosition[] } | LivePosition[]>('/v1/live/positions');
+  if (Array.isArray(res)) return res;
+  return res.positions ?? [];
+}
+export async function getNetworkState(): Promise<NetworkState> {
+  return fetchJson<NetworkState>('/v1/network/state');
+}
+
+export async function getCongestionRadar(): Promise<CongestionRadarData> {
+  return fetchJson<CongestionRadarData>('/v1/corridor/congestion-radar');
+}
+
+export async function getComparator(trainNo: string): Promise<ComparatorData> {
+  return fetchJson<ComparatorData>('/v1/demo/comparator?train_no=' + encodeURIComponent(trainNo.trim()));
+}
+
+export async function injectShock(payload: {
+  event_type: string;
+  severity_min: number;
+  station?: string;
+  description?: string;
+}): Promise<{ status: string; message: string }> {
+  return fetchJson<{ status: string; message: string }>('/v1/demo/inject-event', {
+    method: 'POST',
+    body: JSON.stringify({
+      event_type: payload.event_type,
+      severity_min: payload.severity_min,
+      station: payload.station ?? 'CNB',
+      description: payload.description,
+    }),
+  });
+}
+
+export async function resetShocks(): Promise<{ status: string; message: string }> {
+  return fetchJson<{ status: string; message: string }>('/v1/demo/reset-events', {
+    method: 'POST',
+  });
+}
+
+export async function getTimeMachine(trainNo: string, dest?: string): Promise<TimeMachineData> {
+  return fetchJson<TimeMachineData>('/v1/demo/time-machine?train_no=' + encodeURIComponent(trainNo.trim()) + '&dest=' + encodeURIComponent(dest ?? 'CNB'));
+}
+
+export async function getModelPerformance(): Promise<ModelPerformanceData> {
+  return fetchJson<ModelPerformanceData>('/v1/model/performance');
+}
+
+export async function getLedgerScoreboard(): Promise<LedgerScoreboard> {
+  return fetchJson<LedgerScoreboard>('/v1/ledger/scoreboard');
+}
+
+export async function verifyLedger(): Promise<LedgerVerificationResult> {
+  return fetchJson<LedgerVerificationResult>('/v1/ledger/verify');
+}
+
+export async function getCascadeRipple(stationCode = 'CNB'): Promise<CascadeRippleData> {
+  return fetchJson<CascadeRippleData>('/v1/cascade/ripple?station_code=' + encodeURIComponent(stationCode));
+}
+
+export function getPassengerStreamUrl(trainNo: string): string {
+  return `/v1/passenger/stream?train=${encodeURIComponent(trainNo)}`;
+}
 
 export const api = {
-  // 1. Core Station & Network State
-  async getStation(code?: StationCode): Promise<Station> {
-    return fetchBackend(`/v1/network/state`, {}, () => mockStore.getStation(code));
+  getPassengerStreamUrl: (trainNo: string) => getPassengerStreamUrl(trainNo),
+  passenger: {
+    snapshot: (trainNo: string, stopCode?: string) => getSnapshot(trainNo, stopCode),
+    popular: () => getPopularTrains(),
+    search: (q: string) => searchTrains(q),
+    streamUrl: (trainNo: string) => getPassengerStreamUrl(trainNo),
   },
-
-  async switchStation(code: StationCode, actor?: string): Promise<Station> {
-    mockStore.setActiveStation(code, actor);
-    return mockStore.getStation(code);
+  trains: {
+    whyLate: (trainNo: string) => getWhyLate(trainNo),
   },
-
-  // 2. Trains & ETA
-  async getTrains(): Promise<Train[]> {
-    return fetchBackend<any>(`/v1/network/state`, {}, () => mockStore.getTrains()).then((res) => {
-      const trainList = Array.isArray(res) ? res : (res?.trains || []);
-      if (!trainList || trainList.length === 0) {
-        return mockStore.getTrains();
-      }
-      return trainList.map((t: any) => {
-        const delayMin = t.current_delay_min ?? t.delay_min ?? 0;
-        const status: 'on_time' | 'delayed' | 'critical' =
-          delayMin > 20 ? 'critical' : delayMin > 5 ? 'delayed' : 'on_time';
-
-        const p50Minutes = 18 * 60 + delayMin;
-        const formatClock = (mins: number) => {
-          const h = Math.floor((mins % (24 * 60)) / 60).toString().padStart(2, '0');
-          const m = (mins % 60).toString().padStart(2, '0');
-          return `${h}:${m}`;
-        };
-
-        const p10 = formatClock(Math.max(0, p50Minutes - 5));
-        const p50 = formatClock(p50Minutes);
-        const p90 = formatClock(p50Minutes + 12);
-
-        return {
-          number: t.train_no || t.number,
-          name: t.train_name || t.name || 'Express',
-          type: (t.train_class || t.type || 'Superfast') as any,
-          origin: t.last_passed_station || t.origin || 'NDLS',
-          destination: t.destination || 'DDU',
-          currentStation: t.last_passed_station || t.currentStation || 'NDLS',
-          nextStation: t.next_station || t.nextStation || 'CNB',
-          routePosition: t.routePosition || `${t.last_passed_station || 'NDLS'} â†’ ${t.next_station || 'CNB'}`,
-          scheduledArrival: t.scheduledArrival || '18:00',
-          scheduledDeparture: t.scheduledDeparture || '18:05',
-          predictedArrival: t.predictedArrival || p50,
-          predictedDeparture: t.predictedDeparture || formatClock(p50Minutes + 5),
-          etaBand: t.etaBand || { p10, p50, p90, spreadMinutes: 17 },
-          delayMinutes: delayMin,
-          platform: t.platform || (parseInt(t.train_no || '1', 10) % 8) + 1 || 1,
-          assignedPlatform: t.assignedPlatform || (parseInt(t.train_no || '1', 10) % 8) + 1 || 1,
-          speedKmph: t.speedKmph || (t.status_color === 'red' ? 45 : t.status_color === 'amber' ? 75 : 110),
-          priority: t.priority || 1,
-          rakeId: t.rakeId || `RAKE-${t.train_no || t.number}`,
-          status,
-          regimeWeights: t.regimeWeights || {
-            clearTrack: t.status_color === 'green' ? 0.85 : 0.4,
-            congestion: t.status_color === 'amber' ? 0.5 : 0.1,
-            winterFog: t.status_color === 'red' ? 0.5 : 0.05,
-          },
-          journey: t.journey || [],
-          delayAutopsy: t.delayAutopsy || [],
-          updatedAt: new Date().toISOString(),
-        };
-      });
-    });
+  live: {
+    positions: () => getLivePositions(),
   },
-
-  async getTrain(number: string): Promise<Train | null> {
-    const fallbackTrain = mockStore.getTrain(number);
-
-    return fetchBackend<any>(`/v1/trains/${number}/journey`, {}, () => fallbackTrain).then(async (res) => {
-      if (!res || (!res.train_no && !res.number)) {
-        return fallbackTrain || null;
-      }
-
-      // If it's already a full Train instance from mockStore
-      if (res.etaBand && res.number) {
-        return res as Train;
-      }
-
-      let autopsy: DelayAutopsyItem[] = [];
-      try {
-        const autoRes = await api.getTrainAutopsy(number);
-        if (autoRes && Array.isArray(autoRes.causes) && autoRes.causes.length > 0) {
-          const total = autoRes.total_predicted_delay_min || 1;
-          autopsy = autoRes.causes.map((c: any) => ({
-            cause: c.event_type || c.cause,
-            minutes: c.minutes,
-            category: (c.event_type === 'TSR' ? 'Speed Restriction' : c.event_type === 'CROSSING_HOLD' ? 'Precedence' : 'Signaling') as any,
-            description: c.cause || `Attributed delay event: ${c.event_type} at ${c.station_code || 'Section'}`,
-            percentage: Math.round((c.minutes / Math.max(1, total)) * 100),
-          }));
-        }
-      } catch {
-        // fallback to mock autopsy
-      }
-
-      const delayMin = res.current_delay_min ?? res.delayMinutes ?? 0;
-      const status: 'on_time' | 'delayed' | 'critical' =
-        delayMin > 20 ? 'critical' : delayMin > 5 ? 'delayed' : 'on_time';
-
-      return {
-        number: res.train_no || res.number || number,
-        name: res.train_name || res.name || 'Express',
-        type: (res.train_class?.toUpperCase() || res.type || 'EXPRESS') as any,
-        origin: res.origin || 'NDLS',
-        destination: res.destination || 'DDU',
-        scheduledArrival: res.scheduledArrival || '18:00',
-        predictedArrival: res.predictedArrival || '18:15',
-        scheduledDeparture: res.scheduledDeparture || '18:05',
-        predictedDeparture: res.predictedDeparture || '18:20',
-        delayMinutes: delayMin,
-        status,
-        platform: res.platform || (parseInt(number, 10) % 8) + 1 || 1,
-        assignedPlatform: res.assignedPlatform || (parseInt(number, 10) % 8) + 1 || 1,
-        speedKmph: res.speedKmph || 85,
-        currentStation: res.current_station || res.currentStation || 'En Route',
-        nextStation: res.next_station || res.nextStation || 'CNB',
-        routePosition: res.routePosition || `${res.current_station || 'En Route'} (In Corridor)`,
-        priority: res.priority || 1,
-        rakeId: res.rakeId || `RAKE-${number}`,
-        etaBand: res.etaBand || { p10: '18:10', p50: '18:15', p90: '18:25', spreadMinutes: 15 },
-        journey: Array.isArray(res.timeline)
-          ? res.timeline.map((stop: any) => ({
-              seq: stop.seq,
-              stationCode: stop.station_code,
-              stationName: stop.station_name,
-              distanceKm: stop.distance_km,
-              schedArrival: stop.sched_arr || '--:--',
-              schedDeparture: stop.sched_dep || '--:--',
-              predArrival: stop.predicted_arr || '--:--',
-              predDeparture: stop.predicted_dep || '--:--',
-              actualArrival: stop.status_color === 'green' ? stop.sched_arr : undefined,
-              actualDeparture: stop.status_color === 'green' ? stop.sched_dep : undefined,
-              delayMinutes: stop.delay_min || 0,
-              status: stop.status_color === 'green' ? 'passed' : stop.status_color === 'amber' ? 'current' : 'upcoming',
-            }))
-          : res.journey || [],
-        delayAutopsy: autopsy.length > 0 ? autopsy : (fallbackTrain?.delayAutopsy || []),
-        updatedAt: new Date().toISOString(),
-      };
-    });
+  demo: {
+    comparator: (trainNo: string) => getComparator(trainNo),
+    injectEvent: (payload: { event_type: string; severity_min: number; station?: string; description?: string }) => injectShock(payload),
+    resetEvents: () => resetShocks(),
+    timeMachine: (trainNo: string, dest?: string) => getTimeMachine(trainNo, dest),
   },
-
-  async getTrainAutopsy(id: string, runDate?: string): Promise<DelayAutopsyResponse> {
-    const mockTrain = mockStore.getTrain(id);
-    const mockDelay = mockTrain?.delayMinutes || 18;
-
-    const defaultCauses: DelayCauseItem[] = [
-      {
-        event_type: 'INHERITED',
-        minutes: Math.max(5, Math.round(mockDelay * 0.45)),
-        cause: 'Incoming rake turnaround deficit from previous service leg',
-        station_code: 'NDLS',
-      },
-      {
-        event_type: 'TSR',
-        minutes: Math.max(3, Math.round(mockDelay * 0.35)),
-        cause: '45 km/h engineering speed restriction between TDL–ETW',
-        station_code: 'ETW',
-      },
-      {
-        event_type: 'CONGESTION',
-        minutes: Math.max(2, Math.round(mockDelay * 0.25)),
-        cause: 'Junction headway spacing behind freight precedence',
-        station_code: 'CNB',
-      },
-      {
-        event_type: 'RECOVERY',
-        minutes: -3,
-        cause: 'Loco pilot recovered 3m on clear high-speed block section',
-        station_code: 'PRYJ',
-      },
-    ];
-
-    const url = runDate
-      ? `/v1/trains/${id}/why-late?run_date=${encodeURIComponent(runDate)}`
-      : `/v1/trains/${id}/autopsy`;
-
-    return fetchBackend<DelayAutopsyResponse>(
-      url,
-      {},
-      () => ({
-        train_no: id,
-        train_name: mockTrain?.name || 'Express',
-        total_predicted_delay_min: mockDelay,
-        is_exact_accounting: true,
-        causes: defaultCauses,
-      })
-    ).then(res => {
-      if (!res || !res.causes || res.causes.length === 0) {
-        return {
-          train_no: id,
-          train_name: mockTrain?.name || 'Express',
-          total_predicted_delay_min: mockDelay,
-          is_exact_accounting: true,
-          causes: defaultCauses,
-        };
-      }
-      return res;
-    });
+  model: {
+    performance: () => getModelPerformance(),
   },
-
-  async getTrainLive(trainNo: string): Promise<any> {
-    return fetchBackend<any>(`/v1/trains/${trainNo}/live`, {}, () => null);
+  ledger: {
+    scoreboard: () => getLedgerScoreboard(),
+    verify: () => verifyLedger(),
   },
-
-  async getPNRStatus(pnrNo: string): Promise<any> {
-    return fetchBackend<any>(`/v1/pnr/${pnrNo}`, {}, () => null);
+  cascade: {
+    ripple: (station?: string) => getCascadeRipple(station),
   },
-
-  // 2b. Passenger Journey Tracking Contract (Pipeline 08)
-  async searchPassengerTrains(q: string): Promise<PassengerSearchResult[]> {
-    return fetchBackend<PassengerSearchResult[]>(
-      `/v1/passenger/search?q=${encodeURIComponent(q)}`,
-      {},
-      () => []
-    );
-  },
-
-  async getPopularPassengerTrains(): Promise<PassengerPopularTrain[]> {
-    return fetchBackend<PassengerPopularTrain[]>(
-      `/v1/passenger/popular`,
-      {},
-      () => []
-    );
-  },
-
-  async getPassengerPNR(pnr: string): Promise<PassengerPNRResponse> {
-    return fetchBackend<PassengerPNRResponse>(
-      `/v1/passenger/pnr/${encodeURIComponent(pnr)}`,
-      {}
-    );
-  },
-
-  async getPassengerSnapshot(train?: string, stop?: string, pnr?: string): Promise<PassengerSnapshot> {
-    const params = new URLSearchParams();
-    if (train) params.set('train', train);
-    if (stop) params.set('stop', stop);
-    if (pnr) params.set('pnr', pnr);
-    return fetchBackend<PassengerSnapshot>(
-      `/v1/passenger/snapshot?${params.toString()}`,
-      {}
-    );
-  },
-
-  getPassengerStreamUrl(trainNo: string): string {
-    return `${API_BASE}/v1/passenger/stream?train=${encodeURIComponent(trainNo)}`;
-  },
-
-  // 3. Platform Gantt
-  async getPlatforms(code?: StationCode): Promise<PlatformInfo[]> {
-    return fetchBackend(`/api/platform/states`, {}, () => mockStore.getPlatforms(code));
-  },
-
-  async reoptimizePlatforms(stationCode?: StationCode): Promise<{ resolvedCount: number; swapsCount: number }> {
-    return fetchBackend(`/api/platform/reoptimize`, { method: 'POST', body: JSON.stringify({ station_code: stationCode || 'CNB' }) }, () =>
-      mockStore.reoptimizePlatforms(stationCode)
-    );
-  },
-
-  async rollbackPlatforms(stationCode?: StationCode): Promise<boolean> {
-    return fetchBackend(`/api/platform/rollback`, { method: 'POST', body: JSON.stringify({ station_code: stationCode || 'CNB' }) }, () =>
-      true
-    );
-  },
-
-  // 4. Advisories & Triage
-  async getAdvisories(): Promise<Advisory[]> {
-    try {
-      const [crewRes, secRes] = await Promise.allSettled([
-        fetchBackend<any>(`/v1/crew/alerts`, {}, () => ({ alerts: [] })),
-        fetchBackend<any[]>(`/api/section/advisories/generate`, {}, () => []),
-      ]);
-
-      const advisories: Advisory[] = [];
-
-      // 1. Crew Duty Breach Alerts
-      if (crewRes.status === 'fulfilled' && crewRes.value?.alerts && Array.isArray(crewRes.value.alerts)) {
-        crewRes.value.alerts.forEach((alert: any) => {
-          advisories.push({
-            id: `adv-crew-${alert.crew_id}-${alert.train_no}`,
-            code: 'CREW-LIMIT',
-            priority: alert.breach_minutes > 60 ? 'danger' : 'warn',
-            title: `Crew Duty Breach Alert â€” Train ${alert.train_no}`,
-            trainNo: alert.train_no,
-            trainName: `Crew ${alert.crew_id}`,
-            stationCode: (alert.recommended_relief_station || 'CNB') as StationCode,
-            rationale: alert.message || `Projected duty ${alert.projected_duty_hours}h exceeds cap (+${alert.breach_minutes}m breach).`,
-            recommendedAction: `Dispatch standby crew at ${alert.recommended_relief_station || 'CNB'} before departure.`,
-            simulatedImpact: {
-              delaySavingsMinutes: Math.max(10, alert.breach_minutes),
-              conflictResolved: true,
-              cascadePreventedCount: 1,
-            },
-            status: 'pending',
-            humanAckRequired: true,
-            createdAt: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-            expiresAt: alert.projected_trip_end_time || '--:--',
-          });
-        });
-      }
-
-      // 2. Precedence / Overtake Advisories
-      if (secRes.status === 'fulfilled' && Array.isArray(secRes.value)) {
-        secRes.value.forEach((adv: any) => {
-          advisories.push({
-            id: `adv-prec-${adv.id || adv.train_no}`,
-            code: adv.advisory_type === 'OVERTAKE' ? 'HOLD_AT_LOOP' : 'STOP_TRAIN',
-            priority: (adv.priority_score || 0) >= 9 ? 'danger' : 'warn',
-            title: adv.advisory_type === 'OVERTAKE'
-              ? `Precedence Overtake: Train ${adv.overtaking_train_no} over ${adv.train_no}`
-              : `Speed Regulation: Train ${adv.train_no}`,
-            trainNo: adv.train_no,
-            trainName: adv.train_name || 'Express',
-            stationCode: (adv.recommended_station || 'GZB') as StationCode,
-            platform: adv.recommended_loop_line ? parseInt(adv.recommended_loop_line, 10) || 1 : undefined,
-            suggestedPlatform: adv.recommended_loop_line ? parseInt(adv.recommended_loop_line, 10) || 1 : undefined,
-            rationale: adv.details || `Regulate Train ${adv.train_no} for corridor optimization.`,
-            recommendedAction: adv.advisory_type === 'OVERTAKE'
-              ? `Loop train ${adv.train_no} on ${adv.recommended_station} Loop ${adv.recommended_loop_line} to clear high-speed path.`
-              : `Regulate train ${adv.train_no} speed at ${adv.recommended_station}.`,
-            simulatedImpact: {
-              delaySavingsMinutes: Math.round((adv.priority_score || 8) * 2.5),
-              conflictResolved: true,
-              cascadePreventedCount: 2,
-            },
-            status: adv.status?.toLowerCase() === 'executed' ? 'accepted' : 'pending',
-            humanAckRequired: true,
-            createdAt: adv.created_at || '12:00',
-            expiresAt: '18:00',
-          });
-        });
-      }
-
-      return advisories;
-    } catch {
-      return [];
-    }
-  },
-
-  async acceptAdvisory(id: string, reason?: string, actor?: string): Promise<boolean> {
-    return fetchBackend(
-      `/v1/advise/${id}/ack`,
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          decision: 'accepted',
-          comment: reason || 'Accepted per dispatcher recommendation',
-          dispatcher_id: actor || 'DISP-01',
-        }),
-      },
-      () => true
-    );
-  },
-
-  async dismissAdvisory(id: string, reason?: string, actor?: string): Promise<boolean> {
-    return fetchBackend(
-      `/v1/advise/${id}/ack`,
-      {
-        method: 'POST',
-        body: JSON.stringify({
-          decision: 'rejected',
-          comment: reason || 'Dismissed under dispatcher discretion',
-          dispatcher_id: actor || 'DISP-01',
-        }),
-      },
-      () => true
-    );
-  },
-
-  // 5. Crew Duty
-  async getCrew(): Promise<CrewMember[]> {
-    try {
-      const res = await fetchBackend<any>(`/api/workforce/crew/roster`, {}, () => mockStore.getCrew());
-      if (Array.isArray(res)) return res;
-      if (res && Array.isArray(res.roster)) return res.roster;
-      if (res && Array.isArray(res.items)) return res.items;
-      return mockStore.getCrew();
-    } catch {
-      return mockStore.getCrew();
-    }
-  },
-
-  async requestCrewRelief(crewId: string, actor?: string): Promise<boolean> {
-    return fetchBackend(`/api/workforce/crew/signon`, { method: 'POST', body: JSON.stringify({ crew_id: crewId }) }, () =>
-      mockStore.requestCrewRelief(crewId, actor)
-    );
-  },
-
-  // 6. Maintenance Track Blocks
-  async getMaintenance(): Promise<MaintenanceBlock[]> {
-    return fetchBackend(`/api/safety/possessions`, {}, () => mockStore.getMaintenance());
-  },
-
-  // 7. Audit & Integrity
-  async getAuditLogs(): Promise<AuditEntry[]> {
-    return fetchBackend(`/api/audit/logs`, {}, () => mockStore.getAuditLogs());
-  },
-
-  async verifyAuditIntegrity(): Promise<{ valid: boolean; entriesChecked: number; rootHash: string; algorithm: string }> {
-    return fetchBackend(`/api/audit/verify-integrity`, {}, () => ({
-      valid: true,
-      entriesChecked: mockStore.getAuditLogs().length,
-      rootHash: '0x8f2a11b9c402e9a781b0451cf982aa10e82c',
-      algorithm: 'SHA-256 (HMAC Linked Chain)',
-    }));
-  },
-
-  // 8. Model Proof
-  async getModelProof() {
-    return fetchBackend(`/v1/evaluation/summary`, {}, () => mockStore.getModelProof());
-  },
-
-  // 9. Operations: Timetable Manager
-  async getTimetableVersions() {
-    return fetchBackend(`/api/timetable/versions`, {}, () => [
-      { id: 'tt-v2.1', version_name: 'WTT Winter 2026 (Published)', status: 'PUBLISHED', effective_from: '2026-01-01', total_trains: 58, published_at: '2026-01-01T00:00:00Z' },
-      { id: 'tt-v2.2-draft', version_name: 'WTT Spring 2026 Special (Draft)', status: 'DRAFT', effective_from: '2026-04-01', total_trains: 64, published_at: null },
-      { id: 'tt-v2.0', version_name: 'WTT Autumn 2025 (Archived)', status: 'ARCHIVED', effective_from: '2025-10-01', total_trains: 52, published_at: '2025-10-01T00:00:00Z' },
-    ]);
-  },
-
-  async getTimetableEntries(versionId: string) {
-    return fetchBackend(`/api/timetable/versions/${versionId}/entries`, {}, () => ({
-      version_id: versionId,
-      entries: mockStore.getTrains().map(t => ({
-        id: `tt-entry-${t.number}`,
-        train_no: t.number,
-        train_name: t.name,
-        type: t.type,
-        origin: t.origin,
-        destination: t.destination,
-        sched_arr: t.scheduledArrival,
-        sched_dep: t.scheduledDeparture,
-        default_platform: t.platform,
-        days_of_run: 'Daily',
-      })),
-    }));
-  },
-
-  async publishTimetableVersion(versionId: string) {
-    return fetchBackend(`/api/timetable/versions/${versionId}/publish`, { method: 'POST' }, () => ({
-      success: true,
-      version_id: versionId,
-      status: 'PUBLISHED',
-    }));
-  },
-
-  // 10. Operations: Block Sections
-  async getBlockSections() {
-    return fetchBackend(`/api/blocks/status`, {}, () => [
-      { id: 'BLK-CNB-ON-UP', section_name: 'Kanpur Central â€“ Unnao (UP Main)', state: 'CAUTION', speed_limit: 30, occupant: '12424', time_in_state: '14m' },
-      { id: 'BLK-CNB-ON-DN', section_name: 'Unnao â€“ Kanpur Central (DN Main)', state: 'CLEAR', speed_limit: 110, occupant: null, time_in_state: '42m' },
-      { id: 'BLK-ETW-TDL-UP', section_name: 'Etawah â€“ Tundla (UP Main)', state: 'OCCUPIED', speed_limit: 120, occupant: '12301', time_in_state: '8m' },
-      { id: 'BLK-ETW-TDL-DN', section_name: 'Tundla â€“ Etawah (DN Main)', state: 'BLOCKED', speed_limit: 0, occupant: 'MNT-01', time_in_state: '1h 12m' },
-      { id: 'BLK-GZB-ALJN-UP', section_name: 'Ghaziabad â€“ Aligarh (UP Main)', state: 'CLEAR', speed_limit: 130, occupant: null, time_in_state: '28m' },
-      { id: 'BLK-DFC-ROOMA', section_name: 'Rooma DFC Siding Line 4', state: 'OCCUPIED', speed_limit: 25, occupant: 'BOXN-7041', time_in_state: '22m' },
-    ]);
-  },
-
-  // 11. Safety: TSR / Caution Orders
-  async getTSRs() {
-    return fetchBackend(`/api/safety/tsr`, {}, () => [
-      { id: 'TSR-2026-081', order_no: 'CO-NCR-CNB-1014', section: 'CNB â€“ ON', start_km: 1012.4, end_km: 1018.6, speed_limit_kmph: 30, cause: 'Ganga Bridge Girder Inspection', status: 'ACTIVE', effective_from: '2026-08-28 14:00', effective_to: '2026-08-28 18:30' },
-      { id: 'TSR-2026-082', order_no: 'CO-NCR-ETW-0942', section: 'ETW â€“ TDL', start_km: 942.0, end_km: 949.0, speed_limit_kmph: 45, cause: 'CSM Ballast Tamping', status: 'ACTIVE', effective_from: '2026-08-28 16:30', effective_to: '2026-08-28 20:00' },
-      { id: 'TSR-2026-079', order_no: 'CO-NR-GZB-0028', section: 'GZB â€“ ALJN', start_km: 28.0, end_km: 35.0, speed_limit_kmph: 20, cause: 'Deep Screening Finished', status: 'EXPIRED', effective_from: '2026-08-28 08:00', effective_to: '2026-08-28 13:00' },
-    ]);
-  },
-
-  async createTSR(data: Record<string, unknown>) {
-    return fetchBackend(`/api/safety/tsr`, { method: 'POST', body: JSON.stringify(data) }, () => ({
-      success: true,
-      id: `TSR-${Math.floor(100 + Math.random() * 900)}`,
-      ...data,
-    }));
-  },
-
-  async liftTSR(id: string) {
-    return fetchBackend(`/api/safety/tsr/${id}/lift`, { method: 'POST' }, () => ({
-      success: true,
-      id,
-      status: 'LIFTED',
-    }));
-  },
-
-  // 12. Safety: Incidents Register
-  async getIncidents() {
-    return fetchBackend(`/api/safety/incidents`, {}, () => [
-      { id: 'INC-2026-009', time: '16:42 IST', type: 'Track Circuit Glitch', location: 'Panki West Cabin (TC-44)', severity: 'minor', status: 'Investigating', reporter: 'Signal Maint Gang 3', description: 'Intermittent phantom drop on track circuit 44A during light drizzle.' },
-      { id: 'INC-2026-008', time: '14:15 IST', type: 'OHE Tripping (25kV)', location: 'Unnao Yard Substation', severity: 'major', status: 'Closed', reporter: 'Traction Power Controller', description: 'Feeder CB tripped on overcurrent; auto-reclosed after 90 seconds.' },
-      { id: 'INC-2026-007', time: '11:00 IST', type: 'Near Miss / Trespass', location: 'KM 1008 Level Crossing', severity: 'critical', status: 'Closed', reporter: 'LP 12034 Shatabdi', description: 'Cattle herd removed from tracks by RPF patrol team.' },
-    ]);
-  },
-
-  async logIncident(data: Record<string, unknown>) {
-    return fetchBackend(`/api/safety/incidents`, { method: 'POST', body: JSON.stringify(data) }, () => ({
-      success: true,
-      id: `INC-${Math.floor(1000 + Math.random() * 9000)}`,
-      ...data,
-    }));
-  },
-
-  // 13. Coordination: Corridor Handoff Matrix
-  async getCorridorHandoffs() {
-    return fetchBackend(`/api/section/handoffs`, {}, () => [
-      { id: 'HDF-12301', train_no: '12301', boundary: 'PRYJ â†’ CNB', sched_handoff: '17:15', pred_handoff: '17:28', state: 'ACCEPTED', delta: '+13M', speed_kmph: 112 },
-      { id: 'HDF-12034', train_no: '12034', boundary: 'ETW â†’ CNB', sched_handoff: '17:10', pred_handoff: '17:35', state: 'FLAGGED', delta: '+25M', speed_kmph: 98 },
-      { id: 'HDF-22436', train_no: '22436', boundary: 'TDL â†’ CNB', sched_handoff: '17:45', pred_handoff: '17:47', state: 'ACCEPTED', delta: '+2M', speed_kmph: 130 },
-      { id: 'HDF-BOXN-7041', train_no: 'BOXN-7041', boundary: 'PRYJ â†’ CNB', sched_handoff: '16:50', pred_handoff: '17:40', state: 'PENDING', delta: '+50M', speed_kmph: 0 },
-    ]);
-  },
-
-  async acknowledgeHandoff(id: string) {
-    return fetchBackend(`/api/section/handoffs/${id}/ack`, { method: 'POST' }, () => ({
-      success: true,
-      id,
-      state: 'ACCEPTED',
-    }));
-  },
-
-  // 14. Coordination: DFC Freight Precedence
-  async getDFCPrecedence() {
-    return fetchBackend(`/api/section/dfc`, {}, () => [
-      { id: 'DFC-01', crossing_point: 'Rooma DFC Junction (KM 1018)', freight_train: 'BOXN-7041 (Coal)', passenger_train: '22436 Vande Bharat', proposed_action: 'LOOP_HOLD_FREIGHT', delay_impact_min: -24, status: 'ACTIVE' },
-      { id: 'DFC-02', crossing_point: 'Panki DFC Siding (KM 1007)', freight_train: 'BTPN-3092 (POL)', passenger_train: '12424 Dibrugarh Raj', proposed_action: 'REGULATE_FREIGHT', delay_impact_min: -16, status: 'PENDING' },
-    ]);
-  },
-
-  // 15. Access Request Form
-  async requestAccess(data: { stationCode: string; name: string; email: string; organisation: string }) {
-    return {
-      success: true,
-      id: `REQ-${Math.floor(100000 + Math.random() * 900000)}`,
-    };
-  },
-  // 16. Differentiation Surfaces (D1 - D5)
-  async getModelPerformance(): Promise<ModelPerformanceData> {
-    return fetchBackend<ModelPerformanceData>('/v1/model/performance');
-  },
-
-  async getDemoComparator(trainNo = '12301', runDate?: string, currentSeq?: number): Promise<DemoComparatorData> {
-    let url = `/v1/demo/comparator?train_no=${encodeURIComponent(trainNo)}`;
-    if (runDate) url += `&run_date=${encodeURIComponent(runDate)}`;
-    if (currentSeq !== undefined) url += `&current_seq=${currentSeq}`;
-    return fetchBackend<DemoComparatorData>(url);
-  },
-
-  async injectShockEvent(data: { event_type: string; station?: string; severity_min?: number; description?: string }) {
-    return fetchBackend('/v1/demo/inject-event', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  async resetShockEvents() {
-    return fetchBackend('/v1/demo/reset-events', {
-      method: 'POST',
-    });
-  },
-
-  async getCascadeRipple(stationCode = 'CNB', runDate?: string): Promise<CascadeRippleData> {
-    let url = `/v1/cascade/ripple?station_code=${encodeURIComponent(stationCode)}`;
-    if (runDate) url += `&run_date=${encodeURIComponent(runDate)}`;
-    return fetchBackend<CascadeRippleData>(url);
-  },
-
-  async getTimeMachineData(trainNo = '12301', targetStation = 'LKO', runDate?: string): Promise<TimeMachineData> {
-    let url = `/v1/demo/time-machine?train_no=${encodeURIComponent(trainNo)}&target_station=${encodeURIComponent(targetStation)}`;
-    if (runDate) url += `&run_date=${encodeURIComponent(runDate)}`;
-    return fetchBackend<TimeMachineData>(url);
-  },
-
-  async getLedgerScoreboard(): Promise<LedgerScoreboardResponse> {
-    return fetchBackend<LedgerScoreboardResponse>('/v1/ledger/scoreboard', {}, () => ({
-      status: 'OK',
-      scoreboard: {
-        total_served_predictions: 2331,
-        verified_arrivals_count: 430,
-        empirical_80pct_coverage: 80.6,
-        target_coverage_pct: 80.0,
-        mean_absolute_error_min: 10.72,
-        mean_winkler_score: 57.94,
-        chain_integrity_verified: true,
-        total_blocks_verified: 2331,
-        chain_tip_hash: '6ffbe6ab4550951b0b79bea38aa3b181927805e68d27d2f9298ff0bd6fb3031e',
-        as_of: new Date().toISOString(),
-      },
-    }));
-  },
-
-  async verifyLedgerChain(): Promise<LedgerVerifyResponse> {
-    return fetchBackend<LedgerVerifyResponse>('/v1/ledger/verify', {}, () => ({
-      status: 'OK',
-      chain_integrity_verified: true,
-      total_blocks_verified: 2331,
-      broken_at_block_id: null,
-    }));
-  },
-
-  async getCorridorCongestionRadar(): Promise<CorridorRadarResponse> {
-    return fetchBackend<CorridorRadarResponse>('/v1/corridor/congestion-radar', {}, () => ({
-      status: 'OK',
-      corridor: 'NCR Mainline (NDLS – DDU 785km)',
-      as_of: new Date().toISOString(),
-      horizons: ['T+0h (Now)', 'T+1h', 'T+2h', 'T+4h', 'T+6h'],
-      sections_count: 9,
-      active_monitored_trains: 14,
-      radar: [],
-      highest_chokepoints: [],
-    }));
+  corridor: {
+    congestionRadar: () => getCongestionRadar(),
+    networkState: () => getNetworkState(),
   },
 };
-
-export interface HorizonCard {
-  horizon: string;
-  horizon_label: string;
-  mae: number;
-  baseline_b1_mae: number;
-  baseline_b2_mae: number;
-  baseline_b3_mae: number;
-  improvement_vs_official_pct: number;
-  coverage_80_pct: number;
-  winkler_score: number;
-  verdict: string;
-  status_badge: string;
-  narrative: string;
-}
-
-export interface ModelPerformanceData {
-  status: string;
-  schema_version: string;
-  canonical_mae: number;
-  overall_mae: number;
-  overall_coverage_80: number;
-  overall_winkler_score: number;
-  overall_crps: number;
-  total_test_samples: number;
-  horizon_cards: HorizonCard[];
-  proof_table: any[];
-  audit_note: string;
-}
-
-export interface ComparatorStation {
-  seq: number;
-  station_code: string;
-  station_name: string;
-  distance_km: number;
-  delta_km_from_now: number;
-  sched_arr: string | null;
-  sched_dep: string | null;
-  is_passed: boolean;
-  is_current: boolean;
-  horizon_tag: string;
-  actual_delay_min: number | null;
-  b1_frozen_delay_min: number;
-  b2_official_delay_min: number;
-  p10_delay_min: number;
-  p50_delay_min: number;
-  p90_delay_min: number;
-  cone_spread_min: number;
-}
-
-export interface DemoComparatorData {
-  status: string;
-  train_no: string;
-  train_name: string;
-  train_class: string;
-  origin: string;
-  destination: string;
-  run_date: string;
-  active_station: {
-    seq: number;
-    code: string;
-    name: string;
-    current_delay_min: number;
-  };
-  simulation_shock_active: boolean;
-  active_shocks: any[];
-  stations: ComparatorStation[];
-  cumulative_errors: {
-    samples_evaluated: number;
-    b1_frozen_mae: number;
-    b2_official_mae: number;
-    railtwin_p50_mae: number;
-    railtwin_vs_official_gain_pct: number;
-  };
-  why_late: any;
-  ledger_receipt: {
-    receipt_hash: string;
-    chain_verified: boolean;
-    status: string;
-  };
-  proof_points: Record<string, string>;
-  as_of: string;
-}
-
-export interface CascadeRippleData {
-  status: string;
-  jurisdiction_framing: {
-    title: string;
-    authority_badge: string;
-    legal_note: string;
-  };
-  target_station: string;
-  run_date: string;
-  summary: {
-    total_rake_links_monitored: number;
-    at_risk_turnarounds: number;
-    total_passenger_connections_monitored: number;
-    active_hold_advisories: number;
-    total_net_pax_hours_saved: number;
-  };
-  rake_turnarounds: any[];
-  top_hold_advisories: any[];
-  all_interchange_connections_count: number;
-  as_of: string;
-}
-
-export interface TimeMachineSnapshot {
-  stage: string;
-  label: string;
-  checkpoint_station: {
-    code: string;
-    name: string;
-    seq: number;
-    distance_from_origin_km: number;
-    remaining_km: number;
-    recorded_delay_min: number;
-  };
-  ntes_prediction: string;
-  ntes_delay_min?: number;
-  ntes_status: string;
-  railtwin_p50: string;
-  railtwin_p50_delay_min?: number;
-  railtwin_range: string;
-  cone_width: string;
-  receipt_hash: string;
-  full_receipt_hash?: string;
-  ledger_state: string;
-  actual_arrival?: string;
-  actual_delay_min?: number;
-  tier_used?: string;
-}
-
-export interface TimeMachineData {
-  status: string;
-  train_no: string;
-  run_date: string;
-  destination: {
-    code: string;
-    name: string;
-    distance_km: number;
-    sched_arr: string;
-  };
-  snapshots: {
-    t6: TimeMachineSnapshot;
-    t3: TimeMachineSnapshot;
-    t1: TimeMachineSnapshot;
-    truth: TimeMachineSnapshot;
-  };
-  as_of: string;
-}
-
-export interface LedgerScoreboardData {
-  total_served_predictions: number;
-  verified_arrivals_count: number;
-  empirical_80pct_coverage: number;
-  target_coverage_pct: number;
-  mean_absolute_error_min: number;
-  mean_winkler_score: number;
-  chain_integrity_verified: boolean;
-  total_blocks_verified: number;
-  chain_tip_hash: string;
-  as_of: string;
-}
-
-export interface LedgerScoreboardResponse {
-  status: string;
-  scoreboard: LedgerScoreboardData;
-}
-
-export interface LedgerVerifyResponse {
-  status: string;
-  chain_integrity_verified: boolean;
-  total_blocks_verified: number;
-  broken_at_block_id: number | null;
-}
-
-export interface CorridorRadarHorizonMetric {
-  horizon: string;
-  active_trains: number;
-  capacity: number;
-  occupancy_pct: number;
-  congestion_level: 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL';
-  total_delay_min: number;
-}
-
-export interface CorridorRadarSection {
-  section_id: string;
-  section_name: string;
-  from_km: number;
-  to_km: number;
-  length_km: number;
-  chokepoint_station: string;
-  peak_occupancy_pct: number;
-  horizons: Record<string, CorridorRadarHorizonMetric>;
-}
-
-export interface CorridorRadarResponse {
-  status: string;
-  corridor: string;
-  as_of: string;
-  horizons: string[];
-  sections_count: number;
-  active_monitored_trains: number;
-  radar: CorridorRadarSection[];
-  highest_chokepoints: Array<{
-    section: string;
-    chokepoint: string;
-    peak_occupancy: number;
-    recommended_action: string;
-  }>;
-}
-
-
