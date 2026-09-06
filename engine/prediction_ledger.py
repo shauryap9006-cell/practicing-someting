@@ -101,6 +101,28 @@ class PredictionLedger:
 
             return receipt_hash
 
+    def record_prediction(
+        self,
+        train_no: str,
+        station_code: str,
+        p10: float,
+        p50: float,
+        p90: float,
+        scheduled_arrival: Optional[str] = None,
+        tier: Optional[str] = None,
+        features: Optional[Dict[str, Any]] = None,
+        query_timestamp: Optional[str] = None,
+    ) -> str:
+        """Alias for record_prediction_receipt with extended metadata compatibility."""
+        return self.record_prediction_receipt(
+            train_no=train_no,
+            target_station=station_code,
+            p10=p10,
+            p50=p50,
+            p90=p90,
+            query_timestamp=query_timestamp,
+        )
+
     def grade_actual_arrival(
         self,
         train_no: str,

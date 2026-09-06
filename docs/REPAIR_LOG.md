@@ -59,4 +59,16 @@
 - `engine/live_tracker.py`: Integrated `TwinEngine` into `tick()`. Orchestrates active corridor trains, generates 13-column `station_events` rows (`source="simulated"`), invokes touchdown ledger grading, dynamic section occupancy calculation, and async advisory lock against double-starts.
 - `api/live_routes.py` & `api/passenger_routes.py`: Wrapped blocking tracker/DB calls in `asyncio.to_thread` for SSE stream generators.
 - Tests: Created `tests/test_heartbeat.py` covering 300-min pure-math simulation, idempotent advisory lock, 13-column station_events integration, and SSE smoke frame validation. Ledger integrity verified: (True, 6142, None).
-
+## Phase 4: Passenger Through ML Brain (D04)
+- `api/passenger_routes.py`:
+  - In `get_passenger_snapshot`:
+    - Wired `get_predictor_service().predict_train_eta(target_train_no, selected_stop_code)`.
+    - Returns calibrated quantiles `p10_min`, `p50_min`, `p90_min`, and `tier_used`.
+    - Implemented 5-second per-train in-memory debounce cache (`_SNAPSHOT_CACHE`) to prevent redundant predictor computation and duplicate ledger writes on rapid polling.
+    - Added additive-only keys `band` (`p10_min`, `p50_min`, `p90_min`, `p10_time`, `p90_time`) and `model` (`version`, `horizon_min`).
+    - Handled float/int delta times safely in `_add_minutes_to_time`.
+    - Preserved 404 response for unknown train numbers.
+- `engine/prediction_ledger.py`:
+  - Added `record_prediction(...)` alias method for API compatibility.
+- Tests: Created `tests/test_passenger_ml.py` testing confidence band presence, cryptographic ledger block increment (+1 block), debounce caching behavior (single predictor call & single ledger receipt across rapid calls), and 404 status on unknown trains.
+- Verification: 284/284 tests green. Ledger verified at 6,394 blocks.

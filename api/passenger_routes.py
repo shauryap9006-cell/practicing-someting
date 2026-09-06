@@ -7,8 +7,9 @@ import asyncio
 import json
 import math
 import re
+import time
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
@@ -18,8 +19,11 @@ from data.db import Database, get_db
 from engine.clocks import get_clock
 from engine.attribution import LiveAttributionEngine, get_attribution_engine, CauseCategory
 from engine.live_tracker import LivePositionTracker, get_live_tracker
+from api.predictor import get_predictor_service
 
 router = APIRouter(prefix="/v1/passenger", tags=["Passenger Train Tracker"])
+
+_SNAPSHOT_CACHE: Dict[str, Tuple[Dict[str, Any], float]] = {}
 
 def _get_tracker_dep() -> LivePositionTracker:
     return get_live_tracker()
@@ -111,7 +115,7 @@ def _get_train_hi(train_no: str, default_name: str) -> str:
     return name
 
 
-def _add_minutes_to_time(time_str: Optional[str], delta_min: int) -> str:
+def _add_minutes_to_time(time_str: Optional[str], delta_min: int | float) -> str:
     """Adds delta_min to HH:MM string and wraps around 24 hours."""
     if not time_str or ":" not in time_str:
         return "18:00"
@@ -120,7 +124,7 @@ def _add_minutes_to_time(time_str: Optional[str], delta_min: int) -> str:
         h, m = int(parts[0]), int(parts[1])
     except ValueError:
         return time_str
-    total = (h * 60 + m + delta_min) % (24 * 60)
+    total = int(round(h * 60 + m + float(delta_min))) % (24 * 60)
     if total < 0:
         total += 24 * 60
     return f"{total // 60:02d}:{total % 60:02d}"
@@ -538,6 +542,13 @@ def get_passenger_snapshot(
 
     target_train_no = target_train_no.strip()
 
+    cache_key = f"{target_train_no}:{target_stop_code or ''}:{clean_pnr if pnr else ''}"
+    now_ts = time.time()
+    if cache_key in _SNAPSHOT_CACHE:
+        cached_resp, cached_time = _SNAPSHOT_CACHE[cache_key]
+        if (now_ts - cached_time) < 5.0:
+            return cached_resp
+
     with db.transaction() as cur:
         cur.execute("SELECT train_no, name, class FROM trains WHERE train_no = ?", (target_train_no,))
         train_row = cur.fetchone()
@@ -686,6 +697,22 @@ def get_passenger_snapshot(
     sel_expected = _add_minutes_to_time(sel_sched, delay_min)
     time_win = _get_time_window(sel_expected)
 
+    predictor = get_predictor_service()
+    try:
+        pred_res = predictor.predict_train_eta(target_train_no, selected_stop_obj["station_code"])
+        p10_min = float(pred_res.get("pred_delay_p10", 0.0))
+        p50_min = float(pred_res.get("pred_delay_p50", delay_min))
+        p90_min = float(pred_res.get("pred_delay_p90", delay_min))
+        tier_used = str(pred_res.get("tier_used", "Tier2_Convex_Ensemble_NNLS"))
+    except Exception:
+        p10_min = max(0.0, float(delay_min - 5.0))
+        p50_min = float(delay_min)
+        p90_min = float(delay_min + 15.0)
+        tier_used = "Tier1_HistLookup"
+
+    p10_time_str = _add_minutes_to_time(sel_sched, p10_min)
+    p90_time_str = _add_minutes_to_time(sel_sched, p90_min)
+
     is_boarding_pnr = bool(pnr_resolved and pnr_resolved.get("boarding", {}).get("code") == selected_stop_obj["station_code"])
 
     next_code = next_stop_obj["station_code"] if next_stop_obj else None
@@ -786,7 +813,7 @@ def get_passenger_snapshot(
 
     run_status_str = "NOT_RUNNING_TODAY" if is_not_running_today else ("COMPLETED" if is_completed_journey else "RUNNING")
 
-    return {
+    resp_payload = {
         "train": {
             "train_no": target_train_no,
             "name": train_name,
@@ -879,4 +906,18 @@ def get_passenger_snapshot(
             "clock_mode": clock.mode.upper(),
             "simulated_clock": f"{clock.mode.upper()} · {clock.now().strftime('%H:%M')} IST",
         },
+        "band": {
+            "p10_min": round(p10_min, 1),
+            "p50_min": round(p50_min, 1),
+            "p90_min": round(p90_min, 1),
+            "p10_time": p10_time_str,
+            "p90_time": p90_time_str,
+        },
+        "model": {
+            "version": getattr(predictor, "champion_name", "PyTorch_GRU_Quantile"),
+            "horizon_min": round(p50_min, 1),
+        },
     }
+
+    _SNAPSHOT_CACHE[cache_key] = (resp_payload, now_ts)
+    return resp_payload
