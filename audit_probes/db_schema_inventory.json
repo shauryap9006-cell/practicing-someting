@@ -1,0 +1,7322 @@
+{
+  "db_tables": [
+    "access_requests",
+    "ad_events",
+    "advisory_ack_log",
+    "audit_log",
+    "auth_sessions",
+    "backups",
+    "block_status",
+    "brain_advisory_audit",
+    "breathalyzer_tests",
+    "cleaning_logs",
+    "commercial_stalls",
+    "conformal_pid_state",
+    "corridor_sections",
+    "crew_rosters",
+    "cross_station_locks",
+    "delay_certificates",
+    "eta_prediction_ledger",
+    "handover_log",
+    "hist_baselines",
+    "incidents",
+    "level_crossings",
+    "live_delay_ledger",
+    "live_ingest_events",
+    "live_positions",
+    "lost_and_found",
+    "notification_ack",
+    "notification_log",
+    "notifications",
+    "planner_changesets",
+    "platform_assignments",
+    "platform_states",
+    "possessions",
+    "rake_links",
+    "rakes",
+    "roles",
+    "route_stations",
+    "run_snapshots",
+    "sahayak_roster",
+    "schema_migrations",
+    "section_advisories",
+    "sections",
+    "shadow_log",
+    "shunting_moves",
+    "sim_ledger",
+    "sop_runs",
+    "speed_restrictions",
+    "staff",
+    "staff_shifts",
+    "station_assets",
+    "station_events",
+    "stations",
+    "timetable_entries",
+    "timetable_versions",
+    "train_runs",
+    "trains",
+    "user_roles",
+    "users",
+    "weather",
+    "weather_hourly",
+    "work_orders"
+  ],
+  "code_written_tables": [
+    "access_requests",
+    "users",
+    "user_roles",
+    "auth_sessions",
+    "block_status",
+    "brain_advisory_audit",
+    "delay_certificates",
+    "commercial_stalls",
+    "lost_and_found",
+    "handover_log",
+    "rakes",
+    "station_assets",
+    "work_orders",
+    "cleaning_logs",
+    "ad_events",
+    "platform_states",
+    "shunting_moves",
+    "platform_assignments",
+    "planner_changesets",
+    "advisory_ack_log",
+    "speed_restrictions",
+    "possessions",
+    "incidents",
+    "sop_runs",
+    "level_crossings",
+    "corridor_sections",
+    "cross_station_locks",
+    "timetable_versions",
+    "timetable_entries",
+    "breathalyzer_tests",
+    "crew_rosters",
+    "staff_shifts",
+    "sahayak_roster",
+    "eta_prediction_ledger",
+    "sim_ledger",
+    "station_events",
+    "train_runs",
+    "run_snapshots",
+    "weather",
+    "weather_hourly",
+    "audit_log",
+    "hist_baselines",
+    "schema_migrations",
+    "live_positions",
+    "live_delay_ledger",
+    "stations",
+    "sections",
+    "trains",
+    "route_stations",
+    "rake_links",
+    "staff",
+    "roles",
+    "backups",
+    "sqlite",
+    "route_cum_km",
+    "notifications",
+    "notification_ack",
+    "notification_log"
+  ],
+  "tables_in_db_not_written_in_code": [
+    "conformal_pid_state",
+    "live_ingest_events",
+    "section_advisories",
+    "shadow_log"
+  ],
+  "tables_written_in_code_not_in_db": [
+    "sqlite",
+    "route_cum_km"
+  ],
+  "details": {
+    "access_requests": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "request_id",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "full_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "email",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "organization",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'pending'",
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "requested_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "reviewed_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "reviewed_by",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_access_requests_status_time",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 5,
+              "name": "status"
+            },
+            {
+              "seqno": 1,
+              "cid": 6,
+              "name": "requested_at"
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_access_requests_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "request_id"
+            }
+          ]
+        }
+      ],
+      "row_count": 0,
+      "create_sql": "CREATE TABLE access_requests (\n  request_id TEXT PRIMARY KEY,\n  station_code TEXT NOT NULL,\n  full_name TEXT NOT NULL,\n  email TEXT NOT NULL,\n  organization TEXT,\n  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'approved', 'rejected')),\n  requested_at TEXT NOT NULL,\n  reviewed_at TEXT,\n  reviewed_by TEXT,\n  FOREIGN KEY (reviewed_by) REFERENCES users(id)\n)"
+    },
+    "ad_events": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "run_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "event_kind",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "actual_ts",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "platform",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "predicted_ts",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "discrepancy_min",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": "0.0",
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "discrepancy_flag",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "source",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'human'",
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "confirmed_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 12,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_ad_events_stn_ts",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 3,
+              "name": "station_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 5,
+              "name": "actual_ts"
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "idx_ad_events_run",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "run_id"
+            },
+            {
+              "seqno": 1,
+              "cid": 4,
+              "name": "event_kind"
+            }
+          ]
+        }
+      ],
+      "row_count": 12,
+      "create_sql": "CREATE TABLE ad_events (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  run_id TEXT NOT NULL,\n  train_no TEXT NOT NULL,\n  station_code TEXT NOT NULL,\n  event_kind TEXT NOT NULL CHECK(event_kind IN ('setin', 'setout')),\n  actual_ts TEXT NOT NULL,\n  platform INTEGER NOT NULL,\n  predicted_ts TEXT,\n  discrepancy_min REAL DEFAULT 0.0,\n  discrepancy_flag INTEGER DEFAULT 0,\n  source TEXT NOT NULL DEFAULT 'human' CHECK(source IN ('human', 'inferred', 'gps')),\n  confirmed_by TEXT NOT NULL,\n  created_at TEXT NOT NULL\n)"
+    },
+    "advisory_ack_log": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "adv_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "decision",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "dispatcher_id",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "comment",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "recorded_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_ack_log_adv",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "adv_id"
+            }
+          ]
+        }
+      ],
+      "row_count": 103,
+      "create_sql": "CREATE TABLE advisory_ack_log (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  adv_id TEXT NOT NULL,       -- advisory identifier (brain_advisory_audit.id or uuid from payload)\n  decision TEXT NOT NULL CHECK(decision IN ('accepted', 'rejected')),\n  dispatcher_id TEXT,         -- optional dispatcher badge / login\n  comment TEXT,               -- optional free-text comment\n  recorded_at TEXT NOT NULL   -- ISO timestamp in IST\n)"
+    },
+    "audit_log": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "ts",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "actor_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "actor_role",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "action",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "table_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "record_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "before_state",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "after_state",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "row_hash",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "prev_hash",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_audit_log_actor",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 2,
+              "name": "actor_id"
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "idx_audit_log_ts",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "ts"
+            }
+          ]
+        },
+        {
+          "seq": 2,
+          "name": "idx_audit_log_table",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 5,
+              "name": "table_name"
+            },
+            {
+              "seqno": 1,
+              "cid": 6,
+              "name": "record_id"
+            }
+          ]
+        }
+      ],
+      "row_count": 55,
+      "create_sql": "CREATE TABLE audit_log (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  ts TEXT NOT NULL,\n  actor_id TEXT NOT NULL,\n  actor_role TEXT NOT NULL,\n  action TEXT NOT NULL,\n  table_name TEXT NOT NULL,\n  record_id TEXT NOT NULL,\n  before_state TEXT,\n  after_state TEXT,\n  row_hash TEXT NOT NULL,\n  prev_hash TEXT NOT NULL\n)"
+    },
+    "auth_sessions": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "token_id",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "user_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "token_hash",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "expires_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "last_used_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "revoked_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "replaced_by",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_auth_sessions_expiry",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 4,
+              "name": "expires_at"
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "idx_auth_sessions_user",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "user_id"
+            },
+            {
+              "seqno": 1,
+              "cid": 6,
+              "name": "revoked_at"
+            }
+          ]
+        },
+        {
+          "seq": 2,
+          "name": "sqlite_autoindex_auth_sessions_2",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 2,
+              "name": "token_hash"
+            }
+          ]
+        },
+        {
+          "seq": 3,
+          "name": "sqlite_autoindex_auth_sessions_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "token_id"
+            }
+          ]
+        }
+      ],
+      "row_count": 15,
+      "create_sql": "CREATE TABLE auth_sessions (\n  token_id TEXT PRIMARY KEY,\n  user_id TEXT NOT NULL,\n  token_hash TEXT NOT NULL UNIQUE,\n  created_at TEXT NOT NULL,\n  expires_at TEXT NOT NULL,\n  last_used_at TEXT,\n  revoked_at TEXT,\n  replaced_by TEXT,\n  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE\n)"
+    },
+    "backups": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "filename",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "backup_ts",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "size_bytes",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "row_counts_json",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'SUCCESS'",
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "checksum_sha256",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [],
+      "row_count": 42,
+      "create_sql": "CREATE TABLE backups (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  filename TEXT NOT NULL,\n  backup_ts TEXT NOT NULL,\n  size_bytes INTEGER NOT NULL,\n  row_counts_json TEXT,\n  status TEXT NOT NULL DEFAULT 'SUCCESS',\n  checksum_sha256 TEXT NOT NULL\n)"
+    },
+    "block_status": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "block_id",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "from_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "to_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "state",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'CLEAR'",
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "occupied_by_train",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "line_clear_granted_to",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "granted_by",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "since",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_block_status_section",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "from_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 2,
+              "name": "to_code"
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_block_status_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "block_id"
+            }
+          ]
+        }
+      ],
+      "row_count": 1,
+      "create_sql": "CREATE TABLE block_status (\n  block_id TEXT PRIMARY KEY,\n  from_code TEXT NOT NULL,\n  to_code TEXT NOT NULL,\n  state TEXT NOT NULL DEFAULT 'CLEAR' CHECK(state IN ('CLEAR', 'OCCUPIED', 'BLOCKED', 'CAUTION')),\n  occupied_by_train TEXT,\n  line_clear_granted_to TEXT,\n  granted_by TEXT,\n  since TEXT NOT NULL,\n  notes TEXT\n)"
+    },
+    "brain_advisory_audit": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "query_timestamp",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "input_delay_min",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "predicted_delay_min",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "confidence_tier",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "checks_passed",
+          "type": "INT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "conflicts_count",
+          "type": "INT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "suggested_action",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "model_version",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "raw_payload",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_brain_audit_train",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "train_no"
+            },
+            {
+              "seqno": 1,
+              "cid": 2,
+              "name": "query_timestamp"
+            }
+          ]
+        }
+      ],
+      "row_count": 57,
+      "create_sql": "CREATE TABLE brain_advisory_audit (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  train_no TEXT NOT NULL,\n  query_timestamp TEXT NOT NULL,\n  input_delay_min REAL,\n  predicted_delay_min REAL,\n  confidence_tier TEXT,\n  checks_passed INT,\n  conflicts_count INT,\n  suggested_action TEXT,\n  model_version TEXT,\n  raw_payload TEXT\n)"
+    },
+    "breathalyzer_tests": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "staff_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "staff_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "role",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "duty_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "reading_mg_100ml",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": "0.0",
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "passed",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "1",
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "verified_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "test_time",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_ba_staff",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "staff_id"
+            },
+            {
+              "seqno": 1,
+              "cid": 9,
+              "name": "test_time"
+            }
+          ]
+        }
+      ],
+      "row_count": 12,
+      "create_sql": "CREATE TABLE breathalyzer_tests (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  staff_id TEXT NOT NULL,\n  staff_name TEXT NOT NULL,\n  role TEXT NOT NULL CHECK(role IN ('loco_pilot', 'alp', 'guard', 'station_master', 'shunter')),\n  train_no TEXT,\n  duty_type TEXT NOT NULL CHECK(duty_type IN ('SIGN_ON', 'SIGN_OFF', 'SURPRISE_CHECK')),\n  reading_mg_100ml REAL NOT NULL DEFAULT 0.0,\n  passed INTEGER NOT NULL DEFAULT 1,\n  verified_by TEXT NOT NULL,\n  test_time TEXT NOT NULL,\n  notes TEXT\n)"
+    },
+    "cleaning_logs": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "area_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "platform_number",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "cleaned_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "inspected_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "score_1_to_5",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "contractor_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'Swachh Rail Agency'",
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_clean_stn",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "station_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 2,
+              "name": "area_type"
+            }
+          ]
+        }
+      ],
+      "row_count": 9,
+      "create_sql": "CREATE TABLE cleaning_logs (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  station_code TEXT NOT NULL,\n  area_type TEXT NOT NULL CHECK(area_type IN ('PLATFORM', 'WAITING_HALL', 'TOILET', 'CONCOURSE', 'FOOT_OVER_BRIDGE')),\n  platform_number INTEGER,\n  cleaned_at TEXT NOT NULL,\n  inspected_by TEXT NOT NULL,\n  score_1_to_5 INTEGER NOT NULL CHECK(score_1_to_5 BETWEEN 1 AND 5),\n  contractor_name TEXT NOT NULL DEFAULT 'Swachh Rail Agency',\n  notes TEXT\n)"
+    },
+    "commercial_stalls": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "stall_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "platform_number",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "stall_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "vendor_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "contact_phone",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "monthly_rent_inr",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "lease_start_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "lease_expiry_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'ACTIVE'",
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_stalls_station",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 2,
+              "name": "station_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 10,
+              "name": "status"
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_commercial_stalls_1",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "stall_code"
+            }
+          ]
+        }
+      ],
+      "row_count": 1,
+      "create_sql": "CREATE TABLE commercial_stalls (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  stall_code TEXT NOT NULL UNIQUE,\n  station_code TEXT NOT NULL,\n  platform_number INTEGER NOT NULL,\n  stall_type TEXT NOT NULL CHECK(stall_type IN ('CATERING', 'TEA_STALL', 'BOOKSTALL', 'ATM', 'PHARMACY', 'CLOAK_ROOM', 'EXECUTIVE_LOUNGE', 'RETAIL')),\n  vendor_name TEXT NOT NULL,\n  contact_phone TEXT,\n  monthly_rent_inr REAL NOT NULL,\n  lease_start_date TEXT NOT NULL,\n  lease_expiry_date TEXT NOT NULL,\n  status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK(status IN ('ACTIVE', 'OVERDUE', 'EXPIRED', 'TERMINATED')),\n  notes TEXT\n)"
+    },
+    "conformal_pid_state": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "group_key",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "target_alpha",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": "0.20",
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "current_alpha",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": "0.20",
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "integral",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": "0.0",
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "prev_error",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": "0.0",
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "steps",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "updated_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_conformal_pid_state_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "group_key"
+            }
+          ]
+        }
+      ],
+      "row_count": 0,
+      "create_sql": "CREATE TABLE conformal_pid_state (\n  group_key TEXT PRIMARY KEY,\n  target_alpha REAL NOT NULL DEFAULT 0.20,\n  current_alpha REAL NOT NULL DEFAULT 0.20,\n  integral REAL NOT NULL DEFAULT 0.0,\n  prev_error REAL NOT NULL DEFAULT 0.0,\n  steps INTEGER NOT NULL DEFAULT 0,\n  updated_at TEXT NOT NULL\n)"
+    },
+    "corridor_sections": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "section_id",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "from_station",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "to_station",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "length_km",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "max_speed_kmph",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": "130.0",
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "is_electrified",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "1",
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "signaling_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'AUTOMATIC_BLOCK'",
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_corr_sec_stns",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "from_station"
+            },
+            {
+              "seqno": 1,
+              "cid": 2,
+              "name": "to_station"
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_corridor_sections_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "section_id"
+            }
+          ]
+        }
+      ],
+      "row_count": 4,
+      "create_sql": "CREATE TABLE corridor_sections (\n  section_id TEXT PRIMARY KEY,\n  from_station TEXT NOT NULL,\n  to_station TEXT NOT NULL,\n  length_km REAL NOT NULL,\n  max_speed_kmph REAL NOT NULL DEFAULT 130.0,\n  is_electrified INTEGER NOT NULL DEFAULT 1,\n  signaling_type TEXT NOT NULL DEFAULT 'AUTOMATIC_BLOCK' CHECK(signaling_type IN ('AUTOMATIC_BLOCK', 'ABSOLUTE_BLOCK', 'CTC', 'KAVACH_ATP')),\n  FOREIGN KEY (from_station) REFERENCES stations(code),\n  FOREIGN KEY (to_station) REFERENCES stations(code)\n)"
+    },
+    "crew_rosters": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "crew_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "staff_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "role",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "sign_on_time",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "sign_off_time",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "duty_hours_limit",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": "10.0",
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "consecutive_night_shifts",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "rest_hours_due",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": "16.0",
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'ON_DUTY'",
+          "pk": 0
+        },
+        {
+          "cid": 12,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_crew_stn_status",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 5,
+              "name": "station_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 11,
+              "name": "status"
+            }
+          ]
+        }
+      ],
+      "row_count": 10,
+      "create_sql": "CREATE TABLE crew_rosters (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  crew_id TEXT NOT NULL,\n  staff_name TEXT NOT NULL,\n  role TEXT NOT NULL CHECK(role IN ('loco_pilot', 'alp', 'guard')),\n  train_no TEXT NOT NULL,\n  station_code TEXT NOT NULL,\n  sign_on_time TEXT NOT NULL,\n  sign_off_time TEXT,\n  duty_hours_limit REAL NOT NULL DEFAULT 10.0,\n  consecutive_night_shifts INTEGER NOT NULL DEFAULT 0,\n  rest_hours_due REAL NOT NULL DEFAULT 16.0,\n  status TEXT NOT NULL DEFAULT 'ON_DUTY' CHECK(status IN ('ON_DUTY', 'RESTING', 'BREACH_WARNING', 'COMPLETED')),\n  created_at TEXT NOT NULL\n)"
+    },
+    "cross_station_locks": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "section_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "from_station",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "to_station",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "lock_state",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'REQUESTED'",
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "requested_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "granted_by",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "granted_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "released_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_cross_locks_sec",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "section_id"
+            },
+            {
+              "seqno": 1,
+              "cid": 5,
+              "name": "lock_state"
+            }
+          ]
+        }
+      ],
+      "row_count": 6,
+      "create_sql": "CREATE TABLE cross_station_locks (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  section_id TEXT NOT NULL,\n  from_station TEXT NOT NULL,\n  to_station TEXT NOT NULL,\n  train_no TEXT NOT NULL,\n  lock_state TEXT NOT NULL DEFAULT 'REQUESTED' CHECK(lock_state IN ('REQUESTED', 'GRANTED', 'OCCUPIED', 'RELEASED', 'REJECTED')),\n  requested_by TEXT NOT NULL,\n  granted_by TEXT,\n  granted_at TEXT,\n  released_at TEXT,\n  notes TEXT,\n  FOREIGN KEY (section_id) REFERENCES corridor_sections(section_id)\n)"
+    },
+    "delay_certificates": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "cert_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "pnr_no",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "train_name",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "scheduled_arr",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "actual_arr",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "delay_min",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "reason",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "issued_to_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "issued_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 12,
+          "name": "issued_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 13,
+          "name": "qr_token",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_delay_certs_qr",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 13,
+              "name": "qr_token"
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "idx_delay_certs_train",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 3,
+              "name": "train_no"
+            },
+            {
+              "seqno": 1,
+              "cid": 5,
+              "name": "station_code"
+            }
+          ]
+        },
+        {
+          "seq": 2,
+          "name": "sqlite_autoindex_delay_certificates_2",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 13,
+              "name": "qr_token"
+            }
+          ]
+        },
+        {
+          "seq": 3,
+          "name": "sqlite_autoindex_delay_certificates_1",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "cert_no"
+            }
+          ]
+        }
+      ],
+      "row_count": 10,
+      "create_sql": "CREATE TABLE delay_certificates (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  cert_no TEXT NOT NULL UNIQUE,\n  pnr_no TEXT,\n  train_no TEXT NOT NULL,\n  train_name TEXT,\n  station_code TEXT NOT NULL,\n  scheduled_arr TEXT NOT NULL,\n  actual_arr TEXT NOT NULL,\n  delay_min INTEGER NOT NULL,\n  reason TEXT NOT NULL,\n  issued_to_name TEXT NOT NULL,\n  issued_by TEXT NOT NULL,\n  issued_at TEXT NOT NULL,\n  qr_token TEXT NOT NULL UNIQUE\n)"
+    },
+    "eta_prediction_ledger": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "receipt_hash",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "prev_hash",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "target_station",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "query_timestamp",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "p10_delay",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "p50_delay",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "p90_delay",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "actual_delay",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "actual_timestamp",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "error_min",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 12,
+          "name": "in_band",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 13,
+          "name": "winkler_score",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 14,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_ledger_hash",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "receipt_hash"
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "idx_ledger_train",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 3,
+              "name": "train_no"
+            },
+            {
+              "seqno": 1,
+              "cid": 5,
+              "name": "query_timestamp"
+            }
+          ]
+        },
+        {
+          "seq": 2,
+          "name": "sqlite_autoindex_eta_prediction_ledger_1",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "receipt_hash"
+            }
+          ]
+        }
+      ],
+      "row_count": 3050,
+      "create_sql": "CREATE TABLE eta_prediction_ledger (\n                    id INTEGER PRIMARY KEY AUTOINCREMENT,\n                    receipt_hash TEXT UNIQUE NOT NULL,\n                    prev_hash TEXT NOT NULL,\n                    train_no TEXT NOT NULL,\n                    target_station TEXT NOT NULL,\n                    query_timestamp TEXT NOT NULL,\n                    p10_delay REAL NOT NULL,\n                    p50_delay REAL NOT NULL,\n                    p90_delay REAL NOT NULL,\n                    actual_delay REAL,\n                    actual_timestamp TEXT,\n                    error_min REAL,\n                    in_band INTEGER,\n                    winkler_score REAL,\n                    created_at TEXT NOT NULL\n                )"
+    },
+    "handover_log": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "shift_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "shift_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "outgoing_user_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "incoming_user_id",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "outgoing_signed_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "incoming_acked_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "open_incidents_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'[]'",
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "active_srs_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'[]'",
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "active_possessions_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'[]'",
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "crew_exceptions_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'[]'",
+          "pk": 0
+        },
+        {
+          "cid": 12,
+          "name": "operational_notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 13,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'draft'",
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_handover_station_date",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "station_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 2,
+              "name": "shift_date"
+            }
+          ]
+        }
+      ],
+      "row_count": 7,
+      "create_sql": "CREATE TABLE handover_log (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  station_code TEXT NOT NULL,\n  shift_date TEXT NOT NULL,\n  shift_type TEXT NOT NULL CHECK(shift_type IN ('morning', 'afternoon', 'night')),\n  outgoing_user_id TEXT NOT NULL,\n  incoming_user_id TEXT,\n  outgoing_signed_at TEXT,\n  incoming_acked_at TEXT,\n  open_incidents_json TEXT NOT NULL DEFAULT '[]',\n  active_srs_json TEXT NOT NULL DEFAULT '[]',\n  active_possessions_json TEXT NOT NULL DEFAULT '[]',\n  crew_exceptions_json TEXT NOT NULL DEFAULT '[]',\n  operational_notes TEXT,\n  status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft', 'signed', 'acknowledged')),\n  FOREIGN KEY (outgoing_user_id) REFERENCES users(id),\n  FOREIGN KEY (incoming_user_id) REFERENCES users(id)\n)"
+    },
+    "hist_baselines": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "avg_delay",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "p90_delay",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "chronic_delay_flag",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "sample_count",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "updated_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_hist_baselines",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "train_no"
+            },
+            {
+              "seqno": 1,
+              "cid": 1,
+              "name": "station_code"
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_hist_baselines_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "train_no"
+            },
+            {
+              "seqno": 1,
+              "cid": 1,
+              "name": "station_code"
+            }
+          ]
+        }
+      ],
+      "row_count": 1200,
+      "create_sql": "CREATE TABLE hist_baselines (train_no TEXT NOT NULL, station_code TEXT NOT NULL, avg_delay REAL NOT NULL, p90_delay REAL NOT NULL, chronic_delay_flag INTEGER NOT NULL DEFAULT 0, sample_count INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL, PRIMARY KEY (train_no, station_code))"
+    },
+    "incidents": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "incident_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "severity",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "location_km",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "summary",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "investigation_status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'OPEN'",
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "action_taken",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "reported_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "reported_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_incidents_stn",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 3,
+              "name": "station_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 10,
+              "name": "reported_at"
+            }
+          ]
+        }
+      ],
+      "row_count": 6,
+      "create_sql": "CREATE TABLE incidents (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  incident_type TEXT NOT NULL CHECK(incident_type IN ('SPAD', 'DERAILMENT', 'EQUIPMENT_FAIL', 'NEAR_MISS', 'GATE_BURST', 'OHE_BREAKDOWN', 'TRESPASSING')),\n  severity TEXT NOT NULL CHECK(severity IN ('MINOR', 'MAJOR', 'CRITICAL')),\n  station_code TEXT NOT NULL,\n  location_km REAL,\n  train_no TEXT,\n  summary TEXT NOT NULL,\n  investigation_status TEXT NOT NULL DEFAULT 'OPEN' CHECK(investigation_status IN ('OPEN', 'UNDER_REVIEW', 'CLOSED')),\n  action_taken TEXT,\n  reported_by TEXT NOT NULL,\n  reported_at TEXT NOT NULL\n)"
+    },
+    "level_crossings": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "lc_number",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "km",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "gate_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'NORMAL'",
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "last_inspected",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "gateman_name",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "contact_phone",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_lc_stn",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 2,
+              "name": "station_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 5,
+              "name": "status"
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_level_crossings_1",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "lc_number"
+            }
+          ]
+        }
+      ],
+      "row_count": 4,
+      "create_sql": "CREATE TABLE level_crossings (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  lc_number TEXT NOT NULL UNIQUE,\n  station_code TEXT NOT NULL,\n  km REAL NOT NULL,\n  gate_type TEXT NOT NULL CHECK(gate_type IN ('MANNED_INTERLOCKED', 'MANNED_NON_INTERLOCKED', 'SPECIAL_CLASS', 'UNMANNED')),\n  status TEXT NOT NULL DEFAULT 'NORMAL' CHECK(status IN ('NORMAL', 'DEFECTIVE', 'BOOM_DAMAGED', 'INTERLOCK_FAIL', 'MAINTENANCE')),\n  last_inspected TEXT NOT NULL,\n  gateman_name TEXT,\n  contact_phone TEXT,\n  notes TEXT\n)"
+    },
+    "live_delay_ledger": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "run_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "timestamp",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "delay_change_min",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "previous_delay_min",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "current_delay_min",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "primary_cause",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "secondary_cause",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "confidence",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": "1.0",
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "evidence_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'{}'",
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "is_exact_accounting",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": "1",
+          "pk": 0
+        },
+        {
+          "cid": 12,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_live_delay_ledger_timestamp",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 3,
+              "name": "timestamp"
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "idx_live_delay_ledger_train",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "train_no"
+            },
+            {
+              "seqno": 1,
+              "cid": 2,
+              "name": "run_date"
+            }
+          ]
+        }
+      ],
+      "row_count": 222,
+      "create_sql": "CREATE TABLE live_delay_ledger (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  train_no TEXT NOT NULL,\n  run_date TEXT NOT NULL,\n  timestamp TEXT NOT NULL,\n  delay_change_min REAL NOT NULL,\n  previous_delay_min REAL NOT NULL,\n  current_delay_min REAL NOT NULL,\n  primary_cause TEXT NOT NULL,\n  secondary_cause TEXT,\n  confidence REAL DEFAULT 1.0,\n  evidence_json TEXT NOT NULL DEFAULT '{}',\n  is_exact_accounting INTEGER DEFAULT 1,\n  created_at TEXT NOT NULL,\n  FOREIGN KEY (train_no) REFERENCES trains(train_no) ON DELETE CASCADE\n)"
+    },
+    "live_ingest_events": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "scheduled_time",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "actual_time",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "delay_min",
+          "type": "INT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "collected_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_live_ingest_lookup",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "train_no"
+            },
+            {
+              "seqno": 1,
+              "cid": 2,
+              "name": "station_code"
+            },
+            {
+              "seqno": 2,
+              "cid": 6,
+              "name": "collected_at"
+            }
+          ]
+        }
+      ],
+      "row_count": 0,
+      "create_sql": "CREATE TABLE live_ingest_events (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  train_no TEXT NOT NULL,\n  station_code TEXT NOT NULL,\n  scheduled_time TEXT,\n  actual_time TEXT,\n  delay_min INT NOT NULL,\n  collected_at TEXT NOT NULL\n)"
+    },
+    "live_positions": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "run_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "lat",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "lng",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "current_station_code",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "next_station_code",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "section_id",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "speed_kmh",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": "0.0",
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "delay_minutes",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": "0.0",
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "confidence",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": "1.0",
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "progress_pct",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": "0.0",
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "is_dead_reckoned",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 12,
+          "name": "source",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": "'live'",
+          "pk": 0
+        },
+        {
+          "cid": 13,
+          "name": "last_event_time",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 14,
+          "name": "last_gps_fix",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 15,
+          "name": "updated_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_live_positions_updated",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 15,
+              "name": "updated_at"
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "idx_live_positions_station",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 4,
+              "name": "current_station_code"
+            }
+          ]
+        },
+        {
+          "seq": 2,
+          "name": "sqlite_autoindex_live_positions_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "train_no"
+            },
+            {
+              "seqno": 1,
+              "cid": 1,
+              "name": "run_date"
+            }
+          ]
+        }
+      ],
+      "row_count": 752,
+      "create_sql": "CREATE TABLE live_positions (\n  train_no TEXT NOT NULL,\n  run_date TEXT NOT NULL,\n  lat REAL NOT NULL,\n  lng REAL NOT NULL,\n  current_station_code TEXT,\n  next_station_code TEXT,\n  section_id TEXT,\n  speed_kmh REAL DEFAULT 0.0,\n  delay_minutes REAL DEFAULT 0.0,\n  confidence REAL DEFAULT 1.0,\n  progress_pct REAL DEFAULT 0.0,\n  is_dead_reckoned INTEGER DEFAULT 0,\n  source TEXT DEFAULT 'live',\n  last_event_time TEXT,\n  last_gps_fix TEXT,\n  updated_at TEXT NOT NULL,\n  PRIMARY KEY (train_no, run_date),\n  FOREIGN KEY (train_no) REFERENCES trains(train_no) ON DELETE CASCADE\n)"
+    },
+    "lost_and_found": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "item_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "description",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "found_location",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "found_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "found_by_staff",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "custody_location",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'Station Master Safe'",
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'UNCLAIMED'",
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "claimant_name",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "claimant_id_proof",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 12,
+          "name": "claimant_phone",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 13,
+          "name": "claimed_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_lost_found_stn",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 4,
+              "name": "station_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 9,
+              "name": "status"
+            }
+          ]
+        }
+      ],
+      "row_count": 10,
+      "create_sql": "CREATE TABLE lost_and_found (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  item_type TEXT NOT NULL CHECK(item_type IN ('BAG_LUGGAGE', 'ELECTRONICS', 'WALLET_CASH', 'DOCUMENT_ID', 'CLOTHING', 'OTHER')),\n  description TEXT NOT NULL,\n  found_location TEXT NOT NULL,\n  station_code TEXT NOT NULL,\n  train_no TEXT,\n  found_at TEXT NOT NULL,\n  found_by_staff TEXT NOT NULL,\n  custody_location TEXT NOT NULL DEFAULT 'Station Master Safe',\n  status TEXT NOT NULL DEFAULT 'UNCLAIMED' CHECK(status IN ('UNCLAIMED', 'CLAIMED', 'AUCTIONED', 'DISPOSED')),\n  claimant_name TEXT,\n  claimant_id_proof TEXT,\n  claimant_phone TEXT,\n  claimed_at TEXT\n)"
+    },
+    "notification_ack": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "notif_id",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "user_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "channel",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'in_app'",
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "ack_ts",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_notif_ack_notif",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "notif_id"
+            }
+          ]
+        }
+      ],
+      "row_count": 6,
+      "create_sql": "CREATE TABLE notification_ack (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  notif_id INTEGER NOT NULL,\n  user_id TEXT NOT NULL,\n  channel TEXT NOT NULL DEFAULT 'in_app',\n  ack_ts TEXT NOT NULL,\n  notes TEXT,\n  FOREIGN KEY (notif_id) REFERENCES notifications(id) ON DELETE CASCADE\n)"
+    },
+    "notification_log": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "staff_id",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "event_type",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "severity",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "channel",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": "'queued'",
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "payload",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "sent_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "ack_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_notif_log_sent",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 7,
+              "name": "sent_at"
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "idx_notif_log_staff",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "staff_id"
+            }
+          ]
+        }
+      ],
+      "row_count": 56,
+      "create_sql": "CREATE TABLE notification_log (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  staff_id TEXT,\n  event_type TEXT,\n  severity TEXT,\n  channel TEXT,\n  status TEXT DEFAULT 'queued',\n  payload TEXT,\n  sent_at TEXT,\n  ack_at TEXT,\n  FOREIGN KEY(staff_id) REFERENCES staff(staff_id) ON DELETE SET NULL\n)"
+    },
+    "notifications": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "event_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "target_role",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "severity",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "title",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "message",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "payload_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'{}'",
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "state",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'queued'",
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "escalated_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "acked_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "acked_by",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 12,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_notifications_station_state",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 12,
+              "name": "station_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 7,
+              "name": "state"
+            },
+            {
+              "seqno": 2,
+              "cid": 8,
+              "name": "created_at"
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "idx_notifications_created",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 8,
+              "name": "created_at"
+            }
+          ]
+        },
+        {
+          "seq": 2,
+          "name": "idx_notifications_role_state",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 2,
+              "name": "target_role"
+            },
+            {
+              "seqno": 1,
+              "cid": 7,
+              "name": "state"
+            }
+          ]
+        }
+      ],
+      "row_count": 129,
+      "create_sql": "CREATE TABLE notifications (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  event_type TEXT NOT NULL,\n  target_role TEXT,\n  severity TEXT NOT NULL CHECK(severity IN ('info', 'warning', 'critical')),\n  title TEXT NOT NULL,\n  message TEXT NOT NULL,\n  payload_json TEXT NOT NULL DEFAULT '{}',\n  state TEXT NOT NULL DEFAULT 'queued' CHECK(state IN ('queued', 'sent', 'escalated', 'acked')),\n  created_at TEXT NOT NULL,\n  escalated_at TEXT,\n  acked_at TEXT,\n  acked_by TEXT\n, station_code TEXT)"
+    },
+    "planner_changesets": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "plan_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "changeset_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "sim_result_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'{}'",
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "interlock_passed",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "1",
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "applied_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_planner_changesets_stn",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "station_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 2,
+              "name": "plan_date"
+            }
+          ]
+        }
+      ],
+      "row_count": 6,
+      "create_sql": "CREATE TABLE planner_changesets (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  station_code TEXT NOT NULL,\n  plan_date TEXT NOT NULL,\n  changeset_json TEXT NOT NULL,\n  sim_result_json TEXT NOT NULL DEFAULT '{}',\n  interlock_passed INTEGER NOT NULL DEFAULT 1,\n  applied_by TEXT NOT NULL,\n  created_at TEXT NOT NULL\n)"
+    },
+    "platform_assignments": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "run_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "platform",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "assigned_arr",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "assigned_dep",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "is_locked",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "locked_by",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'SCHEDULED'",
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_pf_assign_stn",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "station_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 3,
+              "name": "run_date"
+            },
+            {
+              "seqno": 2,
+              "cid": 4,
+              "name": "platform"
+            }
+          ]
+        }
+      ],
+      "row_count": 18,
+      "create_sql": "CREATE TABLE platform_assignments (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  station_code TEXT NOT NULL,\n  train_no TEXT NOT NULL,\n  run_date TEXT NOT NULL,\n  platform INTEGER NOT NULL,\n  assigned_arr TEXT NOT NULL,\n  assigned_dep TEXT NOT NULL,\n  is_locked INTEGER NOT NULL DEFAULT 0,\n  locked_by TEXT,\n  status TEXT NOT NULL DEFAULT 'SCHEDULED' CHECK(status IN ('SCHEDULED', 'ACTIVE', 'COMPLETED', 'CANCELLED')),\n  created_at TEXT NOT NULL\n)"
+    },
+    "platform_states": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "platform",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "state",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'FREE'",
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "occupied_by_train",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "since",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "reason",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "updated_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_platform_states_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "station_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 1,
+              "name": "platform"
+            }
+          ]
+        }
+      ],
+      "row_count": 2,
+      "create_sql": "CREATE TABLE platform_states (\n  station_code TEXT NOT NULL,\n  platform INTEGER NOT NULL,\n  state TEXT NOT NULL DEFAULT 'FREE' CHECK(state IN ('FREE', 'OCCUPIED', 'BLOCKED_MAINT', 'OUT_OF_SERVICE')),\n  occupied_by_train TEXT,\n  since TEXT NOT NULL,\n  reason TEXT,\n  updated_by TEXT NOT NULL,\n  PRIMARY KEY (station_code, platform)\n)"
+    },
+    "possessions": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "possession_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "element_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "start_time",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "end_time",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "work_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "requesting_dept",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'REQUESTED'",
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "granted_by",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "granted_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "restored_by",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 12,
+          "name": "restored_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 13,
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 14,
+          "name": "created_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 15,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_possessions_stn_time",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 3,
+              "name": "station_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 4,
+              "name": "start_time"
+            },
+            {
+              "seqno": 2,
+              "cid": 8,
+              "name": "status"
+            }
+          ]
+        }
+      ],
+      "row_count": 6,
+      "create_sql": "CREATE TABLE possessions (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  possession_type TEXT NOT NULL CHECK(possession_type IN ('BLOCK_SECTION', 'PLATFORM', 'OHE_LINE', 'YARD_TRACK')),\n  element_id TEXT NOT NULL,\n  station_code TEXT NOT NULL,\n  start_time TEXT NOT NULL,\n  end_time TEXT NOT NULL,\n  work_type TEXT NOT NULL CHECK(work_type IN ('P_WAY', 'OHE_TRACTION', 'S_AND_T', 'BRIDGE_WORK', 'GENERAL')),\n  requesting_dept TEXT NOT NULL,\n  status TEXT NOT NULL DEFAULT 'REQUESTED' CHECK(status IN ('REQUESTED', 'GRANTED', 'ACTIVE', 'RESTORED', 'CANCELLED')),\n  granted_by TEXT,\n  granted_at TEXT,\n  restored_by TEXT,\n  restored_at TEXT,\n  notes TEXT,\n  created_by TEXT NOT NULL,\n  created_at TEXT NOT NULL\n)"
+    },
+    "rake_links": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "incoming_train",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "outgoing_train",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "turnaround_min",
+          "type": "INT",
+          "notnull": 1,
+          "dflt_value": "240",
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_rake_links_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "incoming_train"
+            },
+            {
+              "seqno": 1,
+              "cid": 1,
+              "name": "outgoing_train"
+            }
+          ]
+        }
+      ],
+      "row_count": 14,
+      "create_sql": "CREATE TABLE rake_links (\n  incoming_train TEXT NOT NULL,\n  outgoing_train TEXT NOT NULL,\n  station_code TEXT NOT NULL,\n  turnaround_min INT NOT NULL DEFAULT 240, -- min required turnaround time in minutes\n  PRIMARY KEY (incoming_train, outgoing_train),\n  FOREIGN KEY (incoming_train) REFERENCES trains(train_no) ON DELETE CASCADE,\n  FOREIGN KEY (outgoing_train) REFERENCES trains(train_no) ON DELETE CASCADE,\n  FOREIGN KEY (station_code) REFERENCES stations(code) ON DELETE RESTRICT\n)"
+    },
+    "rakes": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "rake_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "bpc_number",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "bpc_issue_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "bpc_valid_until",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "bpc_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "brake_power_percent",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": "100.0",
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "air_brake_pressure_kg",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": "5.0",
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "coach_count",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "22",
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'ACTIVE'",
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_rakes_train",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 2,
+              "name": "train_no"
+            },
+            {
+              "seqno": 1,
+              "cid": 10,
+              "name": "status"
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_rakes_2",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 3,
+              "name": "bpc_number"
+            }
+          ]
+        },
+        {
+          "seq": 2,
+          "name": "sqlite_autoindex_rakes_1",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "rake_id"
+            }
+          ]
+        }
+      ],
+      "row_count": 4,
+      "create_sql": "CREATE TABLE rakes (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  rake_id TEXT NOT NULL UNIQUE,\n  train_no TEXT,\n  bpc_number TEXT NOT NULL UNIQUE,\n  bpc_issue_date TEXT NOT NULL,\n  bpc_valid_until TEXT NOT NULL,\n  bpc_type TEXT NOT NULL CHECK(bpc_type IN ('PREMIUM', 'CC_INTENSIVE', 'END_TO_END', 'SPECIAL')),\n  brake_power_percent REAL NOT NULL DEFAULT 100.0,\n  air_brake_pressure_kg REAL NOT NULL DEFAULT 5.0,\n  coach_count INTEGER NOT NULL DEFAULT 22,\n  status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK(status IN ('ACTIVE', 'MAINTENANCE_DUE', 'OVERDUE', 'SICK_LINE')),\n  notes TEXT\n)"
+    },
+    "roles": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "description",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "permissions_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'[]'",
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_roles_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "id"
+            }
+          ]
+        }
+      ],
+      "row_count": 9,
+      "create_sql": "CREATE TABLE roles (\n  id TEXT PRIMARY KEY,\n  name TEXT NOT NULL,\n  description TEXT,\n  permissions_json TEXT NOT NULL DEFAULT '[]'\n)"
+    },
+    "route_stations": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "seq",
+          "type": "INT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "sched_arr",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "sched_dep",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "halt_min",
+          "type": "INT",
+          "notnull": 0,
+          "dflt_value": "2",
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "distance_km",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_route_stations_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "train_no"
+            },
+            {
+              "seqno": 1,
+              "cid": 1,
+              "name": "seq"
+            }
+          ]
+        }
+      ],
+      "row_count": 1205,
+      "create_sql": "CREATE TABLE route_stations (\n  train_no TEXT NOT NULL,\n  seq INT NOT NULL,\n  station_code TEXT NOT NULL,\n  sched_arr TEXT, -- HH:MM in IST or null for origin\n  sched_dep TEXT, -- HH:MM in IST or null for destination\n  halt_min INT DEFAULT 2,\n  distance_km REAL NOT NULL,\n  PRIMARY KEY (train_no, seq),\n  FOREIGN KEY (train_no) REFERENCES trains(train_no) ON DELETE CASCADE,\n  FOREIGN KEY (station_code) REFERENCES stations(code) ON DELETE RESTRICT\n)"
+    },
+    "run_snapshots": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "snapshot_id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "run_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "ts",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "sch_arr",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "sch_dep",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "exp_arr",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "exp_dep",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "delay_min",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "last_loc_station",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "lat",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "lng",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 12,
+          "name": "raw_json",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 13,
+          "name": "source",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'rapidapi'",
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_snapshots_ts",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 2,
+              "name": "ts"
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "idx_snapshots_run_ts",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "run_id"
+            },
+            {
+              "seqno": 1,
+              "cid": 2,
+              "name": "ts"
+            }
+          ]
+        }
+      ],
+      "row_count": 25,
+      "create_sql": "CREATE TABLE run_snapshots (\n  snapshot_id INTEGER PRIMARY KEY AUTOINCREMENT,\n  run_id TEXT NOT NULL,\n  ts TEXT NOT NULL,\n  station_code TEXT NOT NULL,\n  sch_arr TEXT,\n  sch_dep TEXT,\n  exp_arr TEXT,\n  exp_dep TEXT,\n  delay_min INTEGER DEFAULT 0,\n  last_loc_station TEXT,\n  lat REAL,\n  lng REAL,\n  raw_json TEXT,\n  source TEXT NOT NULL DEFAULT 'rapidapi' CHECK(source IN ('rapidapi', 'synthetic', 'manual')),\n  FOREIGN KEY (run_id) REFERENCES train_runs(run_id) ON DELETE CASCADE\n)"
+    },
+    "sahayak_roster": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "badge_number",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "phone",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "assigned_platform",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "1",
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "shift",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'morning'",
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "on_duty",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "1",
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "tariff_fixed_inr",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": "150.0",
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "last_active",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_sahayak_stn",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 4,
+              "name": "station_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 7,
+              "name": "on_duty"
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_sahayak_roster_1",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "badge_number"
+            }
+          ]
+        }
+      ],
+      "row_count": 5,
+      "create_sql": "CREATE TABLE sahayak_roster (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  badge_number TEXT NOT NULL UNIQUE,\n  name TEXT NOT NULL,\n  phone TEXT NOT NULL,\n  station_code TEXT NOT NULL,\n  assigned_platform INTEGER NOT NULL DEFAULT 1,\n  shift TEXT NOT NULL DEFAULT 'morning' CHECK(shift IN ('morning', 'afternoon', 'night')),\n  on_duty INTEGER NOT NULL DEFAULT 1,\n  tariff_fixed_inr REAL NOT NULL DEFAULT 150.0,\n  last_active TEXT NOT NULL\n)"
+    },
+    "schema_migrations": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "version",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "applied_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [],
+      "row_count": 14,
+      "create_sql": "CREATE TABLE schema_migrations (\n                    version INTEGER PRIMARY KEY,\n                    name TEXT NOT NULL,\n                    applied_at TEXT NOT NULL\n                )"
+    },
+    "section_advisories": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "section_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "overtaking_train_no",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "advisory_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "recommended_station",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "recommended_loop_line",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "2",
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "priority_score",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": "1.0",
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "details",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'PENDING'",
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "executed_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_sec_adv_stn",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "section_id"
+            },
+            {
+              "seqno": 1,
+              "cid": 9,
+              "name": "status"
+            }
+          ]
+        }
+      ],
+      "row_count": 0,
+      "create_sql": "CREATE TABLE section_advisories (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  section_id TEXT NOT NULL,\n  train_no TEXT NOT NULL,\n  overtaking_train_no TEXT,\n  advisory_type TEXT NOT NULL CHECK(advisory_type IN ('OVERTAKE', 'REGULATION', 'SPEED_HOLD', 'EARLY_DEPARTURE', 'LOOP_DIVERSION')),\n  recommended_station TEXT NOT NULL,\n  recommended_loop_line INTEGER NOT NULL DEFAULT 2,\n  priority_score REAL NOT NULL DEFAULT 1.0,\n  details TEXT NOT NULL,\n  status TEXT NOT NULL DEFAULT 'PENDING' CHECK(status IN ('PENDING', 'ACCEPTED', 'REJECTED', 'EXECUTED')),\n  created_at TEXT NOT NULL,\n  executed_at TEXT\n)"
+    },
+    "sections": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "from_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "to_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "distance_km",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "single_line",
+          "type": "INT",
+          "notnull": 0,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "max_speed_kmph",
+          "type": "INT",
+          "notnull": 0,
+          "dflt_value": "130",
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "is_dfc",
+          "type": "INT",
+          "notnull": 0,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "loop_length_m",
+          "type": "INT",
+          "notnull": 0,
+          "dflt_value": "750",
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_sections_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "from_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 1,
+              "name": "to_code"
+            }
+          ]
+        }
+      ],
+      "row_count": 14,
+      "create_sql": "CREATE TABLE sections (\n  from_code TEXT NOT NULL,\n  to_code TEXT NOT NULL,\n  distance_km REAL NOT NULL,\n  single_line INT DEFAULT 0, -- 1 = single-line section (crossing holds possible), 0 = double/quad\n  max_speed_kmph INT DEFAULT 130,\n  is_dfc INT DEFAULT 0,\n  loop_length_m INT DEFAULT 750,\n  PRIMARY KEY (from_code, to_code),\n  FOREIGN KEY (from_code) REFERENCES stations(code) ON DELETE RESTRICT,\n  FOREIGN KEY (to_code) REFERENCES stations(code) ON DELETE RESTRICT\n)"
+    },
+    "shadow_log": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "target_station",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "champion_model",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "challenger_model",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "champion_p50",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "challenger_p50",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "abs_delta",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "latency_ms",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [],
+      "row_count": 0,
+      "create_sql": "CREATE TABLE shadow_log (\n                        id INTEGER PRIMARY KEY AUTOINCREMENT,\n                        train_no TEXT NOT NULL,\n                        target_station TEXT NOT NULL,\n                        champion_model TEXT NOT NULL,\n                        challenger_model TEXT NOT NULL,\n                        champion_p50 REAL NOT NULL,\n                        challenger_p50 REAL NOT NULL,\n                        abs_delta REAL NOT NULL,\n                        latency_ms REAL NOT NULL,\n                        created_at TEXT NOT NULL\n                    )"
+    },
+    "shunting_moves": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "move_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "loco_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "rake_id",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "from_track",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "to_track",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "start_time",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "end_time",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'REQUESTED'",
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "created_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 12,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_shunting_stn_time",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "station_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 7,
+              "name": "start_time"
+            }
+          ]
+        }
+      ],
+      "row_count": 6,
+      "create_sql": "CREATE TABLE shunting_moves (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  station_code TEXT NOT NULL,\n  move_type TEXT NOT NULL CHECK(move_type IN ('loco_attach', 'loco_detach', 'rake_release', 'yard_shunt', 'empty_haul')),\n  loco_id TEXT NOT NULL,\n  rake_id TEXT,\n  from_track TEXT NOT NULL,\n  to_track TEXT NOT NULL,\n  start_time TEXT NOT NULL,\n  end_time TEXT NOT NULL,\n  status TEXT NOT NULL DEFAULT 'REQUESTED' CHECK(status IN ('REQUESTED', 'APPROVED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED')),\n  notes TEXT,\n  created_by TEXT NOT NULL,\n  created_at TEXT NOT NULL\n)"
+    },
+    "sim_ledger": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "run_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 1,
+          "name": "sim_time",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "event_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "minutes",
+          "type": "INT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "cause",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "counterparty",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_ledger_run_train",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "run_id"
+            },
+            {
+              "seqno": 1,
+              "cid": 2,
+              "name": "train_no"
+            }
+          ]
+        }
+      ],
+      "row_count": 3001,
+      "create_sql": "CREATE TABLE sim_ledger (\n  run_id TEXT NOT NULL,\n  sim_time TEXT NOT NULL, -- ISO timestamp in IST\n  train_no TEXT NOT NULL,\n  event_type TEXT NOT NULL CHECK(event_type IN ('CROSSING_HOLD', 'TSR', 'EXT_DWELL', 'RAKE_INHERIT', 'PLATFORM_WAIT', 'EMPTY_RETURN')),\n  minutes INT NOT NULL,\n  cause TEXT NOT NULL,\n  counterparty TEXT, -- other train or signal/resource id causing the delay\n  station_code TEXT,\n  FOREIGN KEY (train_no) REFERENCES trains(train_no) ON DELETE CASCADE\n)"
+    },
+    "sop_runs": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "template_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "title",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "severity",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'CRITICAL'",
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'IN_PROGRESS'",
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "steps_completed_json",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'[]'",
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "started_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "started_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "completed_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_sop_runs_stn",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 3,
+              "name": "station_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 5,
+              "name": "status"
+            }
+          ]
+        }
+      ],
+      "row_count": 6,
+      "create_sql": "CREATE TABLE sop_runs (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  template_id TEXT NOT NULL,\n  title TEXT NOT NULL,\n  station_code TEXT NOT NULL,\n  severity TEXT NOT NULL DEFAULT 'CRITICAL',\n  status TEXT NOT NULL DEFAULT 'IN_PROGRESS' CHECK(status IN ('IN_PROGRESS', 'COMPLETED', 'ABORTED')),\n  steps_completed_json TEXT NOT NULL DEFAULT '[]',\n  started_by TEXT NOT NULL,\n  started_at TEXT NOT NULL,\n  completed_at TEXT\n)"
+    },
+    "speed_restrictions": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "from_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "to_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "start_km",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": "0.0",
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "end_km",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": "0.0",
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "speed_limit_kmph",
+          "type": "INT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "cause",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "permanent_or_temp",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": "'TEMPORARY'",
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "effective_from",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": "'2026-08-01'",
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "effective_to",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": "'ACTIVE'",
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "issued_by",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": "'admin'",
+          "pk": 0
+        },
+        {
+          "cid": 12,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": "'2026-08-01T00:00:00Z'",
+          "pk": 0
+        },
+        {
+          "cid": 13,
+          "name": "is_active",
+          "type": "INT",
+          "notnull": 0,
+          "dflt_value": "1",
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_tsr_section_status",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "from_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 2,
+              "name": "to_code"
+            },
+            {
+              "seqno": 2,
+              "cid": 10,
+              "name": "status"
+            }
+          ]
+        }
+      ],
+      "row_count": 13,
+      "create_sql": "CREATE TABLE speed_restrictions (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  from_code TEXT NOT NULL,\n  to_code TEXT NOT NULL,\n  start_km REAL DEFAULT 0.0,\n  end_km REAL DEFAULT 0.0,\n  speed_limit_kmph INT NOT NULL,\n  cause TEXT NOT NULL,\n  permanent_or_temp TEXT DEFAULT 'TEMPORARY',\n  effective_from TEXT DEFAULT '2026-08-01',\n  effective_to TEXT,\n  status TEXT DEFAULT 'ACTIVE',\n  issued_by TEXT DEFAULT 'admin',\n  created_at TEXT DEFAULT '2026-08-01T00:00:00Z',\n  is_active INT DEFAULT 1,\n  FOREIGN KEY (from_code) REFERENCES stations(code),\n  FOREIGN KEY (to_code) REFERENCES stations(code)\n)"
+    },
+    "staff": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "staff_id",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "role",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "phone",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "pin_hash",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "on_duty",
+          "type": "BOOLEAN",
+          "notnull": 0,
+          "dflt_value": "1",
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_staff_lookup",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 4,
+              "name": "station_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 2,
+              "name": "role"
+            },
+            {
+              "seqno": 2,
+              "cid": 6,
+              "name": "on_duty"
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_staff_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "staff_id"
+            }
+          ]
+        }
+      ],
+      "row_count": 10,
+      "create_sql": "CREATE TABLE staff (\n  staff_id TEXT PRIMARY KEY,\n  name TEXT NOT NULL,\n  role TEXT NOT NULL CHECK(role IN ('controller', 'pointsman', 'loco_pilot', 'guard', 'shunter', 'station_master')),\n  phone TEXT NOT NULL,\n  station_code TEXT NOT NULL,\n  pin_hash TEXT NOT NULL,\n  on_duty BOOLEAN DEFAULT 1,\n  FOREIGN KEY (station_code) REFERENCES stations(code) ON DELETE RESTRICT\n)"
+    },
+    "staff_shifts": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "staff_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "staff_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "role_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "shift_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "shift_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "attendance_status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'PRESENT'",
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_shifts_stn_date",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 4,
+              "name": "station_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 5,
+              "name": "shift_date"
+            }
+          ]
+        }
+      ],
+      "row_count": 6,
+      "create_sql": "CREATE TABLE staff_shifts (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  staff_id TEXT NOT NULL,\n  staff_name TEXT NOT NULL,\n  role_id TEXT NOT NULL,\n  station_code TEXT NOT NULL,\n  shift_date TEXT NOT NULL,\n  shift_type TEXT NOT NULL CHECK(shift_type IN ('morning', 'afternoon', 'night')),\n  attendance_status TEXT NOT NULL DEFAULT 'PRESENT' CHECK(attendance_status IN ('PRESENT', 'ABSENT', 'LEAVE', 'REST')),\n  created_at TEXT NOT NULL\n)"
+    },
+    "station_assets": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "asset_tag",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "asset_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "platform_or_track",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'OPERATIONAL'",
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "last_serviced_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "next_service_due",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_assets_stn_type",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 3,
+              "name": "station_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 2,
+              "name": "asset_type"
+            },
+            {
+              "seqno": 2,
+              "cid": 5,
+              "name": "status"
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_station_assets_1",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "asset_tag"
+            }
+          ]
+        }
+      ],
+      "row_count": 6,
+      "create_sql": "CREATE TABLE station_assets (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  asset_tag TEXT NOT NULL UNIQUE,\n  asset_type TEXT NOT NULL CHECK(asset_type IN ('TURNOUT', 'SIGNAL', 'OHE_SECTION', 'TRACK_CIRCUIT', 'POINT_MACHINE', 'CCTV', 'PA_SPEAKER', 'LIFT_ESCALATOR', 'WATER_HYDRANT')),\n  station_code TEXT NOT NULL,\n  platform_or_track TEXT NOT NULL,\n  status TEXT NOT NULL DEFAULT 'OPERATIONAL' CHECK(status IN ('OPERATIONAL', 'DEFECTIVE', 'DEGRADED', 'UNDER_MAINTENANCE')),\n  last_serviced_date TEXT NOT NULL,\n  next_service_due TEXT NOT NULL,\n  notes TEXT\n)"
+    },
+    "station_events": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "run_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "seq",
+          "type": "INT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 3
+        },
+        {
+          "cid": 3,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "sched_arr",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "actual_arr",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "sched_dep",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "actual_dep",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "delay_arr_min",
+          "type": "INT",
+          "notnull": 0,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "delay_dep_min",
+          "type": "INT",
+          "notnull": 0,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "collected_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "event_time",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 12,
+          "name": "source",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'observed'",
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_events_train_event_time",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "train_no"
+            },
+            {
+              "seqno": 1,
+              "cid": 11,
+              "name": "event_time"
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "idx_events_station_date",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 3,
+              "name": "station_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 1,
+              "name": "run_date"
+            }
+          ]
+        },
+        {
+          "seq": 2,
+          "name": "idx_events_train_date",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "train_no"
+            },
+            {
+              "seqno": 1,
+              "cid": 1,
+              "name": "run_date"
+            }
+          ]
+        },
+        {
+          "seq": 3,
+          "name": "idx_events_date",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "run_date"
+            }
+          ]
+        },
+        {
+          "seq": 4,
+          "name": "idx_events_lookup",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "train_no"
+            },
+            {
+              "seqno": 1,
+              "cid": 3,
+              "name": "station_code"
+            },
+            {
+              "seqno": 2,
+              "cid": 1,
+              "name": "run_date"
+            }
+          ]
+        },
+        {
+          "seq": 5,
+          "name": "sqlite_autoindex_station_events_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "train_no"
+            },
+            {
+              "seqno": 1,
+              "cid": 1,
+              "name": "run_date"
+            },
+            {
+              "seqno": 2,
+              "cid": 2,
+              "name": "seq"
+            }
+          ]
+        }
+      ],
+      "row_count": 33601,
+      "create_sql": "CREATE TABLE station_events (\n  train_no TEXT NOT NULL,\n  run_date TEXT NOT NULL, -- YYYY-MM-DD\n  seq INT NOT NULL,\n  station_code TEXT NOT NULL,\n  sched_arr TEXT,\n  actual_arr TEXT,\n  sched_dep TEXT,\n  actual_dep TEXT,\n  delay_arr_min INT DEFAULT 0,\n  delay_dep_min INT DEFAULT 0,\n  collected_at TEXT NOT NULL, -- ISO timestamp in IST\n  event_time TEXT, source TEXT NOT NULL DEFAULT 'observed', -- ISO timestamp in IST for point-in-time filtering\n  PRIMARY KEY (train_no, run_date, seq),\n  FOREIGN KEY (train_no) REFERENCES trains(train_no) ON DELETE CASCADE,\n  FOREIGN KEY (station_code) REFERENCES stations(code) ON DELETE RESTRICT\n)"
+    },
+    "stations": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "code",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "lat",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "lon",
+          "type": "REAL",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "zone",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": "'NR'",
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "category",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": "'NSG-2'",
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "is_junction",
+          "type": "INT",
+          "notnull": 0,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "platforms",
+          "type": "INT",
+          "notnull": 0,
+          "dflt_value": "2",
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_stations_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "code"
+            }
+          ]
+        }
+      ],
+      "row_count": 112,
+      "create_sql": "CREATE TABLE stations (\n  code TEXT PRIMARY KEY,\n  name TEXT NOT NULL,\n  lat REAL NOT NULL,\n  lon REAL NOT NULL,\n  zone TEXT DEFAULT 'NR',\n  category TEXT DEFAULT 'NSG-2',\n  is_junction INT DEFAULT 0,\n  platforms INT DEFAULT 2\n)"
+    },
+    "timetable_entries": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "version_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "train_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "train_type",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "direction",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "stop_seq",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "sched_arr",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "sched_dep",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "halt_min",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "2",
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "platform_default",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "1",
+          "pk": 0
+        },
+        {
+          "cid": 12,
+          "name": "days_of_run",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'DAILY'",
+          "pk": 0
+        },
+        {
+          "cid": 13,
+          "name": "is_cancelled",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 14,
+          "name": "cancellation_reason",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_tt_entries_stn",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 6,
+              "name": "station_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 8,
+              "name": "sched_arr"
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "idx_tt_entries_version",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "version_id"
+            },
+            {
+              "seqno": 1,
+              "cid": 2,
+              "name": "train_no"
+            }
+          ]
+        }
+      ],
+      "row_count": 6,
+      "create_sql": "CREATE TABLE timetable_entries (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  version_id TEXT NOT NULL,\n  train_no TEXT NOT NULL,\n  train_name TEXT NOT NULL,\n  train_type TEXT NOT NULL CHECK(train_type IN ('express', 'passenger', 'freight', 'emu', 'special')),\n  direction TEXT NOT NULL CHECK(direction IN ('UP', 'DOWN')),\n  station_code TEXT NOT NULL,\n  stop_seq INTEGER NOT NULL,\n  sched_arr TEXT,\n  sched_dep TEXT,\n  halt_min INTEGER NOT NULL DEFAULT 2,\n  platform_default INTEGER NOT NULL DEFAULT 1,\n  days_of_run TEXT NOT NULL DEFAULT 'DAILY', -- e.g. 'MON,WED,FRI' or 'DAILY'\n  is_cancelled INTEGER NOT NULL DEFAULT 0,\n  cancellation_reason TEXT,\n  FOREIGN KEY (version_id) REFERENCES timetable_versions(id) ON DELETE CASCADE,\n  FOREIGN KEY (station_code) REFERENCES stations(code) ON DELETE RESTRICT\n)"
+    },
+    "timetable_versions": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "version_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'draft'",
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "effective_from",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "effective_to",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "description",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "created_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "published_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_timetable_versions_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "id"
+            }
+          ]
+        }
+      ],
+      "row_count": 6,
+      "create_sql": "CREATE TABLE timetable_versions (\n  id TEXT PRIMARY KEY,\n  version_name TEXT NOT NULL,\n  status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft', 'published', 'archived')),\n  effective_from TEXT NOT NULL,\n  effective_to TEXT,\n  description TEXT,\n  created_by TEXT NOT NULL,\n  published_at TEXT,\n  created_at TEXT NOT NULL\n)"
+    },
+    "train_runs": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "run_id",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "run_date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "origin",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "dest",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "source",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'rapidapi'",
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_train_runs_train_date",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "train_no"
+            },
+            {
+              "seqno": 1,
+              "cid": 2,
+              "name": "run_date"
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "sqlite_autoindex_train_runs_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "run_id"
+            }
+          ]
+        }
+      ],
+      "row_count": 5,
+      "create_sql": "CREATE TABLE train_runs (\n  run_id TEXT PRIMARY KEY,\n  train_no TEXT NOT NULL,\n  run_date TEXT NOT NULL,\n  origin TEXT,\n  dest TEXT,\n  source TEXT NOT NULL DEFAULT 'rapidapi' CHECK(source IN ('rapidapi', 'synthetic', 'manual')),\n  created_at TEXT NOT NULL\n)"
+    },
+    "trains": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "train_no",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "class",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "priority",
+          "type": "INT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "trailing_tonnage",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": "0.0",
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "is_freight",
+          "type": "INT",
+          "notnull": 0,
+          "dflt_value": "0",
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_trains_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "train_no"
+            }
+          ]
+        }
+      ],
+      "row_count": 151,
+      "create_sql": "CREATE TABLE trains (\n  train_no TEXT PRIMARY KEY,\n  name TEXT NOT NULL,\n  class TEXT NOT NULL CHECK(class IN ('rajdhani', 'shatabdi', 'superfast', 'mail', 'passenger', 'container', 'coal_rake', 'auto_rake', 'steel_rake', 'empty_freight')),\n  priority INT NOT NULL CHECK(priority BETWEEN 1 AND 5), -- 1: highest (Rajdhani/Shatabdi), 4: passenger, 5: empty freight\n  trailing_tonnage REAL DEFAULT 0.0,\n  is_freight INT DEFAULT 0\n)"
+    },
+    "user_roles": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "user_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "role_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_user_roles_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "user_id"
+            },
+            {
+              "seqno": 1,
+              "cid": 1,
+              "name": "role_id"
+            }
+          ]
+        }
+      ],
+      "row_count": 10,
+      "create_sql": "CREATE TABLE user_roles (\n  user_id TEXT NOT NULL,\n  role_id TEXT NOT NULL,\n  PRIMARY KEY (user_id, role_id),\n  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,\n  FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE\n)"
+    },
+    "users": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "username",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "email",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "password_hash",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "role_id",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'NDLS'",
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "full_name",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "is_active",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": "1",
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_users_station",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 5,
+              "name": "station_code"
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "idx_users_role",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 4,
+              "name": "role_id"
+            }
+          ]
+        },
+        {
+          "seq": 2,
+          "name": "idx_users_username",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "username"
+            }
+          ]
+        },
+        {
+          "seq": 3,
+          "name": "sqlite_autoindex_users_3",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 2,
+              "name": "email"
+            }
+          ]
+        },
+        {
+          "seq": 4,
+          "name": "sqlite_autoindex_users_2",
+          "unique": 1,
+          "origin": "u",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 1,
+              "name": "username"
+            }
+          ]
+        },
+        {
+          "seq": 5,
+          "name": "sqlite_autoindex_users_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "id"
+            }
+          ]
+        }
+      ],
+      "row_count": 10,
+      "create_sql": "CREATE TABLE users (\n  id TEXT PRIMARY KEY,\n  username TEXT UNIQUE NOT NULL,\n  email TEXT UNIQUE,\n  password_hash TEXT NOT NULL,\n  role_id TEXT NOT NULL,\n  station_code TEXT NOT NULL DEFAULT 'NDLS',\n  full_name TEXT NOT NULL,\n  is_active INTEGER NOT NULL DEFAULT 1,\n  created_at TEXT NOT NULL,\n  FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT\n)"
+    },
+    "weather": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "temp",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "precip_mm",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": "0.0",
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "humidity",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "fog_flag",
+          "type": "INT",
+          "notnull": 0,
+          "dflt_value": "0",
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "ts_ist",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "visibility",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "wind_speed_10m",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "relative_humidity_2m",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "temperature_2m",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 11,
+          "name": "precipitation",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "sqlite_autoindex_weather_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "date"
+            },
+            {
+              "seqno": 1,
+              "cid": 1,
+              "name": "station_code"
+            }
+          ]
+        }
+      ],
+      "row_count": 3080,
+      "create_sql": "CREATE TABLE weather (\n  date TEXT NOT NULL, -- YYYY-MM-DD\n  station_code TEXT NOT NULL,\n  temp REAL,\n  precip_mm REAL DEFAULT 0.0,\n  humidity REAL,\n  fog_flag INT DEFAULT 0, ts_ist TEXT, visibility REAL, wind_speed_10m REAL, relative_humidity_2m REAL, temperature_2m REAL, precipitation REAL, -- 1 if fog condition met\n  PRIMARY KEY (date, station_code),\n  FOREIGN KEY (station_code) REFERENCES stations(code) ON DELETE RESTRICT\n)"
+    },
+    "weather_hourly": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "ts_ist",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 2
+        },
+        {
+          "cid": 2,
+          "name": "date",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "hour",
+          "type": "INTEGER",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "temperature_2m",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "precipitation",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "visibility",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "wind_speed_10m",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "relative_humidity_2m",
+          "type": "REAL",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "fog_flag",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": "0",
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_weather_hourly_ts",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "station_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 1,
+              "name": "ts_ist"
+            }
+          ]
+        },
+        {
+          "seq": 1,
+          "name": "idx_weather_hourly_date",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "station_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 2,
+              "name": "date"
+            }
+          ]
+        },
+        {
+          "seq": 2,
+          "name": "sqlite_autoindex_weather_hourly_1",
+          "unique": 1,
+          "origin": "pk",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 0,
+              "name": "station_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 1,
+              "name": "ts_ist"
+            }
+          ]
+        }
+      ],
+      "row_count": 1,
+      "create_sql": "CREATE TABLE weather_hourly (\n  station_code TEXT NOT NULL,\n  ts_ist TEXT NOT NULL,\n  date TEXT NOT NULL,\n  hour INTEGER NOT NULL,\n  temperature_2m REAL,\n  precipitation REAL,\n  visibility REAL,\n  wind_speed_10m REAL,\n  relative_humidity_2m REAL,\n  fog_flag INTEGER DEFAULT 0,\n  PRIMARY KEY (station_code, ts_ist)\n)"
+    },
+    "work_orders": {
+      "columns": [
+        {
+          "cid": 0,
+          "name": "id",
+          "type": "INTEGER",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 1
+        },
+        {
+          "cid": 1,
+          "name": "asset_tag",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 2,
+          "name": "station_code",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 3,
+          "name": "issue_description",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 4,
+          "name": "priority",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 5,
+          "name": "status",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": "'OPEN'",
+          "pk": 0
+        },
+        {
+          "cid": 6,
+          "name": "reported_by",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 7,
+          "name": "assigned_to",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 8,
+          "name": "created_at",
+          "type": "TEXT",
+          "notnull": 1,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 9,
+          "name": "resolved_at",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        },
+        {
+          "cid": 10,
+          "name": "resolution_notes",
+          "type": "TEXT",
+          "notnull": 0,
+          "dflt_value": null,
+          "pk": 0
+        }
+      ],
+      "indexes": [
+        {
+          "seq": 0,
+          "name": "idx_work_orders_stn",
+          "unique": 0,
+          "origin": "c",
+          "partial": 0,
+          "columns": [
+            {
+              "seqno": 0,
+              "cid": 2,
+              "name": "station_code"
+            },
+            {
+              "seqno": 1,
+              "cid": 5,
+              "name": "status"
+            }
+          ]
+        }
+      ],
+      "row_count": 6,
+      "create_sql": "CREATE TABLE work_orders (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  asset_tag TEXT NOT NULL,\n  station_code TEXT NOT NULL,\n  issue_description TEXT NOT NULL,\n  priority TEXT NOT NULL CHECK(priority IN ('LOW', 'MEDIUM', 'HIGH', 'URGENT')),\n  status TEXT NOT NULL DEFAULT 'OPEN' CHECK(status IN ('OPEN', 'IN_PROGRESS', 'RESOLVED', 'CANCELLED')),\n  reported_by TEXT NOT NULL,\n  assigned_to TEXT,\n  created_at TEXT NOT NULL,\n  resolved_at TEXT,\n  resolution_notes TEXT,\n  FOREIGN KEY (asset_tag) REFERENCES station_assets(asset_tag) ON DELETE CASCADE\n)"
+    }
+  },
+  "table_writes": {
+    "access_requests": [
+      "api\\access_routes.py:40"
+    ],
+    "users": [
+      "api\\admin_routes.py:208",
+      "api\\admin_routes.py:295",
+      "api\\admin_routes.py:303",
+      "api\\auth_routes.py:86",
+      "data\\seed_users.py:145"
+    ],
+    "user_roles": [
+      "api\\admin_routes.py:223",
+      "api\\admin_routes.py:310",
+      "data\\seed_users.py:168"
+    ],
+    "auth_sessions": [
+      "api\\auth_routes.py:104",
+      "api\\auth_routes.py:198",
+      "api\\auth_routes.py:203",
+      "api\\auth_routes.py:236"
+    ],
+    "block_status": [
+      "api\\block_routes.py:121",
+      "api\\block_routes.py:167",
+      "api\\safety_routes.py:82"
+    ],
+    "brain_advisory_audit": [
+      "api\\brain.py:198"
+    ],
+    "delay_certificates": [
+      "api\\commercial_routes.py:80"
+    ],
+    "commercial_stalls": [
+      "api\\commercial_routes.py:275",
+      "api\\commercial_routes.py:339"
+    ],
+    "lost_and_found": [
+      "api\\commercial_routes.py:394"
+    ],
+    "handover_log": [
+      "api\\handover_routes.py:211"
+    ],
+    "rakes": [
+      "api\\infra_routes.py:51",
+      "api\\infra_routes.py:114"
+    ],
+    "station_assets": [
+      "api\\infra_routes.py:162",
+      "api\\infra_routes.py:224",
+      "api\\infra_routes.py:291",
+      "api\\infra_routes.py:377"
+    ],
+    "work_orders": [
+      "api\\infra_routes.py:271"
+    ],
+    "cleaning_logs": [
+      "api\\infra_routes.py:419",
+      "api\\infra_routes.py:466"
+    ],
+    "ad_events": [
+      "api\\ops_routes.py:87",
+      "api\\ops_routes.py:176"
+    ],
+    "platform_states": [
+      "api\\ops_routes.py:111",
+      "api\\ops_routes.py:196",
+      "api\\platform_routes.py:104",
+      "api\\safety_routes.py:269"
+    ],
+    "shunting_moves": [
+      "api\\ops_routes.py:316"
+    ],
+    "platform_assignments": [
+      "api\\planner_routes.py:125",
+      "api\\platform_routes.py:204"
+    ],
+    "planner_changesets": [
+      "api\\planner_routes.py:135"
+    ],
+    "advisory_ack_log": [
+      "api\\routes.py:1041",
+      "scripts\\demo_replay.py:211"
+    ],
+    "speed_restrictions": [
+      "api\\safety_routes.py:55",
+      "api\\safety_routes.py:157",
+      "data\\seed.py:84",
+      "data\\seed.py:84"
+    ],
+    "possessions": [
+      "api\\safety_routes.py:199"
+    ],
+    "incidents": [
+      "api\\safety_routes.py:431"
+    ],
+    "sop_runs": [
+      "api\\safety_routes.py:572"
+    ],
+    "level_crossings": [
+      "api\\safety_routes.py:732"
+    ],
+    "corridor_sections": [
+      "api\\section_routes.py:57"
+    ],
+    "cross_station_locks": [
+      "api\\section_routes.py:91"
+    ],
+    "timetable_versions": [
+      "api\\timetable_routes.py:112",
+      "api\\timetable_routes.py:467"
+    ],
+    "timetable_entries": [
+      "api\\timetable_routes.py:228",
+      "api\\timetable_routes.py:337",
+      "api\\timetable_routes.py:426"
+    ],
+    "breathalyzer_tests": [
+      "api\\workforce_routes.py:52"
+    ],
+    "crew_rosters": [
+      "api\\workforce_routes.py:171",
+      "api\\workforce_routes.py:281"
+    ],
+    "staff_shifts": [
+      "api\\workforce_routes.py:356",
+      "api\\workforce_routes.py:414"
+    ],
+    "sahayak_roster": [
+      "api\\workforce_routes.py:468"
+    ],
+    "eta_prediction_ledger": [
+      "engine\\prediction_ledger.py:83",
+      "scripts\\repair_ledger.py:57"
+    ],
+    "sim_ledger": [
+      "engine\\simulator.py:295"
+    ],
+    "station_events": [
+      "collector\\collect.py:102",
+      "collector\\collect.py:102",
+      "data\\seed.py:378",
+      "data\\seed.py:378",
+      "scripts\\clean_and_curate_real_data.py:361",
+      "scripts\\clean_and_curate_real_data.py:361",
+      "scripts\\demo_replay.py:160",
+      "scripts\\demo_replay.py:160",
+      "scripts\\harvest_historical_data.py:239",
+      "scripts\\harvest_historical_data.py:239",
+      "scripts\\ingest_bulk_csv.py:187",
+      "scripts\\ingest_bulk_csv.py:187",
+      "scripts\\replay_proof.py:49",
+      "scripts\\replay_proof.py:55",
+      "scripts\\replay_proof.py:65",
+      "scripts\\replay_proof.py:75"
+    ],
+    "train_runs": [
+      "collector\\snapshot_cron.py:98"
+    ],
+    "run_snapshots": [
+      "collector\\snapshot_cron.py:112"
+    ],
+    "weather": [
+      "collector\\weather.py:126",
+      "collector\\weather.py:126",
+      "collector\\weather_backfill.py:220",
+      "collector\\weather_backfill.py:220",
+      "data\\seed.py:307",
+      "data\\seed.py:307",
+      "scripts\\harvest_historical_data.py:120",
+      "scripts\\harvest_historical_data.py:120",
+      "scripts\\ingest_historical_weather.py:47",
+      "scripts\\ingest_historical_weather.py:47"
+    ],
+    "weather_hourly": [
+      "collector\\weather_backfill.py:209",
+      "collector\\weather_backfill.py:209",
+      "scripts\\demo_replay.py:129",
+      "scripts\\demo_replay.py:129"
+    ],
+    "audit_log": [
+      "data\\audit.py:83"
+    ],
+    "hist_baselines": [
+      "data\\db.py:98",
+      "data\\db.py:98"
+    ],
+    "schema_migrations": [
+      "data\\db.py:157"
+    ],
+    "live_positions": [
+      "data\\db.py:251",
+      "data\\db.py:288"
+    ],
+    "live_delay_ledger": [
+      "data\\db.py:368"
+    ],
+    "stations": [
+      "data\\seed.py:56",
+      "scripts\\clean_and_curate_real_data.py:344",
+      "scripts\\ingest_bulk_csv.py:149"
+    ],
+    "sections": [
+      "data\\seed.py:94",
+      "data\\seed.py:94",
+      "data\\seed.py:102",
+      "data\\seed.py:102",
+      "data\\seed.py:136",
+      "data\\seed.py:136",
+      "data\\seed.py:146",
+      "data\\seed.py:146"
+    ],
+    "trains": [
+      "data\\seed.py:116",
+      "scripts\\clean_and_curate_real_data.py:349",
+      "scripts\\ingest_bulk_csv.py:156"
+    ],
+    "route_stations": [
+      "data\\seed.py:233",
+      "data\\seed.py:233",
+      "scripts\\clean_and_curate_real_data.py:354"
+    ],
+    "rake_links": [
+      "data\\seed.py:246",
+      "data\\seed.py:246"
+    ],
+    "staff": [
+      "data\\seed.py:258",
+      "data\\seed.py:258"
+    ],
+    "roles": [
+      "data\\seed_users.py:124"
+    ],
+    "backups": [
+      "scripts\\backup_db.py:74"
+    ],
+    "sqlite": [
+      "scripts\\ingest_historical_weather.py:31"
+    ],
+    "route_cum_km": [
+      "scripts\\precompute_cum_km.py:37",
+      "scripts\\precompute_cum_km.py:40",
+      "scripts\\precompute_cum_km.py:40"
+    ],
+    "notifications": [
+      "notifications\\dispatcher.py:257"
+    ],
+    "notification_ack": [
+      "notifications\\dispatcher.py:331"
+    ],
+    "notification_log": [
+      "notifications\\channels\\inapp.py:47"
+    ]
+  }
+}

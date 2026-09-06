@@ -1,0 +1,51 @@
+{
+  "latencies_ms": {
+    "min": 39.46,
+    "p50": 48.13,
+    "p95": 77.75,
+    "p99": 171.29,
+    "max": 208.92,
+    "mean": 53.12
+  },
+  "memory_rss_mb": {
+    "boot": 344.18,
+    "warmed": 392.74,
+    "after_500": 392.6,
+    "delta": 48.42
+  },
+  "query_counts": {
+    "queries_per_predict_train_eta": 13,
+    "pred_sample_queries": [
+      "SELECT name, class, priority FROM trains WHERE train_no = ?",
+      "SELECT seq, station_code, sched_arr, sched_dep, halt_min, distance_km           ",
+      "SELECT seq, delay_arr_min, delay_dep_min                 FROM station_events    ",
+      "SELECT station_code, event_kind, actual_ts                     FROM ad_events   ",
+      "SELECT seq, station_code, event_time, delay_arr_min, delay_dep_min, sched_arr, s",
+      "SELECT from_code, to_code, speed_limit_kmph, is_active FROM speed_restrictions W",
+      "SELECT COALESCE(event_time, collected_at) as ts                     FROM station",
+      "CREATE TABLE IF NOT EXISTS eta_prediction_ledger (                     id INTEGE"
+    ],
+    "snapshot_extract_features_ms": 81.23,
+    "queries_per_snapshot": 11,
+    "snapshot_sample_queries": [
+      "SELECT code, name, lat, lon, is_junction, platforms FROM stations",
+      "SELECT rs.train_no, rs.seq, rs.station_code, rs.sched_arr, rs.sched_dep,        ",
+      "SELECT incoming_train, outgoing_train, station_code, turnaround_min FROM rake_li",
+      "SELECT train_no, station_code, avg_delay, p90_delay FROM hist_baselines",
+      "SELECT station_code, date, fog_flag, precip_mm FROM weather",
+      "SELECT station_code, fog_flag, precip_mm, MAX(date) as max_date                 ",
+      "SELECT COUNT(DISTINCT train_no) as cnt                     FROM station_events  ",
+      "SELECT train_no, seq, station_code, delay_arr_min, sched_arr, actual_arr, collec"
+    ]
+  },
+  "scale_arithmetic": {
+    "target_trains": 10000,
+    "window_seconds": 60,
+    "total_cpu_seconds_p50": 481.35,
+    "total_cpu_seconds_mean": 531.18,
+    "min_parallel_cores_p50": 8.02,
+    "min_parallel_cores_mean": 8.85,
+    "sqlite_capacity_single_proc_trains_per_min": 1129.56,
+    "scale_deficit_ratio": 8.85
+  }
+}

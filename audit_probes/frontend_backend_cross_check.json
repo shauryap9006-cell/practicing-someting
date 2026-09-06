@@ -1,0 +1,829 @@
+{
+  "matches": [
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/api/audit/logs",
+        "calls": [
+          "web\\src\\lib\\api.ts:759"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/api/audit/logs",
+          "auth": false,
+          "async": false,
+          "handler": "get_audit_logs",
+          "module": "api.audit_routes",
+          "location": "audit_routes.py:48"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/api/audit/verify-integrity",
+        "calls": [
+          "web\\src\\lib\\api.ts:763"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/api/audit/verify-integrity",
+          "auth": false,
+          "async": false,
+          "handler": "verify_audit_trail_integrity",
+          "module": "api.audit_routes",
+          "location": "audit_routes.py:106"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/api/blocks/status",
+        "calls": [
+          "web\\src\\lib\\api.ts:813"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/api/blocks/status",
+          "auth": false,
+          "async": false,
+          "handler": "get_block_statuses",
+          "module": "api.block_routes",
+          "location": "block_routes.py:34"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/api/platform/states",
+        "calls": [
+          "web\\src\\lib\\api.ts:614"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/api/platform/states",
+          "auth": false,
+          "async": false,
+          "handler": "get_platform_states",
+          "module": "api.platform_routes",
+          "location": "platform_routes.py:45"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/api/safety/incidents",
+        "calls": [
+          "web\\src\\lib\\api.ts:850"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "POST"
+          ],
+          "path": "/api/safety/incidents",
+          "auth": false,
+          "async": false,
+          "handler": "report_incident",
+          "module": "api.safety_routes",
+          "location": "safety_routes.py:419"
+        },
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/api/safety/incidents",
+          "auth": false,
+          "async": false,
+          "handler": "list_incidents",
+          "module": "api.safety_routes",
+          "location": "safety_routes.py:476"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/api/safety/possessions",
+        "calls": [
+          "web\\src\\lib\\api.ts:754"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/api/safety/possessions",
+          "auth": false,
+          "async": false,
+          "handler": "list_possessions",
+          "module": "api.safety_routes",
+          "location": "safety_routes.py:379"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/api/safety/tsr",
+        "calls": [
+          "web\\src\\lib\\api.ts:825"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "POST"
+          ],
+          "path": "/api/safety/tsr",
+          "auth": false,
+          "async": false,
+          "handler": "create_speed_restriction",
+          "module": "api.safety_routes",
+          "location": "safety_routes.py:43"
+        },
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/api/safety/tsr",
+          "auth": false,
+          "async": false,
+          "handler": "list_speed_restrictions",
+          "module": "api.safety_routes",
+          "location": "safety_routes.py:115"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/api/section/advisories/generate",
+        "calls": [
+          "web\\src\\lib\\api.ts:634"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/api/section/advisories/generate",
+          "auth": false,
+          "async": false,
+          "handler": "generate_precedence_advisories",
+          "module": "api.section_routes",
+          "location": "section_routes.py:239"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/api/section/dfc",
+        "calls": [
+          "web\\src\\lib\\api.ts:885"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/api/section/dfc",
+          "auth": false,
+          "async": false,
+          "handler": "get_dfc_precedence",
+          "module": "api.section_routes",
+          "location": "section_routes.py:315"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/api/section/handoffs",
+        "calls": [
+          "web\\src\\lib\\api.ts:867"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/api/section/handoffs",
+          "auth": false,
+          "async": false,
+          "handler": "list_cross_station_handoffs",
+          "module": "api.section_routes",
+          "location": "section_routes.py:206"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/api/timetable/versions",
+        "calls": [
+          "web\\src\\lib\\api.ts:778"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/api/timetable/versions",
+          "auth": false,
+          "async": false,
+          "handler": "list_timetable_versions",
+          "module": "api.timetable_routes",
+          "location": "timetable_routes.py:59"
+        },
+        {
+          "methods": [
+            "POST"
+          ],
+          "path": "/api/timetable/versions",
+          "auth": false,
+          "async": false,
+          "handler": "create_timetable_version",
+          "module": "api.timetable_routes",
+          "location": "timetable_routes.py:99"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/api/timetable/versions/${versionId}/entries",
+        "calls": [
+          "web\\src\\lib\\api.ts:786"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/api/timetable/versions/{version_id}/entries",
+          "auth": false,
+          "async": false,
+          "handler": "get_version_entries",
+          "module": "api.timetable_routes",
+          "location": "timetable_routes.py:150"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/api/workforce/crew/roster",
+        "calls": [
+          "web\\src\\lib\\api.ts:736"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/api/workforce/crew/roster",
+          "auth": false,
+          "async": false,
+          "handler": "list_crew_roster",
+          "module": "api.workforce_routes",
+          "location": "workforce_routes.py:255"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/v1/advise/${id}/ack",
+        "calls": [
+          "web\\src\\lib\\api.ts:705",
+          "web\\src\\lib\\api.ts:720"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "POST"
+          ],
+          "path": "/v1/advise/{adv_id}/ack",
+          "auth": false,
+          "async": false,
+          "handler": "post_advisory_ack",
+          "module": "api.routes",
+          "location": "routes.py:1074"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/v1/corridor/congestion-radar",
+        "calls": [
+          "web\\src\\lib\\api.ts:963"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/v1/corridor/congestion-radar",
+          "auth": false,
+          "async": false,
+          "handler": "get_corridor_congestion_radar",
+          "module": "api.demo_routes",
+          "location": "demo_routes.py:646"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/v1/crew/alerts",
+        "calls": [
+          "web\\src\\lib\\api.ts:633"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/v1/crew/alerts",
+          "auth": false,
+          "async": false,
+          "handler": "get_crew_alerts",
+          "module": "api.routes",
+          "location": "routes.py:828"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/v1/demo/inject-event",
+        "calls": [
+          "web\\src\\lib\\api.ts:911"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "POST"
+          ],
+          "path": "/v1/demo/inject-event",
+          "auth": false,
+          "async": false,
+          "handler": "inject_shock_event",
+          "module": "api.demo_routes",
+          "location": "demo_routes.py:54"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/v1/demo/reset-events",
+        "calls": [
+          "web\\src\\lib\\api.ts:918"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "POST"
+          ],
+          "path": "/v1/demo/reset-events",
+          "auth": false,
+          "async": false,
+          "handler": "reset_shock_events",
+          "module": "api.demo_routes",
+          "location": "demo_routes.py:76"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/v1/evaluation/summary",
+        "calls": [
+          "web\\src\\lib\\api.ts:773"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/v1/evaluation/summary",
+          "auth": false,
+          "async": false,
+          "handler": "get_evaluation_summary",
+          "module": "api.routes",
+          "location": "routes.py:45"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/v1/ledger/scoreboard",
+        "calls": [
+          "web\\src\\lib\\api.ts:936"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/v1/ledger/scoreboard",
+          "auth": false,
+          "async": false,
+          "handler": "get_prediction_ledger_scoreboard",
+          "module": "api.routes",
+          "location": "routes.py:881"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/v1/ledger/verify",
+        "calls": [
+          "web\\src\\lib\\api.ts:954"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/v1/ledger/verify",
+          "auth": false,
+          "async": false,
+          "handler": "verify_prediction_ledger_chain",
+          "module": "api.routes",
+          "location": "routes.py:893"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/v1/model/performance",
+        "calls": [
+          "web\\src\\lib\\api.ts:900"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/v1/model/performance",
+          "auth": false,
+          "async": false,
+          "handler": "get_model_performance",
+          "module": "api.routes",
+          "location": "routes.py:66"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/v1/network/state",
+        "calls": [
+          "web\\src\\lib\\api.ts:364",
+          "web\\src\\lib\\api.ts:374"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/v1/network/state",
+          "auth": false,
+          "async": false,
+          "handler": "get_network_state",
+          "module": "api.routes",
+          "location": "routes.py:501"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/v1/passenger/pnr/${encodeURIComponent(pnr)}",
+        "calls": [
+          "web\\src\\lib\\api.ts:592"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/v1/passenger/pnr/{pnr}",
+          "auth": false,
+          "async": false,
+          "handler": "get_pnr",
+          "module": "api.passenger_routes",
+          "location": "passenger_routes.py:490"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/v1/passenger/popular",
+        "calls": [
+          "web\\src\\lib\\api.ts:584"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/v1/passenger/popular",
+          "auth": false,
+          "async": false,
+          "handler": "get_popular_trains",
+          "module": "api.passenger_routes",
+          "location": "passenger_routes.py:369"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/v1/pnr/${pnrNo}",
+        "calls": [
+          "web\\src\\lib\\api.ts:570"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/v1/pnr/{pnr_no}",
+          "auth": false,
+          "async": false,
+          "handler": "get_pnr_status",
+          "module": "api.routes",
+          "location": "routes.py:321"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/v1/trains/${id}/autopsy",
+        "calls": [
+          "web\\src\\lib\\api.ts:539"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/v1/trains/{train_no}/autopsy",
+          "auth": false,
+          "async": false,
+          "handler": "get_train_autopsy",
+          "module": "api.routes",
+          "location": "routes.py:283"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/v1/trains/${number}/journey",
+        "calls": [
+          "web\\src\\lib\\api.ts:432"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/v1/trains/{train_no}/journey",
+          "auth": false,
+          "async": false,
+          "handler": "get_train_journey",
+          "module": "api.routes",
+          "location": "routes.py:172"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "GET",
+        "url": "/v1/trains/${trainNo}/live",
+        "calls": [
+          "web\\src\\lib\\api.ts:566"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/v1/trains/{train_no}/live",
+          "auth": false,
+          "async": false,
+          "handler": "get_train_live",
+          "module": "api.live_routes",
+          "location": "live_routes.py:96"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "POST",
+        "url": "/api/platform/reoptimize",
+        "calls": [
+          "web\\src\\lib\\api.ts:618"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "POST"
+          ],
+          "path": "/api/platform/reoptimize",
+          "auth": false,
+          "async": false,
+          "handler": "reoptimize_station_platforms",
+          "module": "api.platform_routes",
+          "location": "platform_routes.py:285"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "POST",
+        "url": "/api/safety/incidents",
+        "calls": [
+          "web\\src\\lib\\api.ts:858"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "POST"
+          ],
+          "path": "/api/safety/incidents",
+          "auth": false,
+          "async": false,
+          "handler": "report_incident",
+          "module": "api.safety_routes",
+          "location": "safety_routes.py:419"
+        },
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/api/safety/incidents",
+          "auth": false,
+          "async": false,
+          "handler": "list_incidents",
+          "module": "api.safety_routes",
+          "location": "safety_routes.py:476"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "POST",
+        "url": "/api/safety/tsr",
+        "calls": [
+          "web\\src\\lib\\api.ts:833"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "POST"
+          ],
+          "path": "/api/safety/tsr",
+          "auth": false,
+          "async": false,
+          "handler": "create_speed_restriction",
+          "module": "api.safety_routes",
+          "location": "safety_routes.py:43"
+        },
+        {
+          "methods": [
+            "GET"
+          ],
+          "path": "/api/safety/tsr",
+          "auth": false,
+          "async": false,
+          "handler": "list_speed_restrictions",
+          "module": "api.safety_routes",
+          "location": "safety_routes.py:115"
+        }
+      ]
+    },
+    {
+      "frontend": {
+        "method": "POST",
+        "url": "/api/timetable/versions/${versionId}/publish",
+        "calls": [
+          "web\\src\\lib\\api.ts:804"
+        ]
+      },
+      "backend": [
+        {
+          "methods": [
+            "POST"
+          ],
+          "path": "/api/timetable/versions/{version_id}/publish",
+          "auth": false,
+          "async": false,
+          "handler": "publish_timetable_version",
+          "module": "api.timetable_routes",
+          "location": "timetable_routes.py:450"
+        }
+      ]
+    }
+  ],
+  "mismatches": [
+    {
+      "frontend": {
+        "method": "POST",
+        "url": "/api/platform/rollback",
+        "calls": [
+          "web\\src\\lib\\api.ts:624"
+        ]
+      },
+      "reason": "Route path not found in backend"
+    },
+    {
+      "frontend": {
+        "method": "POST",
+        "url": "/api/safety/tsr/${id}/lift",
+        "calls": [
+          "web\\src\\lib\\api.ts:841"
+        ]
+      },
+      "reason": "Route path not found in backend"
+    },
+    {
+      "frontend": {
+        "method": "POST",
+        "url": "/api/section/handoffs/${id}/ack",
+        "calls": [
+          "web\\src\\lib\\api.ts:876"
+        ]
+      },
+      "reason": "Route path not found in backend"
+    },
+    {
+      "frontend": {
+        "method": "POST",
+        "url": "/api/workforce/crew/signon",
+        "calls": [
+          "web\\src\\lib\\api.ts:747"
+        ]
+      },
+      "reason": "Route path not found in backend"
+    }
+  ]
+}

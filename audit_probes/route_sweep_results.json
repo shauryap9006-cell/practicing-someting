@@ -1,0 +1,347 @@
+[
+  {
+    "method": "GET",
+    "path": "/healthz",
+    "status": 200,
+    "time_ms": 22.71,
+    "keys": [
+      "status"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/readyz",
+    "status": 200,
+    "time_ms": 105.33,
+    "keys": [
+      "status",
+      "ready",
+      "db",
+      "models",
+      "migrations",
+      "components",
+      "whatsapp",
+      "clock_mode",
+      "updated_at",
+      "live_tracker_last_tick_age_seconds",
+      "active_sse_clients",
+      "adapter_tier_in_use",
+      "live_positions_count",
+      "drift_status",
+      "model_trust"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v1/health",
+    "status": 200,
+    "time_ms": 90.17,
+    "keys": [
+      "status",
+      "ready",
+      "db",
+      "models",
+      "migrations",
+      "components",
+      "whatsapp",
+      "clock_mode",
+      "updated_at",
+      "live_tracker_last_tick_age_seconds",
+      "active_sse_clients",
+      "adapter_tier_in_use",
+      "live_positions_count",
+      "drift_status",
+      "model_trust"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v1/meta/stations",
+    "status": 200,
+    "time_ms": 11.93,
+    "keys": [
+      "stations",
+      "total",
+      "limit",
+      "offset"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v1/meta/trains",
+    "status": 200,
+    "time_ms": 10.02,
+    "keys": [
+      "trains",
+      "total",
+      "limit",
+      "offset"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v1/meta/models",
+    "status": 200,
+    "time_ms": 5.99,
+    "keys": [
+      "updated_at",
+      "clock_mode",
+      "manifest",
+      "metrics"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v1/trains/12301/eta?target_station=CNB",
+    "status": 200,
+    "time_ms": 40.05,
+    "keys": [
+      "updated_at",
+      "clock_mode",
+      "train_no",
+      "train_name",
+      "target_station",
+      "sched_arr",
+      "predicted_arr",
+      "predicted_delay_min",
+      "confidence_band",
+      "tier_used",
+      "model",
+      "position",
+      "feature_version",
+      "as_of_ts",
+      "data_freshness_seconds",
+      "drivers",
+      "model_provenance"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v1/trains/12301/journey",
+    "status": 200,
+    "time_ms": 341.48,
+    "keys": [
+      "updated_at",
+      "clock_mode",
+      "train_no",
+      "train_name",
+      "train_class",
+      "current_station",
+      "current_delay_min",
+      "timeline"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v1/trains/12301/autopsy",
+    "status": 200,
+    "time_ms": 19.32,
+    "keys": [
+      "updated_at",
+      "clock_mode",
+      "train_no",
+      "train_name",
+      "total_predicted_delay_min",
+      "is_exact_accounting",
+      "causes",
+      "narrative",
+      "integrity_status",
+      "integrity_checks",
+      "as_of_ts"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v1/corridor/congestion-radar",
+    "status": 200,
+    "time_ms": 25.41,
+    "keys": [
+      "status",
+      "corridor",
+      "as_of",
+      "horizons",
+      "sections_count",
+      "active_monitored_trains",
+      "radar",
+      "highest_chokepoints"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v1/ledger/scoreboard",
+    "status": 200,
+    "time_ms": 38.23,
+    "keys": [
+      "status",
+      "scoreboard"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v1/ledger/verify",
+    "status": 200,
+    "time_ms": 23.56,
+    "keys": [
+      "status",
+      "chain_integrity_verified",
+      "total_blocks_verified",
+      "broken_at_block_id"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v1/model/performance",
+    "status": 200,
+    "time_ms": 6.34,
+    "keys": [
+      "status",
+      "schema_version",
+      "canonical_mae",
+      "overall_mae",
+      "overall_coverage_80",
+      "overall_winkler_score",
+      "overall_crps",
+      "total_test_samples",
+      "horizon_cards",
+      "proof_table",
+      "metrics_by_horizon",
+      "rolling_origin_cv",
+      "audit_note"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v1/network/state",
+    "status": 200,
+    "time_ms": 89.09,
+    "keys": [
+      "updated_at",
+      "clock_mode",
+      "active_trains_count",
+      "delayed_trains_count",
+      "active_conflicts_count",
+      "trains",
+      "active_tsrs"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v1/passenger/tracker/12301",
+    "status": 404,
+    "time_ms": 3.97,
+    "keys": [
+      "detail"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/v1/passenger/popular",
+    "status": 200,
+    "time_ms": 8.62,
+    "keys": "list[5]"
+  },
+  {
+    "method": "GET",
+    "path": "/api/board/station?station_code=NDLS",
+    "status": 404,
+    "time_ms": 4.12,
+    "keys": [
+      "detail"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/platform/states?station_code=NDLS",
+    "status": 401,
+    "time_ms": 20.49,
+    "keys": [
+      "detail",
+      "error",
+      "request_id"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/blocks/status",
+    "status": 401,
+    "time_ms": 5.32,
+    "keys": [
+      "detail",
+      "error",
+      "request_id"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/safety/tsr",
+    "status": 401,
+    "time_ms": 4.44,
+    "keys": [
+      "detail",
+      "error",
+      "request_id"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/safety/incidents",
+    "status": 401,
+    "time_ms": 4.38,
+    "keys": [
+      "detail",
+      "error",
+      "request_id"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/workforce/crew/roster",
+    "status": 401,
+    "time_ms": 5.21,
+    "keys": [
+      "detail",
+      "error",
+      "request_id"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/timetable/versions",
+    "status": 401,
+    "time_ms": 6.11,
+    "keys": [
+      "detail",
+      "error",
+      "request_id"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/audit/logs",
+    "status": 401,
+    "time_ms": 3.92,
+    "keys": [
+      "detail",
+      "error",
+      "request_id"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/system/status",
+    "status": 200,
+    "time_ms": 9.15,
+    "keys": [
+      "status",
+      "is_degraded",
+      "degraded_reasons",
+      "database_connected",
+      "ml_models_loaded",
+      "last_telemetry_snapshot",
+      "telemetry_age_seconds",
+      "is_telemetry_stale",
+      "local_timestamp",
+      "tables_summary"
+    ]
+  }
+]

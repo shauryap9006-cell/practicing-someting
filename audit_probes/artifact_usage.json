@@ -1,0 +1,146 @@
+{
+  "artifact_integrity.json": [
+    "api\\routes.py:1236",
+    "ml\\artifact_integrity.py:21"
+  ],
+  "candidate0_manifest.json": [],
+  "candidate0_metrics.json": [
+    "scripts\\candidate_shootout.py:194",
+    "scripts\\candidate_shootout.py:227",
+    "scripts\\read_c0.py:2"
+  ],
+  "drift_report.json": [
+    "api\\routes.py:1319",
+    "ml\\drift.py:168",
+    "scripts\\nightly_pipeline.py:10",
+    "scripts\\nightly_pipeline.py:101"
+  ],
+  "gru_config.json": [
+    "ml\\audit.py:274",
+    "ml\\model_seq.py:387"
+  ],
+  "manifest.json": [
+    "api\\predictor.py:169",
+    "api\\routes.py:915",
+    "api\\routes.py:1232",
+    "api\\system_routes.py:58",
+    "ml\\audit.py:71",
+    "ml\\audit.py:216",
+    "ml\\ensemble.py:172",
+    "ml\\ensemble.py:282",
+    "ml\\evaluate.py:35",
+    "ml\\train.py:316",
+    "ml\\train_v2.py:748",
+    "scripts\\champion_gate_v3.py:264",
+    "scripts\\closing_c245.py:14",
+    "scripts\\closing_evidence.py:29",
+    "scripts\\closing_evidence.py:86",
+    "scripts\\closing_evidence.py:148",
+    "scripts\\closing_evidence.py:245",
+    "scripts\\final_onepager.py:16",
+    "scripts\\gate_v3_features.py:226"
+  ],
+  "metrics.json": [
+    "api\\routes.py:48",
+    "api\\routes.py:68",
+    "api\\routes.py:69",
+    "api\\routes.py:71",
+    "api\\routes.py:139",
+    "api\\routes.py:916",
+    "api\\routes.py:1237",
+    "api\\routes.py:1249",
+    "api\\routes.py:1270",
+    "ml\\evaluate.py:483",
+    "ml\\evaluate.py:484",
+    "scripts\\candidate_shootout.py:194",
+    "scripts\\candidate_shootout.py:227",
+    "scripts\\factcheck.py:3",
+    "scripts\\factcheck.py:25",
+    "scripts\\factcheck.py:26",
+    "scripts\\factcheck.py:35",
+    "scripts\\factcheck.py:36",
+    "scripts\\final_onepager.py:1",
+    "scripts\\final_onepager.py:15",
+    "scripts\\generate_metrics.py:3",
+    "scripts\\generate_metrics.py:19",
+    "scripts\\nightly_loop.py:8",
+    "scripts\\nightly_loop.py:57",
+    "scripts\\nightly_pipeline.py:9",
+    "scripts\\nightly_pipeline.py:97",
+    "scripts\\read_c0.py:2",
+    "scripts\\render_metrics_doc.py:3",
+    "scripts\\render_metrics_doc.py:15",
+    "scripts\\render_metrics_doc.py:27"
+  ],
+  "model_delta_q10.txt": [
+    "ml\\artifact_integrity.py:15"
+  ],
+  "model_delta_q50.txt": [
+    "ml\\artifact_integrity.py:16"
+  ],
+  "model_delta_q90.txt": [
+    "ml\\artifact_integrity.py:17"
+  ],
+  "model_direct_q10.txt": [
+    "api\\routes.py:1233",
+    "ml\\artifact_integrity.py:12",
+    "scripts\\closing_c245.py:34",
+    "scripts\\closing_evidence.py:100",
+    "scripts\\factcheck.py:61"
+  ],
+  "model_direct_q50.txt": [
+    "api\\predictor.py:167",
+    "api\\routes.py:1234",
+    "api\\system_routes.py:59",
+    "ml\\artifact_integrity.py:13",
+    "ml\\audit.py:43",
+    "scripts\\closing_c245.py:69",
+    "scripts\\closing_evidence.py:52",
+    "scripts\\closing_evidence.py:209",
+    "scripts\\factcheck.py:62"
+  ],
+  "model_direct_q90.txt": [
+    "api\\routes.py:1235",
+    "ml\\artifact_integrity.py:14",
+    "scripts\\closing_c245.py:35",
+    "scripts\\closing_evidence.py:101",
+    "scripts\\factcheck.py:63"
+  ],
+  "model_gru_challenger.pt": [
+    "api\\predictor.py:153",
+    "api\\system_routes.py:60",
+    "ml\\artifact_integrity.py:18",
+    "ml\\audit.py:273",
+    "ml\\ensemble.py:152",
+    "ml\\model_seq.py:370",
+    "scripts\\champion_gate.py:60",
+    "scripts\\factcheck.py:64"
+  ],
+  "model_lr_benchmark.pkl": [
+    "ml\\artifact_integrity.py:19",
+    "ml\\ensemble.py:163",
+    "ml\\evaluate.py:88",
+    "ml\\evaluate.py:312",
+    "ml\\train.py:287"
+  ],
+  "perf_bench.json": [
+    "scripts\\perf_bench.py:166"
+  ],
+  "registry.json": [
+    "api\\predictor.py:4",
+    "api\\predictor.py:127",
+    "ml\\audit.py:275",
+    "ml\\ensemble.py:466",
+    "ml\\train_v2.py:750",
+    "scripts\\champion_gate.py:55",
+    "scripts\\factcheck.py:4",
+    "scripts\\factcheck.py:39",
+    "scripts\\factcheck.py:46",
+    "scripts\\factcheck.py:47",
+    "scripts\\final_onepager.py:1",
+    "scripts\\final_onepager.py:17"
+  ],
+  "shootout_results.json": [
+    "scripts\\candidate_shootout.py:276"
+  ]
+}

@@ -1,0 +1,765 @@
+[
+  {
+    "method": "GET",
+    "url": "/v1/trains/99999/eta?target_station=CNB",
+    "status": 404,
+    "is_500": false,
+    "response_keys": [
+      "detail",
+      "error",
+      "request_id"
+    ],
+    "sample_body": {
+      "detail": {
+        "code": "TRAIN_OR_STATION_NOT_FOUND",
+        "message": "Train 99999 not found.",
+        "retryable": false
+      },
+      "error": {
+        "code": "TRAIN_OR_STATION_NOT_FOUND",
+        "message": "Train 99999 not found.",
+        "retryable": false
+      },
+      "request_id": "93cf8229-59f1-4da2-b24f-cbc42ebb8302"
+    }
+  },
+  {
+    "method": "GET",
+    "url": "/v1/trains/12301/eta?target_station=INVALID_STATION",
+    "status": 404,
+    "is_500": false,
+    "response_keys": [
+      "detail",
+      "error",
+      "request_id"
+    ],
+    "sample_body": {
+      "detail": {
+        "code": "TRAIN_OR_STATION_NOT_FOUND",
+        "message": "Station INVALID_STATION is not on the route for train 12301.",
+        "retryable": false
+      },
+      "error": {
+        "code": "TRAIN_OR_STATION_NOT_FOUND",
+        "message": "Station INVALID_STATION is not on the route for train 12301.",
+        "retryable": false
+      },
+      "request_id": "265f9190-5b56-4f54-bd1b-567b532d0044"
+    }
+  },
+  {
+    "method": "GET",
+    "url": "/v1/trains/-123/eta?target_station=CNB",
+    "status": 404,
+    "is_500": false,
+    "response_keys": [
+      "detail",
+      "error",
+      "request_id"
+    ],
+    "sample_body": {
+      "detail": {
+        "code": "TRAIN_OR_STATION_NOT_FOUND",
+        "message": "Train -123 not found.",
+        "retryable": false
+      },
+      "error": {
+        "code": "TRAIN_OR_STATION_NOT_FOUND",
+        "message": "Train -123 not found.",
+        "retryable": false
+      },
+      "request_id": "daf8efc4-7fef-48bb-9f55-3ae15723d39c"
+    }
+  },
+  {
+    "method": "GET",
+    "url": "/v1/trains/12301/eta",
+    "status": 422,
+    "is_500": false,
+    "response_keys": [
+      "detail",
+      "error",
+      "request_id"
+    ],
+    "sample_body": {
+      "detail": "[{'loc': ['query', 'station'], 'msg': \"Field required: 'station' or 'target_station'\", 'type': 'value_error.missing'}]",
+      "error": {
+        "code": "HTTP_422",
+        "message": "[{'loc': ['query', 'station'], 'msg': \"Field required: 'station' or 'target_station'\", 'type': 'value_error.missing'}]",
+        "retryable": false
+      },
+      "request_id": "3aef1d18-f6cb-4542-92e0-de54edc92f36"
+    }
+  },
+  {
+    "method": "GET",
+    "url": "/v1/trains/12301/journey",
+    "status": 200,
+    "is_500": false,
+    "response_keys": [
+      "updated_at",
+      "clock_mode",
+      "train_no",
+      "train_name",
+      "train_class",
+      "current_station",
+      "current_delay_min",
+      "timeline"
+    ],
+    "sample_body": {
+      "updated_at": "2026-09-06T15:29:07.621845+05:30",
+      "clock_mode": "live",
+      "train_no": "12301",
+      "train_name": "Howrah Rajdhani Express (Via Gaya)",
+      "train_class": "rajdhani",
+      "current_station": "LKO",
+      "current_delay_min": 20,
+      "timeline": [
+        {
+          "seq": 1,
+          "station_code": "NDLS",
+          "station_name": "New Delhi",
+          "distance_km": 0.0,
+          "sched_arr": null,
+          "predicted_arr": "16:35",
+          "sched_dep": "00:00",
+          "predicted_dep": "00:00",
+          "delay_min": 66,
+          "status_color": "red",
+          "band": {
+            "best_p10_min": 59.6,
+            "likely_p50_min": 66.0,
+            "worst_p90_min": 77.2,
+            "best_arrival": "16:28",
+            "likely_arrival": "16:35",
+            "worst_arrival": "16:46"
+          }
+        },
+        {
+          "seq": 2,
+          "station_code": "GZB",
+          "station_name": "Ghaziabad Junction",
+          "distance_km": 65.0,
+          "sched_arr": "00:40",
+          "predicted_arr": "01:45",
+          "sched_dep": "00:42",
+          "predicted_dep": "00:42",
+          "delay_min": 66,
+          "status_color": "red",
+          "band": {
+            "best_p10_min": 59.6,
+            "likely_p50_min": 66.0,
+            "worst_p90_min": 77.2,
+            "best_arrival": "01:39",
+            "likely_arrival": "01:45",
+            "worst_arrival": "01:57"
+          }
+        },
+        {
+          "seq": 3,
+          "station_code": "ALJN",
+          "station_name": "Aligarh Junction",
+          "distance_km": 130.0,
+          "sched_arr": "01:22",
+          "predicted_arr": "02:22",
+          "sched_dep": "01:24",
+          "predicted_dep": "01:24",
+          "delay_min": 60,
+          "status_color": "amber",
+          "band": {
+            "best_p10_min": 55.6,
+            "likely_p50_min": 60.1,
+            "worst_p90_min": 69.0,
+            "best_arrival": "02:17",
+            "likely_arrival": "02:22",
+            "worst_arrival": "02:31"
+          }
+        },
+        {
+          "seq": 4,
+          "station_code": "TDL",
+          "station_name": "Tundla Junction",
+          "distance_km": 195.0,
+          "sched_arr": "02:04",
+          "predicted_arr": "03:04",
+          "sched_dep": "02:06",
+          "predicted_dep": "02:06",
+          "delay_min": 61,
+          "status_color": "red",
+          "band": {
+            "best_p10_min": 55.4,
+            "likely_p50_min": 60.5,
+            "worst_p90_min": 69.8,
+            "best_arrival": "02:59",
+            "likely_arrival": "03:04",
+            "worst_arrival": "03:13"
+          }
+        },
+        {
+          "seq": 5,
+          "station_code": "ETW",
+          "station_name": "Etawah Junction",
+          "distance_km": 260.0,
+          "sched_arr": "02:46",
+          "predicted_arr": "03:50",
+          "sched_dep": "02:48",
+          "predicted_dep": "02:48",
+          "delay_min": 65,
+          "status_color": "red",
+          "band": {
+            "best_p10_min": 60.5,
+            "likely_p50_min": 65.0,
+            "worst_p90_min": 75.0,
+            "best_arrival": "03:46",
+            "likely_arrival": "03:50",
+            "worst_arrival": "04:01"
+          }
+        },
+        {
+          "seq": 6,
+          "station_code": "CNB",
+          "station_name": "Kanpur Central",
+          "distance_km": 325.0,
+          "sched_arr": "03:28",
+          "predicted_arr": "04:33",
+          "sched_dep": "03:30",
+          "predicted_dep": "03:30",
+          "delay_min": 66,
+          "status_color": "red",
+          "band": {
+            "best_p10_min": 60.3,
+            "likely_p50_min": 65.9,
+            "worst_p90_min": 75.9,
+            "best_arrival": "04:28",
+            "likely_arrival": "04:33",
+            "worst_arrival": "04:43"
+          }
+        },
+        {
+          "seq": 7,
+          "station_code": "ON",
+          "station_name": "Unnao Junction",
+          "distance_km": 390.0,
+          "sched_arr": "04:10",
+          "predicted_arr": "05:26",
+          "sched_dep": "04:12",
+          "predicted_dep": "04:12",
+          "delay_min": 76,
+          "status_color": "red",
+          "band": {
+            "best_p10_min": 69.1,
+            "likely_p50_min": 76.5,
+            "worst_p90_min": 86.3,
+            "best_arrival": "05:19",
+            "likely_arrival": "05:26",
+            "worst_arrival": "05:36"
+          }
+        },
+        {
+          "seq": 8,
+          "station_code": "LKO",
+          "station_name": "Lucknow Charbagh",
+          "distance_km": 440.0,
+          "sched_arr": "04:43",
+          "predicted_arr": "05:56",
+          "sched_dep": null,
+          "predicted_dep": null,
+          "delay_min": 73,
+          "status_color": "red",
+          "band": {
+            "best_p10_min": 68.3,
+            "likely_p50_min": 73.2,
+            "worst_p90_min": 83.1,
+            "best_arrival": "05:51",
+            "likely_arrival": "05:56",
+            "worst_arrival": "06:06"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "method": "GET",
+    "url": "/v1/trains/NONEXISTENT/journey",
+    "status": 404,
+    "is_500": false,
+    "response_keys": [
+      "detail",
+      "error",
+      "request_id"
+    ],
+    "sample_body": {
+      "detail": {
+        "code": "TRAIN_NOT_FOUND",
+        "message": "Train NONEXISTENT not found",
+        "retryable": false
+      },
+      "error": {
+        "code": "TRAIN_NOT_FOUND",
+        "message": "Train NONEXISTENT not found",
+        "retryable": false
+      },
+      "request_id": "f261f417-dce0-46c0-b46e-fd51314310af"
+    }
+  },
+  {
+    "method": "GET",
+    "url": "/v1/trains/12301/autopsy?run_date=MALFORMED-DATE",
+    "status": 200,
+    "is_500": false,
+    "response_keys": [
+      "updated_at",
+      "clock_mode",
+      "train_no",
+      "train_name",
+      "total_predicted_delay_min",
+      "is_exact_accounting",
+      "causes",
+      "narrative",
+      "integrity_status",
+      "integrity_checks",
+      "as_of_ts"
+    ],
+    "sample_body": {
+      "updated_at": "2026-09-06T15:29:07.648524+05:30",
+      "clock_mode": "live",
+      "train_no": "12301",
+      "train_name": "Howrah Rajdhani Express (Via Gaya)",
+      "total_predicted_delay_min": 20,
+      "is_exact_accounting": true,
+      "causes": [
+        {
+          "event_type": "INHERITED",
+          "minutes": 5,
+          "cause": "Inherited 5m delay from origin turnaround / late rake arrival at NDLS",
+          "station_code": "NDLS",
+          "evidence": {
+            "source_type": "RAKE_LINK",
+            "record_id": "EV-ORIGIN-32401",
+            "station_code": "NDLS",
+            "dwell_diff_min": 5,
+            "details": {
+              "origin_station": "NDLS",
+              "origin_delay_dep": 5
+            }
+          },
+          "evidence_pointer": "Rake Turnaround @ NDLS (Event #32401)"
+        },
+        {
+          "event_type": "DWELL_OVERRUN",
+          "minutes": 4,
+          "cause": "Station halt dwell overrun of +4m at CNB (passenger surge / platform congestion)",
+          "station_code": "CNB",
+          "evidence": {
+            "source_type": "STATION_EVENT",
+            "record_id": "EV-32406",
+            "station_code": "CNB",
+            "dwell_diff_min": 4,
+            "details": {
+              "planned_dwell_min": 2,
+              "actual_dwell_min": 6
+            }
+          },
+          "evidence_pointer": "Halt Overrun @ CNB (Event #32406)"
+        },
+        {
+          "event_type": "TSR",
+          "minutes": 1,
+          "cause": "Speed restriction of 60 km/h between CNB\u2013ON (km 0.0\u20130.0): Ganga bridge track repair",
+          "station_code": "CNB",
+          "evidence": {
+            "source_type": "TSR",
+            "record_id": "TSR-1",
+            "station_code": "CNB",
+            "km_range": "0.0-0.0",
+            "speed_limit_kmph": 60,
+            "planned_speed_kmph": 110,
+            "details": {
+              "tsr_id": 1,
+              "cause": "Ganga bridge track repair"
+            }
+          },
+          "evidence_pointer": "TSR #1 (60 km/h @ km 0.0-0.0)"
+        },
+        {
+          "event_type": "TSR",
+          "minutes": 1,
+          "cause": "Speed restriction of 80 km/h between TDL\u2013ETW (km 0.0\u20130.0): Overhead traction maintenance",
+          "station_code": "TDL",
+          "evidence": {
+            "source_type": "TSR",
+            "record_id": "TSR-2",
+            "station_code": "TDL",
+            "km_range": "0.0-0.0",
+            "speed_limit_kmph": 80,
+            "planned_speed_kmph": 110,
+            "details": {
+              "tsr_id": 2,
+              "cause": "Overhead traction maintenance"
+            }
+          },
+          "evidence_pointer": "TSR #2 (80 km/h @ km 0.0-0.0)"
+        },
+        {
+          "event_type": "TSR",
+          "minutes": 1,
+          "cause": "Speed restriction of 30 km/h between GZB\u2013NDLS (km 0.0\u20130.0): Emergency Track Fracture at Sahibabad",
+          "station_code": "GZB",
+          "evidence": {
+            "source_type": "TSR",
+            "record_id": "TSR-17",
+            "station_code": "GZB",
+            "km_range": "0.0-0.0",
+            "speed_limit_kmph": 30,
+            "planned_speed_kmph": 110,
+            "details": {
+              "tsr_id": 17,
+              "cause": "Emergency Track Fracture at Sahibabad"
+            }
+          },
+          "evidence_pointer": "TSR #17 (30 km/h @ km 0.0-0.0)"
+        },
+        {
+          "event_type": "TSR",
+          "minutes": 1,
+          "cause": "Speed restriction of 30 km/h between GZB\u2013NDLS (km 0.0\u20130.0): Emergency Track Fracture at Sahibabad",
+          "station_code": "GZB",
+          "evidence": {
+            "source_type": "TSR",
+            "record_id": "TSR-20",
+            "station_code": "GZB",
+            "km_range": "0.0-0.0",
+            "speed_limit_kmph": 30,
+            "planned_speed_kmph": 110,
+            "details": {
+              "tsr_id": 20,
+              "cause": "Emergency Track Fracture at Sahibabad"
+            }
+          },
+          "evidence_pointer": "TSR #20 (30 km/h @ km 0.0-0.0)"
+        },
+        {
+          "event_type": "TSR",
+          "minutes": 1,
+          "cause": "Speed restriction of 30 km/h between GZB\u2013NDLS (km 0.0\u20130.0): Emergency Track Fracture at Sahibabad",
+          "station_code": "GZB",
+          "evidence": {
+            "source_type": "TSR",
+            "record_id": "TSR-26",
+            "station_code": "GZB",
+            "km_range": "0.0-0.0",
+            "speed_limit_kmph": 30,
+            "planned_speed_kmph": 110,
+            "details": {
+              "tsr_id": 26,
+              "cause": "Emergency Track Fracture at Sahibabad"
+            }
+          },
+          "evidence_pointer": "TSR #26 (30 km/h @ km 0.0-0.0)"
+        },
+        {
+          "event_type": "TSR",
+          "minutes": 1,
+          "cause": "Speed restriction of 30 km/h between GZB\u2013NDLS (km 0.0\u20130.0): Emergency Track Fracture at Sahibabad",
+          "station_code": "GZB",
+          "evidence": {
+            "source_type": "TSR",
+            "record_id": "TSR-29",
+            "station_code": "GZB",
+            "km_range": "0.0-0.0",
+            "speed_limit_kmph": 30,
+            "planned_speed_kmph": 110,
+            "details": {
+              "tsr_id": 29,
+              "cause": "Emergency Track Fracture at Sahibabad"
+            }
+          },
+          "evidence_pointer": "TSR #29 (30 km/h @ km 0.0-0.0)"
+        },
+        {
+          "event_type": "TSR",
+          "minutes": 1,
+          "cause": "Speed restriction of 30 km/h between GZB\u2013NDLS (km 0.0\u20130.0): Emergency Track Fracture at Sahibabad",
+          "station_code": "GZB",
+          "evidence": {
+            "source_type": "TSR",
+            "record_id": "TSR-32",
+            "station_code": "GZB",
+            "km_range": "0.0-0.0",
+            "speed_limit_kmph": 30,
+            "planned_speed_kmph": 110,
+            "details": {
+              "tsr_id": 32,
+              "cause": "Emergency Track Fracture at Sahibabad"
+            }
+          },
+          "evidence_pointer": "TSR #32 (30 km/h @ km 0.0-0.0)"
+        },
+        {
+          "event_type": "SIGNAL_HOLD",
+          "minutes": 2,
+          "cause": "Automatic signal hold / crossing wait at outer approach of LKO",
+          "station_code": "LKO",
+          "evidence": {
+            "source_type": "LIVE_POSITION",
+            "record_id": "SIG-HOLD-LKO",
+            "station_code": "LKO",
+            "preceding_train_no": "12301",
+            "details": {
+              "held_duration_min": 2,
+              "signal_block": "OUTER_ADVANCE"
+            }
+          },
+          "evidence_pointer": "Signal Block Hold @ LKO Outer"
+        },
+        {
+          "event_type": "RESIDUAL",
+          "minutes": 2,
+          "cause": "Operational runtime variance / track-circuit transition margin",
+          "station_code": "LKO",
+          "evidence": {
+            "source_type": "STATION_EVENT",
+            "record_id": "RESIDUAL_VARIANCE",
+            "details": {
+              "residual_minutes": 2
+            }
+          },
+          "evidence_pointer": "Unexplained Operational Variance"
+        }
+      ],
+      "narrative": "Running 20 min late \u2014 5m inherited from late origin turnaround at NDLS, dwell overrun at CNB (+4m), speed restriction (60 km/h) at km 0.0-0.0 (+1m), speed restriction (80 km/h) at km 0.0-0.0 (+1m), speed restriction (30 km/h) at km 0.0-0.0 (+1m), speed restriction (30 km/h) at km 0.0-0.0 (+1m), speed restriction (30 km/h) at km 0.0-0.0 (+1m), speed restriction (30 km/h) at km 0.0-0.0 (+1m), speed restriction (30 km/h) at km 0.0-0.0 (+1m), and precedence crossing hold at LKO (+2m).",
+      "integrity_status": "VERIFIED",
+      "integrity_checks": {
+        "additivity_pass": true,
+        "evidence_resolvable": true,
+        "clock_consistent": true
+      },
+      "as_of_ts": "2026-09-06T15:29:07.648524+05:30"
+    }
+  },
+  {
+    "method": "GET",
+    "url": "/api/board/live?station_code=UNKNOWN_STATION",
+    "status": 200,
+    "is_500": false,
+    "response_keys": [
+      "station_code",
+      "date",
+      "total_trains",
+      "refreshed_at",
+      "entries"
+    ],
+    "sample_body": {
+      "station_code": "UNKNOWN_STATION",
+      "date": "2026-09-06",
+      "total_trains": 0,
+      "refreshed_at": "2026-09-06T09:59:07.667135+00:00",
+      "entries": []
+    }
+  },
+  {
+    "method": "POST",
+    "url": "/api/auth/login",
+    "status": 422,
+    "is_500": false,
+    "response_keys": [
+      "detail",
+      "error",
+      "request_id"
+    ],
+    "sample_body": {
+      "detail": "Request validation failed",
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Request validation failed",
+        "retryable": false,
+        "fields": [
+          {
+            "type": "missing",
+            "loc": [
+              "body",
+              "username"
+            ],
+            "msg": "Field required",
+            "input": {}
+          },
+          {
+            "type": "missing",
+            "loc": [
+              "body",
+              "password"
+            ],
+            "msg": "Field required",
+            "input": {}
+          }
+        ]
+      },
+      "request_id": "1aa03be1-6400-4099-8f79-4b842cf77398"
+    }
+  },
+  {
+    "method": "POST",
+    "url": "/api/auth/login",
+    "status": 422,
+    "is_500": false,
+    "response_keys": [
+      "detail",
+      "error",
+      "request_id"
+    ],
+    "sample_body": {
+      "detail": "Request validation failed",
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Request validation failed",
+        "retryable": false,
+        "fields": [
+          {
+            "type": "string_type",
+            "loc": [
+              "body",
+              "username"
+            ],
+            "msg": "Input should be a valid string",
+            "input": 12345
+          },
+          {
+            "type": "string_type",
+            "loc": [
+              "body",
+              "password"
+            ],
+            "msg": "Input should be a valid string",
+            "input": null
+          }
+        ]
+      },
+      "request_id": "cbf4786b-e519-4f7d-b222-59e30d8e130b"
+    }
+  },
+  {
+    "method": "POST",
+    "url": "/api/safety/tsr",
+    "status": 422,
+    "is_500": false,
+    "response_keys": [
+      "detail",
+      "error",
+      "request_id"
+    ],
+    "sample_body": {
+      "detail": "Request validation failed",
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Request validation failed",
+        "retryable": false,
+        "fields": [
+          {
+            "type": "missing",
+            "loc": [
+              "body",
+              "from_code"
+            ],
+            "msg": "Field required",
+            "input": {
+              "station_code": "NDLS",
+              "speed_kmph": -50
+            }
+          },
+          {
+            "type": "missing",
+            "loc": [
+              "body",
+              "to_code"
+            ],
+            "msg": "Field required",
+            "input": {
+              "station_code": "NDLS",
+              "speed_kmph": -50
+            }
+          },
+          {
+            "type": "missing",
+            "loc": [
+              "body",
+              "speed_limit_kmph"
+            ],
+            "msg": "Field required",
+            "input": {
+              "station_code": "NDLS",
+              "speed_kmph": -50
+            }
+          },
+          {
+            "type": "missing",
+            "loc": [
+              "body",
+              "cause"
+            ],
+            "msg": "Field required",
+            "input": {
+              "station_code": "NDLS",
+              "speed_kmph": -50
+            }
+          },
+          {
+            "type": "missing",
+            "loc": [
+              "body",
+              "effective_from"
+            ],
+            "msg": "Field required",
+            "input": {
+              "station_code": "NDLS",
+              "speed_kmph": -50
+            }
+          }
+        ]
+      },
+      "request_id": "362888ae-dab1-48da-a1be-53d2d1a91562"
+    }
+  },
+  {
+    "method": "POST",
+    "url": "/v1/advise",
+    "status": 401,
+    "is_500": false,
+    "response_keys": [
+      "detail",
+      "error",
+      "request_id"
+    ],
+    "sample_body": {
+      "detail": "Authentication required. Please provide a valid Bearer token.",
+      "error": {
+        "code": "HTTP_401",
+        "message": "Authentication required. Please provide a valid Bearer token.",
+        "retryable": false
+      },
+      "request_id": "8c5a2c1d-978b-4c2e-beab-c4e37f7dbc73"
+    }
+  },
+  {
+    "method": "GET",
+    "url": "/v1/passenger/snapshot?train=UNKNOWN_TRAIN",
+    "status": 404,
+    "is_500": false,
+    "response_keys": [
+      "detail",
+      "error",
+      "request_id"
+    ],
+    "sample_body": {
+      "detail": {
+        "code": "TRAIN_NOT_FOUND",
+        "message": "Train 'UNKNOWN_TRAIN' not found in timetable registry."
+      },
+      "error": {
+        "code": "TRAIN_NOT_FOUND",
+        "message": "Train 'UNKNOWN_TRAIN' not found in timetable registry.",
+        "retryable": false
+      },
+      "request_id": "62b4b6bb-96e8-4cbe-843f-206fa87fa887"
+    }
+  }
+]

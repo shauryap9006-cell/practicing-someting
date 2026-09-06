@@ -1,0 +1,8 @@
+[
+  {
+    "type": "asyncio.create_task",
+    "file": "engine\\live_tracker.py",
+    "line": 191,
+    "snippet": "self._task = asyncio.create_task(self._run_loop())"
+  }
+]

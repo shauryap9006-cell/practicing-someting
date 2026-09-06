@@ -1,0 +1,263 @@
+[
+  {
+    "method": "GET",
+    "url": "/api/audit/logs",
+    "calls": [
+      "web\\src\\lib\\api.ts:759"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/api/audit/verify-integrity",
+    "calls": [
+      "web\\src\\lib\\api.ts:763"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/api/blocks/status",
+    "calls": [
+      "web\\src\\lib\\api.ts:813"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/api/platform/states",
+    "calls": [
+      "web\\src\\lib\\api.ts:614"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/api/safety/incidents",
+    "calls": [
+      "web\\src\\lib\\api.ts:850"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/api/safety/possessions",
+    "calls": [
+      "web\\src\\lib\\api.ts:754"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/api/safety/tsr",
+    "calls": [
+      "web\\src\\lib\\api.ts:825"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/api/section/advisories/generate",
+    "calls": [
+      "web\\src\\lib\\api.ts:634"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/api/section/dfc",
+    "calls": [
+      "web\\src\\lib\\api.ts:885"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/api/section/handoffs",
+    "calls": [
+      "web\\src\\lib\\api.ts:867"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/api/timetable/versions",
+    "calls": [
+      "web\\src\\lib\\api.ts:778"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/api/timetable/versions/${versionId}/entries",
+    "calls": [
+      "web\\src\\lib\\api.ts:786"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/api/workforce/crew/roster",
+    "calls": [
+      "web\\src\\lib\\api.ts:736"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/v1/advise/${id}/ack",
+    "calls": [
+      "web\\src\\lib\\api.ts:705",
+      "web\\src\\lib\\api.ts:720"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/v1/corridor/congestion-radar",
+    "calls": [
+      "web\\src\\lib\\api.ts:963"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/v1/crew/alerts",
+    "calls": [
+      "web\\src\\lib\\api.ts:633"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/v1/demo/inject-event",
+    "calls": [
+      "web\\src\\lib\\api.ts:911"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/v1/demo/reset-events",
+    "calls": [
+      "web\\src\\lib\\api.ts:918"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/v1/evaluation/summary",
+    "calls": [
+      "web\\src\\lib\\api.ts:773"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/v1/ledger/scoreboard",
+    "calls": [
+      "web\\src\\lib\\api.ts:936"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/v1/ledger/verify",
+    "calls": [
+      "web\\src\\lib\\api.ts:954"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/v1/model/performance",
+    "calls": [
+      "web\\src\\lib\\api.ts:900"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/v1/network/state",
+    "calls": [
+      "web\\src\\lib\\api.ts:364",
+      "web\\src\\lib\\api.ts:374"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/v1/passenger/pnr/${encodeURIComponent(pnr)}",
+    "calls": [
+      "web\\src\\lib\\api.ts:592"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/v1/passenger/popular",
+    "calls": [
+      "web\\src\\lib\\api.ts:584"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/v1/pnr/${pnrNo}",
+    "calls": [
+      "web\\src\\lib\\api.ts:570"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/v1/trains/${id}/autopsy",
+    "calls": [
+      "web\\src\\lib\\api.ts:539"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/v1/trains/${number}/journey",
+    "calls": [
+      "web\\src\\lib\\api.ts:432"
+    ]
+  },
+  {
+    "method": "GET",
+    "url": "/v1/trains/${trainNo}/live",
+    "calls": [
+      "web\\src\\lib\\api.ts:566"
+    ]
+  },
+  {
+    "method": "POST",
+    "url": "/api/platform/reoptimize",
+    "calls": [
+      "web\\src\\lib\\api.ts:618"
+    ]
+  },
+  {
+    "method": "POST",
+    "url": "/api/platform/rollback",
+    "calls": [
+      "web\\src\\lib\\api.ts:624"
+    ]
+  },
+  {
+    "method": "POST",
+    "url": "/api/safety/incidents",
+    "calls": [
+      "web\\src\\lib\\api.ts:858"
+    ]
+  },
+  {
+    "method": "POST",
+    "url": "/api/safety/tsr",
+    "calls": [
+      "web\\src\\lib\\api.ts:833"
+    ]
+  },
+  {
+    "method": "POST",
+    "url": "/api/safety/tsr/${id}/lift",
+    "calls": [
+      "web\\src\\lib\\api.ts:841"
+    ]
+  },
+  {
+    "method": "POST",
+    "url": "/api/section/handoffs/${id}/ack",
+    "calls": [
+      "web\\src\\lib\\api.ts:876"
+    ]
+  },
+  {
+    "method": "POST",
+    "url": "/api/timetable/versions/${versionId}/publish",
+    "calls": [
+      "web\\src\\lib\\api.ts:804"
+    ]
+  },
+  {
+    "method": "POST",
+    "url": "/api/workforce/crew/signon",
+    "calls": [
+      "web\\src\\lib\\api.ts:747"
+    ]
+  }
+]

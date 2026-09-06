@@ -1,0 +1,968 @@
+[
+  {
+    "module": "api.access_routes",
+    "handler": "create_access_request",
+    "methods": "POST",
+    "path": "/api/access-requests"
+  },
+  {
+    "module": "api.admin_routes",
+    "handler": "list_access_requests",
+    "methods": "GET",
+    "path": "/api/admin/access-requests"
+  },
+  {
+    "module": "api.admin_routes",
+    "handler": "review_access_request",
+    "methods": "PUT",
+    "path": "/api/admin/access-requests/{request_id}"
+  },
+  {
+    "module": "api.admin_routes",
+    "handler": "list_users",
+    "methods": "GET",
+    "path": "/api/admin/users"
+  },
+  {
+    "module": "api.admin_routes",
+    "handler": "create_user",
+    "methods": "POST",
+    "path": "/api/admin/users"
+  },
+  {
+    "module": "api.admin_routes",
+    "handler": "update_user",
+    "methods": "PUT",
+    "path": "/api/admin/users/{user_id}"
+  },
+  {
+    "module": "api.admin_routes",
+    "handler": "list_backups",
+    "methods": "GET",
+    "path": "/api/admin/backups"
+  },
+  {
+    "module": "api.admin_routes",
+    "handler": "trigger_backup",
+    "methods": "POST",
+    "path": "/api/admin/backups/create"
+  },
+  {
+    "module": "api.admin_routes",
+    "handler": "verify_latest_backup",
+    "methods": "POST",
+    "path": "/api/admin/backups/verify"
+  },
+  {
+    "module": "api.audit_routes",
+    "handler": "get_audit_logs",
+    "methods": "GET",
+    "path": "/api/audit/logs"
+  },
+  {
+    "module": "api.audit_routes",
+    "handler": "verify_audit_trail_integrity",
+    "methods": "GET",
+    "path": "/api/audit/verify-integrity"
+  },
+  {
+    "module": "api.auth_routes",
+    "handler": "login",
+    "methods": "POST",
+    "path": "/api/auth/login"
+  },
+  {
+    "module": "api.auth_routes",
+    "handler": "get_current_user_profile",
+    "methods": "GET",
+    "path": "/api/auth/me"
+  },
+  {
+    "module": "api.auth_routes",
+    "handler": "refresh_token",
+    "methods": "POST",
+    "path": "/api/auth/refresh"
+  },
+  {
+    "module": "api.auth_routes",
+    "handler": "logout",
+    "methods": "POST",
+    "path": "/api/auth/logout"
+  },
+  {
+    "module": "api.block_routes",
+    "handler": "get_block_statuses",
+    "methods": "GET",
+    "path": "/api/blocks/status"
+  },
+  {
+    "module": "api.block_routes",
+    "handler": "update_block_state",
+    "methods": "POST",
+    "path": "/api/blocks/{block_id}/state"
+  },
+  {
+    "module": "api.block_routes",
+    "handler": "grant_line_clear",
+    "methods": "POST",
+    "path": "/api/blocks/{block_id}/line-clear"
+  },
+  {
+    "module": "api.board_routes",
+    "handler": "get_live_board",
+    "methods": "GET",
+    "path": "/api/board/live"
+  },
+  {
+    "module": "api.board_routes",
+    "handler": "get_kiosk_board",
+    "methods": "GET",
+    "path": "/api/board/kiosk"
+  },
+  {
+    "module": "api.board_routes",
+    "handler": "stream_live_board",
+    "methods": "GET",
+    "path": "/api/board/stream"
+  },
+  {
+    "module": "api.commercial_routes",
+    "handler": "issue_delay_certificate",
+    "methods": "POST",
+    "path": "/api/commercial/delay-certificate"
+  },
+  {
+    "module": "api.commercial_routes",
+    "handler": "get_delay_certificate",
+    "methods": "GET",
+    "path": "/api/commercial/delay-certificate/{cert_no}"
+  },
+  {
+    "module": "api.commercial_routes",
+    "handler": "verify_delay_certificate",
+    "methods": "GET",
+    "path": "/api/commercial/delay-certificate/verify/{qr_token}"
+  },
+  {
+    "module": "api.commercial_routes",
+    "handler": "generate_platform_announcement",
+    "methods": "GET",
+    "path": "/api/commercial/announcements/generate"
+  },
+  {
+    "module": "api.commercial_routes",
+    "handler": "register_commercial_stall",
+    "methods": "POST",
+    "path": "/api/commercial/stalls"
+  },
+  {
+    "module": "api.commercial_routes",
+    "handler": "list_commercial_stalls",
+    "methods": "GET",
+    "path": "/api/commercial/stalls"
+  },
+  {
+    "module": "api.commercial_routes",
+    "handler": "register_lost_item",
+    "methods": "POST",
+    "path": "/api/commercial/lost-found"
+  },
+  {
+    "module": "api.commercial_routes",
+    "handler": "list_lost_items",
+    "methods": "GET",
+    "path": "/api/commercial/lost-found"
+  },
+  {
+    "module": "api.commercial_routes",
+    "handler": "claim_lost_item",
+    "methods": "PUT",
+    "path": "/api/commercial/lost-found/{item_id}/claim"
+  },
+  {
+    "module": "api.demo_routes",
+    "handler": "get_active_shocks",
+    "methods": "GET",
+    "path": "/api/v1/demo/shocks"
+  },
+  {
+    "module": "api.demo_routes",
+    "handler": "get_active_shocks",
+    "methods": "GET",
+    "path": "/v1/demo/shocks"
+  },
+  {
+    "module": "api.demo_routes",
+    "handler": "inject_shock_event",
+    "methods": "POST",
+    "path": "/api/v1/demo/inject-event"
+  },
+  {
+    "module": "api.demo_routes",
+    "handler": "inject_shock_event",
+    "methods": "POST",
+    "path": "/v1/demo/inject-event"
+  },
+  {
+    "module": "api.demo_routes",
+    "handler": "reset_shock_events",
+    "methods": "POST",
+    "path": "/api/v1/demo/reset-events"
+  },
+  {
+    "module": "api.demo_routes",
+    "handler": "reset_shock_events",
+    "methods": "POST",
+    "path": "/v1/demo/reset-events"
+  },
+  {
+    "module": "api.demo_routes",
+    "handler": "get_demo_comparator",
+    "methods": "GET",
+    "path": "/api/v1/demo/comparator"
+  },
+  {
+    "module": "api.demo_routes",
+    "handler": "get_demo_comparator",
+    "methods": "GET",
+    "path": "/v1/demo/comparator"
+  },
+  {
+    "module": "api.demo_routes",
+    "handler": "get_cascade_ripple",
+    "methods": "GET",
+    "path": "/api/v1/cascade/ripple"
+  },
+  {
+    "module": "api.demo_routes",
+    "handler": "get_cascade_ripple",
+    "methods": "GET",
+    "path": "/v1/cascade/ripple"
+  },
+  {
+    "module": "api.demo_routes",
+    "handler": "get_demo_time_machine",
+    "methods": "GET",
+    "path": "/api/v1/demo/time-machine"
+  },
+  {
+    "module": "api.demo_routes",
+    "handler": "get_demo_time_machine",
+    "methods": "GET",
+    "path": "/v1/demo/time-machine"
+  },
+  {
+    "module": "api.demo_routes",
+    "handler": "get_corridor_congestion_radar",
+    "methods": "GET",
+    "path": "/api/v1/corridor/congestion-radar"
+  },
+  {
+    "module": "api.demo_routes",
+    "handler": "get_corridor_congestion_radar",
+    "methods": "GET",
+    "path": "/v1/corridor/congestion-radar"
+  },
+  {
+    "module": "api.handover_routes",
+    "handler": "get_current_handover_summary",
+    "methods": "GET",
+    "path": "/api/handover/current"
+  },
+  {
+    "module": "api.handover_routes",
+    "handler": "create_or_update_draft",
+    "methods": "POST",
+    "path": "/api/handover/draft"
+  },
+  {
+    "module": "api.handover_routes",
+    "handler": "sign_out_shift",
+    "methods": "POST",
+    "path": "/api/handover/{handover_id}/sign-out"
+  },
+  {
+    "module": "api.handover_routes",
+    "handler": "acknowledge_incoming_shift",
+    "methods": "POST",
+    "path": "/api/handover/{handover_id}/ack-in"
+  },
+  {
+    "module": "api.handover_routes",
+    "handler": "list_handover_history",
+    "methods": "GET",
+    "path": "/api/handover/history"
+  },
+  {
+    "module": "api.infra_routes",
+    "handler": "register_rake_bpc",
+    "methods": "POST",
+    "path": "/rakes"
+  },
+  {
+    "module": "api.infra_routes",
+    "handler": "list_rakes",
+    "methods": "GET",
+    "path": "/rakes"
+  },
+  {
+    "module": "api.infra_routes",
+    "handler": "register_station_asset",
+    "methods": "POST",
+    "path": "/assets"
+  },
+  {
+    "module": "api.infra_routes",
+    "handler": "list_station_assets",
+    "methods": "GET",
+    "path": "/assets"
+  },
+  {
+    "module": "api.infra_routes",
+    "handler": "create_work_order",
+    "methods": "POST",
+    "path": "/work-orders"
+  },
+  {
+    "module": "api.infra_routes",
+    "handler": "list_work_orders",
+    "methods": "GET",
+    "path": "/work-orders"
+  },
+  {
+    "module": "api.infra_routes",
+    "handler": "resolve_work_order",
+    "methods": "PUT",
+    "path": "/work-orders/{wo_id}/resolve"
+  },
+  {
+    "module": "api.infra_routes",
+    "handler": "record_cleaning_log",
+    "methods": "POST",
+    "path": "/cleaning-logs"
+  },
+  {
+    "module": "api.infra_routes",
+    "handler": "list_cleaning_logs",
+    "methods": "GET",
+    "path": "/feedback"
+  },
+  {
+    "module": "api.infra_routes",
+    "handler": "list_cleaning_logs",
+    "methods": "GET",
+    "path": "/cleaning-logs"
+  },
+  {
+    "module": "api.live_routes",
+    "handler": "get_meta_config",
+    "methods": "GET",
+    "path": "/api/v1/meta/config"
+  },
+  {
+    "module": "api.live_routes",
+    "handler": "get_meta_config",
+    "methods": "GET",
+    "path": "/v1/meta/config"
+  },
+  {
+    "module": "api.live_routes",
+    "handler": "get_train_live",
+    "methods": "GET",
+    "path": "/api/v1/trains/{train_no}/live"
+  },
+  {
+    "module": "api.live_routes",
+    "handler": "get_train_live",
+    "methods": "GET",
+    "path": "/v1/trains/{train_no}/live"
+  },
+  {
+    "module": "api.live_routes",
+    "handler": "get_train_why_late",
+    "methods": "GET",
+    "path": "/api/v1/trains/{train_no}/why-late"
+  },
+  {
+    "module": "api.live_routes",
+    "handler": "get_train_why_late",
+    "methods": "GET",
+    "path": "/v1/trains/{train_no}/why-late"
+  },
+  {
+    "module": "api.live_routes",
+    "handler": "get_live_positions",
+    "methods": "GET",
+    "path": "/api/v1/live/positions"
+  },
+  {
+    "module": "api.live_routes",
+    "handler": "get_live_positions",
+    "methods": "GET",
+    "path": "/v1/live/positions"
+  },
+  {
+    "module": "api.live_routes",
+    "handler": "stream_live_positions",
+    "methods": "GET",
+    "path": "/api/v1/live/stream"
+  },
+  {
+    "module": "api.live_routes",
+    "handler": "stream_live_positions",
+    "methods": "GET",
+    "path": "/v1/live/stream"
+  },
+  {
+    "module": "api.notification_routes",
+    "handler": "get_active_notifications",
+    "methods": "GET",
+    "path": "/api/notifications/active"
+  },
+  {
+    "module": "api.notification_routes",
+    "handler": "ack_notification_endpoint",
+    "methods": "POST",
+    "path": "/api/notifications/{notification_id}/ack"
+  },
+  {
+    "module": "api.notification_routes",
+    "handler": "emit_notification_endpoint",
+    "methods": "POST",
+    "path": "/api/notifications/emit"
+  },
+  {
+    "module": "api.notification_routes",
+    "handler": "trigger_escalation_ladder",
+    "methods": "POST",
+    "path": "/api/notifications/escalate"
+  },
+  {
+    "module": "api.ops_routes",
+    "handler": "record_set_in",
+    "methods": "POST",
+    "path": "/api/ops/setin/{train_no}"
+  },
+  {
+    "module": "api.ops_routes",
+    "handler": "record_set_out",
+    "methods": "POST",
+    "path": "/api/ops/setout/{train_no}"
+  },
+  {
+    "module": "api.ops_routes",
+    "handler": "list_ad_events",
+    "methods": "GET",
+    "path": "/api/ops/ad-events"
+  },
+  {
+    "module": "api.ops_routes",
+    "handler": "create_shunting_move",
+    "methods": "POST",
+    "path": "/api/ops/shunting"
+  },
+  {
+    "module": "api.ops_routes",
+    "handler": "list_shunting_moves",
+    "methods": "GET",
+    "path": "/api/ops/shunting"
+  },
+  {
+    "module": "api.ops_routes",
+    "handler": "update_shunting_status",
+    "methods": "PUT",
+    "path": "/api/ops/shunting/{move_id}/status"
+  },
+  {
+    "module": "api.passenger_routes",
+    "handler": "stream_passenger_train",
+    "methods": "GET",
+    "path": "/v1/passenger/stream"
+  },
+  {
+    "module": "api.passenger_routes",
+    "handler": "search_trains",
+    "methods": "GET",
+    "path": "/v1/passenger/search"
+  },
+  {
+    "module": "api.passenger_routes",
+    "handler": "get_popular_trains",
+    "methods": "GET",
+    "path": "/v1/passenger/popular"
+  },
+  {
+    "module": "api.passenger_routes",
+    "handler": "get_pnr",
+    "methods": "GET",
+    "path": "/v1/passenger/pnr/{pnr}"
+  },
+  {
+    "module": "api.passenger_routes",
+    "handler": "get_passenger_snapshot",
+    "methods": "GET",
+    "path": "/v1/passenger/snapshot"
+  },
+  {
+    "module": "api.planner_routes",
+    "handler": "simulate_day_changeset",
+    "methods": "POST",
+    "path": "/api/planner/simulate"
+  },
+  {
+    "module": "api.planner_routes",
+    "handler": "apply_day_changeset",
+    "methods": "POST",
+    "path": "/api/planner/apply"
+  },
+  {
+    "module": "api.planner_routes",
+    "handler": "list_planner_changesets",
+    "methods": "GET",
+    "path": "/api/planner/changesets"
+  },
+  {
+    "module": "api.platform_routes",
+    "handler": "get_platform_states",
+    "methods": "GET",
+    "path": "/api/platform/states"
+  },
+  {
+    "module": "api.platform_routes",
+    "handler": "set_platform_block",
+    "methods": "POST",
+    "path": "/api/platform/block"
+  },
+  {
+    "module": "api.platform_routes",
+    "handler": "assign_platform",
+    "methods": "POST",
+    "path": "/api/platform/assign"
+  },
+  {
+    "module": "api.platform_routes",
+    "handler": "toggle_assignment_lock",
+    "methods": "POST",
+    "path": "/api/platform/assignments/{assign_id}/lock"
+  },
+  {
+    "module": "api.platform_routes",
+    "handler": "reoptimize_station_platforms",
+    "methods": "POST",
+    "path": "/api/platform/reoptimize"
+  },
+  {
+    "module": "api.routes",
+    "handler": "get_evaluation_summary",
+    "methods": "GET",
+    "path": "/v1/evaluation/summary"
+  },
+  {
+    "module": "api.routes",
+    "handler": "get_model_performance",
+    "methods": "GET",
+    "path": "/v1/model/performance"
+  },
+  {
+    "module": "api.routes",
+    "handler": "get_train_eta",
+    "methods": "GET",
+    "path": "/v1/trains/{train_no}/eta"
+  },
+  {
+    "module": "api.routes",
+    "handler": "get_train_journey",
+    "methods": "GET",
+    "path": "/v1/trains/{train_no}/journey"
+  },
+  {
+    "module": "api.routes",
+    "handler": "get_train_autopsy",
+    "methods": "GET",
+    "path": "/v1/trains/{train_no}/autopsy"
+  },
+  {
+    "module": "api.routes",
+    "handler": "get_pnr_status",
+    "methods": "GET",
+    "path": "/v1/pnr/{pnr_no}"
+  },
+  {
+    "module": "api.routes",
+    "handler": "passenger_search",
+    "methods": "GET",
+    "path": "/v1/passenger/search"
+  },
+  {
+    "module": "api.routes",
+    "handler": "get_network_state",
+    "methods": "GET",
+    "path": "/v1/network/state"
+  },
+  {
+    "module": "api.routes",
+    "handler": "get_station_summary",
+    "methods": "GET",
+    "path": "/v1/stations/{code}"
+  },
+  {
+    "module": "api.routes",
+    "handler": "get_station_gantt",
+    "methods": "GET",
+    "path": "/v1/stations/{code}/gantt"
+  },
+  {
+    "module": "api.routes",
+    "handler": "reoptimize_station_platforms",
+    "methods": "POST",
+    "path": "/v1/stations/{code}/reoptimize"
+  },
+  {
+    "module": "api.routes",
+    "handler": "simulate_what_if",
+    "methods": "POST",
+    "path": "/v1/simulate/what-if"
+  },
+  {
+    "module": "api.routes",
+    "handler": "get_crew_alerts",
+    "methods": "GET",
+    "path": "/v1/crew/alerts"
+  },
+  {
+    "module": "api.routes",
+    "handler": "get_station_connections",
+    "methods": "GET",
+    "path": "/v1/stations/{code}/connections"
+  },
+  {
+    "module": "api.routes",
+    "handler": "get_prediction_ledger_scoreboard",
+    "methods": "GET",
+    "path": "/v1/ledger/scoreboard"
+  },
+  {
+    "module": "api.routes",
+    "handler": "verify_prediction_ledger_chain",
+    "methods": "GET",
+    "path": "/v1/ledger/verify"
+  },
+  {
+    "module": "api.routes",
+    "handler": "get_models_meta",
+    "methods": "GET",
+    "path": "/v1/meta/models"
+  },
+  {
+    "module": "api.routes",
+    "handler": "get_meta_stations",
+    "methods": "GET",
+    "path": "/v1/meta/stations"
+  },
+  {
+    "module": "api.routes",
+    "handler": "get_meta_trains",
+    "methods": "GET",
+    "path": "/v1/meta/trains"
+  },
+  {
+    "module": "api.routes",
+    "handler": "post_brain_advise",
+    "methods": "POST",
+    "path": "/v1/advise"
+  },
+  {
+    "module": "api.routes",
+    "handler": "get_train_conflicts",
+    "methods": "GET",
+    "path": "/v1/conflicts/{train_no}"
+  },
+  {
+    "module": "api.routes",
+    "handler": "post_advisory_ack",
+    "methods": "POST",
+    "path": "/v1/advise/{adv_id}/ack"
+  },
+  {
+    "module": "api.routes",
+    "handler": "whatsapp_inbound_webhook",
+    "methods": "POST",
+    "path": "/v1/hooks/whatsapp"
+  },
+  {
+    "module": "api.routes",
+    "handler": "get_health",
+    "methods": "GET",
+    "path": "/v1/health"
+  },
+  {
+    "module": "api.safety_routes",
+    "handler": "create_speed_restriction",
+    "methods": "POST",
+    "path": "/api/safety/tsr"
+  },
+  {
+    "module": "api.safety_routes",
+    "handler": "list_speed_restrictions",
+    "methods": "GET",
+    "path": "/api/safety/tsr"
+  },
+  {
+    "module": "api.safety_routes",
+    "handler": "cancel_speed_restriction",
+    "methods": "DELETE",
+    "path": "/api/safety/tsr/{tsr_id}"
+  },
+  {
+    "module": "api.safety_routes",
+    "handler": "request_possession",
+    "methods": "POST",
+    "path": "/api/safety/possession/request"
+  },
+  {
+    "module": "api.safety_routes",
+    "handler": "grant_possession",
+    "methods": "POST",
+    "path": "/api/safety/possession/{possession_id}/grant"
+  },
+  {
+    "module": "api.safety_routes",
+    "handler": "restore_possession",
+    "methods": "POST",
+    "path": "/api/safety/possession/{possession_id}/restore"
+  },
+  {
+    "module": "api.safety_routes",
+    "handler": "list_possessions",
+    "methods": "GET",
+    "path": "/api/safety/possessions"
+  },
+  {
+    "module": "api.safety_routes",
+    "handler": "report_incident",
+    "methods": "POST",
+    "path": "/api/safety/incidents"
+  },
+  {
+    "module": "api.safety_routes",
+    "handler": "list_incidents",
+    "methods": "GET",
+    "path": "/api/safety/incidents"
+  },
+  {
+    "module": "api.safety_routes",
+    "handler": "get_sop_templates",
+    "methods": "GET",
+    "path": "/api/safety/sop/templates"
+  },
+  {
+    "module": "api.safety_routes",
+    "handler": "start_sop_run",
+    "methods": "POST",
+    "path": "/api/safety/sop/start"
+  },
+  {
+    "module": "api.safety_routes",
+    "handler": "complete_sop_step",
+    "methods": "POST",
+    "path": "/api/safety/sop/{run_id}/step"
+  },
+  {
+    "module": "api.safety_routes",
+    "handler": "list_active_sop_runs",
+    "methods": "GET",
+    "path": "/api/safety/sop/active"
+  },
+  {
+    "module": "api.safety_routes",
+    "handler": "list_level_crossings",
+    "methods": "GET",
+    "path": "/api/safety/lc/status"
+  },
+  {
+    "module": "api.safety_routes",
+    "handler": "update_lc_status",
+    "methods": "PUT",
+    "path": "/api/safety/lc/{lc_id}/status"
+  },
+  {
+    "module": "api.section_routes",
+    "handler": "get_corridor_topology",
+    "methods": "GET",
+    "path": "/corridor"
+  },
+  {
+    "module": "api.section_routes",
+    "handler": "request_cross_station_handoff",
+    "methods": "POST",
+    "path": "/handoff/request"
+  },
+  {
+    "module": "api.section_routes",
+    "handler": "grant_cross_station_handoff",
+    "methods": "PUT",
+    "path": "/handoff/{lock_id}/grant"
+  },
+  {
+    "module": "api.section_routes",
+    "handler": "release_cross_station_handoff",
+    "methods": "PUT",
+    "path": "/handoff/{lock_id}/release"
+  },
+  {
+    "module": "api.section_routes",
+    "handler": "list_cross_station_handoffs",
+    "methods": "GET",
+    "path": "/handoffs"
+  },
+  {
+    "module": "api.section_routes",
+    "handler": "generate_precedence_advisories",
+    "methods": "GET",
+    "path": "/precedence"
+  },
+  {
+    "module": "api.section_routes",
+    "handler": "generate_precedence_advisories",
+    "methods": "GET",
+    "path": "/advisories/generate"
+  },
+  {
+    "module": "api.section_routes",
+    "handler": "execute_precedence_advisory",
+    "methods": "POST",
+    "path": "/advisories/{adv_id}/execute"
+  },
+  {
+    "module": "api.section_routes",
+    "handler": "get_dfc_precedence",
+    "methods": "GET",
+    "path": "/dfc"
+  },
+  {
+    "module": "api.system_routes",
+    "handler": "get_system_status",
+    "methods": "GET",
+    "path": "/api/system/status"
+  },
+  {
+    "module": "api.system_routes",
+    "handler": "get_system_model_info",
+    "methods": "GET",
+    "path": "/api/system/model-info"
+  },
+  {
+    "module": "api.timetable_routes",
+    "handler": "list_timetable_versions",
+    "methods": "GET",
+    "path": "/api/timetable/versions"
+  },
+  {
+    "module": "api.timetable_routes",
+    "handler": "create_timetable_version",
+    "methods": "POST",
+    "path": "/api/timetable/versions"
+  },
+  {
+    "module": "api.timetable_routes",
+    "handler": "get_version_entries",
+    "methods": "GET",
+    "path": "/api/timetable/versions/{version_id}/entries"
+  },
+  {
+    "module": "api.timetable_routes",
+    "handler": "create_timetable_entry",
+    "methods": "POST",
+    "path": "/api/timetable/entries"
+  },
+  {
+    "module": "api.timetable_routes",
+    "handler": "update_timetable_entry",
+    "methods": "PUT",
+    "path": "/api/timetable/entries/{entry_id}"
+  },
+  {
+    "module": "api.timetable_routes",
+    "handler": "delete_timetable_entry",
+    "methods": "DELETE",
+    "path": "/api/timetable/entries/{entry_id}"
+  },
+  {
+    "module": "api.timetable_routes",
+    "handler": "validate_timetable_version",
+    "methods": "GET",
+    "path": "/api/timetable/versions/{version_id}/validate"
+  },
+  {
+    "module": "api.timetable_routes",
+    "handler": "import_seed_timetable",
+    "methods": "POST",
+    "path": "/api/timetable/versions/{version_id}/import-seed"
+  },
+  {
+    "module": "api.timetable_routes",
+    "handler": "publish_timetable_version",
+    "methods": "POST",
+    "path": "/api/timetable/versions/{version_id}/publish"
+  },
+  {
+    "module": "api.workforce_routes",
+    "handler": "record_breathalyzer_test",
+    "methods": "POST",
+    "path": "/api/workforce/breathalyzer"
+  },
+  {
+    "module": "api.workforce_routes",
+    "handler": "list_breathalyzer_tests",
+    "methods": "GET",
+    "path": "/api/workforce/breathalyzer"
+  },
+  {
+    "module": "api.workforce_routes",
+    "handler": "crew_sign_on",
+    "methods": "POST",
+    "path": "/api/workforce/crew/sign-on"
+  },
+  {
+    "module": "api.workforce_routes",
+    "handler": "crew_sign_off",
+    "methods": "POST",
+    "path": "/api/workforce/crew/{roster_id}/sign-off"
+  },
+  {
+    "module": "api.workforce_routes",
+    "handler": "list_crew_roster",
+    "methods": "GET",
+    "path": "/api/workforce/crew/roster"
+  },
+  {
+    "module": "api.workforce_routes",
+    "handler": "check_crew_breaches",
+    "methods": "GET",
+    "path": "/api/workforce/crew/breaches"
+  },
+  {
+    "module": "api.workforce_routes",
+    "handler": "assign_staff_shift",
+    "methods": "POST",
+    "path": "/api/workforce/shifts"
+  },
+  {
+    "module": "api.workforce_routes",
+    "handler": "list_staff_shifts",
+    "methods": "GET",
+    "path": "/api/workforce/shifts"
+  },
+  {
+    "module": "api.workforce_routes",
+    "handler": "list_sahayak_roster",
+    "methods": "GET",
+    "path": "/api/workforce/sahayak"
+  },
+  {
+    "module": "api.workforce_routes",
+    "handler": "toggle_sahayak_duty",
+    "methods": "PUT",
+    "path": "/api/workforce/sahayak/{sahayak_id}/duty"
+  }
+]
