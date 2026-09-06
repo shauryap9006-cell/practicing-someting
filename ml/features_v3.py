@@ -230,24 +230,32 @@ class V3FeatureBuilder:
         self.route_max_seq: Dict[str, int] = {}
         self.train_routes: Dict[str, List[Tuple[str, int, float]]] = {}
 
+        rows = []
         try:
             cur = self.con.execute("SELECT train_no, station_code, seq, cum_km FROM route_cum_km ORDER BY train_no, seq")
             rows = cur.fetchall()
-            if not rows:
+        except Exception as e_cum:
+            import logging
+            logging.warning(f"[WARN] Failed to query route_cum_km, falling back to route_stations: {e_cum}")
+
+        if not rows:
+            try:
                 cur = self.con.execute("SELECT train_no, station_code, seq, distance_km FROM route_stations ORDER BY train_no, seq")
                 rows = cur.fetchall()
+            except Exception as e_rs:
+                import logging
+                logging.error(f"[ERROR] Failed to query route_stations fallback: {e_rs}")
+                rows = []
 
-            for r in rows:
-                t_no = str(r[0])
-                stn = str(r[1])
-                seq = int(r[2])
-                km = float(r[3] or 0.0)
-                self.cum_km_map[(t_no, stn)] = km
-                self.route_seq_map[(t_no, stn)] = seq
-                self.route_max_seq[t_no] = max(self.route_max_seq.get(t_no, 0), seq)
-                self.train_routes.setdefault(t_no, []).append((stn, seq, km))
-        except Exception:
-            pass
+        for r in rows:
+            t_no = str(r[0])
+            stn = str(r[1])
+            seq = int(r[2])
+            km = float(r[3] or 0.0)
+            self.cum_km_map[(t_no, stn)] = km
+            self.route_seq_map[(t_no, stn)] = seq
+            self.route_max_seq[t_no] = max(self.route_max_seq.get(t_no, 0), seq)
+            self.train_routes.setdefault(t_no, []).append((stn, seq, km))
 
     def _build_history_cache(self) -> None:
         """Builds point-in-time sorted historical delay lists for bisect search."""

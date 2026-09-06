@@ -71,6 +71,9 @@ class PredictorService:
         self.served_model_version: str = "v3.0"
         self.loaded_at: str = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
+        self._gru_sequence_ready: bool = False
+        print("[NOTICE] GRU challenger not served: sequence inputs not wired to real history (see docs/HEARTBEAT.md roadmap).")
+
         self._direct_models: Optional[dict] = None
         self._delta_models: Optional[dict] = None
         self._gru_model: Optional[NonCrossingGRUQuantileModel] = None
@@ -160,12 +163,6 @@ class PredictorService:
                 except Exception as e:
                     print(f"[WARN] Failed to load PyTorch GRU model: {e}")
 
-            # Determine Champion SHA
-            if self.champion_name == "PyTorch_GRU_Quantile" and gru_path.exists():
-                self.champion_sha = self._calculate_file_sha256(gru_path)
-            elif self._direct_models:
-                self.champion_sha = self._calculate_file_sha256(self.artifacts_dir / "model_direct_q50.txt")
-
             manifest_path = self.artifacts_dir / "manifest.json"
             if manifest_path.exists():
                 with open(manifest_path, "r", encoding="utf-8") as f:
@@ -180,6 +177,17 @@ class PredictorService:
                 print(f"[WARN] Could not initialize EnsemblePredictor: {e_err}")
                 self._ensemble = None
 
+            # Determine Champion SHA
+            if self._ensemble is not None:
+                ens_w = self.artifacts_dir / "ensemble_weights.json"
+                self.champion_sha = self._calculate_file_sha256(ens_w) if ens_w.exists() else (
+                    self._calculate_file_sha256(self.artifacts_dir / "model_direct_q50.txt")
+                )
+            elif self.champion_name == "PyTorch_GRU_Quantile" and gru_path.exists() and self._gru_sequence_ready:
+                self.champion_sha = self._calculate_file_sha256(gru_path)
+            elif self._direct_models:
+                self.champion_sha = self._calculate_file_sha256(self.artifacts_dir / "model_direct_q50.txt")
+
             return True
         except Exception as err:
             print(f"[WARN] Model loading error: {err}")
@@ -187,14 +195,17 @@ class PredictorService:
 
     def get_model_info(self) -> Dict[str, Any]:
         """Returns governance information for served model (F15)."""
+        served = self.champion_name
+        if not self._gru_sequence_ready and served == "PyTorch_GRU_Quantile":
+            served = "Tier2_Convex_Ensemble_NNLS" if hasattr(self, "_ensemble") and self._ensemble is not None else "LightGBM_Quantile_Direct"
         return {
-            "served_model": self.champion_name,
+            "served_model": served,
             "version": self.served_model_version,
             "sha": self.champion_sha,
             "loaded_at": self.loaded_at,
             "device": str(self.device),
             "tiers_available": {
-                "neural_gru": self._gru_model is not None,
+                "neural_gru": self._gru_model is not None and self._gru_sequence_ready,
                 "lightgbm_cqr": self._direct_models is not None,
                 "historical_db": True,
             },
@@ -267,7 +278,8 @@ class PredictorService:
                 )
                 arr_feat = vec.to_numpy_v1()
 
-                # Primary Served Inference: 5-Model Convex NNLS Ensemble Stacking (Wiring Plan 3)
+                predicted = False
+                # 1. Primary Served Inference: 5-Model Convex NNLS Ensemble Stacking
                 if hasattr(self, "_ensemble") and self._ensemble is not None:
                     try:
                         raw_p10, raw_p50, raw_p90 = self._ensemble.predict(
@@ -277,43 +289,34 @@ class PredictorService:
                             train_class=target_stop.get("train_class"),
                         )
                         tier_used = "Tier2_Convex_Ensemble_NNLS"
+                        predicted = True
                     except Exception:
-                        tier_used = "Tier2_LightGBM_CQR"
-                        if hops <= settings.DIRECT_MODEL_MAX_HOPS:
-                            raw_p10 = float(self._direct_models[0.1].predict(arr_feat)[0]) - self._q_hat
-                            raw_p50 = float(self._direct_models[0.5].predict(arr_feat)[0])
-                            raw_p90 = float(self._direct_models[0.9].predict(arr_feat)[0]) + self._q_hat
-                        else:
-                            del_10 = float(self._delta_models[0.1].predict(arr_feat)[0])
-                            del_50 = float(self._delta_models[0.5].predict(arr_feat)[0])
-                            del_90 = float(self._delta_models[0.9].predict(arr_feat)[0])
-                            raw_p10 = c_delay + (del_10 * hops) - self._q_hat
-                            raw_p50 = c_delay + (del_50 * hops)
-                            raw_p90 = c_delay + (del_90 * hops) + self._q_hat
+                        predicted = False
 
-                # Dynamic TSR Kinematic Penalty
-                if vec.tsr_active_ahead_count > 0:
-                    tsr_penalty = max(8.0, float(vec.tsr_active_ahead_count) * 8.0)
-                    raw_p10 += tsr_penalty
-                    raw_p50 += tsr_penalty
-                    raw_p90 += tsr_penalty
-                elif self.champion_name == "PyTorch_GRU_Quantile" and self._gru_model is not None and hops <= settings.DIRECT_MODEL_MAX_HOPS:
-                    tier_used = "Tier2_PyTorch_GRU_Champion"
-                    seq_mat = np.zeros((1, 8, 8), dtype=np.float32)
-                    seq_mat[0, -1, 0] = float(c_delay)
-                    seq_mat[0, -1, 1] = float(c_delay)
-                    seq_mat[0, -1, 2] = float(target_stop.get("halt_min", 2.0))
-                    seq_mat[0, -1, 3] = float(target_stop.get("distance_km", 50.0))
-                    seq_mat[0, -1, 5] = 2.0  # priority
-                    seq_mat[0, -1, 6] = 10.0 # sched_hour
-                    t_in = torch.tensor(seq_mat, dtype=torch.float32, device=self.device)
+                # 2. PyTorch GRU Challenger (Only if enabled and sequence ready)
+                if not predicted and self.champion_name == "PyTorch_GRU_Quantile" and self._gru_sequence_ready and self._gru_model is not None and hops <= settings.DIRECT_MODEL_MAX_HOPS:
+                    try:
+                        seq_mat = np.zeros((1, 8, 8), dtype=np.float32)
+                        seq_mat[0, -1, 0] = float(c_delay)
+                        seq_mat[0, -1, 1] = float(c_delay)
+                        seq_mat[0, -1, 2] = float(target_stop.get("halt_min", 2.0))
+                        seq_mat[0, -1, 3] = float(target_stop.get("distance_km", 50.0))
+                        seq_mat[0, -1, 5] = 2.0  # priority
+                        seq_mat[0, -1, 6] = 10.0 # sched_hour
+                        t_in = torch.tensor(seq_mat, dtype=torch.float32, device=self.device)
 
-                    with torch.no_grad():
-                        q10_t, q50_t, q90_t = self._gru_model(t_in)
-                        raw_p10 = float(q10_t.cpu().numpy().item()) - self._q_hat_gru
-                        raw_p50 = float(q50_t.cpu().numpy().item())
-                        raw_p90 = float(q90_t.cpu().numpy().item()) + self._q_hat_gru
-                else:
+                        with torch.no_grad():
+                            q10_t, q50_t, q90_t = self._gru_model(t_in)
+                            raw_p10 = float(q10_t.cpu().numpy().item()) - self._q_hat_gru
+                            raw_p50 = float(q50_t.cpu().numpy().item())
+                            raw_p90 = float(q90_t.cpu().numpy().item()) + self._q_hat_gru
+                        tier_used = "Tier2_PyTorch_GRU_Champion"
+                        predicted = True
+                    except Exception:
+                        predicted = False
+
+                # 3. Direct / Delta LightGBM Fallback
+                if not predicted:
                     tier_used = "Tier2_LightGBM_CQR"
                     if hops <= settings.DIRECT_MODEL_MAX_HOPS:
                         raw_p10 = float(self._direct_models[0.1].predict(arr_feat)[0]) - self._q_hat
@@ -326,6 +329,14 @@ class PredictorService:
                         raw_p10 = c_delay + (del_10 * hops) - self._q_hat
                         raw_p50 = c_delay + (del_50 * hops)
                         raw_p90 = c_delay + (del_90 * hops) + self._q_hat
+                    predicted = True
+
+                # 4. Dynamic TSR Kinematic Penalty: Additive adjustment to won model output
+                if vec.tsr_active_ahead_count > 0:
+                    tsr_penalty = max(8.0, float(vec.tsr_active_ahead_count) * 8.0)
+                    raw_p10 += tsr_penalty
+                    raw_p50 += tsr_penalty
+                    raw_p90 += tsr_penalty
             except Exception:
                 tier_used = "Tier1_HistLookup"
 
@@ -589,9 +600,12 @@ class PredictorService:
         likely_arr = add_min_to_sched(sched_arr, safe_p50)
         worst_arr = add_min_to_sched(sched_arr, safe_p90)
 
+        served_model_name = self.champion_name
+        if not self._gru_sequence_ready and served_model_name == "PyTorch_GRU_Quantile":
+            served_model_name = "Tier2_Convex_Ensemble_NNLS" if hasattr(self, "_ensemble") and self._ensemble is not None else "LightGBM_Quantile_Direct"
         pos_dict = position_record.to_dict()
         model_dict = {
-            "name": self.champion_name,
+            "name": served_model_name,
             "sha256": self.champion_sha,
             "version": self.served_model_version,
         }

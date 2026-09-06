@@ -10,9 +10,17 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+import random
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
+import torch
+
+np.random.seed(42)
+random.seed(42)
+torch.manual_seed(42)
+if torch.cuda.is_available():
+    torch.cuda.manual_seed_all(42)
 
 from config import settings
 from data.db import Database, get_db
@@ -209,27 +217,39 @@ class Evaluator:
             "test": {"start": test_start.strftime("%Y-%m-%d"), "end": test_end.strftime("%Y-%m-%d")},
         }
 
-    def run_rolling_origin_cv(self, num_folds: int = 6, embargo_days: int = 2) -> List[Dict]:
+    def run_rolling_origin_cv(self, num_folds: int = 6, embargo_days: int = 1) -> List[Dict]:
         """Runs 6-fold rolling-origin (prequential) cross-validation grouped by (train_no, run_date)."""
         import datetime
         with self.db.transaction() as cur:
-            cur.execute("SELECT MIN(run_date) as min_date, MAX(run_date) as max_date FROM station_events")
+            cur.execute("""
+                SELECT MIN(run_date) as min_date, MAX(run_date) as max_date
+                FROM (
+                    SELECT run_date, COUNT(*) as cnt
+                    FROM station_events
+                    GROUP BY run_date
+                    HAVING cnt >= 50
+                )
+            """)
             row = cur.fetchone()
 
-        min_d = datetime.date.fromisoformat(row["min_date"]) if row and row["min_date"] else datetime.date(2026, 7, 31)
-        max_d = datetime.date.fromisoformat(row["max_date"]) if row and row["max_date"] else datetime.date(2026, 8, 27)
+        min_d = datetime.date.fromisoformat(row["min_date"]) if row and row["min_date"] else datetime.date(2026, 8, 6)
+        max_d = datetime.date.fromisoformat(row["max_date"]) if row and row["max_date"] else datetime.date(2026, 9, 2)
 
         total_days = (max_d - min_d).days + 1
-        fold_span = max(3, total_days // (num_folds + 2))
+        min_train_days = 7
+        span_needed = 2 * embargo_days + 2
+        available_steps = total_days - min_train_days - span_needed
+        step_days = max(1, available_steps // max(1, num_folds - 1)) if total_days >= min_train_days + span_needed else 1
+        base_train_offset = min_train_days if total_days >= min_train_days + span_needed else 3
 
         folds = []
         for i in range(num_folds):
-            origin_offset = (i + 1) * fold_span
-            t_train_end = min_d + datetime.timedelta(days=origin_offset)
+            train_offset = base_train_offset + i * step_days
+            t_train_end = min_d + datetime.timedelta(days=train_offset)
             t_cal_start = t_train_end + datetime.timedelta(days=embargo_days)
-            t_cal_end = t_cal_start + datetime.timedelta(days=max(1, fold_span // 2))
+            t_cal_end = t_cal_start + datetime.timedelta(days=1)
             t_test_start = t_cal_end + datetime.timedelta(days=embargo_days)
-            t_test_end = min(max_d, t_test_start + datetime.timedelta(days=max(2, fold_span // 2)))
+            t_test_end = min(max_d, t_test_start + datetime.timedelta(days=1))
 
             if t_test_start > max_d or t_cal_start > max_d:
                 break
@@ -263,7 +283,7 @@ class Evaluator:
                         "crps": round(crps, 2),
                     })
                 else:
-                    fold_info.update({"samples": 0, "mae": None, "coverage_80": None, "winkler_score": None, "crps": None})
+                    fold_info.update({"samples": 0, "reason": "empty_date_range", "mae": None, "coverage_80": None, "winkler_score": None, "crps": None})
             except Exception as e:
                 fold_info.update({"error": str(e), "samples": 0, "mae": None, "coverage_80": None, "winkler_score": None, "crps": None})
 
@@ -282,7 +302,15 @@ class Evaluator:
 
         if not (test_start and test_end and train_cutoff):
             with self.db.transaction() as cur:
-                cur.execute("SELECT MIN(run_date) as min_date, MAX(run_date) as max_date FROM station_events")
+                cur.execute("""
+                    SELECT MIN(run_date) as min_date, MAX(run_date) as max_date
+                    FROM (
+                        SELECT run_date, COUNT(*) as cnt
+                        FROM station_events
+                        GROUP BY run_date
+                        HAVING cnt >= 50
+                    )
+                """)
                 row = cur.fetchone()
             if row and row["max_date"] and row["min_date"]:
                 min_d = datetime.date.fromisoformat(row["min_date"])

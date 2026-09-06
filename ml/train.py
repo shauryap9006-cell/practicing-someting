@@ -10,9 +10,17 @@ import datetime
 import json
 from pathlib import Path
 from typing import Dict, Tuple, Optional
+import random
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
+import torch
+
+np.random.seed(42)
+random.seed(42)
+torch.manual_seed(42)
+if torch.cuda.is_available():
+    torch.cuda.manual_seed_all(42)
 
 from config import settings
 from data.db import Database, get_db
@@ -126,6 +134,8 @@ class ModelTrainer:
             "colsample_bytree": 0.8,
             "verbosity": -1,
             "force_col_wise": True,
+            "random_state": 42,
+            "deterministic": True,
         }
         if is_delta:
             # TASK-6a: Delta model Huber-tolerant params
