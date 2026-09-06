@@ -22,7 +22,7 @@ def test_api_health():
     assert data["status"] in ("healthy", "not_ready")
     assert data["ready"] is (resp.status_code == 200)
     assert "connected" in data["db"]
-    assert data["clock_mode"] in ["live", "replay"]
+    assert data["clock_mode"] in ["live", "replay", "simulated"]
 
 
 def test_api_train_eta():
@@ -34,7 +34,7 @@ def test_api_train_eta():
     assert data["target_station"] == "NDLS"
     assert "confidence_band" in data
     assert "predicted_arr" in data
-    assert data["clock_mode"] in ["live", "replay"]
+    assert data["clock_mode"] in ["live", "replay", "simulated"]
 
 
 def test_api_train_journey():

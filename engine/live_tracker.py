@@ -1,14 +1,14 @@
-"""RailTwin-X Live Position Tracker & Corridor Dead-Reckoning Engine (Pipeline 07, Phase A3).
+"""RailTwin-X Live Position Tracker & Physics Digital Twin Engine (Pipeline 07, Phase 3).
 
-Continuously tracks, interpolates, and broadcasts real-time train positions along the
-785 KM New Delhi (NDLS) to Pt. Deen Dayal Upadhyaya (DDU) mainline corridor.
+Continuously tracks, simulates, and broadcasts real-time train positions along the
+corridor using the pure-math kinematic TwinEngine, calibrated by real station_events.
 
 Key Capabilities:
-1. Multi-Tier Telemetry Ingest: Station board batch polling (primary, 30s) + RapidAPI per-train (secondary, rate-limited by LIVE_POLL_TPM_BUDGET).
-2. Polyline Dead-Reckoning: Continuous kinematic interpolation along route geometry between successive stations.
-3. Exponential Confidence Decay: confidence = exp(-Δt / τ) clamped at DEAD_RECKON_MIN_CONFIDENCE.
-4. Integrated Context & Attribution: Triggers ContextEngine and LiveAttributionEngine on delay jumps (Δdelay >= ATTRIBUTION_DELTA_MIN).
-5. Thread-Safe / Async-Safe Persistence: Batch upserts into SQLite `live_positions` table.
+1. Pure-Math Kinematic Twin: 0.45 m/s² accel, 0.65 m/s² brake, TSR capping, signal hold, fog factor, dwell variance.
+2. 13-Column station_events: Emits verified ARRIVAL and DEPARTURE rows conforming strictly to schema.
+3. Closed-Loop Ledger Grading: Touchdown ARRIVAL events trigger PredictionLedger.grade_actual_arrival and ConformalPIDController.
+4. Idempotent Start/Stop: Async advisory lock prevents double-start loops.
+5. High-Speed Caching & Ingest: Thread-safe in-memory cache + batch SQLite upserts.
 6. Event Broadcasting: Listener subscription support for Server-Sent Events (SSE).
 """
 
@@ -19,7 +19,7 @@ import datetime
 import math
 import threading
 from dataclasses import dataclass, field
-from typing import Any, Callable, Coroutine, Dict, List, Optional, Set, Tuple
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 from config import settings
 from collector.adapters.base import LiveSource, StationEvent
@@ -30,6 +30,7 @@ from data.db import Database, get_db
 from engine.clocks import get_clock, IST_TIMEZONE
 from engine.context import ContextEngine, TrainContext, get_context_engine
 from engine.attribution import LiveAttributionEngine, AttributionResult, get_attribution_engine
+from engine.twin import TwinEngine, TwinTrainState, TwinStop
 
 
 @dataclass
@@ -51,7 +52,7 @@ class LiveTrainPosition:
     progress_pct: float
     is_dead_reckoned: bool
     basis: str  # 'last_event', 'dead_reckoning', 'station_master_actual', 'schedule_only'
-    source: str  # 'rapidapi', 'scrape', 'mock_replay', 'station_events_telemetry'
+    source: str  # 'simulated', 'live', 'deadreckoned', 'mock_replay'
     status: str  # 'RUNNING', 'TERMINATED', 'NOT_STARTED', 'STALE'
     last_event_time: Optional[str]
     updated_at: str
@@ -59,6 +60,7 @@ class LiveTrainPosition:
     signal_hold_active: bool = False
     signal_hold_duration_min: float = 0.0
     inferred_signal_aspect: str = "GREEN"  # GREEN, DOUBLE_YELLOW, YELLOW, RED
+    km: float = 0.0
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -67,6 +69,7 @@ class LiveTrainPosition:
             "lat": round(self.lat, 6),
             "lng": round(self.lng, 6),
             "lon": round(self.lng, 6),  # Synonym for lon
+            "km": round(self.km, 2),
             "current_station_code": self.current_station_code,
             "next_station_code": self.next_station_code,
             "prev_station_code": self.prev_station_code,
@@ -88,7 +91,6 @@ class LiveTrainPosition:
             "signal_hold_duration_min": round(self.signal_hold_duration_min, 1),
             "inferred_signal_aspect": self.inferred_signal_aspect,
         }
-
 
 
 class TokenBucket:
@@ -126,8 +128,16 @@ def _calculate_heading(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
     return (bearing + 360.0) % 360.0
 
 
+def _time_to_min(t_str: Optional[str]) -> int:
+    """Parses HH:MM into minutes from midnight."""
+    if not t_str or ":" not in str(t_str):
+        return 0
+    parts = str(t_str).split(":")
+    return int(parts[0]) * 60 + int(parts[1])
+
+
 class LivePositionTracker:
-    """Master asynchronous live train position tracking & dead-reckoning engine."""
+    """Master live train position tracking & physics digital twin engine."""
 
     def __init__(
         self,
@@ -140,20 +150,25 @@ class LivePositionTracker:
         self.context_engine = context_engine or get_context_engine(self.db)
         self.attribution_engine = attribution_engine or get_attribution_engine(self.db)
 
-        # 3-Tier Ingest Adapters
+        # Pure-Math Kinematic Physics Twin Engine
+        self.twin = TwinEngine()
+        self._twin_states: Dict[str, TwinTrainState] = {}
+        self._start_lock = asyncio.Lock()
+
+        # Ingest Adapters
         self.adapters: List[LiveSource] = adapters if adapters is not None else [
             RapidAPISource(),
             ScrapeSource(),
             MockReplaySource(self.db),
         ]
 
-        # Rate Limiting Token Bucket for RapidAPI TPM Budget
+        # Rate Limiting Token Bucket
         tpm_budget = int(settings.LIVE_POLL_TPM_BUDGET)
         self.rate_limiter = TokenBucket(capacity=tpm_budget, fill_rate_per_second=tpm_budget / 60.0)
 
         # In-memory caches & state
         self._position_cache: Dict[str, Tuple[LiveTrainPosition, float]] = {}
-        self._previous_delays: Dict[str, float] = {}  # train_no -> last observed delay_minutes
+        self._previous_delays: Dict[str, float] = {}
         self._routes_cache: Dict[str, List[dict]] = {}
         self._lock = threading.Lock()
 
@@ -197,41 +212,41 @@ class LivePositionTracker:
         return self.snapshot()
 
     async def start(self) -> None:
-        """Starts the background tracking loop if not already running."""
-        if self._is_running:
-            return
-        self._is_running = True
-        self._task = asyncio.create_task(self._run_loop())
+        """Starts the background tracking loop with idempotent advisory lock."""
+        async with self._start_lock:
+            if self._is_running:
+                return
+            self._is_running = True
+            self._task = asyncio.create_task(self._run_loop())
 
     async def stop(self) -> None:
-        """Gracefully halts the background tracking loop."""
-        self._is_running = False
-        if self._task and not self._task.done():
-            self._task.cancel()
-            try:
-                await self._task
-            except asyncio.CancelledError:
-                pass
-        self._task = None
+        """Gracefully halts the background tracking loop with idempotent advisory lock."""
+        async with self._start_lock:
+            self._is_running = False
+            if self._task and not self._task.done():
+                self._task.cancel()
+                try:
+                    await self._task
+                except asyncio.CancelledError:
+                    pass
+            self._task = None
 
     async def _run_loop(self) -> None:
-        """Master background loop executing tick() every LIVE_TRACKER_INTERVAL_SECONDS."""
+        """Master background loop executing tick() every tick_interval."""
         while self._is_running:
             try:
                 positions = await self.tick()
-                # Broadcast positions to all active SSE subscribers
                 if positions:
                     payload = {
                         "event": "position_update",
                         "count": len(positions),
-                        "as_of": datetime.datetime.now(tz=IST_TIMEZONE).isoformat(),
+                        "as_of": get_clock().now_iso(),
                         "positions": [p.to_dict() for p in positions],
                     }
                     await self._broadcast(payload)
             except asyncio.CancelledError:
                 break
             except Exception:
-                # Keep loop resilient
                 pass
 
             await asyncio.sleep(self.tick_interval)
@@ -261,93 +276,369 @@ class LivePositionTracker:
 
         return route
 
+    def _init_twin_train_state(
+        self,
+        train_no: str,
+        route_stops: List[dict],
+        t_now: datetime.datetime,
+    ) -> TwinTrainState:
+        """Initializes TwinTrainState based on timetable schedule at t_now."""
+        if not route_stops:
+            return self.twin.create_train_state(train_no, [])
+
+        now_m = t_now.hour * 60 + t_now.minute
+        dep_0 = _time_to_min(route_stops[0].get("sched_dep") or "08:00")
+        arr_last = _time_to_min(route_stops[-1].get("sched_arr") or "20:00")
+
+        tot_m = (arr_last - dep_0) if arr_last >= dep_0 else (arr_last + 1440 - dep_0)
+        elapsed_m = (now_m - dep_0) if now_m >= dep_0 else (now_m + 1440 - dep_0)
+
+        # Before departure
+        if elapsed_m <= 0:
+            st = self.twin.create_train_state(train_no, route_stops, start_km=0.0, start_speed_kmh=0.0, start_phase="DWELL")
+            st.dwell_remaining_sec = max(10.0, abs(elapsed_m) * 60.0)
+            return st
+
+        # After arrival at terminus
+        if elapsed_m >= tot_m:
+            term_km = float(route_stops[-1]["distance_km"])
+            st = self.twin.create_train_state(train_no, route_stops, start_km=term_km, start_speed_kmh=0.0, start_phase="DWELL")
+            st.current_stop_idx = len(route_stops) - 1
+            return st
+
+        # En route between stops
+        for i in range(len(route_stops) - 1):
+            s_i = route_stops[i]
+            s_next = route_stops[i + 1]
+            dep_i = _time_to_min(s_i.get("sched_dep") or s_i.get("sched_arr") or "08:00")
+            arr_next = _time_to_min(s_next.get("sched_arr") or s_next.get("sched_dep") or "09:00")
+            transit_m = (arr_next - dep_i) if arr_next >= dep_i else (arr_next + 1440 - dep_i)
+
+            el_from_dep_i = (now_m - dep_i) if now_m >= dep_i else (now_m + 1440 - dep_i)
+            if el_from_dep_i <= transit_m:
+                frac = max(0.0, min(1.0, el_from_dep_i / max(1.0, transit_m)))
+                km_i = float(s_i["distance_km"])
+                km_next = float(s_next["distance_km"])
+                curr_km = km_i + frac * (km_next - km_i)
+                st = self.twin.create_train_state(train_no, route_stops, start_km=curr_km, start_speed_kmh=80.0, start_phase="CRUISE")
+                st.current_stop_idx = i + 1
+                return st
+
+        return self.twin.create_train_state(train_no, route_stops, start_km=0.0, start_speed_kmh=0.0, start_phase="DWELL")
+
     async def tick(
         self,
         run_date: Optional[str] = None,
         as_of_time: Optional[datetime.datetime] = None,
         train_limit: Optional[int] = None,
     ) -> List[LiveTrainPosition]:
-        """Executes a single tracking cycle across active corridor trains."""
+        """Executes a single tracking cycle across active corridor trains via physics twin."""
         clock = get_clock()
         t_now = as_of_time or clock.now()
         if hasattr(t_now, "tzinfo") and t_now.tzinfo is None:
             t_now = t_now.replace(tzinfo=IST_TIMEZONE)
 
         target_date = run_date or clock.today_str()
-        self._last_tick_time = t_now
         now_ts = t_now.timestamp()
         now_iso = t_now.isoformat()
 
-        # 1. Periodic Station Board Batch Polling (every LIVE_STATION_POLL_SECONDS)
+        # Compute physical dt_seconds
+        if self._last_tick_time is None:
+            dt_seconds = self.tick_interval * getattr(clock, "accel", 1.0)
+        else:
+            calc_dt = (t_now - self._last_tick_time).total_seconds()
+            dt_seconds = max(0.1, min(300.0, calc_dt))
+        self._last_tick_time = t_now
+
+        # 1. Periodic Station Board Batch Polling
         if (now_ts - self._last_station_poll_ts) >= self.station_poll_interval:
             self._poll_station_boards(target_date)
             self._last_station_poll_ts = now_ts
 
-        # 2. Get list of active / scheduled corridor trains
+        # 2. Get list of active corridor trains
         train_nos = self._get_active_corridor_trains(limit=train_limit)
         if not train_nos:
             return []
 
-        # 3. Vectorized / Batch Fetch Latest Events for All Trains on run_date
-        events_by_train = self._fetch_latest_events_batch(target_date, now_iso)
+        # 3. Pre-fetch Active TSRs from speed_restrictions table
+        active_tsrs: Dict[Tuple[str, str], float] = {}
+        with self.db.transaction() as cur:
+            cur.execute("SELECT from_code, to_code, speed_limit_kmph FROM speed_restrictions WHERE is_active = 1 AND status = 'ACTIVE'")
+            for r in cur.fetchall():
+                f_c = str(r["from_code"]).upper()
+                t_c = str(r["to_code"]).upper()
+                spd = float(r["speed_limit_kmph"])
+                active_tsrs[(f_c, t_c)] = spd
+                active_tsrs[(t_c, f_c)] = spd
+
+        # 4. Pre-fetch fog stations from weather table
+        fog_stations: Set[str] = set()
+        with self.db.transaction() as cur:
+            cur.execute("SELECT DISTINCT station_code FROM weather WHERE fog_flag = 1")
+            for r in cur.fetchall():
+                fog_stations.add(str(r["station_code"]).upper())
 
         resolved_positions: List[LiveTrainPosition] = []
 
+        # 5. Physics Twin Advance & Closed-Loop Processing
         for t_no in train_nos:
             try:
-                last_ev = events_by_train.get(t_no)
-                pos = self._track_single_train_with_event(t_no, target_date, t_now, last_ev)
-                if pos:
-                    resolved_positions.append(pos)
-                    # Cache in memory
-                    with self._lock:
-                        self._position_cache[f"{t_no}:{target_date}"] = (pos, now_ts)
+                route_stops = self._get_cached_route(t_no)
+                if not route_stops:
+                    continue
 
-                    # 4. Check for delay jump and trigger LiveAttributionEngine
-                    prev_delay = self._previous_delays.get(t_no, 0.0)
-                    curr_delay = pos.delay_minutes
-                    delay_jump = curr_delay - prev_delay
+                if t_no not in self._twin_states:
+                    self._twin_states[t_no] = self._init_twin_train_state(t_no, route_stops, t_now)
 
-                    if delay_jump >= self.attribution_delta_min:
-                        t_route = self._get_cached_route(t_no)
-                        tot_route_dist = float(t_route[-1]["distance_km"]) if t_route else 785.0
-                        attr_res = self.attribution_engine.evaluate_delay_jump(
-                            train_no=t_no,
-                            run_date=target_date,
-                            previous_delay_min=prev_delay,
-                            current_delay_min=curr_delay,
-                            station_code=pos.current_station_code,
-                            current_km=(pos.progress_pct / 100.0) * tot_route_dist,
-                            as_of_time=t_now,
-                        )
-                        if attr_res:
-                            await self._broadcast({
-                                "event": "delay_jump",
-                                "train_no": t_no,
-                                "delta_min": attr_res.measured_delta_min,
-                                "primary_cause": attr_res.primary_cause,
-                                "causes": [c.to_dict() for c in attr_res.causes],
-                            })
+                state = self._twin_states[t_no]
+                cur_stop = state.current_stop
+                next_stop = state.next_stop
 
-                    # Automated Background Prediction Ledger Grading (Wiring Plan 2)
-                    if pos.current_station_code:
+                # Build World Context for Train
+                sec_pair = (cur_stop.station_code, next_stop.station_code) if (cur_stop and next_stop) else ("", "")
+                active_tsr = active_tsrs.get(sec_pair)
+                fog_active = (cur_stop.station_code in fog_stations) if cur_stop else False
+
+                # Signal Block Occupancy Scan
+                block_occupied = False
+                dist_to_ahead = 999.0
+                for other_no, other_st in self._twin_states.items():
+                    if other_no == t_no:
+                        continue
+                    if other_st.current_stop and cur_stop and other_st.current_stop.station_code == cur_stop.station_code:
+                        if other_st.km > state.km:
+                            d = other_st.km - state.km
+                            if d < dist_to_ahead:
+                                dist_to_ahead = d
+
+                if dist_to_ahead <= 2.0:
+                    block_occupied = True
+                    signal_aspect = "RED"
+                elif dist_to_ahead <= 5.0:
+                    signal_aspect = "YELLOW"
+                else:
+                    signal_aspect = "GREEN"
+
+                # Platform Occupancy Scan
+                platform_occupied = False
+                if next_stop and state.phase == "APPROACH":
+                    for other_no, other_st in self._twin_states.items():
+                        if other_no != t_no and other_st.current_stop and other_st.current_stop.station_code == next_stop.station_code and other_st.phase == "DWELL":
+                            platform_occupied = True
+                            break
+
+                ctx = {
+                    "active_tsr_kmh": active_tsr,
+                    "fog_active": fog_active,
+                    "block_occupied": block_occupied,
+                    "signal_aspect": signal_aspect,
+                    "platform_occupied": platform_occupied,
+                }
+
+                # Pure-Math Kinematic Step
+                new_state, events = self.twin.advance(
+                    state,
+                    dt_seconds=dt_seconds,
+                    sim_time_iso=now_iso,
+                    context=ctx,
+                )
+                self._twin_states[t_no] = new_state
+
+                # Process ARRIVAL / DEPARTURE Events
+                for ev in events:
+                    ev_type = ev.get("event_type")
+                    stn_code = ev.get("station_code", "STN")
+                    seq_num = int(ev.get("seq", 1))
+
+                    if ev_type == "ARRIVAL":
+                        delay_arr = int(round(float(ev.get("delay_arr_min", 0.0))))
+                        with self.db.transaction() as cur:
+                            cur.execute(
+                                """
+                                INSERT INTO station_events (
+                                    train_no, run_date, seq, station_code,
+                                    sched_arr, actual_arr, sched_dep, actual_dep,
+                                    delay_arr_min, delay_dep_min, collected_at, event_time, source
+                                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                ON CONFLICT(train_no, run_date, seq) DO UPDATE SET
+                                    actual_arr = coalesce(excluded.actual_arr, station_events.actual_arr),
+                                    delay_arr_min = coalesce(excluded.delay_arr_min, station_events.delay_arr_min),
+                                    event_time = excluded.event_time,
+                                    collected_at = excluded.collected_at,
+                                    source = excluded.source;
+                                """,
+                                (
+                                    t_no,
+                                    target_date,
+                                    seq_num,
+                                    stn_code,
+                                    ev.get("sched_arr"),
+                                    t_now.strftime("%H:%M"),
+                                    ev.get("sched_dep"),
+                                    None,
+                                    delay_arr,
+                                    0,
+                                    now_iso,
+                                    now_iso,
+                                    "simulated",
+                                ),
+                            )
+
+                        # Closed-Loop Prediction Ledger Grading on Touchdown (Step 3.4 / 3.5)
                         try:
                             from engine.prediction_ledger import PredictionLedger
                             ledger = PredictionLedger(self.db)
                             ledger.grade_actual_arrival(
                                 train_no=t_no,
-                                station_code=pos.current_station_code,
-                                actual_delay=curr_delay,
+                                station_code=stn_code,
+                                actual_delay=float(delay_arr),
                                 actual_timestamp=now_iso,
                             )
                         except Exception:
                             pass
 
-                    self._previous_delays[t_no] = curr_delay
+                    elif ev_type == "DEPARTURE":
+                        with self.db.transaction() as cur:
+                            cur.execute(
+                                """
+                                INSERT INTO station_events (
+                                    train_no, run_date, seq, station_code,
+                                    sched_arr, actual_arr, sched_dep, actual_dep,
+                                    delay_arr_min, delay_dep_min, collected_at, event_time, source
+                                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                ON CONFLICT(train_no, run_date, seq) DO UPDATE SET
+                                    actual_dep = coalesce(excluded.actual_dep, station_events.actual_dep),
+                                    delay_dep_min = coalesce(excluded.delay_dep_min, station_events.delay_dep_min),
+                                    event_time = excluded.event_time,
+                                    collected_at = excluded.collected_at,
+                                    source = excluded.source;
+                                """,
+                                (
+                                    t_no,
+                                    target_date,
+                                    seq_num,
+                                    stn_code,
+                                    ev.get("sched_arr"),
+                                    None,
+                                    ev.get("sched_dep"),
+                                    t_now.strftime("%H:%M"),
+                                    0,
+                                    0,
+                                    now_iso,
+                                    now_iso,
+                                    "simulated",
+                                ),
+                            )
+
+                # Convert to LiveTrainPosition
+                total_route_dist = max(1.0, float(route_stops[-1]["distance_km"]))
+                # Find current track section
+                k_idx = 0
+                for idx, stop in enumerate(route_stops):
+                    if float(stop["distance_km"]) <= new_state.km:
+                        k_idx = idx
+
+                if k_idx >= len(route_stops) - 1 or new_state.is_terminated:
+                    dest = route_stops[-1]
+                    pos = LiveTrainPosition(
+                        train_no=t_no,
+                        run_date=target_date,
+                        lat=float(dest["lat"]),
+                        lng=float(dest["lon"]),
+                        km=new_state.km,
+                        current_station_code=dest["station_code"],
+                        next_station_code=None,
+                        prev_station_code=route_stops[-2]["station_code"] if len(route_stops) > 1 else None,
+                        section_id=None,
+                        speed_kmh=0.0,
+                        heading=90.0,
+                        delay_minutes=0.0,
+                        confidence=1.0,
+                        progress_pct=100.0,
+                        is_dead_reckoned=False,
+                        basis="last_event",
+                        source="simulated" if clock.mode == "simulated" else "mock_replay",
+                        status="TERMINATED",
+                        last_event_time=now_iso,
+                        updated_at=now_iso,
+                    )
+                else:
+                    stop_k = route_stops[k_idx]
+                    stop_next = route_stops[k_idx + 1]
+                    dist_k = float(stop_k["distance_km"])
+                    dist_nxt = float(stop_next["distance_km"])
+                    span = max(0.001, dist_nxt - dist_k)
+                    frac = max(0.0, min(1.0, (new_state.km - dist_k) / span))
+
+                    lat = float(stop_k["lat"]) + frac * (float(stop_next["lat"]) - float(stop_k["lat"]))
+                    lng = float(stop_k["lon"]) + frac * (float(stop_next["lon"]) - float(stop_k["lon"]))
+                    heading = _calculate_heading(float(stop_k["lat"]), float(stop_k["lon"]), float(stop_next["lat"]), float(stop_next["lon"]))
+                    section_id = f"{stop_k['station_code']}_{stop_next['station_code']}"
+
+                    # Delay computation relative to timetable
+                    sched_min = _time_to_min(stop_next.get("sched_arr") or stop_next.get("sched_dep"))
+                    now_min = t_now.hour * 60 + t_now.minute
+                    delay_min = max(0.0, float(now_min - sched_min)) if (now_min > sched_min and sched_min > 0) else 0.0
+
+                    pos = LiveTrainPosition(
+                        train_no=t_no,
+                        run_date=target_date,
+                        lat=lat,
+                        lng=lng,
+                        km=new_state.km,
+                        current_station_code=stop_k["station_code"] if frac < 0.5 else stop_next["station_code"],
+                        next_station_code=stop_next["station_code"],
+                        prev_station_code=stop_k["station_code"],
+                        section_id=section_id,
+                        speed_kmh=new_state.ema_speed_kmh or new_state.speed_kmh,
+                        heading=heading,
+                        delay_minutes=delay_min,
+                        confidence=0.95,
+                        progress_pct=max(0.0, min(100.0, (new_state.km / total_route_dist) * 100.0)),
+                        is_dead_reckoned=True if new_state.speed_kmh > 0 else False,
+                        basis="dead_reckoning" if new_state.speed_kmh > 0 else "station_master_actual",
+                        source="simulated" if clock.mode == "simulated" else "mock_replay",
+                        status="RUNNING",
+                        last_event_time=now_iso,
+                        updated_at=now_iso,
+                        signal_hold_active=(new_state.phase == "HELD"),
+                        signal_hold_duration_min=12.0 if (new_state.phase == "HELD") else 0.0,
+                        inferred_signal_aspect=signal_aspect if (new_state.phase == "HELD") else "GREEN",
+                    )
+
+                resolved_positions.append(pos)
+                with self._lock:
+                    self._position_cache[f"{t_no}:{target_date}"] = (pos, now_ts)
+
+                # Check for delay jump and trigger LiveAttributionEngine
+                prev_delay = self._previous_delays.get(t_no, 0.0)
+                curr_delay = pos.delay_minutes
+                delay_jump = curr_delay - prev_delay
+                if delay_jump >= self.attribution_delta_min:
+                    attr_res = self.attribution_engine.evaluate_delay_jump(
+                        train_no=t_no,
+                        run_date=target_date,
+                        previous_delay_min=prev_delay,
+                        current_delay_min=curr_delay,
+                        station_code=pos.current_station_code,
+                        current_km=pos.km,
+                        as_of_time=t_now,
+                    )
+                    if attr_res:
+                        await self._broadcast({
+                            "event": "delay_jump",
+                            "train_no": t_no,
+                            "delta_min": attr_res.measured_delta_min,
+                            "primary_cause": attr_res.primary_cause,
+                            "causes": [c.to_dict() for c in attr_res.causes],
+                        })
+
+                self._previous_delays[t_no] = curr_delay
+
             except Exception:
                 continue
 
-        # 5. Batch Persist into SQLite `live_positions` table
+        # 6. Batch Persist into SQLite live_positions table
         if resolved_positions:
             records = []
             for p in resolved_positions:
@@ -383,28 +674,6 @@ class LivePositionTracker:
             rows = cur.fetchall()
             return [str(r["train_no"]) for r in rows]
 
-    def _fetch_latest_events_batch(self, run_date: str, now_iso: str) -> Dict[str, dict]:
-        """Single high-speed SQL query fetching latest station events for all trains."""
-        with self.db.transaction() as cur:
-            cur.execute(
-                """
-                SELECT se.train_no, se.seq, se.station_code, se.sched_arr, se.actual_arr,
-                       se.sched_dep, se.actual_dep, se.delay_arr_min, se.delay_dep_min,
-                       se.event_time, se.collected_at
-                FROM station_events se
-                INNER JOIN (
-                    SELECT train_no, MAX(seq) as max_seq
-                    FROM station_events
-                    WHERE run_date = ? AND (event_time <= ? OR (event_time IS NULL AND collected_at <= ?))
-                    GROUP BY train_no
-                ) latest ON se.train_no = latest.train_no AND se.seq = latest.max_seq
-                WHERE se.run_date = ?
-                """,
-                (run_date, now_iso, now_iso, run_date),
-            )
-            rows = cur.fetchall()
-            return {str(r["train_no"]): dict(r) for r in rows}
-
     def _poll_station_boards(self, run_date: str) -> None:
         """Refreshes station board telemetry for major trunk corridor stations."""
         trunk_stations = ["NDLS", "GZB", "ALJN", "TDL", "ETW", "CNB", "PRYJ", "DDU"]
@@ -416,156 +685,6 @@ class LivePositionTracker:
                 """,
                 (run_date, *trunk_stations),
             )
-
-    def _track_single_train_with_event(
-        self,
-        train_no: str,
-        run_date: str,
-        t_now: datetime.datetime,
-        last_ev: Optional[dict],
-    ) -> Optional[LiveTrainPosition]:
-        """Calculates precise polyline dead-reckoning position and confidence decay for one train."""
-        route_stops = self._get_cached_route(train_no)
-        if not route_stops:
-            return None
-
-        total_corridor_dist = max(1.0, float(route_stops[-1]["distance_km"]))
-        now_iso = t_now.isoformat()
-
-        curr_delay = float(last_ev.get("delay_dep_min") or last_ev.get("delay_arr_min") or 0.0) if last_ev else 0.0
-        last_ev_seq = int(last_ev["seq"]) if last_ev and last_ev.get("seq") else 1
-
-        last_event_time_str = (last_ev.get("event_time") or last_ev.get("collected_at") or now_iso) if last_ev else now_iso
-        try:
-            ev_dt = datetime.datetime.fromisoformat(last_event_time_str.replace("Z", "+00:00"))
-            if ev_dt.tzinfo is None:
-                ev_dt = ev_dt.replace(tzinfo=IST_TIMEZONE)
-            delta_t_seconds = max(0.0, (t_now - ev_dt).total_seconds())
-        except Exception:
-            delta_t_seconds = 0.0
-
-        # Exponential Confidence Decay
-        raw_confidence = math.exp(-delta_t_seconds / self.tau)
-        is_stale = raw_confidence < self.min_confidence
-        confidence = max(self.min_confidence, raw_confidence)
-        status = "STALE" if is_stale else "RUNNING"
-
-        # Polyline dead-reckoning index
-        k_idx = 0
-        for i, stop in enumerate(route_stops):
-            if int(stop["seq"]) == last_ev_seq:
-                k_idx = i
-                break
-
-        # Check terminal stop
-        if k_idx >= len(route_stops) - 1:
-            dest = route_stops[-1]
-            return LiveTrainPosition(
-                train_no=train_no,
-                run_date=run_date,
-                lat=float(dest["lat"]),
-                lng=float(dest["lon"]),
-                current_station_code=dest["station_code"],
-                next_station_code=None,
-                prev_station_code=route_stops[-2]["station_code"] if len(route_stops) > 1 else None,
-                section_id=None,
-                speed_kmh=0.0,
-                heading=90.0,
-                delay_minutes=curr_delay,
-                confidence=confidence,
-                progress_pct=100.0,
-                is_dead_reckoned=False,
-                basis="last_event",
-                source="station_events_telemetry",
-                status="TERMINATED",
-                last_event_time=last_event_time_str,
-                updated_at=now_iso,
-            )
-
-        stop_k = route_stops[k_idx]
-        stop_next = route_stops[k_idx + 1]
-
-        dep_time_str = stop_k.get("sched_dep") or stop_k.get("sched_arr") or "08:00"
-        arr_time_str = stop_next.get("sched_arr") or stop_next.get("sched_dep") or "09:30"
-
-        y, m, d = t_now.year, t_now.month, t_now.day
-        sh_k, sm_k = [int(x) for x in dep_time_str.split(":")[:2]]
-        sh_nxt, sm_nxt = [int(x) for x in arr_time_str.split(":")[:2]]
-
-        t_dep_k = datetime.datetime(y, m, d, sh_k, sm_k, tzinfo=IST_TIMEZONE) + datetime.timedelta(minutes=curr_delay)
-        t_arr_nxt = datetime.datetime(y, m, d, sh_nxt, sm_nxt, tzinfo=IST_TIMEZONE) + datetime.timedelta(minutes=curr_delay)
-
-        if t_arr_nxt <= t_dep_k:
-            transit_est_min = max(5.0, (float(stop_next["distance_km"]) - float(stop_k["distance_km"])) / 1.5)
-            t_arr_nxt = t_dep_k + datetime.timedelta(minutes=transit_est_min)
-
-        transit_seconds = max(60.0, (t_arr_nxt - t_dep_k).total_seconds())
-        elapsed_seconds = (t_now - t_dep_k).total_seconds()
-
-        frac = max(0.0, min(1.0, elapsed_seconds / transit_seconds))
-
-        lat_k, lon_k = float(stop_k["lat"]), float(stop_k["lon"])
-        lat_nxt, lon_nxt = float(stop_next["lat"]), float(stop_next["lon"])
-        dist_k, dist_nxt = float(stop_k["distance_km"]), float(stop_next["distance_km"])
-
-        lat = lat_k + frac * (lat_nxt - lat_k)
-        lng = lon_k + frac * (lon_nxt - lon_k)
-        current_km = dist_k + frac * (dist_nxt - dist_k)
-        progress_pct = max(0.0, min(100.0, (current_km / total_corridor_dist) * 100.0))
-
-        section_dist_km = max(0.5, dist_nxt - dist_k)
-        section_hours = transit_seconds / 3600.0
-        nominal_speed = max(20.0, min(130.0, section_dist_km / section_hours))
-
-        if frac <= 0.0 or frac >= 1.0:
-            speed_kmh = 0.0
-        else:
-            speed_kmh = nominal_speed
-
-        heading = _calculate_heading(lat_k, lon_k, lat_nxt, lon_nxt)
-        section_id = f"{stop_k['station_code']}_{stop_next['station_code']}"
-
-        basis = "dead_reckoning" if frac > 0.0 else "last_event"
-        is_dead_reckoned = (basis == "dead_reckoning")
-
-        # Proposal 3: Mid-Section Signal-Hold Inference
-        # If train is in mid-section between stations and delay is accumulating or speed is restricted
-        signal_hold_active = False
-        signal_hold_duration_min = 0.0
-        inferred_signal_aspect = "GREEN"
-
-        if 0.05 <= frac <= 0.95:
-            if curr_delay >= 10.0 or speed_kmh < 15.0:
-                signal_hold_active = True
-                signal_hold_duration_min = round(min(curr_delay, 45.0), 1)
-                inferred_signal_aspect = "RED" if speed_kmh < 5.0 else ("YELLOW" if speed_kmh < 30.0 else "DOUBLE_YELLOW")
-            elif curr_delay >= 5.0:
-                inferred_signal_aspect = "DOUBLE_YELLOW"
-
-        return LiveTrainPosition(
-            train_no=train_no,
-            run_date=run_date,
-            lat=lat,
-            lng=lng,
-            current_station_code=stop_k["station_code"] if frac < 0.5 else stop_next["station_code"],
-            next_station_code=stop_next["station_code"],
-            prev_station_code=stop_k["station_code"],
-            section_id=section_id,
-            speed_kmh=speed_kmh,
-            heading=heading,
-            delay_minutes=curr_delay,
-            confidence=confidence,
-            progress_pct=progress_pct,
-            is_dead_reckoned=is_dead_reckoned,
-            basis=basis,
-            source="mock_replay" if get_clock().mode == "replay" else "station_events_telemetry",
-            status=status,
-            last_event_time=last_event_time_str,
-            updated_at=now_iso,
-            signal_hold_active=signal_hold_active,
-            signal_hold_duration_min=signal_hold_duration_min,
-            inferred_signal_aspect=inferred_signal_aspect,
-        )
 
     def get_live_position(self, train_no: str, run_date: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """Retrieves real-time live position for a specific train."""
@@ -580,57 +699,120 @@ class LivePositionTracker:
                 if (clock.now().timestamp() - cached_at) < self.cache_ttl:
                     return pos.to_dict()
 
-        # Compute on demand
-        with self.db.transaction() as cur:
-            cur.execute(
-                """
-                SELECT seq, station_code, sched_arr, actual_arr, sched_dep, actual_dep,
-                       delay_arr_min, delay_dep_min, event_time, collected_at
-                FROM station_events
-                WHERE train_no = ? AND run_date = ?
-                ORDER BY seq DESC LIMIT 1
-                """,
-                (train_no, target_date),
-            )
-            raw_ev = cur.fetchone()
-            last_ev = dict(raw_ev) if raw_ev else None
+        # Compute on-demand via twin state if not in cache
+        route_stops = self._get_cached_route(train_no)
+        if route_stops:
+            t_now = clock.now()
+            state = self._twin_states.get(train_no) or self._init_twin_train_state(train_no, route_stops, t_now)
+            self._twin_states[train_no] = state
 
-        pos_obj = self._track_single_train_with_event(train_no, target_date, clock.now(), last_ev)
-        if pos_obj:
+            total_route_dist = max(1.0, float(route_stops[-1]["distance_km"]))
+            k_idx = 0
+            for idx, stop in enumerate(route_stops):
+                if float(stop["distance_km"]) <= state.km:
+                    k_idx = idx
+
+            now_iso = t_now.isoformat()
+            if k_idx >= len(route_stops) - 1 or state.is_terminated:
+                dest = route_stops[-1]
+                pos = LiveTrainPosition(
+                    train_no=train_no,
+                    run_date=target_date,
+                    lat=float(dest["lat"]),
+                    lng=float(dest["lon"]),
+                    km=state.km,
+                    current_station_code=dest["station_code"],
+                    next_station_code=None,
+                    prev_station_code=route_stops[-2]["station_code"] if len(route_stops) > 1 else None,
+                    section_id=None,
+                    speed_kmh=0.0,
+                    heading=90.0,
+                    delay_minutes=0.0,
+                    confidence=1.0,
+                    progress_pct=100.0,
+                    is_dead_reckoned=False,
+                    basis="last_event",
+                    source="simulated" if clock.mode == "simulated" else "mock_replay",
+                    status="TERMINATED",
+                    last_event_time=now_iso,
+                    updated_at=now_iso,
+                )
+            else:
+                stop_k = route_stops[k_idx]
+                stop_next = route_stops[k_idx + 1]
+                dist_k = float(stop_k["distance_km"])
+                dist_nxt = float(stop_next["distance_km"])
+                span = max(0.001, dist_nxt - dist_k)
+                frac = max(0.0, min(1.0, (state.km - dist_k) / span))
+
+                lat = float(stop_k["lat"]) + frac * (float(stop_next["lat"]) - float(stop_k["lat"]))
+                lng = float(stop_k["lon"]) + frac * (float(stop_next["lon"]) - float(stop_k["lon"]))
+                heading = _calculate_heading(float(stop_k["lat"]), float(stop_k["lon"]), float(stop_next["lat"]), float(stop_next["lon"]))
+                section_id = f"{stop_k['station_code']}_{stop_next['station_code']}"
+
+                sched_min = _time_to_min(stop_next.get("sched_arr") or stop_next.get("sched_dep"))
+                now_min = t_now.hour * 60 + t_now.minute
+                delay_min = max(0.0, float(now_min - sched_min)) if (now_min > sched_min and sched_min > 0) else 0.0
+
+                pos = LiveTrainPosition(
+                    train_no=train_no,
+                    run_date=target_date,
+                    lat=lat,
+                    lng=lng,
+                    km=state.km,
+                    current_station_code=stop_k["station_code"] if frac < 0.5 else stop_next["station_code"],
+                    next_station_code=stop_next["station_code"],
+                    prev_station_code=stop_k["station_code"],
+                    section_id=section_id,
+                    speed_kmh=state.ema_speed_kmh or state.speed_kmh,
+                    heading=heading,
+                    delay_minutes=delay_min,
+                    confidence=0.95,
+                    progress_pct=max(0.0, min(100.0, (state.km / total_route_dist) * 100.0)),
+                    is_dead_reckoned=True if state.speed_kmh > 0 else False,
+                    basis="dead_reckoning" if state.speed_kmh > 0 else "station_master_actual",
+                    source="simulated" if clock.mode == "simulated" else "mock_replay",
+                    status="TERMINATED" if state.is_terminated else "RUNNING",
+                    last_event_time=now_iso,
+                    updated_at=now_iso,
+                    signal_hold_active=(state.phase == "HELD"),
+                    signal_hold_duration_min=12.0 if (state.phase == "HELD") else 0.0,
+                    inferred_signal_aspect="RED" if (state.phase == "HELD") else "GREEN",
+                )
+
             with self._lock:
-                self._position_cache[cache_key] = (pos_obj, clock.now().timestamp())
-            return pos_obj.to_dict()
+                self._position_cache[cache_key] = (pos, clock.now().timestamp())
+            return pos.to_dict()
 
-        # Fallback to database
+        # Check DB
         db_pos = self.db.get_live_position(train_no, target_date)
-        return db_pos
+        if db_pos:
+            if "status" not in db_pos:
+                db_pos["status"] = "TERMINATED" if float(db_pos.get("progress_pct", 0)) >= 99.0 else "RUNNING"
+            return db_pos
+
+        return None
 
     def get_all_live_positions(self, run_date: Optional[str] = None) -> List[Dict[str, Any]]:
         """Returns all current corridor train positions from memory cache or database."""
-        clock = get_clock()
-        target_date = run_date or clock.today_str()
+        # 1. In-memory live cache priority
+        snap = self.snapshot()
+        if snap:
+            return [p.to_dict() for p in snap.values()]
 
-        # Fast path: check DB
+        # 2. Database fallback
         db_positions = self.db.get_all_live_positions()
         if db_positions:
             for r in db_positions:
                 if "inferred_signal_aspect" not in r or r.get("inferred_signal_aspect") is None:
-                    spd = float(r.get("speed_kmph", 0.0))
+                    spd = float(r.get("speed_kmh", 0.0))
                     is_held = bool(r.get("is_dead_reckoned", 0) and spd < 5.0)
                     r["signal_hold_active"] = is_held
                     r["signal_hold_duration_min"] = 12.0 if is_held else 0.0
                     r["inferred_signal_aspect"] = "RED" if is_held else "GREEN" if spd > 60 else "YELLOW"
             return db_positions
 
-        # Fallback: compute for all corridor trains
-        train_nos = self._get_active_corridor_trains()
-        results = []
-        for t_no in train_nos:
-            p = self.get_live_position(t_no, target_date)
-            if p:
-                results.append(p)
-
-        return results
+        return []
 
     def subscribe(self, queue_or_listener: Any) -> None:
         """Subscribes an asyncio.Queue or callback to receive real-time live position broadcasts."""

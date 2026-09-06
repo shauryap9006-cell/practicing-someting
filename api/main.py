@@ -69,6 +69,12 @@ async def lifespan(app: FastAPI):
     counts = db.table_counts()
     print(f"[INFO] SQLite Database initialized with {counts.get('station_events', 0):,} station events.")
 
+    # Initialize SimulatedClock as global clock (F02, F28)
+    from engine.sim_clock import get_sim_clock
+    from engine.clocks import set_global_clock
+    sim_clock = get_sim_clock(db)
+    set_global_clock(sim_clock)
+
     # Pipeline 07: Start background live position tracking loop
     tracker = get_live_tracker(db)
     await tracker.start()

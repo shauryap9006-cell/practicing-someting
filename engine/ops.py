@@ -582,7 +582,8 @@ class ConnectionCustodyEngine:
                 if prob < 85.0:
                     needed_hold_m = max(0, int(p50_arr_m + min_connection_time_min - c_dep_m))
                     if 0 < needed_hold_m <= 20:
-                        c_class = str(c.get("class", "express")).lower()
+                        c_dict = dict(c)
+                        c_class = str(c_dict.get("class", "express") or "express").lower()
                         # Dynamic capacity based on train class
                         capacity = 1100 if ("rajdhani" in c_class or "shatabdi" in c_class or "vande" in c_class) else 1650
                         onboard_pax = int(capacity * 0.82)

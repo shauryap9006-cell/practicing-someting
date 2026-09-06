@@ -51,3 +51,12 @@
 - `ml/train.py`: Added global determinism seeds and LightGBM parameters (`random_state=42`, `deterministic=True`).
 - Tests: Added `tests/test_phase2_ml_integrity.py` asserting D01 ensemble serving, additive TSR penalty, D02 GRU gating, and D09 quantile monotonicity. Suite passed: 275/275 tests green. Cryptographic ledger verified: (True, 5622, None).
 
+## Phase 3: The Physics Twin
+- `engine/sim_clock.py`: Virtual IST clock implemented (`SimulatedClock`), supporting acceleration factor (1x to 60x), manual jump, and auto start hour detection (hour 11:00 with 66 concurrent active trains). Registered `/v1/meta/clock` and `/v1/demo/time`.
+- `engine/twin.py`: Pure-math kinematic digital twin engine (`TwinEngine`) with 0.45 m/s² accel, 0.65 m/s² brake, sub-second stepping, TSR capping, signal hold, fog factor, dwell variance, and ARRIVAL/DEPARTURE event emissions. Monotonic distance strictly guaranteed.
+- Gate 3.4 Branch A: Graded fields outside hash block. Executed `scripts/regrade_ledger.py` resetting 126 polluted rows. Cryptographic hash chain verified at 5,865 blocks.
+- `engine/prediction_ledger.py`: Closed-loop touchdown auto-grading wired to `ConformalPIDController` (`ml/conformal.py`). Updates `conformal_pid_state` table outside transaction to eliminate SQLite lock contention.
+- `engine/live_tracker.py`: Integrated `TwinEngine` into `tick()`. Orchestrates active corridor trains, generates 13-column `station_events` rows (`source="simulated"`), invokes touchdown ledger grading, dynamic section occupancy calculation, and async advisory lock against double-starts.
+- `api/live_routes.py` & `api/passenger_routes.py`: Wrapped blocking tracker/DB calls in `asyncio.to_thread` for SSE stream generators.
+- Tests: Created `tests/test_heartbeat.py` covering 300-min pure-math simulation, idempotent advisory lock, 13-column station_events integration, and SSE smoke frame validation. Ledger integrity verified: (True, 6142, None).
+

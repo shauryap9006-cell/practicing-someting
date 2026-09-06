@@ -86,6 +86,22 @@ def reset_shock_events() -> Dict[str, Any]:
     }
 
 
+@router.post("/v1/demo/time", response_model=None)
+@router.post("/api/v1/demo/time", response_model=None)
+@router.post("/demo/time", response_model=None)
+def post_demo_time(payload: dict) -> Dict[str, Any]:
+    """Controls simulated clock (jump_to, accel) for hackathon demo scenarios."""
+    if not settings.DEMO_ALLOW_CLOCK_CONTROL:
+        raise HTTPException(status_code=403, detail="Demo clock control is disabled")
+    from engine.sim_clock import get_sim_clock
+    clock = get_sim_clock()
+    if "accel" in payload and payload["accel"] is not None:
+        clock.set_accel(float(payload["accel"]))
+    if "jump_to" in payload and payload["jump_to"]:
+        clock.jump_to(str(payload["jump_to"]))
+    return {"status": "success", "clock": clock.get_status()}
+
+
 @router.get("/v1/demo/comparator", response_model=None)
 @router.get("/api/v1/demo/comparator", response_model=None)
 def get_demo_comparator(

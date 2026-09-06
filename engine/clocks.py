@@ -115,11 +115,18 @@ class ReplayClock(TimeProvider):
 
 
 # Default system clock singleton
-GLOBAL_CLOCK: TimeProvider = RealClock()
+GLOBAL_CLOCK: Optional[TimeProvider] = None
 
 
 def get_clock() -> TimeProvider:
     """Returns the active global clock instance."""
+    global GLOBAL_CLOCK
+    if GLOBAL_CLOCK is None:
+        try:
+            from engine.sim_clock import get_sim_clock
+            GLOBAL_CLOCK = get_sim_clock()
+        except Exception:
+            GLOBAL_CLOCK = RealClock()
     return GLOBAL_CLOCK
 
 

@@ -164,25 +164,30 @@ async def stream_passenger_train(
     clock = get_clock()
 
     async def event_generator():
-        # Dynamically resolve route and live telemetry from tracker and database
-        with db.transaction() as cur:
-            cur.execute(
-                """
-                SELECT rs.seq, rs.station_code, s.name as station_name, rs.distance_km
-                FROM route_stations rs
-                JOIN stations s ON rs.station_code = s.code
-                WHERE rs.train_no = ?
-                ORDER BY rs.seq ASC
-                """,
-                (target_train_no,),
-            )
-            route_stops = [dict(r) for r in cur.fetchall()]
+        # Dynamically resolve route and live telemetry from tracker and database (non-blocking)
+        def _fetch_route_and_lp():
+            with db.transaction() as cur:
+                cur.execute(
+                    """
+                    SELECT rs.seq, rs.station_code, s.name as station_name, rs.distance_km
+                    FROM route_stations rs
+                    JOIN stations s ON rs.station_code = s.code
+                    WHERE rs.train_no = ?
+                    ORDER BY rs.seq ASC
+                    """,
+                    (target_train_no,),
+                )
+                r_stops = [dict(r) for r in cur.fetchall()]
 
-            cur.execute(
-                "SELECT * FROM live_positions WHERE train_no = ? ORDER BY updated_at DESC LIMIT 1",
-                (target_train_no,),
-            )
-            lp_row = cur.fetchone()
+                cur.execute(
+                    "SELECT * FROM live_positions WHERE train_no = ? ORDER BY updated_at DESC LIMIT 1",
+                    (target_train_no,),
+                )
+                row = cur.fetchone()
+                lp = dict(row) if row else None
+            return r_stops, lp
+
+        route_stops, lp_row = await asyncio.to_thread(_fetch_route_and_lp)
 
         pos = getattr(tracker, "positions", {}).get(target_train_no) if tracker else None
 
@@ -254,6 +259,7 @@ async def stream_passenger_train(
                 "delay_min": round(delay_val, 1),
                 "at": clock.now().isoformat(),
                 "seq": seq,
+                "source": getattr(pos, "source", "simulated") if pos else "simulated",
             }
             yield f"data: {json.dumps(payload)}\n\n"
             seq += 1

@@ -112,6 +112,7 @@ class PredictionLedger:
         clock = get_clock()
         act_ts = actual_timestamp or clock.now_iso()
         graded_count = 0
+        graded_tuples: List[Tuple[float, float, float]] = []
 
         with self.db.transaction() as cur:
             cur.execute(
@@ -153,6 +154,17 @@ class PredictionLedger:
                     (y, act_ts, error_min, in_band, winkler, r_id),
                 )
                 graded_count += 1
+                graded_tuples.append((y, p10, p90))
+
+        # Wire ConformalPIDController on touchdown outside the transaction to prevent nested write deadlock
+        if graded_tuples:
+            try:
+                from ml.conformal import ConformalPIDController
+                pid = ConformalPIDController(group_key="global", target_alpha=0.20, db=self.db)
+                for y, p10, p90 in graded_tuples:
+                    pid.update(y_true=y, p10_pred=p10, p90_pred=p90)
+            except Exception:
+                pass
 
         return graded_count
 

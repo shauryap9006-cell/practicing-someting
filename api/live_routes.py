@@ -287,7 +287,7 @@ async def stream_live_positions(
         frames_sent = 0
         try:
             # Initial burst: emit current snapshot immediately
-            initial_positions = tracker.get_all_live_positions()
+            initial_positions = await asyncio.to_thread(tracker.get_all_live_positions)
             initial_payload = {
                 "event": "initial_state",
                 "count": len(initial_positions),
@@ -316,7 +316,7 @@ async def stream_live_positions(
                         break
                 except asyncio.TimeoutError:
                     # Periodic heartbeat pulse
-                    positions = tracker.get_all_live_positions()
+                    positions = await asyncio.to_thread(tracker.get_all_live_positions)
                     pulse_payload = {
                         "event": "pulse",
                         "count": len(positions),

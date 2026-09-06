@@ -926,6 +926,13 @@ def get_meta_trains(
     return {"trains": [dict(r) for r in rows], "total": total, "limit": limit, "offset": offset}
 
 
+@router.get("/meta/clock")
+def get_meta_clock():
+    """Returns current simulated / virtual clock metadata (F02, F28)."""
+    from engine.sim_clock import get_sim_clock
+    return get_sim_clock().get_status()
+
+
 @router.post("/advise")
 def post_brain_advise(
     payload: dict,

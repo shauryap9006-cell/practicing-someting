@@ -47,12 +47,14 @@ class Settings(BaseSettings):
     TIMEZONE_NAME: str = "Asia/Kolkata"
     TIMEZONE_OFFSET_HOURS: float = 5.5
     DEFAULT_CLOCK_MODE: str = Field(default="live", validation_alias=AliasChoices("RAILTWIN_DEFAULT_CLOCK_MODE", "DEFAULT_CLOCK_MODE"), description="'live' or 'replay'")
+    SIM_CLOCK_START: str = Field(default="auto", validation_alias=AliasChoices("RAILTWIN_SIM_CLOCK_START", "SIM_CLOCK_START"))
+    SIM_CLOCK_ACCEL: float = Field(default=1.0, validation_alias=AliasChoices("RAILTWIN_SIM_CLOCK_ACCEL", "SIM_CLOCK_ACCEL"))
+    DEMO_ALLOW_CLOCK_CONTROL: bool = Field(default=True, validation_alias=AliasChoices("RAILTWIN_DEMO_ALLOW_CLOCK_CONTROL", "DEMO_ALLOW_CLOCK_CONTROL"))
     ALLOW_SYNTHETIC_FALLBACK: bool = Field(
         default=False,
         validation_alias=AliasChoices("RAILTWIN_ALLOW_SYNTHETIC_FALLBACK", "ALLOW_SYNTHETIC_FALLBACK"),
         description="Permit mock replay only for an explicitly configured demo/replay environment",
     )
-
     # 3. External API Settings
     RAPIDAPI_KEY: str = Field(default="", validation_alias=AliasChoices("RAILTWIN_RAPIDAPI_KEY", "RAPIDAPI_KEY"), description="RapidAPI Indian Railways API Key (optional)")
     RAPIDAPI_HOST: str = "indianrailways.p.rapidapi.com"
