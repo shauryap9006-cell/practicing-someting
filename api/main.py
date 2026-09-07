@@ -48,6 +48,7 @@ from api.infra_routes import router as infra_router
 from api.ops_routes import router as ops_router
 from api.commercial_routes import router as commercial_router
 from api.live_routes import router as live_router
+from api.live_events_routes import router as live_events_router
 from api.demo_routes import router as demo_router
 from api.passenger_routes import router as passenger_router
 from engine.live_tracker import get_live_tracker
@@ -243,6 +244,7 @@ ROUTER_MANIFEST = [
     (ops_router, None),
     (commercial_router, None),
     (live_router, None),
+    (live_events_router, None),
     (demo_router, None),
 ]
 

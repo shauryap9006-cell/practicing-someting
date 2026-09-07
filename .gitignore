@@ -27,3 +27,7 @@ __pycache__/
 web/dist/
 graphify-out/
 .v4-rescue/
+*.log
+wmi_test.txt
+livewall/node_modules/
+livewall/dist/

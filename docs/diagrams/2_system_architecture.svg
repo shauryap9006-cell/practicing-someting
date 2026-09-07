@@ -1,0 +1,427 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGradArch" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#070b14"/>
+      <stop offset="50%" stop-color="#0b1329"/>
+      <stop offset="100%" stop-color="#070b14"/>
+    </linearGradient>
+
+    <!-- Layer Gradients -->
+    <linearGradient id="layerClient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0284c7" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#0369a1" stop-opacity="0.1"/>
+    </linearGradient>
+
+    <linearGradient id="layerAPI" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0284c7" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.05"/>
+    </linearGradient>
+
+    <linearGradient id="layerSafety" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#059669" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#10b981" stop-opacity="0.05"/>
+    </linearGradient>
+
+    <linearGradient id="layerML" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#c084fc" stop-opacity="0.05"/>
+    </linearGradient>
+
+    <linearGradient id="layerFeature" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#d97706" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#fbbf24" stop-opacity="0.05"/>
+    </linearGradient>
+
+    <linearGradient id="layerData" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#334155" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#1e293b" stop-opacity="0.2"/>
+    </linearGradient>
+
+    <!-- Card Backgrounds -->
+    <linearGradient id="cardGradDark" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.95"/>
+    </linearGradient>
+
+    <!-- Shadow & Glow Filters -->
+    <filter id="shadowArch" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+
+    <!-- Markers -->
+    <marker id="mCyanUp" markerWidth="7" markerHeight="7" refX="3.5" refY="0" orient="auto">
+      <path d="M 0 7 L 3.5 0 L 7 7 Z" fill="#38bdf8"/>
+    </marker>
+    <marker id="mCyanDown" markerWidth="7" markerHeight="7" refX="3.5" refY="7" orient="auto">
+      <path d="M 0 0 L 3.5 7 L 7 0 Z" fill="#38bdf8"/>
+    </marker>
+    <marker id="mEmeraldUp" markerWidth="7" markerHeight="7" refX="3.5" refY="0" orient="auto">
+      <path d="M 0 7 L 3.5 0 L 7 7 Z" fill="#34d399"/>
+    </marker>
+    <marker id="mPurpleUp" markerWidth="7" markerHeight="7" refX="3.5" refY="0" orient="auto">
+      <path d="M 0 7 L 3.5 0 L 7 7 Z" fill="#c084fc"/>
+    </marker>
+
+    <!-- Pattern -->
+    <pattern id="archGrid" width="30" height="30" patternUnits="userSpaceOnUse">
+      <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#1e293b" stroke-width="0.5" stroke-opacity="0.6"/>
+    </pattern>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="1920" height="1080" fill="url(#bgGradArch)"/>
+  <rect width="1920" height="1080" fill="url(#archGrid)"/>
+
+  <!-- Subtle glow spots -->
+  <circle cx="200" cy="200" r="250" fill="#0284c7" fill-opacity="0.05"/>
+  <circle cx="1700" cy="500" r="300" fill="#7c3aed" fill-opacity="0.05"/>
+  <circle cx="960" cy="900" r="350" fill="#059669" fill-opacity="0.04"/>
+
+  <!-- ==================== HEADER BAR ==================== -->
+  <g transform="translate(60, 35)">
+    <!-- RailTwin-X Brand Pill -->
+    <rect x="0" y="0" width="130" height="32" rx="16" fill="#0284c7" fill-opacity="0.2" stroke="#38bdf8" stroke-width="1.5"/>
+    <text x="65" y="21" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#38bdf8" text-anchor="middle" letter-spacing="1.5">RAILTWIN-X</text>
+
+    <!-- Tag -->
+    <rect x="140" y="0" width="200" height="32" rx="16" fill="#334155" fill-opacity="0.4" stroke="#475569" stroke-width="1"/>
+    <text x="240" y="21" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#94a3b8" text-anchor="middle">SYSTEM ARCHITECTURE</text>
+
+    <!-- Title & Subtitle -->
+    <text x="0" y="68" font-family="system-ui, sans-serif" font-size="28" font-weight="800" fill="#f8fafc" letter-spacing="-0.5">
+      Enterprise Multi-Tier Digital Twin &amp; Decision Support Architecture
+    </text>
+    <text x="0" y="93" font-family="system-ui, sans-serif" font-size="14.5" font-weight="400" fill="#94a3b8">
+      Modular Micro-Tier Design: Telemetry Ingestion → Leakage-Free Features → Dual ML Core → Deterministic Guardrails → Decision Engine → Client Consoles
+    </text>
+
+    <!-- Architecture Badges (Top Right) -->
+    <g transform="translate(1250, 10)">
+      <rect x="0" y="0" width="165" height="48" rx="8" fill="#1e293b" stroke="#38bdf8" stroke-width="1" filter="url(#shadowArch)"/>
+      <text x="82" y="20" font-family="system-ui, sans-serif" font-size="10.5" font-weight="600" fill="#94a3b8" text-anchor="middle">MODEL CORRIDOR</text>
+      <text x="82" y="39" font-family="system-ui, sans-serif" font-size="14" font-weight="800" fill="#38bdf8" text-anchor="middle">440 km · 8 STATIONS</text>
+
+      <rect x="178" y="0" width="165" height="48" rx="8" fill="#1e293b" stroke="#34d399" stroke-width="1" filter="url(#shadowArch)"/>
+      <text x="260" y="20" font-family="system-ui, sans-serif" font-size="10.5" font-weight="600" fill="#94a3b8" text-anchor="middle">SAFETY INTEGRITY</text>
+      <text x="260" y="39" font-family="system-ui, sans-serif" font-size="14" font-weight="800" fill="#34d399" text-anchor="middle">ZERO ML IN SAFETY</text>
+
+      <rect x="356" y="0" width="180" height="48" rx="8" fill="#1e293b" stroke="#c084fc" stroke-width="1" filter="url(#shadowArch)"/>
+      <text x="446" y="20" font-family="system-ui, sans-serif" font-size="10.5" font-weight="600" fill="#94a3b8" text-anchor="middle">AUDIT VERIFIABILITY</text>
+      <text x="446" y="39" font-family="system-ui, sans-serif" font-size="14" font-weight="800" fill="#c084fc" text-anchor="middle">SHA-256 HASH-CHAIN</text>
+    </g>
+  </g>
+
+  <!-- ==================== TIER 6: PRESENTATION & CLIENT DASHBOARDS ==================== -->
+  <g transform="translate(60, 150)">
+    <!-- Layer Frame -->
+    <rect width="1800" height="120" rx="10" fill="url(#layerClient)" stroke="#0284c7" stroke-width="1.2" filter="url(#shadowArch)"/>
+    
+    <!-- Tier Label -->
+    <rect x="15" y="15" width="220" height="26" rx="5" fill="#0284c7" fill-opacity="0.3"/>
+    <text x="125" y="32" font-family="system-ui, sans-serif" font-size="12" font-weight="800" fill="#38bdf8" text-anchor="middle">TIER 6: CLIENT EXPERIENCES</text>
+
+    <!-- Cards Grid -->
+    <g transform="translate(250, 14)">
+      <!-- Card 6.1: Controller Console -->
+      <g transform="translate(0, 0)">
+        <rect width="360" height="92" rx="8" fill="url(#cardGradDark)" stroke="#0284c7" stroke-width="1.2"/>
+        <text x="16" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#f8fafc">Section Controller Console</text>
+        <text x="16" y="42" font-family="system-ui, sans-serif" font-size="11" fill="#38bdf8">• Live Platform Occupancy Gantt Chart</text>
+        <text x="16" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">• Deterministic Headway Conflict Alerts</text>
+        <text x="16" y="78" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Connection Custody DSS (+Pax-Hours)</text>
+      </g>
+
+      <!-- Card 6.2: Passenger Mobile Experience -->
+      <g transform="translate(380, 0)">
+        <rect width="360" height="92" rx="8" fill="url(#cardGradDark)" stroke="#38bdf8" stroke-width="1.2"/>
+        <text x="16" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#f8fafc">Passenger Mobile PWA &amp; Kiosk</text>
+        <text x="16" y="42" font-family="system-ui, sans-serif" font-size="11" fill="#38bdf8">• Calibrated Arrival Cone (p10–p50–p90)</text>
+        <text x="16" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">• Plain-English Delay Causal Autopsy</text>
+        <text x="16" y="78" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Live Journey Progress Timeline</text>
+      </g>
+
+      <!-- Card 6.3: What-If Sandbox & Replay -->
+      <g transform="translate(760, 0)">
+        <rect width="360" height="92" rx="8" fill="url(#cardGradDark)" stroke="#6366f1" stroke-width="1.2"/>
+        <text x="16" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#f8fafc">Interactive What-If &amp; Replay</text>
+        <text x="16" y="42" font-family="system-ui, sans-serif" font-size="11" fill="#c084fc">• SimPy Time Machine Historic Replay</text>
+        <text x="16" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">• Interactive Overtake &amp; Hold Simulator</text>
+        <text x="16" y="78" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Corridor Ripple Propagation Graph</text>
+      </g>
+
+      <!-- Card 6.4: Auditor Verification Board -->
+      <g transform="translate(1140, 0)">
+        <rect width="380" height="92" rx="8" fill="url(#cardGradDark)" stroke="#34d399" stroke-width="1.2"/>
+        <text x="16" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#f8fafc">Auditor Proof &amp; Ledger Board</text>
+        <text x="16" y="42" font-family="system-ui, sans-serif" font-size="11" fill="#34d399">• SHA-256 Block Chain Hash Explorer</text>
+        <text x="16" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">• Live Comparator vs Official NTES Baseline</text>
+        <text x="16" y="78" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Honest Model Card &amp; Winkler Metrics</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Flow Connector 6 <-> 5 (Bidirectional WebSocket & REST) -->
+  <g transform="translate(960, 275)">
+    <line x1="-400" y1="0" x2="-400" y2="18" stroke="#38bdf8" stroke-width="2" marker-end="url(#mCyanDown)"/>
+    <line x1="-380" y1="18" x2="-380" y2="0" stroke="#38bdf8" stroke-width="2" marker-end="url(#mCyanUp)"/>
+    <text x="-310" y="12" font-family="monospace" font-size="10" fill="#38bdf8">REST &amp; WS (/v1/ws/live)</text>
+
+    <line x1="380" y1="0" x2="380" y2="18" stroke="#34d399" stroke-width="2" marker-end="url(#mCyanDown)"/>
+    <line x1="400" y1="18" x2="400" y2="0" stroke="#34d399" stroke-width="2" marker-end="url(#mEmeraldUp)"/>
+    <text x="470" y="12" font-family="monospace" font-size="10" fill="#34d399">Ledger &amp; Proof API</text>
+  </g>
+
+  <!-- ==================== TIER 5: API GATEWAY & SERVING ENGINE ==================== -->
+  <g transform="translate(60, 298)">
+    <rect width="1800" height="122" rx="10" fill="url(#layerAPI)" stroke="#0284c7" stroke-width="1.2" filter="url(#shadowArch)"/>
+    
+    <rect x="15" y="15" width="220" height="26" rx="5" fill="#0284c7" fill-opacity="0.3"/>
+    <text x="125" y="32" font-family="system-ui, sans-serif" font-size="12" font-weight="800" fill="#38bdf8" text-anchor="middle">TIER 5: API &amp; SERVING</text>
+
+    <g transform="translate(250, 14)">
+      <!-- Card 5.1: FastAPI Server -->
+      <g transform="translate(0, 0)">
+        <rect width="360" height="94" rx="8" fill="url(#cardGradDark)" stroke="#334155" stroke-width="1"/>
+        <text x="16" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#f8fafc">FastAPI Asynchronous Gateway</text>
+        <text x="16" y="42" font-family="system-ui, sans-serif" font-size="11" fill="#38bdf8">• Non-blocking asyncio &amp; CORS Middleware</text>
+        <text x="16" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">• Sub-20ms P95 Serving Response Time</text>
+        <text x="16" y="78" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Strict Pydantic v2 Request/Response Schemas</text>
+      </g>
+
+      <!-- Card 5.2: Predictor Service (3-Tier Fallback) -->
+      <g transform="translate(380, 0)">
+        <rect width="360" height="94" rx="8" fill="url(#cardGradDark)" stroke="#0284c7" stroke-width="1.4"/>
+        <text x="16" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#38bdf8">PredictorService Orchestrator</text>
+        <text x="16" y="42" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• <tspan fill="#c084fc" font-weight="700">Tier 1:</tspan> Dual ML Conformal Quantile Core</text>
+        <text x="16" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• <tspan fill="#38bdf8" font-weight="700">Tier 2:</tspan> Historical Corridor Median Lookup</text>
+        <text x="16" y="78" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• <tspan fill="#94a3b8" font-weight="700">Tier 3:</tspan> Scheduled Timetable Fallback</text>
+      </g>
+
+      <!-- Card 5.3: SimPy Ripple Simulator -->
+      <g transform="translate(760, 0)">
+        <rect width="360" height="94" rx="8" fill="url(#cardGradDark)" stroke="#334155" stroke-width="1"/>
+        <text x="16" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#f8fafc">SimPy Discrete-Event Simulator</text>
+        <text x="16" y="42" font-family="system-ui, sans-serif" font-size="11" fill="#fbbf24">• Turnaround Rake Ripple Propagation</text>
+        <text x="16" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">• Connection Custody Holding DSS</text>
+        <text x="16" y="78" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Passenger-Hours Optimization Engine</text>
+      </g>
+
+      <!-- Card 5.4: Deterministic Conflict Scanner -->
+      <g transform="translate(1140, 0)">
+        <rect width="380" height="94" rx="8" fill="url(#cardGradDark)" stroke="#059669" stroke-width="1.2"/>
+        <text x="16" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#34d399">Deterministic Conflict Scanner</text>
+        <text x="16" y="42" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Station Headway Separation (&lt;5m pass / &lt;8-14m frt)</text>
+        <text x="16" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">• Single-Line Opposing Meet Window (&lt;10m)</text>
+        <text x="16" y="78" font-family="system-ui, sans-serif" font-size="11" fill="#f43f5e">• Same-Section Follower Closing Headway</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Flow Connector 5 <-> 4 -->
+  <g transform="translate(960, 425)">
+    <line x1="-200" y1="18" x2="-200" y2="0" stroke="#34d399" stroke-width="2" marker-end="url(#mEmeraldUp)"/>
+    <text x="-185" y="12" font-family="system-ui, sans-serif" font-size="10" fill="#34d399">Enforced Safety Report</text>
+
+    <line x1="200" y1="0" x2="200" y2="18" stroke="#38bdf8" stroke-width="2" marker-end="url(#mCyanDown)"/>
+    <text x="215" y="12" font-family="system-ui, sans-serif" font-size="10" fill="#38bdf8">Receipt to Ledger</text>
+  </g>
+
+  <!-- ==================== TIER 4: SAFETY INTERLOCK & CRYPTO LEDGER ==================== -->
+  <g transform="translate(60, 448)">
+    <rect width="1800" height="126" rx="10" fill="url(#layerSafety)" stroke="#059669" stroke-width="1.2" filter="url(#shadowArch)"/>
+    
+    <rect x="15" y="15" width="220" height="26" rx="5" fill="#059669" fill-opacity="0.3"/>
+    <text x="125" y="32" font-family="system-ui, sans-serif" font-size="12" font-weight="800" fill="#34d399" text-anchor="middle">TIER 4: SAFETY &amp; LEDGER</text>
+
+    <g transform="translate(250, 14)">
+      <!-- Card 4.1: Deterministic Safety Interlock -->
+      <g transform="translate(0, 0)">
+        <rect width="490" height="98" rx="8" fill="url(#cardGradDark)" stroke="#059669" stroke-width="1.5"/>
+        <text x="16" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="800" fill="#34d399">Deterministic Safety Interlock Layer</text>
+        <text x="16" y="42" font-family="system-ui, sans-serif" font-size="11" fill="#f8fafc">100% Deterministic Guardrail · Zero ML in Safety Path</text>
+        <text x="16" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Checks: Speed ≤ 160 km/h · Delay bounds [-5, 720] min · q10 ≤ q50 ≤ q90</text>
+        <text x="16" y="78" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Recovery limit: Max feasible catch-up ≤ (dist / MPS)*60 + slack</text>
+        <text x="16" y="94" font-family="system-ui, sans-serif" font-size="10.5" font-weight="700" fill="#fbbf24">Mandatory Invariant: human_ack_required = True (Advisory only)</text>
+      </g>
+
+      <!-- Card 4.2: Causal Delay Autopsy -->
+      <g transform="translate(510, 0)">
+        <rect width="490" height="98" rx="8" fill="url(#cardGradDark)" stroke="#334155" stroke-width="1"/>
+        <text x="16" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#fbbf24">Causal Delay Autopsy &amp; Attribution</text>
+        <text x="16" y="42" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• 7-Bucket Mechanistic Decomposition with Traceable Evidence Pointers</text>
+        <text x="16" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Categories: Rake Turnaround · TSR Limit · Weather Fog · Dwell · Precedence</text>
+        <text x="16" y="78" font-family="system-ui, sans-serif" font-size="11" fill="#34d399">• Exact Mathematical Additivity Enforced: ∑ Δt_causes ≡ Δt_total (100%)</text>
+        <text x="16" y="94" font-family="system-ui, sans-serif" font-size="10.5" fill="#94a3b8">Auditable sensor references (TSR IDs, Platform IDs, Open-Meteo logs)</text>
+      </g>
+
+      <!-- Card 4.3: SHA-256 Ledger -->
+      <g transform="translate(1020, 0)">
+        <rect width="500" height="98" rx="8" fill="url(#cardGradDark)" stroke="#f59e0b" stroke-width="1.4"/>
+        <text x="16" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#fbbf24">SHA-256 Tamper-Evident Prediction Ledger</text>
+        <text x="16" y="42" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Append-only cryptographic hash chain storing all served forecasts</text>
+        <text x="16" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#34d399">• Hash = SHA-256(prev_hash + train + station + p10/p50/p90 + timestamp)</text>
+        <text x="16" y="78" font-family="system-ui, sans-serif" font-size="11" fill="#f43f5e" font-weight="700">• Sealed prior to arrival: Prevents post-facto cherry-picking</text>
+        <text x="16" y="94" font-family="system-ui, sans-serif" font-size="10.5" fill="#94a3b8">Public verify_chain_integrity() verification · 1,962+ chained blocks</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Flow Connector 4 <-> 3 -->
+  <g transform="translate(960, 580)">
+    <line x1="0" y1="18" x2="0" y2="0" stroke="#c084fc" stroke-width="2" marker-end="url(#mPurpleUp)"/>
+    <text x="15" y="12" font-family="system-ui, sans-serif" font-size="10" fill="#c084fc">Uncalibrated ML Quantiles</text>
+  </g>
+
+  <!-- ==================== TIER 3: MACHINE LEARNING & CALIBRATION ==================== -->
+  <g transform="translate(60, 603)">
+    <rect width="1800" height="136" rx="10" fill="url(#layerML)" stroke="#7c3aed" stroke-width="1.2" filter="url(#shadowArch)"/>
+    
+    <rect x="15" y="15" width="220" height="26" rx="5" fill="#7c3aed" fill-opacity="0.3"/>
+    <text x="125" y="32" font-family="system-ui, sans-serif" font-size="12" font-weight="800" fill="#c084fc" text-anchor="middle">TIER 3: ML &amp; CONFORMAL</text>
+
+    <g transform="translate(250, 14)">
+      <!-- Card 3.1: Champion LightGBM -->
+      <g transform="translate(0, 0)">
+        <rect width="360" height="108" rx="8" fill="url(#cardGradDark)" stroke="#7c3aed" stroke-width="1.2"/>
+        <text x="16" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#c084fc">Champion: LightGBM Boosters</text>
+        <text x="16" y="42" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Quantile Pinball Loss (q10, q50, q90)</text>
+        <text x="16" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Direct Quantiles for local hops (≤3 hops / ≤90 km)</text>
+        <text x="16" y="78" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Delta Quantiles for autoregressive section rollout</text>
+        <text x="16" y="96" font-family="system-ui, sans-serif" font-size="10.5" fill="#38bdf8">1h Horizon: 5.88m vs 5.84m frozen baseline tie</text>
+      </g>
+
+      <!-- Card 3.2: Challenger PyTorch GRU -->
+      <g transform="translate(380, 0)">
+        <rect width="360" height="108" rx="8" fill="url(#cardGradDark)" stroke="#6366f1" stroke-width="1.2"/>
+        <text x="16" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#818cf8">Challenger: PyTorch GRU</text>
+        <text x="16" y="42" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• 2-Layer Non-Crossing Recurrent Unit</text>
+        <text x="16" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Temporal Attention over corridor journey history</text>
+        <text x="16" y="78" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Monotonic quantile ordering enforced in loss term</text>
+        <text x="16" y="96" font-family="system-ui, sans-serif" font-size="10.5" fill="#34d399">Deep Foresight: −51.7% error at 6h horizon</text>
+      </g>
+
+      <!-- Card 3.3: Conformal Calibration Engine -->
+      <g transform="translate(760, 0)">
+        <rect width="360" height="108" rx="8" fill="url(#cardGradDark)" stroke="#c084fc" stroke-width="1.5"/>
+        <text x="16" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="800" fill="#c084fc">Conformal Calibration (CQR)</text>
+        <text x="16" y="42" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Conformalized Quantile Regression calibration</text>
+        <text x="16" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#34d399" font-weight="700">• Verified 80.64% Empirical Band Coverage</text>
+        <text x="16" y="78" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Winkler Uncertainty Score: 57.94</text>
+        <text x="16" y="96" font-family="system-ui, sans-serif" font-size="10.5" fill="#94a3b8">Finite-sample, distribution-free mathematical bound</text>
+      </g>
+
+      <!-- Card 3.4: Statistical Promotion Gate -->
+      <g transform="translate(1140, 0)">
+        <rect width="380" height="108" rx="8" fill="url(#cardGradDark)" stroke="#334155" stroke-width="1"/>
+        <text x="16" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#f8fafc">Statistical Promotion Gate</text>
+        <text x="16" y="42" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Wilcoxon Signed-Rank Test across sequential folds</text>
+        <text x="16" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Criterion: p-value &lt; 0.05, Latency &lt; 20ms</text>
+        <text x="16" y="78" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Drift Sentinel (KS-Test &amp; PSI monitoring on F1-F23)</text>
+        <text x="16" y="96" font-family="system-ui, sans-serif" font-size="10.5" fill="#38bdf8">Automated model artifact integrity verification</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Flow Connector 3 <-> 2 -->
+  <g transform="translate(960, 745)">
+    <line x1="0" y1="18" x2="0" y2="0" stroke="#fbbf24" stroke-width="2" marker-end="url(#mPurpleUp)"/>
+    <text x="15" y="12" font-family="monospace" font-size="10" fill="#fbbf24">23-Feature Vector (X ∈ ℝ²³)</text>
+  </g>
+
+  <!-- ==================== TIER 2: FEATURE ENGINEERING & CONTEXT ==================== -->
+  <g transform="translate(60, 768)">
+    <rect width="1800" height="116" rx="10" fill="url(#layerFeature)" stroke="#d97706" stroke-width="1.2" filter="url(#shadowArch)"/>
+    
+    <rect x="15" y="15" width="220" height="26" rx="5" fill="#d97706" fill-opacity="0.3"/>
+    <text x="125" y="32" font-family="system-ui, sans-serif" font-size="12" font-weight="800" fill="#fbbf24" text-anchor="middle">TIER 2: FEATURE PIPELINE</text>
+
+    <g transform="translate(250, 14)">
+      <!-- Card 2.1: SnapshotGenerator -->
+      <g transform="translate(0, 0)">
+        <rect width="490" height="88" rx="8" fill="url(#cardGradDark)" stroke="#d97706" stroke-width="1.2"/>
+        <text x="16" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#fbbf24">SnapshotGenerator (Shared Parity Core)</text>
+        <text x="16" y="42" font-family="system-ui, sans-serif" font-size="11" fill="#34d399">100% Training &amp; Serving Pipeline Parity</text>
+        <text x="16" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Strict point-in-time isolation: Eliminates future data leakage</text>
+        <text x="16" y="78" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">• Deterministic rolling window aggregations and feature encoding</text>
+      </g>
+
+      <!-- Card 2.2: TrackGraph Context Engine -->
+      <g transform="translate(510, 0)">
+        <rect width="490" height="88" rx="8" fill="url(#cardGradDark)" stroke="#334155" stroke-width="1"/>
+        <text x="16" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#f8fafc">TrackGraph Context Engine</text>
+        <text x="16" y="42" font-family="system-ui, sans-serif" font-size="11" fill="#38bdf8">• Dynamic Spatial Headway &amp; Block Occupancy Calculation</text>
+        <text x="16" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Preceding train spatial delta &amp; trailing train compression index</text>
+        <text x="16" y="78" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">• Loop line clearance &amp; junction conflict state mapping</text>
+      </g>
+
+      <!-- Card 2.3: 23 Strongly-Typed Features -->
+      <g transform="translate(1020, 0)">
+        <rect width="500" height="88" rx="8" fill="url(#cardGradDark)" stroke="#334155" stroke-width="1"/>
+        <text x="16" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#f8fafc">23-Feature Vector (F1 – F23)</text>
+        <text x="16" y="42" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• F1-F8: Kinematic speed, distance, cumulative delay delta</text>
+        <text x="16" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• F9-F14: Corridor congestion, yard queue density, headway</text>
+        <text x="16" y="78" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• F15-F23: Visibility degradation, precipitation, turnaround deficit</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Flow Connector 2 <-> 1 -->
+  <g transform="translate(960, 890)">
+    <line x1="0" y1="18" x2="0" y2="0" stroke="#38bdf8" stroke-width="2" marker-end="url(#mCyanUp)"/>
+    <text x="15" y="12" font-family="monospace" font-size="10" fill="#38bdf8">Normalized Sensor &amp; Timetable Stream</text>
+  </g>
+
+  <!-- ==================== TIER 1: DATA INGESTION & STORAGE ==================== -->
+  <g transform="translate(60, 912)">
+    <rect width="1800" height="120" rx="10" fill="url(#layerData)" stroke="#475569" stroke-width="1.2" filter="url(#shadowArch)"/>
+    
+    <rect x="15" y="15" width="220" height="26" rx="5" fill="#334155" fill-opacity="0.6"/>
+    <text x="125" y="32" font-family="system-ui, sans-serif" font-size="12" font-weight="800" fill="#cbd5e1" text-anchor="middle">TIER 1: INGESTION &amp; DATA</text>
+
+    <g transform="translate(250, 14)">
+      <!-- Card 1.1: IR Timetable & Events -->
+      <g transform="translate(0, 0)">
+        <rect width="360" height="92" rx="8" fill="url(#cardGradDark)" stroke="#334155" stroke-width="1"/>
+        <text x="16" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#f8fafc">IR Timetable &amp; Station Events</text>
+        <text x="16" y="42" font-family="system-ui, sans-serif" font-size="11" fill="#38bdf8">• 8-Station NDLS-CNB-LKO Corridor</text>
+        <text x="16" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">• Scheduled vs Actual arrival/departure</text>
+        <text x="16" y="78" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Platform dwell &amp; rake linking records</text>
+      </g>
+
+      <!-- Card 1.2: Weather & Environmental Store -->
+      <g transform="translate(380, 0)">
+        <rect width="360" height="92" rx="8" fill="url(#cardGradDark)" stroke="#334155" stroke-width="1"/>
+        <text x="16" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#f8fafc">Open-Meteo Weather Store</text>
+        <text x="16" y="42" font-family="system-ui, sans-serif" font-size="11" fill="#38bdf8">• Morning Fog Degradation (04:00-10:00)</text>
+        <text x="16" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">• Hourly precipitation &amp; horizontal visibility</text>
+        <text x="16" y="78" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Station-level geo-coordinates indexing</text>
+      </g>
+
+      <!-- Card 1.3: Calendar & Rush Store -->
+      <g transform="translate(760, 0)">
+        <rect width="360" height="92" rx="8" fill="url(#cardGradDark)" stroke="#334155" stroke-width="1"/>
+        <text x="16" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#f8fafc">Calendar &amp; Rush Store</text>
+        <text x="16" y="42" font-family="system-ui, sans-serif" font-size="11" fill="#38bdf8">• Gazetted Indian Holidays Calendar</text>
+        <text x="16" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">• Festival Passenger Rush Multipliers</text>
+        <text x="16" y="78" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Day-of-week &amp; peak commuting windows</text>
+      </g>
+
+      <!-- Card 1.4: SQLite Canonical DB & NetworkX -->
+      <g transform="translate(1140, 0)">
+        <rect width="380" height="92" rx="8" fill="url(#cardGradDark)" stroke="#0284c7" stroke-width="1.2"/>
+        <text x="16" y="24" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#38bdf8">SQLite Canonical DB &amp; NetworkX</text>
+        <text x="16" y="42" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Time-Split Isolated Historical Records</text>
+        <text x="16" y="60" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">• Directed Multigraph: 440 km Track Topology</text>
+        <text x="16" y="78" font-family="system-ui, sans-serif" font-size="11" fill="#34d399">• Zero-Mock: Pure real-world railway datasets</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ==================== FOOTER ==================== -->
+  <g transform="translate(60, 1045)">
+    <text x="0" y="16" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#64748b">
+      RailTwin-X Enterprise System Architecture · Designed for Scalability to 13,000+ Trains Across All Indian Railway Zones · Zero-Mock Audited
+    </text>
+  </g>
+</svg>

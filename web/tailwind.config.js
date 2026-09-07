@@ -9,7 +9,7 @@ export default {
     extend: {
       colors: {
         paper: '#F3EFE6',
-        surface: '#FDFCF:',
+        surface: '#FDFCF8',
         raised: '#ECE7DB',
         line: '#E1DAC9',
         lineStrong: '#C8C0AC',

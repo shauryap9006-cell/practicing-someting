@@ -1,0 +1,496 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGradWf" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#070b14"/>
+      <stop offset="50%" stop-color="#0c1322"/>
+      <stop offset="100%" stop-color="#080c16"/>
+    </linearGradient>
+
+    <!-- Phase Gradients -->
+    <linearGradient id="p1Grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.85"/>
+    </linearGradient>
+    <linearGradient id="p2Grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#d97706" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.85"/>
+    </linearGradient>
+    <linearGradient id="p3Grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.85"/>
+    </linearGradient>
+    <linearGradient id="p4Grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#059669" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.85"/>
+    </linearGradient>
+    <linearGradient id="p5Grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.85"/>
+    </linearGradient>
+
+    <!-- Card Background -->
+    <linearGradient id="cardGradWf" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.95"/>
+    </linearGradient>
+
+    <!-- Shadow & Glow -->
+    <filter id="shadowWf" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+
+    <!-- Markers -->
+    <marker id="arrowWfRight" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 Z" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowWfAmber" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 Z" fill="#fbbf24"/>
+    </marker>
+    <marker id="arrowWfPurple" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 Z" fill="#c084fc"/>
+    </marker>
+    <marker id="arrowWfEmerald" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 Z" fill="#34d399"/>
+    </marker>
+
+    <!-- Grid Pattern -->
+    <pattern id="wfGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <circle cx="20" cy="20" r="1" fill="#334155" fill-opacity="0.35"/>
+    </pattern>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="1920" height="1080" fill="url(#bgGradWf)"/>
+  <rect width="1920" height="1080" fill="url(#wfGrid)"/>
+
+  <!-- Background Ambient Highlights -->
+  <ellipse cx="200" cy="500" rx="300" ry="250" fill="#0284c7" fill-opacity="0.04"/>
+  <ellipse cx="960" cy="500" rx="300" ry="250" fill="#7c3aed" fill-opacity="0.04"/>
+  <ellipse cx="1700" cy="500" rx="300" ry="250" fill="#059669" fill-opacity="0.04"/>
+
+  <!-- ==================== HEADER BAR ==================== -->
+  <g transform="translate(60, 40)">
+    <!-- Brand Pill -->
+    <rect x="0" y="0" width="130" height="32" rx="16" fill="#0284c7" fill-opacity="0.2" stroke="#38bdf8" stroke-width="1.5"/>
+    <text x="65" y="21" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#38bdf8" text-anchor="middle" letter-spacing="1.5">RAILTWIN-X</text>
+
+    <!-- Tag -->
+    <rect x="140" y="0" width="210" height="32" rx="16" fill="#334155" fill-opacity="0.4" stroke="#475569" stroke-width="1"/>
+    <text x="245" y="21" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#94a3b8" text-anchor="middle">OPERATIONAL WORKFLOW</text>
+
+    <!-- Title & Subtitle -->
+    <text x="0" y="70" font-family="system-ui, sans-serif" font-size="30" font-weight="800" fill="#f8fafc" letter-spacing="-0.5">
+      End-to-End Operational Lifecycle: From Sensor Ping to Actionable Dispatch
+    </text>
+    <text x="0" y="96" font-family="system-ui, sans-serif" font-size="15" font-weight="400" fill="#94a3b8">
+      A Concrete Train Journey Scenario: Train #12004 departs Kanpur Central (CNB) → Processed in &lt;15ms → Dual Passenger &amp; Controller Value Delivery
+    </text>
+
+    <!-- Top Right Workflow Status -->
+    <g transform="translate(1380, 10)">
+      <rect x="0" y="0" width="480" height="50" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1" filter="url(#shadowWf)"/>
+      <circle cx="25" cy="25" r="8" fill="#34d399"/>
+      <text x="42" y="24" font-family="system-ui, sans-serif" font-size="11" font-weight="600" fill="#94a3b8">LIVE CORRIDOR SIMULATION ACTIVE</text>
+      <text x="42" y="40" font-family="monospace" font-size="12" font-weight="700" fill="#34d399">NDLS → CNB → LKO (440 KM) · ZERO-MOCK TESTED</text>
+    </g>
+  </g>
+
+  <!-- ==================== HORIZONTAL FLOW PHASES (5 COLUMNS) ==================== -->
+
+  <!-- Connectors between phases -->
+  <g transform="translate(0, 520)">
+    <!-- 1 to 2 -->
+    <line x1="390" y1="0" x2="425" y2="0" stroke="#38bdf8" stroke-width="3" marker-end="url(#arrowWfRight)"/>
+    <!-- 2 to 3 -->
+    <line x1="745" y1="0" x2="780" y2="0" stroke="#fbbf24" stroke-width="3" marker-end="url(#arrowWfAmber)"/>
+    <!-- 3 to 4 -->
+    <line x1="1100" y1="0" x2="1135" y2="0" stroke="#c084fc" stroke-width="3" marker-end="url(#arrowWfPurple)"/>
+    <!-- 4 to 5 -->
+    <line x1="1455" y1="0" x2="1490" y2="0" stroke="#34d399" stroke-width="3" marker-end="url(#arrowWfEmerald)"/>
+  </g>
+
+  <!-- ==================== PHASE 1: EVENT DETECTION ==================== -->
+  <g transform="translate(60, 160)">
+    <!-- Column Card -->
+    <rect width="330" height="790" rx="12" fill="url(#p1Grad)" stroke="#0284c7" stroke-width="1.5" filter="url(#shadowWf)"/>
+    
+    <!-- Phase Badge -->
+    <rect x="20" y="20" width="290" height="36" rx="6" fill="#0284c7" fill-opacity="0.3" stroke="#38bdf8" stroke-width="1"/>
+    <circle cx="38" cy="38" r="10" fill="#0284c7"/>
+    <text x="38" y="42" font-family="system-ui, sans-serif" font-size="11" font-weight="800" fill="#fff" text-anchor="middle">1</text>
+    <text x="56" y="43" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#38bdf8">EVENT INCEPTION</text>
+
+    <!-- Subtitle -->
+    <text x="20" y="80" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#94a3b8">Real-World Ingestion Trigger</text>
+
+    <!-- Concrete Step 1.1 -->
+    <g transform="translate(18, 98)">
+      <rect width="294" height="155" rx="8" fill="url(#cardGradWf)" stroke="#334155" stroke-width="1"/>
+      <rect x="0" y="0" width="4" height="155" rx="2" fill="#38bdf8"/>
+      <text x="14" y="22" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#f8fafc">1.1 Sensor Ping Emitted</text>
+      
+      <!-- Concrete scenario box -->
+      <rect x="14" y="32" width="266" height="54" rx="4" fill="#0f172a" stroke="#0284c7" stroke-width="0.8"/>
+      <text x="22" y="48" font-family="system-ui, sans-serif" font-size="11" font-weight="700" fill="#38bdf8">Train #12004 (Shatabdi)</text>
+      <text x="22" y="64" font-family="system-ui, sans-serif" font-size="10.5" fill="#cbd5e1">Departs Kanpur Central (CNB)</text>
+      <text x="22" y="78" font-family="system-ui, sans-serif" font-size="10.5" fill="#f43f5e">Delay: +18 min behind schedule</text>
+
+      <text x="14" y="104" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">• Timestamp: 11:24:00 IST</text>
+      <text x="14" y="122" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">• NTES / GPS Event ingested</text>
+      <text x="14" y="140" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">• Sub-second edge capture</text>
+    </g>
+
+    <!-- Concrete Step 1.2 -->
+    <g transform="translate(18, 270)">
+      <rect width="294" height="175" rx="8" fill="url(#cardGradWf)" stroke="#334155" stroke-width="1"/>
+      <rect x="0" y="0" width="4" height="175" rx="2" fill="#38bdf8"/>
+      <text x="14" y="22" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#f8fafc">1.2 Spatial Graph Topology</text>
+      <text x="14" y="40" font-family="system-ui, sans-serif" font-size="10.5" fill="#38bdf8">Corridor Track Context Engine</text>
+
+      <rect x="14" y="50" width="266" height="54" rx="4" fill="#0f172a" stroke="#334155" stroke-width="0.8"/>
+      <text x="22" y="68" font-family="system-ui, sans-serif" font-size="10.5" fill="#cbd5e1">Next Block: CNB → Unnao Jn (18 km)</text>
+      <text x="22" y="84" font-family="system-ui, sans-serif" font-size="10.5" fill="#fbbf24">Occupied by: Freight #N_BOXN</text>
+      <text x="22" y="98" font-family="system-ui, sans-serif" font-size="10" fill="#94a3b8">Trailing Headway: 4.8 km (Closing)</text>
+
+      <text x="14" y="124" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">• Speed limit MPS: 130 km/h</text>
+      <text x="14" y="142" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">• Active TSR: 30 km/h at KM 1022</text>
+      <text x="14" y="160" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">• NetworkX directed corridor lookup</text>
+    </g>
+
+    <!-- Concrete Step 1.3 -->
+    <g transform="translate(18, 462)">
+      <rect width="294" height="160" rx="8" fill="url(#cardGradWf)" stroke="#334155" stroke-width="1"/>
+      <rect x="0" y="0" width="4" height="160" rx="2" fill="#38bdf8"/>
+      <text x="14" y="22" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#f8fafc">1.3 Environmental Signals</text>
+      <text x="14" y="40" font-family="system-ui, sans-serif" font-size="10.5" fill="#38bdf8">Weather &amp; Operating Matrix</text>
+
+      <text x="14" y="64" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Open-Meteo Fog API:</text>
+      <text x="24" y="82" font-family="system-ui, sans-serif" font-size="11" fill="#f87171">  Horizontal Visibility: 450 meters</text>
+      <text x="24" y="100" font-family="system-ui, sans-serif" font-size="11" fill="#f87171">  Fog Speed Restriction Active</text>
+      
+      <text x="14" y="122" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Calendar Multiplier:</text>
+      <text x="24" y="140" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">  Normal Weekday (Factor: 1.0x)</text>
+    </g>
+
+    <!-- Execution Timing Pill -->
+    <g transform="translate(18, 735)">
+      <rect width="294" height="36" rx="6" fill="#0f172a" stroke="#0284c7" stroke-width="1"/>
+      <text x="147" y="23" font-family="monospace" font-size="11" font-weight="700" fill="#38bdf8" text-anchor="middle">Ingestion Latency: 1.8 ms</text>
+    </g>
+  </g>
+
+  <!-- ==================== PHASE 2: CONTEXT & FEATURES ==================== -->
+  <g transform="translate(415, 160)">
+    <rect width="330" height="790" rx="12" fill="url(#p2Grad)" stroke="#d97706" stroke-width="1.5" filter="url(#shadowWf)"/>
+    
+    <rect x="20" y="20" width="290" height="36" rx="6" fill="#d97706" fill-opacity="0.3" stroke="#fbbf24" stroke-width="1"/>
+    <circle cx="38" cy="38" r="10" fill="#d97706"/>
+    <text x="38" y="42" font-family="system-ui, sans-serif" font-size="11" font-weight="800" fill="#fff" text-anchor="middle">2</text>
+    <text x="56" y="43" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#fbbf24">CONTEXT SYNTHESIS</text>
+
+    <text x="20" y="80" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#94a3b8">Leak-Safe Feature Pipeline</text>
+
+    <!-- Step 2.1 -->
+    <g transform="translate(18, 98)">
+      <rect width="294" height="155" rx="8" fill="url(#cardGradWf)" stroke="#334155" stroke-width="1"/>
+      <rect x="0" y="0" width="4" height="155" rx="2" fill="#fbbf24"/>
+      <text x="14" y="22" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#f8fafc">2.1 Rake Linkage Custody</text>
+      <text x="14" y="40" font-family="system-ui, sans-serif" font-size="10.5" fill="#fbbf24">Incoming Rake Delay Carryover</text>
+
+      <rect x="14" y="52" width="266" height="50" rx="4" fill="#0f172a" stroke="#d97706" stroke-width="0.8"/>
+      <text x="22" y="70" font-family="system-ui, sans-serif" font-size="10.5" fill="#cbd5e1">Pairing Train: #12003 arrived late</text>
+      <text x="22" y="86" font-family="system-ui, sans-serif" font-size="10.5" fill="#f43f5e">Turnaround deficit: 12 min inherit</text>
+
+      <text x="14" y="120" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">• Station yard maintenance: 45 min</text>
+      <text x="14" y="138" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">• Rake turnaround buffer depleted</text>
+    </g>
+
+    <!-- Step 2.2 -->
+    <g transform="translate(18, 270)">
+      <rect width="294" height="230" rx="8" fill="url(#cardGradWf)" stroke="#d97706" stroke-width="1.2"/>
+      <rect x="0" y="0" width="4" height="230" rx="2" fill="#fbbf24"/>
+      <text x="14" y="22" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#fbbf24">2.2 SnapshotGenerator</text>
+      <text x="14" y="40" font-family="system-ui, sans-serif" font-size="10.5" fill="#cbd5e1">Point-in-Time Parity Engine</text>
+
+      <rect x="14" y="52" width="266" height="70" rx="4" fill="#0f172a" stroke="#334155" stroke-width="0.8"/>
+      <text x="22" y="70" font-family="system-ui, sans-serif" font-size="10.5" font-weight="700" fill="#34d399">ZERO DATA LEAKAGE RULE:</text>
+      <text x="22" y="88" font-family="system-ui, sans-serif" font-size="10" fill="#cbd5e1">Only events strictly t &lt; 11:24:00</text>
+      <text x="22" y="104" font-family="system-ui, sans-serif" font-size="10" fill="#cbd5e1">No future station look-ahead!</text>
+
+      <text x="14" y="142" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">Vector Construction (23 values):</text>
+      <text x="22" y="160" font-family="monospace" font-size="10" fill="#38bdf8">F1: curr_delay = +18.0</text>
+      <text x="22" y="176" font-family="monospace" font-size="10" fill="#38bdf8">F7: rolling_recovery_slope = -0.12</text>
+      <text x="22" y="192" font-family="monospace" font-size="10" fill="#38bdf8">F12: headway_ahead_km = 4.8</text>
+      <text x="22" y="208" font-family="monospace" font-size="10" fill="#38bdf8">F18: weather_fog_idx = 0.65</text>
+    </g>
+
+    <!-- Step 2.3 -->
+    <g transform="translate(18, 518)">
+      <rect width="294" height="150" rx="8" fill="url(#cardGradWf)" stroke="#334155" stroke-width="1"/>
+      <rect x="0" y="0" width="4" height="150" rx="2" fill="#fbbf24"/>
+      <text x="14" y="22" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#f8fafc">2.3 Horizon Profiler</text>
+      <text x="14" y="40" font-family="system-ui, sans-serif" font-size="10.5" fill="#fbbf24">Target Station Route Routing</text>
+
+      <text x="14" y="64" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">Target: Lucknow Charbagh (LKO)</text>
+      <text x="14" y="82" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">• Remaining Distance: 72 km</text>
+      <text x="14" y="100" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">• Remaining Hops: 2 stations</text>
+      <text x="14" y="118" font-family="system-ui, sans-serif" font-size="11" fill="#38bdf8">• Horizon Tier: 1h Window (≤90 km)</text>
+      <text x="14" y="136" font-family="system-ui, sans-serif" font-size="10.5" font-weight="700" fill="#34d399">Selected Engine: Direct Booster</text>
+    </g>
+
+    <!-- Execution Timing Pill -->
+    <g transform="translate(18, 735)">
+      <rect width="294" height="36" rx="6" fill="#0f172a" stroke="#d97706" stroke-width="1"/>
+      <text x="147" y="23" font-family="monospace" font-size="11" font-weight="700" fill="#fbbf24" text-anchor="middle">Synthesis Latency: 3.4 ms</text>
+    </g>
+  </g>
+
+  <!-- ==================== PHASE 3: ML & CONFORMAL ==================== -->
+  <g transform="translate(770, 160)">
+    <rect width="330" height="790" rx="12" fill="url(#p3Grad)" stroke="#7c3aed" stroke-width="1.5" filter="url(#shadowWf)"/>
+    
+    <rect x="20" y="20" width="290" height="36" rx="6" fill="#7c3aed" fill-opacity="0.3" stroke="#c084fc" stroke-width="1"/>
+    <circle cx="38" cy="38" r="10" fill="#7c3aed"/>
+    <text x="38" y="42" font-family="system-ui, sans-serif" font-size="11" font-weight="800" fill="#fff" text-anchor="middle">3</text>
+    <text x="56" y="43" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#c084fc">ML &amp; UNCERTAINTY</text>
+
+    <text x="20" y="80" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#94a3b8">Quantile Ensemble &amp; CQR</text>
+
+    <!-- Step 3.1 -->
+    <g transform="translate(18, 98)">
+      <rect width="294" height="200" rx="8" fill="url(#cardGradWf)" stroke="#7c3aed" stroke-width="1.2"/>
+      <rect x="0" y="0" width="4" height="200" rx="2" fill="#c084fc"/>
+      <text x="14" y="22" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#c084fc">3.1 Quantile Boosters Exec</text>
+      <text x="14" y="40" font-family="system-ui, sans-serif" font-size="10.5" fill="#cbd5e1">LightGBM Pinball Loss Inference</text>
+
+      <!-- Prediction Pills -->
+      <g transform="translate(14, 52)">
+        <rect width="266" height="32" rx="4" fill="#0f172a" stroke="#38bdf8" stroke-width="0.8"/>
+        <text x="12" y="21" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">p10 (Optimistic):</text>
+        <text x="254" y="21" font-family="monospace" font-size="12" font-weight="700" fill="#38bdf8" text-anchor="end">+21.4 min</text>
+      </g>
+
+      <g transform="translate(14, 90)">
+        <rect width="266" height="32" rx="4" fill="#0f172a" stroke="#c084fc" stroke-width="1.2"/>
+        <text x="12" y="21" font-family="system-ui, sans-serif" font-size="11" fill="#f8fafc" font-weight="700">p50 (Median ETA):</text>
+        <text x="254" y="21" font-family="monospace" font-size="12" font-weight="800" fill="#c084fc" text-anchor="end">+28.2 min</text>
+      </g>
+
+      <g transform="translate(14, 128)">
+        <rect width="266" height="32" rx="4" fill="#0f172a" stroke="#f43f5e" stroke-width="0.8"/>
+        <text x="12" y="21" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">p90 (Pessimistic):</text>
+        <text x="254" y="21" font-family="monospace" font-size="12" font-weight="700" fill="#f43f5e" text-anchor="end">+39.1 min</text>
+      </g>
+
+      <text x="14" y="180" font-family="system-ui, sans-serif" font-size="10.5" fill="#94a3b8">Raw interval width: 17.7 min spread</text>
+    </g>
+
+    <!-- Step 3.2 -->
+    <g transform="translate(18, 316)">
+      <rect width="294" height="210" rx="8" fill="url(#cardGradWf)" stroke="#334155" stroke-width="1"/>
+      <rect x="0" y="0" width="4" height="210" rx="2" fill="#c084fc"/>
+      <text x="14" y="22" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#f8fafc">3.2 Conformal Calibration</text>
+      <text x="14" y="40" font-family="system-ui, sans-serif" font-size="10.5" fill="#c084fc">CQR Finite-Sample Bound</text>
+
+      <rect x="14" y="52" width="266" height="60" rx="4" fill="#0f172a" stroke="#c084fc" stroke-width="0.8"/>
+      <text x="22" y="70" font-family="system-ui, sans-serif" font-size="10.5" fill="#cbd5e1">Calibration Residual: <tspan fill="#38bdf8" font-weight="700">q̂ = ±1.8m</tspan></text>
+      <text x="22" y="88" font-family="system-ui, sans-serif" font-size="10.5" fill="#cbd5e1">Calibrated Cone: <tspan fill="#34d399" font-weight="700">[+19.6m, +40.9m]</tspan></text>
+      <text x="22" y="104" font-family="system-ui, sans-serif" font-size="9.5" fill="#94a3b8">Target Coverage: 80.0% Empirical</text>
+
+      <text x="14" y="132" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Verified Winkler Score: 57.94</text>
+      <text x="14" y="152" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Protects against under-confident bands</text>
+      <text x="14" y="172" font-family="system-ui, sans-serif" font-size="11" fill="#34d399">• Distribution-free guarantee holds</text>
+      <text x="14" y="192" font-family="system-ui, sans-serif" font-size="10" fill="#94a3b8">Valid under non-Gaussian delay tails</text>
+    </g>
+
+    <!-- Step 3.3: Challenger Check -->
+    <g transform="translate(18, 544)">
+      <rect width="294" height="130" rx="8" fill="url(#cardGradWf)" stroke="#334155" stroke-width="1"/>
+      <rect x="0" y="0" width="4" height="130" rx="2" fill="#c084fc"/>
+      <text x="14" y="22" font-family="system-ui, sans-serif" font-size="12" font-weight="700" fill="#f8fafc">3.3 Challenger GRU Audit</text>
+      <text x="14" y="40" font-family="system-ui, sans-serif" font-size="10.5" fill="#94a3b8">Sequential Check &amp; Loss Gate</text>
+
+      <text x="14" y="64" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• PyTorch GRU cross-verification</text>
+      <text x="14" y="84" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Ensemble variance: σ = 1.1 min</text>
+      <text x="14" y="104" font-family="system-ui, sans-serif" font-size="11" font-weight="700" fill="#34d399">✓ Gate Approved: High Confidence</text>
+    </g>
+
+    <!-- Timing Pill -->
+    <g transform="translate(18, 735)">
+      <rect width="294" height="36" rx="6" fill="#0f172a" stroke="#7c3aed" stroke-width="1"/>
+      <text x="147" y="23" font-family="monospace" font-size="11" font-weight="700" fill="#c084fc" text-anchor="middle">ML Inference: 4.6 ms</text>
+    </g>
+  </g>
+
+  <!-- ==================== PHASE 4: SAFETY & LEDGER ==================== -->
+  <g transform="translate(1125, 160)">
+    <rect width="330" height="790" rx="12" fill="url(#p4Grad)" stroke="#059669" stroke-width="1.5" filter="url(#shadowWf)"/>
+    
+    <rect x="20" y="20" width="290" height="36" rx="6" fill="#059669" fill-opacity="0.3" stroke="#34d399" stroke-width="1"/>
+    <circle cx="38" cy="38" r="10" fill="#059669"/>
+    <text x="38" y="42" font-family="system-ui, sans-serif" font-size="11" font-weight="800" fill="#fff" text-anchor="middle">4</text>
+    <text x="56" y="43" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#34d399">GUARDRAIL &amp; SEAL</text>
+
+    <text x="20" y="80" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#94a3b8">Zero-ML Safety + SHA-256</text>
+
+    <!-- Step 4.1 -->
+    <g transform="translate(18, 98)">
+      <rect width="294" height="190" rx="8" fill="url(#cardGradWf)" stroke="#059669" stroke-width="1.2"/>
+      <rect x="0" y="0" width="4" height="190" rx="2" fill="#34d399"/>
+      <text x="14" y="22" font-family="system-ui, sans-serif" font-size="12.5" font-weight="800" fill="#34d399">4.1 Deterministic Interlock</text>
+      <text x="14" y="40" font-family="system-ui, sans-serif" font-size="10.5" fill="#f8fafc">5 Zero-ML Invariant Checks</text>
+
+      <g transform="translate(14, 52)">
+        <text x="0" y="16" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">✓ Input bounds: [0, 160 km/h] MPS</text>
+        <text x="0" y="36" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">✓ Kinematic catch-up: max 22 km/h</text>
+        <text x="0" y="56" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">✓ Non-crossing: q10 ≤ q50 ≤ q90</text>
+        <text x="0" y="76" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">✓ Drift clamping: [-5, 720] min</text>
+        <text x="0" y="96" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">✓ Cancellation flag: False (&lt;300m)</text>
+      </g>
+
+      <rect x="14" y="156" width="266" height="24" rx="4" fill="#022c22" stroke="#059669" stroke-width="1"/>
+      <text x="147" y="172" font-family="system-ui, sans-serif" font-size="10" font-weight="800" fill="#34d399" text-anchor="middle">STATUS: ALL 5 RULES PASSED</text>
+    </g>
+
+    <!-- Step 4.2 -->
+    <g transform="translate(18, 306)">
+      <rect width="294" height="175" rx="8" fill="url(#cardGradWf)" stroke="#334155" stroke-width="1"/>
+      <rect x="0" y="0" width="4" height="175" rx="2" fill="#fbbf24"/>
+      <text x="14" y="22" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#fbbf24">4.2 Causal Delay Autopsy</text>
+      <text x="14" y="40" font-family="system-ui, sans-serif" font-size="10.5" fill="#cbd5e1">Decomposing 18 min Delay</text>
+
+      <rect x="14" y="52" width="266" height="74" rx="4" fill="#0f172a" stroke="#334155" stroke-width="0.8"/>
+      <text x="22" y="70" font-family="system-ui, sans-serif" font-size="10.5" fill="#fbbf24">• Rake Turnaround Inherit: 12 min</text>
+      <text x="22" y="88" font-family="system-ui, sans-serif" font-size="10.5" fill="#38bdf8">• TSR Speed Restriction: 4 min</text>
+      <text x="22" y="106" font-family="system-ui, sans-serif" font-size="10.5" fill="#94a3b8">• Morning Fog Visibility: 2 min</text>
+      <text x="22" y="120" font-family="monospace" font-size="9.5" font-weight="700" fill="#34d399">∑ Causes ≡ +18 min (Exact Additivity)</text>
+
+      <text x="14" y="146" font-family="system-ui, sans-serif" font-size="10.5" fill="#cbd5e1">• Attached sensor pointers to ledger</text>
+      <text x="14" y="162" font-family="system-ui, sans-serif" font-size="10" fill="#94a3b8">TSR Record #4821 at KM 1022</text>
+    </g>
+
+    <!-- Step 4.3 -->
+    <g transform="translate(18, 498)">
+      <rect width="294" height="210" rx="8" fill="url(#cardGradWf)" stroke="#f59e0b" stroke-width="1.2"/>
+      <rect x="0" y="0" width="4" height="210" rx="2" fill="#fbbf24"/>
+      <text x="14" y="22" font-family="system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#fbbf24">4.3 SHA-256 Ledger Sealing</text>
+      <text x="14" y="40" font-family="system-ui, sans-serif" font-size="10.5" fill="#cbd5e1">Cryptographic Proof Receipt</text>
+
+      <rect x="14" y="52" width="266" height="50" rx="4" fill="#0f172a" stroke="#d97706" stroke-width="0.8"/>
+      <text x="22" y="70" font-family="system-ui, sans-serif" font-size="10" fill="#94a3b8">Generated Block #1963 Hash:</text>
+      <text x="22" y="86" font-family="monospace" font-size="10" font-weight="700" fill="#fbbf24">9f8a4c1e...b73a21</text>
+
+      <text x="14" y="120" font-family="system-ui, sans-serif" font-size="11" fill="#f87171" font-weight="700">• Sealed at 11:24:00 (BEFORE arrival)</text>
+      <text x="14" y="140" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Tamper-evident: Cannot edit later</text>
+      <text x="14" y="160" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">• Verification: verify_chain_integrity()</text>
+      <text x="14" y="180" font-family="system-ui, sans-serif" font-size="10" fill="#34d399">✓ 1,962 preceding blocks validated</text>
+    </g>
+
+    <!-- Timing Pill -->
+    <g transform="translate(18, 735)">
+      <rect width="294" height="36" rx="6" fill="#0f172a" stroke="#059669" stroke-width="1"/>
+      <text x="147" y="23" font-family="monospace" font-size="11" font-weight="700" fill="#34d399" text-anchor="middle">Guardrail &amp; Hash: 2.1 ms</text>
+    </g>
+  </g>
+
+  <!-- ==================== PHASE 5: DUAL VALUE DELIVERY ==================== -->
+  <g transform="translate(1480, 160)">
+    <rect width="380" height="790" rx="12" fill="url(#p5Grad)" stroke="#38bdf8" stroke-width="1.5" filter="url(#shadowWf)"/>
+    
+    <rect x="20" y="20" width="340" height="36" rx="6" fill="#0284c7" fill-opacity="0.3" stroke="#38bdf8" stroke-width="1"/>
+    <circle cx="38" cy="38" r="10" fill="#0284c7"/>
+    <text x="38" y="42" font-family="system-ui, sans-serif" font-size="11" font-weight="800" fill="#fff" text-anchor="middle">5</text>
+    <text x="56" y="43" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#38bdf8">DUAL DECISION DELIVERY</text>
+
+    <text x="20" y="80" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#94a3b8">Passenger &amp; Dispatch Impact</text>
+
+    <!-- Stream A: Passenger App -->
+    <g transform="translate(18, 98)">
+      <rect width="344" height="255" rx="8" fill="url(#cardGradWf)" stroke="#38bdf8" stroke-width="1.2"/>
+      <rect x="0" y="0" width="4" height="255" rx="2" fill="#38bdf8"/>
+      
+      <rect x="14" y="14" width="130" height="20" rx="4" fill="#0284c7" fill-opacity="0.25"/>
+      <text x="79" y="28" font-family="system-ui, sans-serif" font-size="10" font-weight="800" fill="#38bdf8" text-anchor="middle">PASSENGER BENEFIT</text>
+
+      <text x="14" y="52" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#f8fafc">Honest Dynamic Arrival Cone</text>
+      
+      <!-- Cone Display -->
+      <g transform="translate(14, 62)">
+        <rect width="316" height="70" rx="6" fill="#0f172a" stroke="#334155" stroke-width="0.8"/>
+        <text x="12" y="20" font-family="system-ui, sans-serif" font-size="10.5" fill="#94a3b8">Arrival at Lucknow (LKO):</text>
+        <text x="12" y="38" font-family="system-ui, sans-serif" font-size="15" font-weight="800" fill="#38bdf8">12:15 PM – 12:33 PM</text>
+        <text x="12" y="56" font-family="system-ui, sans-serif" font-size="10.5" fill="#34d399">Most Probable (p50): 12:22 PM</text>
+      </g>
+
+      <rect x="14" y="144" width="316" height="60" rx="6" fill="#0f172a" stroke="#334155" stroke-width="0.8"/>
+      <text x="22" y="162" font-family="system-ui, sans-serif" font-size="10" font-weight="700" fill="#fbbf24">Passenger Explanation:</text>
+      <text x="22" y="178" font-family="system-ui, sans-serif" font-size="10.5" fill="#cbd5e1">"Delay of 22 min due to turnaround rake</text>
+      <text x="22" y="194" font-family="system-ui, sans-serif" font-size="10.5" fill="#cbd5e1">deficit &amp; track speed restriction at KM 1022"</text>
+
+      <text x="14" y="222" font-family="system-ui, sans-serif" font-size="10.5" fill="#34d399" font-weight="600">✓ Eliminates false "Right Time" certainty</text>
+      <text x="14" y="238" font-family="system-ui, sans-serif" font-size="10.5" fill="#94a3b8">✓ Passengers plan onward cab/train safely</text>
+    </g>
+
+    <!-- Stream B: Section Controller DSS -->
+    <g transform="translate(18, 368)">
+      <rect width="344" height="280" rx="8" fill="url(#cardGradWf)" stroke="#f59e0b" stroke-width="1.2"/>
+      <rect x="0" y="0" width="4" height="280" rx="2" fill="#fbbf24"/>
+      
+      <rect x="14" y="14" width="155" height="20" rx="4" fill="#d97706" fill-opacity="0.25"/>
+      <text x="91" y="28" font-family="system-ui, sans-serif" font-size="10" font-weight="800" fill="#fbbf24" text-anchor="middle">DISPATCHER ADVISORY</text>
+
+      <text x="14" y="52" font-family="system-ui, sans-serif" font-size="13" font-weight="700" fill="#f8fafc">SimPy Connection Custody DSS</text>
+
+      <!-- Algorithmic Recommendation -->
+      <g transform="translate(14, 62)">
+        <rect width="316" height="88" rx="6" fill="#0f172a" stroke="#d97706" stroke-width="1"/>
+        <text x="12" y="20" font-family="system-ui, sans-serif" font-size="11" font-weight="700" fill="#fbbf24">Algorithm Recommendation (LKO):</text>
+        <text x="12" y="38" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">Hold connecting Train #12419 (Gomti Exp)</text>
+        <text x="12" y="54" font-family="system-ui, sans-serif" font-size="11" fill="#cbd5e1">Hold Duration: <tspan fill="#38bdf8" font-weight="700">6 minutes</tspan> at Platform 2</text>
+        <text x="12" y="74" font-family="system-ui, sans-serif" font-size="12" font-weight="800" fill="#34d399">Trade-off: +115.0 Pax-Hours Saved</text>
+      </g>
+
+      <g transform="translate(14, 160)">
+        <rect width="316" height="66" rx="6" fill="#0f172a" stroke="#334155" stroke-width="0.8"/>
+        <text x="12" y="18" font-family="system-ui, sans-serif" font-size="10.5" font-weight="700" fill="#38bdf8">Downstream Ripple Impact Analysis:</text>
+        <text x="12" y="36" font-family="system-ui, sans-serif" font-size="10" fill="#cbd5e1">Holding 6 min creates 0 conflict on line;</text>
+        <text x="12" y="50" font-family="system-ui, sans-serif" font-size="10" fill="#cbd5e1">Gomti Exp absorbs delay via timetable slack.</text>
+      </g>
+
+      <text x="14" y="244" font-family="system-ui, sans-serif" font-size="10.5" font-weight="700" fill="#fbbf24">Section Controller Retains Final Authority</text>
+      <text x="14" y="260" font-family="system-ui, sans-serif" font-size="10" fill="#94a3b8">Advisory DSS only · human_ack_required = True</text>
+    </g>
+
+    <!-- Closed Loop Post-Arrival Step -->
+    <g transform="translate(18, 660)">
+      <rect width="344" height="62" rx="8" fill="#022c22" stroke="#059669" stroke-width="1.2"/>
+      <text x="14" y="22" font-family="system-ui, sans-serif" font-size="11" font-weight="700" fill="#34d399">Closed-Loop Auto-Grading at 12:20:</text>
+      <text x="14" y="38" font-family="system-ui, sans-serif" font-size="10" fill="#cbd5e1">Actual arrival at 12:20 (+20m delay) · Inside [19.6m, 40.9m] cone!</text>
+      <text x="14" y="52" font-family="monospace" font-size="9.5" font-weight="700" fill="#38bdf8">Receipt #1963 Graded: Absolute Error = 1.8 min (In-Band: YES)</text>
+    </g>
+
+    <!-- Timing Pill -->
+    <g transform="translate(18, 735)">
+      <rect width="344" height="36" rx="6" fill="#0f172a" stroke="#38bdf8" stroke-width="1"/>
+      <text x="172" y="23" font-family="monospace" font-size="11" font-weight="700" fill="#38bdf8" text-anchor="middle">Total Pipeline Latency: 11.9 ms</text>
+    </g>
+  </g>
+
+  <!-- ==================== BOTTOM HIGHLIGHT SUMMARY ==================== -->
+  <g transform="translate(60, 975)">
+    <rect width="1800" height="65" rx="8" fill="#0f172a" stroke="#334155" stroke-width="1.2"/>
+
+    <g transform="translate(24, 18)">
+      <text x="0" y="16" font-family="system-ui, sans-serif" font-size="12" font-weight="800" fill="#38bdf8">WHY THIS WINS OVER GENERIC SLACK / NTES:</text>
+      <text x="0" y="34" font-family="system-ui, sans-serif" font-size="12" fill="#cbd5e1">
+        Legacy systems display static estimates that fail when network congestion compounds. RailTwin-X computes <tspan fill="#fbbf24" font-weight="700">dynamic multi-horizon foresight</tspan>, bounds it with <tspan fill="#34d399" font-weight="700">conformal certainty</tspan>, and provides dispatchers with <tspan fill="#38bdf8" font-weight="700">quantified passenger-hour trade-offs</tspan>.
+      </text>
+    </g>
+
+    <g transform="translate(1550, 15)">
+      <rect width="225" height="36" rx="6" fill="#0284c7" fill-opacity="0.2" stroke="#38bdf8" stroke-width="1"/>
+      <text x="112" y="23" font-family="system-ui, sans-serif" font-size="11" font-weight="700" fill="#38bdf8" text-anchor="middle">TOTAL CYCLE: &lt; 15 MILLISECONDS</text>
+    </g>
+  </g>
+</svg>

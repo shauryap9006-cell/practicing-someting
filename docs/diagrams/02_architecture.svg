@@ -1,0 +1,270 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1600" height="960" viewBox="0 0 1600 960"
+     xmlns="http://www.w3.org/2000/svg"
+     font-family="'Segoe UI', system-ui, -apple-system, Arial, sans-serif">
+<defs>
+  <marker id="arr" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#64748b"/></marker>
+  <marker id="arrW" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="white"/></marker>
+  <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="5" flood-color="#0000001a"/></filter>
+  <linearGradient id="hdr" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#0f172a"/>
+    <stop offset="100%" stop-color="#1e3a5f"/>
+  </linearGradient>
+  <pattern id="dots" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+    <circle cx="1" cy="1" r="0.8" fill="#cbd5e1" opacity="0.4"/>
+  </pattern>
+</defs>
+<rect width="1600" height="960" fill="#f1f5f9"/>
+<rect width="1600" height="960" fill="url(#dots)"/>
+<rect width="1600" height="60" fill="url(#hdr)"/>
+<rect y="56" width="1600" height="4" fill="#f97316"/>
+<text x="24" y="26" font-size="20" font-weight="800" fill="white">RailTwin-X  --  System Architecture</text>
+<text x="24" y="48" font-size="11" fill="#94a3b8">6-Layer AI Digital Twin  -  Data Ingestion  -  Feature Pipeline  -  ML Suite  -  Safety  -  API  -  Frontend</text>
+<text x="1576" y="36" font-size="10" fill="#475569" text-anchor="end">SIH 2026 - Problem 26028  -  NDLS-CNB-LKO  -  440 km</text>
+
+<!-- ====================================
+     LAYER LABELS (left side)
+     ==================================== -->
+<text x="14" y="130" font-size="10" font-weight="700" fill="#14b8a6" transform="rotate(-90, 14, 130)">FRONTEND</text>
+<text x="14" y="258" font-size="10" font-weight="700" fill="#f97316" transform="rotate(-90, 14, 258)">API</text>
+<text x="14" y="386" font-size="10" font-weight="700" fill="#ef4444" transform="rotate(-90, 14, 386)">SAFETY</text>
+<text x="14" y="520" font-size="10" font-weight="700" fill="#8b5cf6" transform="rotate(-90, 14, 520)">ML</text>
+<text x="14" y="686" font-size="10" font-weight="700" fill="#3b82f6" transform="rotate(-90, 14, 686)">FEATURES</text>
+<text x="14" y="830" font-size="10" font-weight="700" fill="#64748b" transform="rotate(-90, 14, 830)">DATA</text>
+
+<!-- ====================================
+     LAYER 1 (TOP): FRONTEND  y=68-176
+     ==================================== -->
+<rect x="28" y="68" width="1556" height="108" rx="10" fill="#f0fdfa" stroke="#14b8a6" stroke-width="2" filter="url(#sh)"/>
+<rect x="28" y="68" width="1556" height="8" rx="4" fill="#14b8a6"/>
+<text x="50" y="88" font-size="11" font-weight="700" fill="#0f766e">LAYER 6  --  NEXT.JS CONTROLLER DASHBOARD  +  PASSENGER WEB/APP</text>
+
+<!-- Frontend boxes -->
+<rect x="44"   y="88" width="226" height="72" rx="8" fill="white" stroke="#14b8a6" stroke-width="1.5" filter="url(#sh)"/>
+<text x="157"  y="108" text-anchor="middle" font-size="11" font-weight="700" fill="#0f766e">Live Platform Gantt</text>
+<text x="157"  y="125" text-anchor="middle" font-size="10" fill="#134e4a">Real-time train positions</text>
+<text x="157"  y="141" text-anchor="middle" font-size="10" fill="#0d9488">Platform slot assignments</text>
+<text x="157"  y="155" text-anchor="middle" font-size="10" fill="#0d9488">WebSocket live refresh</text>
+
+<rect x="284"  y="88" width="226" height="72" rx="8" fill="white" stroke="#14b8a6" stroke-width="1.5" filter="url(#sh)"/>
+<text x="397"  y="108" text-anchor="middle" font-size="11" font-weight="700" fill="#0f766e">Calibrated Timeline</text>
+<text x="397"  y="125" text-anchor="middle" font-size="10" fill="#134e4a">p10 / p50 / p90 cones</text>
+<text x="397"  y="141" text-anchor="middle" font-size="10" fill="#0d9488">Uncertainty widens w/ dist</text>
+<text x="397"  y="155" text-anchor="middle" font-size="10" fill="#0d9488">Coverage bands visible</text>
+
+<rect x="524"  y="88" width="226" height="72" rx="8" fill="white" stroke="#14b8a6" stroke-width="1.5" filter="url(#sh)"/>
+<text x="637"  y="108" text-anchor="middle" font-size="11" font-weight="700" fill="#0f766e">Conflict Alert Feed</text>
+<text x="637"  y="125" text-anchor="middle" font-size="10" fill="#134e4a">Headway breach warnings</text>
+<text x="637"  y="141" text-anchor="middle" font-size="10" fill="#0d9488">Single-line block conflicts</text>
+<text x="637"  y="155" text-anchor="middle" font-size="10" fill="#0d9488">Priority override alerts</text>
+
+<rect x="764"  y="88" width="226" height="72" rx="8" fill="white" stroke="#14b8a6" stroke-width="1.5" filter="url(#sh)"/>
+<text x="877"  y="108" text-anchor="middle" font-size="11" font-weight="700" fill="#0f766e">What-If Simulator</text>
+<text x="877"  y="125" text-anchor="middle" font-size="10" fill="#134e4a">Interactive delay injection</text>
+<text x="877"  y="141" text-anchor="middle" font-size="10" fill="#0d9488">Cascade ripple preview</text>
+<text x="877"  y="155" text-anchor="middle" font-size="10" fill="#0d9488">Network reoptimization</text>
+
+<rect x="1004" y="88" width="226" height="72" rx="8" fill="white" stroke="#14b8a6" stroke-width="1.5" filter="url(#sh)"/>
+<text x="1117" y="108" text-anchor="middle" font-size="11" font-weight="700" fill="#0f766e">Passenger Track</text>
+<text x="1117" y="125" text-anchor="middle" font-size="10" fill="#134e4a">ETA cone + cause text</text>
+<text x="1117" y="141" text-anchor="middle" font-size="10" fill="#0d9488">Connection hold advisory</text>
+<text x="1117" y="155" text-anchor="middle" font-size="10" fill="#0d9488">Push notifications</text>
+
+<rect x="1244" y="88" width="324" height="72" rx="8" fill="white" stroke="#14b8a6" stroke-width="1.5" filter="url(#sh)"/>
+<text x="1406" y="108" text-anchor="middle" font-size="11" font-weight="700" fill="#0f766e">Time Machine Replay</text>
+<text x="1406" y="125" text-anchor="middle" font-size="10" fill="#134e4a">Historical scenario playback</text>
+<text x="1406" y="141" text-anchor="middle" font-size="10" fill="#0d9488">Model-vs-actual comparison</text>
+<text x="1406" y="155" text-anchor="middle" font-size="10" fill="#0d9488">Honest Model Card metrics</text>
+
+<!-- Arrows layer1 to layer2 -->
+<line x1="800" y1="176" x2="800" y2="194" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+
+<!-- ====================================
+     LAYER 2: API + ENGINE  y=196-304
+     ==================================== -->
+<rect x="28" y="196" width="1556" height="108" rx="10" fill="#fff7ed" stroke="#f97316" stroke-width="2" filter="url(#sh)"/>
+<rect x="28" y="196" width="1556" height="8" rx="4" fill="#f97316"/>
+<text x="50" y="216" font-size="11" font-weight="700" fill="#c2410c">LAYER 5  --  FASTAPI APPLICATION SERVER  +  DECISION INTELLIGENCE ENGINE</text>
+
+<rect x="44"   y="216" width="276" height="72" rx="8" fill="white" stroke="#f97316" stroke-width="1.5" filter="url(#sh)"/>
+<text x="182"  y="236" text-anchor="middle" font-size="11" font-weight="700" fill="#c2410c">FastAPI App Server</text>
+<text x="182"  y="253" text-anchor="middle" font-size="10" fill="#9a3412">CORS + API-Key Auth Middleware</text>
+<text x="182"  y="270" text-anchor="middle" font-size="10" fill="#ea580c">Rate-limit + request logging</text>
+<text x="182"  y="283" text-anchor="middle" font-size="10" fill="#ea580c">30+ route modules registered</text>
+
+<rect x="334"  y="216" width="276" height="72" rx="8" fill="white" stroke="#f97316" stroke-width="1.5" filter="url(#sh)"/>
+<text x="472"  y="236" text-anchor="middle" font-size="11" font-weight="700" fill="#c2410c">Predictor Service</text>
+<text x="472"  y="253" text-anchor="middle" font-size="10" fill="#9a3412">3-Tier fallback: ML-Hist-Sched</text>
+<text x="472"  y="270" text-anchor="middle" font-size="10" fill="#ea580c">p10 / p50 / p90 ETA output</text>
+<text x="472"  y="283" text-anchor="middle" font-size="10" fill="#ea580c">Causal attribution [7 buckets]</text>
+
+<rect x="624"  y="216" width="276" height="72" rx="8" fill="white" stroke="#f97316" stroke-width="1.5" filter="url(#sh)"/>
+<text x="762"  y="236" text-anchor="middle" font-size="11" font-weight="700" fill="#c2410c">Conflict Scanner</text>
+<text x="762"  y="253" text-anchor="middle" font-size="10" fill="#9a3412">Headway breach detection</text>
+<text x="762"  y="270" text-anchor="middle" font-size="10" fill="#ea580c">Single-line block engine</text>
+<text x="762"  y="283" text-anchor="middle" font-size="10" fill="#ea580c">Priority-based resolution</text>
+
+<rect x="914"  y="216" width="276" height="72" rx="8" fill="white" stroke="#f97316" stroke-width="1.5" filter="url(#sh)"/>
+<text x="1052" y="236" text-anchor="middle" font-size="11" font-weight="700" fill="#c2410c">Cascade Simulator (SimPy)</text>
+<text x="1052" y="253" text-anchor="middle" font-size="10" fill="#9a3412">Network reoptimization</text>
+<text x="1052" y="270" text-anchor="middle" font-size="10" fill="#ea580c">What-If event injection</text>
+<text x="1052" y="283" text-anchor="middle" font-size="10" fill="#ea580c">Ripple propagation model</text>
+
+<rect x="1204" y="216" width="364" height="72" rx="8" fill="white" stroke="#f97316" stroke-width="1.5" filter="url(#sh)"/>
+<text x="1386" y="236" text-anchor="middle" font-size="11" font-weight="700" fill="#c2410c">WebSocket Stream  /v1/ws/live</text>
+<text x="1386" y="253" text-anchor="middle" font-size="10" fill="#9a3412">Instant state push to all clients</text>
+<text x="1386" y="270" text-anchor="middle" font-size="10" fill="#ea580c">Connection custody advisory</text>
+<text x="1386" y="283" text-anchor="middle" font-size="10" fill="#ea580c">+115 pax-hours saved per hold</text>
+
+<!-- Arrows -->
+<line x1="800" y1="304" x2="800" y2="322" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+
+<!-- ====================================
+     LAYER 3: SAFETY + LEDGER  y=324-408
+     ==================================== -->
+<rect x="28" y="324" width="1556" height="84" rx="10" fill="#fef2f2" stroke="#ef4444" stroke-width="2" filter="url(#sh)"/>
+<rect x="28" y="324" width="1556" height="8" rx="4" fill="#ef4444"/>
+<text x="50" y="344" font-size="11" font-weight="700" fill="#b91c1c">LAYER 4  --  SAFETY INTERLOCK  +  AUDIT LEDGER  (Zero ML - Fully Deterministic)</text>
+
+<rect x="44"   y="344" width="740" height="56" rx="8" fill="white" stroke="#ef4444" stroke-width="1.5" filter="url(#sh)"/>
+<text x="414"  y="362" text-anchor="middle" font-size="11" font-weight="700" fill="#b91c1c">Kinematic Safety Interlock</text>
+<text x="414"  y="378" text-anchor="middle" font-size="10" fill="#6b7280">5 deterministic rules: Domain sanity - Recovery rate - Quantile order - Delay clamping - Cancellation flag</text>
+<text x="414"  y="393" text-anchor="middle" font-size="10" fill="#dc2626">human_ack_required = True when delay &gt; 300 min   -   Zero cases where ML overrides physics</text>
+
+<rect x="800"  y="344" width="768" height="56" rx="8" fill="white" stroke="#22c55e" stroke-width="1.5" filter="url(#sh)"/>
+<text x="1184" y="362" text-anchor="middle" font-size="11" font-weight="700" fill="#15803d">SHA-256 Tamper-Evident Audit Ledger</text>
+<text x="1184" y="378" text-anchor="middle" font-size="10" fill="#6b7280">Append-only hash chain: block n links prev_hash to curr_hash - Sealed before arrival</text>
+<text x="1184" y="393" text-anchor="middle" font-size="10" fill="#16a34a">1,962 blocks - verify_chain_integrity() passes - Zero retroactive score manipulation</text>
+
+<!-- Arrow -->
+<line x1="800" y1="408" x2="800" y2="424" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+
+<!-- ====================================
+     LAYER 4: ML SUITE  y=426-598
+     ==================================== -->
+<rect x="28" y="426" width="1556" height="172" rx="10" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="2" filter="url(#sh)"/>
+<rect x="28" y="426" width="1556" height="8" rx="4" fill="#8b5cf6"/>
+<text x="50" y="446" font-size="11" font-weight="700" fill="#5b21b6">LAYER 3  --  MULTI-TIER MACHINE LEARNING SUITE  +  UNCERTAINTY QUANTIFICATION</text>
+
+<!-- Champion sub-box -->
+<rect x="44"   y="448" width="480" height="136" rx="8" fill="white" stroke="#8b5cf6" stroke-width="1.5" filter="url(#sh)"/>
+<rect x="44"   y="448" width="480" height="26" rx="6" fill="#ede9fe"/>
+<text x="284"  y="465" text-anchor="middle" font-size="11" font-weight="700" fill="#4c1d95">CHAMPION TIER  --  LightGBM Quantile Boosters</text>
+<rect x="60"   y="480" width="210" height="92" rx="6" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="1"/>
+<text x="165"  y="498" text-anchor="middle" font-size="10.5" font-weight="600" fill="#6d28d9">LightGBM Direct</text>
+<text x="165"  y="515" text-anchor="middle" font-size="10" fill="#7c3aed">Direct q10/q50/q90</text>
+<text x="165"  y="531" text-anchor="middle" font-size="10" fill="#8b5cf6">Hops 3 or fewer stations</text>
+<text x="165"  y="547" text-anchor="middle" font-size="10" fill="#9f75f7">Early stop: 50 rounds</text>
+<text x="165"  y="563" text-anchor="middle" font-size="10" fill="#9f75f7">Latency under 5 ms</text>
+<rect x="296"  y="480" width="210" height="92" rx="6" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="1"/>
+<text x="401"  y="498" text-anchor="middle" font-size="10.5" font-weight="600" fill="#6d28d9">LightGBM Delta</text>
+<text x="401"  y="515" text-anchor="middle" font-size="10" fill="#7c3aed">Delta q10/q50/q90</text>
+<text x="401"  y="531" text-anchor="middle" font-size="10" fill="#8b5cf6">Autoregressive rollout</text>
+<text x="401"  y="547" text-anchor="middle" font-size="10" fill="#9f75f7">More than 3 hops (3h-6h)</text>
+<text x="401"  y="563" text-anchor="middle" font-size="10" fill="#9f75f7">-36.3% vs NTES at 3h</text>
+
+<!-- Challenger sub-box -->
+<rect x="540"  y="448" width="320" height="136" rx="8" fill="white" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="6,3" filter="url(#sh)"/>
+<rect x="540"  y="448" width="320" height="26" rx="6" fill="#ede9fe"/>
+<text x="700"  y="465" text-anchor="middle" font-size="11" font-weight="700" fill="#5b21b6">CHALLENGER  --  PyTorch GRU</text>
+<text x="700"  y="492" text-anchor="middle" font-size="10.5" fill="#6d28d9">2-Layer Non-Crossing GRU</text>
+<text x="700"  y="509" text-anchor="middle" font-size="10" fill="#7c3aed">Pinball loss (quantile regression)</text>
+<text x="700"  y="525" text-anchor="middle" font-size="10" fill="#7c3aed">Gradient clip 1.0</text>
+<text x="700"  y="541" text-anchor="middle" font-size="10" fill="#8b5cf6">Statistical gate: Wilcoxon p &lt; 0.05</text>
+<text x="700"  y="557" text-anchor="middle" font-size="10" fill="#9f75f7">Latency check: under 20 ms</text>
+<text x="700"  y="573" text-anchor="middle" font-size="10" fill="#9f75f7">Coverage check: 75% min</text>
+
+<!-- Calibration sub-box -->
+<rect x="876"  y="448" width="340" height="136" rx="8" fill="white" stroke="#d946ef" stroke-width="1.5" filter="url(#sh)"/>
+<rect x="876"  y="448" width="340" height="26" rx="6" fill="#fdf4ff"/>
+<text x="1046" y="465" text-anchor="middle" font-size="11" font-weight="700" fill="#86198f">Conformal Calibration  (CQR)</text>
+<text x="1046" y="492" text-anchor="middle" font-size="10.5" fill="#a21caf">Mondrian CQR per horizon bucket</text>
+<text x="1046" y="509" text-anchor="middle" font-size="10" fill="#c026d3">q-hat direct / delta / GRU bands</text>
+<text x="1046" y="525" text-anchor="middle" font-size="10" fill="#c026d3">Non-crossing monotonic enforcement</text>
+<text x="1046" y="541" text-anchor="middle" font-size="10" fill="#a21caf">Target: 80% empirical coverage</text>
+<text x="1046" y="557" text-anchor="middle" font-size="10" fill="#a21caf">Achieved: 80.64% on 25,203 samples</text>
+<text x="1046" y="573" text-anchor="middle" font-size="10" fill="#86198f">NNLS convex stacking weights</text>
+
+<!-- Promotion Gate -->
+<rect x="1232" y="448" width="336" height="136" rx="8" fill="white" stroke="#ca8a04" stroke-width="1.5" filter="url(#sh)"/>
+<rect x="1232" y="448" width="336" height="26" rx="6" fill="#fef9c3"/>
+<text x="1400" y="465" text-anchor="middle" font-size="11" font-weight="700" fill="#78350f">Statistical Promotion Gate</text>
+<text x="1400" y="492" text-anchor="middle" font-size="10.5" fill="#92400e">Wilcoxon Signed-Rank Test</text>
+<text x="1400" y="509" text-anchor="middle" font-size="10" fill="#a16207">p-value &lt; 0.05 required</text>
+<text x="1400" y="525" text-anchor="middle" font-size="10" fill="#a16207">Latency must be under 20 ms</text>
+<text x="1400" y="541" text-anchor="middle" font-size="10" fill="#a16207">Coverage must exceed 75%</text>
+<text x="1400" y="557" text-anchor="middle" font-size="10" fill="#b45309">Champion auto-replaced if gate passes</text>
+<text x="1400" y="573" text-anchor="middle" font-size="10" fill="#b45309">6-fold rolling-origin CV validates</text>
+
+<!-- Arrow -->
+<line x1="800" y1="598" x2="800" y2="616" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+
+<!-- ====================================
+     LAYER 5: FEATURE PIPELINE  y=618-716
+     ==================================== -->
+<rect x="28" y="618" width="1556" height="98" rx="10" fill="#eff6ff" stroke="#3b82f6" stroke-width="2" filter="url(#sh)"/>
+<rect x="28" y="618" width="1556" height="8" rx="4" fill="#3b82f6"/>
+<text x="50" y="638" font-size="11" font-weight="700" fill="#1d4ed8">LAYER 2  --  LEAKAGE-SAFE FEATURE PIPELINE  (Shared Training and Serving Parity)</text>
+
+<rect x="44"   y="640" width="478" height="64" rx="8" fill="white" stroke="#3b82f6" stroke-width="1.5" filter="url(#sh)"/>
+<text x="283"  y="659" text-anchor="middle" font-size="11" font-weight="700" fill="#1d4ed8">SnapshotGenerator</text>
+<text x="283"  y="676" text-anchor="middle" font-size="10" fill="#2563eb">Identical snapshot for training and live serving</text>
+<text x="283"  y="693" text-anchor="middle" font-size="10" fill="#3b82f6">Time-split isolation - No future leakage guaranteed</text>
+
+<rect x="538"  y="640" width="478" height="64" rx="8" fill="white" stroke="#3b82f6" stroke-width="1.5" filter="url(#sh)"/>
+<text x="777"  y="659" text-anchor="middle" font-size="11" font-weight="700" fill="#1d4ed8">TrackGraph Context Engine</text>
+<text x="777"  y="676" text-anchor="middle" font-size="10" fill="#2563eb">Spatial headway calculation between trains</text>
+<text x="777"  y="693" text-anchor="middle" font-size="10" fill="#3b82f6">Block occupancy - yard queue - corridor topology</text>
+
+<rect x="1032" y="640" width="536" height="64" rx="8" fill="white" stroke="#3b82f6" stroke-width="1.5" filter="url(#sh)"/>
+<text x="1300" y="659" text-anchor="middle" font-size="11" font-weight="700" fill="#1d4ed8">23-Feature Vector  (F1-F23)</text>
+<text x="1300" y="676" text-anchor="middle" font-size="10" fill="#2563eb">Strongly typed - Physics features + Weather + Calendar + Network</text>
+<text x="1300" y="693" text-anchor="middle" font-size="10" fill="#3b82f6">Validated FEATURE_NAMES contract shared across train and serve</text>
+
+<!-- Arrow -->
+<line x1="800" y1="716" x2="800" y2="734" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+
+<!-- ====================================
+     LAYER 6 (BOTTOM): DATA SOURCES  y=736-858
+     ==================================== -->
+<rect x="28" y="736" width="1556" height="122" rx="10" fill="#f8fafc" stroke="#64748b" stroke-width="2" filter="url(#sh)"/>
+<rect x="28" y="736" width="1556" height="8" rx="4" fill="#64748b"/>
+<text x="50" y="756" font-size="11" font-weight="700" fill="#374151">LAYER 1  --  DATA INGESTION  +  CANONICAL SQLITE STORE</text>
+
+<rect x="44"   y="758" width="350" height="86" rx="8" fill="white" stroke="#64748b" stroke-width="1.5" filter="url(#sh)"/>
+<text x="219"  y="777" text-anchor="middle" font-size="11" font-weight="700" fill="#374151">IR Timetable Events</text>
+<text x="219"  y="794" text-anchor="middle" font-size="10" fill="#6b7280">Station arrival / departure records</text>
+<text x="219"  y="810" text-anchor="middle" font-size="10" fill="#6b7280">NDLS - GZB - CNB - LKO corridor</text>
+<text x="219"  y="826" text-anchor="middle" font-size="10" fill="#9ca3af">Historical: 2022-2025 time-split</text>
+
+<rect x="410"  y="758" width="350" height="86" rx="8" fill="white" stroke="#64748b" stroke-width="1.5" filter="url(#sh)"/>
+<text x="585"  y="777" text-anchor="middle" font-size="11" font-weight="700" fill="#374151">Open-Meteo Weather API</text>
+<text x="585"  y="794" text-anchor="middle" font-size="10" fill="#6b7280">Hourly fog hours (04:00-10:00)</text>
+<text x="585"  y="810" text-anchor="middle" font-size="10" fill="#6b7280">Precipitation (mm) - Temperature</text>
+<text x="585"  y="826" text-anchor="middle" font-size="10" fill="#9ca3af">Backfilled + daily cron updated</text>
+
+<rect x="776"  y="758" width="350" height="86" rx="8" fill="white" stroke="#64748b" stroke-width="1.5" filter="url(#sh)"/>
+<text x="951"  y="777" text-anchor="middle" font-size="11" font-weight="700" fill="#374151">Holidays Calendar Store</text>
+<text x="951"  y="794" text-anchor="middle" font-size="10" fill="#6b7280">Gazetted national holidays</text>
+<text x="951"  y="810" text-anchor="middle" font-size="10" fill="#6b7280">Festival rush periods (Diwali, etc.)</text>
+<text x="951"  y="826" text-anchor="middle" font-size="10" fill="#9ca3af">Travel demand multiplier flags</text>
+
+<rect x="1142" y="758" width="426" height="86" rx="8" fill="#f8fafc" stroke="#1d4ed8" stroke-width="2" filter="url(#sh)"/>
+<rect x="1142" y="758" width="426" height="28" rx="6" fill="#1e40af"/>
+<text x="1355" y="776" text-anchor="middle" font-size="11" font-weight="700" fill="white">SQLite Canonical Database</text>
+<text x="1355" y="800" text-anchor="middle" font-size="10" fill="#374151">Time-split isolated event store</text>
+<text x="1355" y="816" text-anchor="middle" font-size="10" fill="#374151">Single source of truth - no mocks</text>
+<text x="1355" y="832" text-anchor="middle" font-size="10" fill="#1d4ed8">Provenance verified: DATA_PROVENANCE.md</text>
+
+<!-- Data-flow arrows up to feature layer -->
+<line x1="219"  y1="758" x2="219"  y2="736" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3"/>
+<line x1="585"  y1="758" x2="585"  y2="736" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3"/>
+<line x1="951"  y1="758" x2="951"  y2="736" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3"/>
+<line x1="1355" y1="758" x2="1355" y2="736" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+<!-- FOOTER -->
+<rect y="876" width="1600" height="34" fill="#0f172a"/>
+<rect y="876" width="1600" height="4" fill="#f97316"/>
+<text x="800" y="893" text-anchor="middle" font-size="9.5" fill="#64748b">Corridor: New Delhi (NDLS)  to  Ghaziabad (GZB)  to  Kanpur Central (CNB)  to  Lucknow Charbagh (LKO)  --  440 km  --  8 stations</text>
+<text x="800" y="907" text-anchor="middle" font-size="9.5" fill="#475569">Overall MAE: 10.72 min  --  vs NTES: -40.5%  --  25,203 test samples  --  6-fold rolling-origin temporal CV  --  268+ unit tests</text>
+</svg>

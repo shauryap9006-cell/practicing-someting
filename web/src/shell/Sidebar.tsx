@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useConnectionState } from '../lib/api';
 
@@ -35,6 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenSearch }) => {
     { path: '/network', label: 'Corridor Twin', micro: 'FLEET 1D' },
     { path: '/compare', label: 'Shock Lab', micro: 'VS NTES' },
     { path: '/proof', label: 'Model Proof', micro: 'LEDGER' },
+    { path: '/neural-flow', label: 'Neural Flow', micro: 'AI PIPELINE' },
     { path: '/kiosk', label: 'Station PIDS', micro: 'DISPLAY' },
   ];
 

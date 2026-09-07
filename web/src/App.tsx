@@ -1,4 +1,4 @@
-﻿import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ConnectionProvider } from './lib/api';
@@ -23,6 +23,9 @@ const ComparePage = lazy(() =>
 );
 const ProofPage = lazy(() =>
   import('./pages/ProofPage').then((m) => ({ default: m.ProofPage }))
+);
+const NeuralFlowPage = lazy(() =>
+  import('./pages/NeuralFlowPage').then((m) => ({ default: m.NeuralFlowPage }))
 );
 const KioskPage = lazy(() =>
   import('./pages/KioskPage').then((m) => ({ default: m.KioskPage }))
@@ -98,8 +101,18 @@ export default function App() {
                   </AppShell>
                 }
               />
+              <Route
+                path="/neural-flow"
+                element={
+                  <AppShell>
+                    <NeuralFlowPage />
+                  </AppShell>
+                }
+              />
 
-              {/* Backward-Compatibility Redirects */}
+              {/* Backward-Compatibility & Convenient Aliases */}
+              <Route path="/pipeline" element={<Navigate to="/neural-flow" replace />} />
+              <Route path="/brain" element={<Navigate to="/neural-flow" replace />} />
               <Route path="/track" element={<Navigate to="/t" replace />} />
               <Route path="/track/:trainNo" element={<Navigate to="/t/:trainNo" replace />} />
               <Route path="/corridor" element={<Navigate to="/network" replace />} />
