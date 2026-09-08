@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added — Phase 7 (MLOps)
 - `ml/drift.py`: PSI (Population Stability Index) feature drift monitor across 7 key features. GREEN/AMBER/RED thresholds. Saves `artifacts/drift_report.json`.
 - `scripts/nightly_pipeline.py`: Full pipeline orchestrator (seed → snapshot → lgbm → gru → ensemble → eval → drift).
-- `Dockerfile`: Production Docker image (`python:3.11-slim`, libgomp, health check, 2 uvicorn workers).
+- `Dockerfile`: Production Docker image (`python:3.11-slim`, libgomp, health check, 1 uvicorn worker).
 - `docker-compose.yml`: Single-service stack with persistent volumes for DB, artifacts, and Parquet cache.
 - `Makefile`: 20+ targets for developer ops (`seed`, `train`, `eval`, `drift`, `nightly`, `test`, `api`, `docker-*`).
 

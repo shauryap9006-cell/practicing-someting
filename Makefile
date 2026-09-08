@@ -99,8 +99,10 @@ test-e2e:
 api:
 	$(PYTHON) -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
 
+# Single worker is a hard constraint: rate limiter, idempotency cache, SSE counters,
+# simulated clock, kinematic tracker, and SQLite writer are process-local.
 api-prod:
-	$(PYTHON) -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --workers 2
+	$(PYTHON) -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --workers 1
 
 ##──────────────────────────────────────────────────────────────
 ## Docker

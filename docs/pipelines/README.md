@@ -367,10 +367,10 @@ make api
 # Equivalent CLI:
 python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
 
-# Start production API server with multi-worker concurrency
+# Start production API server (single-worker process-local state)
 make api-prod
 # Equivalent CLI:
-python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --workers 2
+python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --workers 1
 
 # Build Docker image for RailTwin-X
 make docker-build
