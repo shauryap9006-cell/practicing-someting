@@ -98,9 +98,12 @@ export function useConnectionState(): ConnectionInfo {
 // -----------------------------------------------------------------------
 // CORE HONEST FETCH CLIENT - NO MOCKS, NO FALLBACKS
 // -----------------------------------------------------------------------
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+
 async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
+  const url = API_BASE && path.startsWith('/') ? `${API_BASE}${path}` : path;
   try {
-    const res = await fetch(path, {
+    const res = await fetch(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',

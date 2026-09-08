@@ -12,6 +12,7 @@ firebase-admin.json
 !.env.example
 web/.env
 web/.env.*
+web/.env.local
 !web/.env.example
 .venv/
 venv/
