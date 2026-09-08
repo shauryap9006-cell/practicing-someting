@@ -266,6 +266,14 @@ class Settings(BaseSettings):
         description="Sandbox phone for field-staff alerts when NOTIFY_DEMO_MODE is on",
     )
 
+    # 13. Data Privacy & Retention (DPDP Act 2023)
+    PII_RETENTION_DAYS: int = Field(
+        default=90,
+        ge=1,
+        validation_alias=AliasChoices("RAILTWIN_PII_RETENTION_DAYS", "PII_RETENTION_DAYS"),
+        description="Number of days to retain identifiable personal data (delay certificates, notification logs, passenger records) under DPDP Act 2023 before redaction/purge",
+    )
+
     @model_validator(mode="after")
     def validate_runtime_safety(self) -> "Settings":
         """Reject deployment configurations that would silently weaken security."""
