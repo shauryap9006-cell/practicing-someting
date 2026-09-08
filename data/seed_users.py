@@ -157,7 +157,14 @@ def seed_roles_and_users(db: Optional[Database] = None) -> dict[str, int]:
 
         # 2. Seed Users
         for u in DEFAULT_USERS:
-            pwd_hash = hash_password(u["password"])
+            # In production, never persist the well-known DEFAULT_USERS password.
+            # Generate a fresh random credential per account instead.
+            if is_production:
+                actual_password = secrets.token_urlsafe(18)
+                generated_credentials[u["username"]] = actual_password
+            else:
+                actual_password = u["password"]
+            pwd_hash = hash_password(actual_password)
             cur.execute(
                 """
                 INSERT INTO users (id, username, email, password_hash, role_id, station_code, full_name, is_active, created_at)
@@ -190,10 +197,20 @@ def seed_roles_and_users(db: Optional[Database] = None) -> dict[str, int]:
             )
             users_count += 1
 
-    return {"roles_seeded": roles_count, "users_seeded": users_count}
+    result: dict = {"roles_seeded": roles_count, "users_seeded": users_count}
+    if generated_credentials:
+        # Returned once so the caller (e.g. a deployment script) can securely
+        # distribute credentials and force an immediate password reset.
+        # Never logged or persisted anywhere else.
+        result["generated_credentials"] = generated_credentials
+    return result
 
 
 if __name__ == "__main__":
     print("=== Seeding RailTwin-X Roles & Standard Users ===")
     res = seed_roles_and_users()
     print(f"Success: Seeded {res['roles_seeded']} roles and {res['users_seeded']} operational accounts.")
+    if "generated_credentials" in res:
+        print("[PRODUCTION] Generated one-time credentials (distribute securely, then force reset):")
+        for uname, pwd in res["generated_credentials"].items():
+            print(f"  {uname}: {pwd}")
