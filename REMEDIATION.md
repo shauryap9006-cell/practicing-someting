@@ -32,7 +32,7 @@
 | 0.3 | DEP-001 | Docker omits frontend | 🚨 P0 | 60m | ☑ |
 | 1.1 | HAR-001 | localhost QR codes | 🟠 P1 | 15m | ☑ |
 | 1.2 | PERF-001 | GET requests write to SQLite | 🟠 P1 | 90m | ☑ |
-| 1.3 | SEC-003 | Login brute-force/DoS | 🟠 P1 | 60m | ☐ |
+| 1.3 | SEC-003 | Login brute-force/DoS | 🟠 P1 | 60m | ☑ |
 | 1.4 | TIME-001 | Timezone fragmentation | 🟠 P1 | 90m | ☐ |
 | 1.5 | ML-001 | GRU docs vs runtime drift | 🟠 P1 | 20m | ☐ |
 | 1.6 | GIT-001 | 1.06 GiB history rewrite | 🟠 P1 | 60m | ☐ |

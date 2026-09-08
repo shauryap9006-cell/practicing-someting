@@ -9,7 +9,7 @@ import hashlib
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Security, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Security, status
 from pydantic import BaseModel, Field
 
 from api.auth import (
@@ -21,6 +21,13 @@ from api.auth import (
     needs_rehash,
     security_bearer,
     verify_password,
+)
+from api.auth_limiter import (
+    check_login_rate_limits,
+    get_client_ip,
+    record_login_failure,
+    record_login_success,
+    verify_dummy_password,
 )
 from data.audit import record_audit
 from data.db import Database, get_db
@@ -52,8 +59,13 @@ class LoginResponse(BaseModel):
 
 
 @router.post("/login", response_model=LoginResponse)
-def login(request: LoginRequest, db: Database = Depends(get_db)):
+def login(request: LoginRequest, http_request: Request, db: Database = Depends(get_db)):
     """Authenticates user credentials and issues a signed JWT access token."""
+    client_ip = get_client_ip(http_request)
+    username = request.username.strip()
+
+    check_login_rate_limits(client_ip=client_ip, username=username)
+
     with db.transaction() as cur:
         cur.execute(
             """
@@ -63,11 +75,19 @@ def login(request: LoginRequest, db: Database = Depends(get_db)):
             JOIN roles r ON u.role_id = r.id
             WHERE lower(u.username) = lower(?) OR lower(u.email) = lower(?);
             """,
-            (request.username.strip(), request.username.strip()),
+            (username, username),
         )
         row = cur.fetchone()
 
-    if not row or not verify_password(request.password, row["password_hash"]):
+    is_valid = False
+    if row:
+        is_valid = verify_password(request.password, row["password_hash"])
+    else:
+        verify_dummy_password(request.password)
+
+    if not row or not is_valid:
+        now_iso = datetime.now(timezone.utc).isoformat()
+        record_login_failure(client_ip=client_ip, username=username, timestamp_iso=now_iso)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password.",
@@ -79,6 +99,8 @@ def login(request: LoginRequest, db: Database = Depends(get_db)):
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account is deactivated. Contact system administrator.",
         )
+
+    record_login_success(username=username)
 
     if needs_rehash(row["password_hash"]):
         with db.transaction() as cur:
