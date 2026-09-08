@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Literal, Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from api.auth import hash_password, require_role
 from config import settings
@@ -24,6 +24,18 @@ router = APIRouter(prefix="/api/admin", tags=["Administration & Governance"])
 
 _USERNAME_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]{2,63}$")
 _STATION_PATTERN = re.compile(r"^[A-Z0-9_-]{2,8}$")
+_EMAIL_PATTERN = re.compile(r"^[^@\s]{1,64}@[^@\s]+\.[^@\s]+$")
+
+
+def _normalize_email(value: Optional[str]) -> Optional[str]:
+    if value is None:
+        return None
+    email = value.strip().lower()
+    if not email:
+        return None
+    if len(email) > 254 or not _EMAIL_PATTERN.fullmatch(email):
+        raise ValueError("email must be a valid address")
+    return email
 
 
 def _normalize_username(value: str) -> str:
@@ -50,33 +62,54 @@ def _validate_password(value: str) -> str:
 
 class CreateUserRequest(BaseModel):
     username: str = Field(..., description="Unique username")
-    email: Optional[EmailStr] = None
+    email: Optional[str] = Field(None, description="Contact email")
     password: str = Field(..., description="Plaintext password")
     role_id: str = Field(..., description="Role ID (e.g. station_master, dy_sm, engineer)")
     station_code: str = Field(default_factory=lambda: settings.DEFAULT_STATION_CODE, description="Station code assignment")
     full_name: str = Field(..., min_length=2, max_length=120, description="Full display name")
 
-    _username = field_validator("username")(classmethod(lambda cls, v: _normalize_username(v)))
-    _station = field_validator("station_code")(classmethod(lambda cls, v: _normalize_station(v)))
-    _password = field_validator("password")(classmethod(lambda cls, v: _validate_password(v)))
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        return _normalize_username(v)
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: Optional[str]) -> Optional[str]:
+        return _normalize_email(v)
+
+    @field_validator("station_code")
+    @classmethod
+    def validate_station(cls, v: str) -> str:
+        return _normalize_station(v)
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        return _validate_password(v)
 
 
 class UpdateUserRequest(BaseModel):
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
     role_id: Optional[str] = None
     station_code: Optional[str] = None
     full_name: Optional[str] = Field(None, min_length=2, max_length=120)
     is_active: Optional[bool] = None
     new_password: Optional[str] = None
 
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: Optional[str]) -> Optional[str]:
+        return _normalize_email(v)
+
     @field_validator("station_code")
     @classmethod
-    def _station(cls, v: Optional[str]) -> Optional[str]:
+    def validate_station(cls, v: Optional[str]) -> Optional[str]:
         return _normalize_station(v) if v is not None else None
 
     @field_validator("new_password")
     @classmethod
-    def _password(cls, v: Optional[str]) -> Optional[str]:
+    def validate_password(cls, v: Optional[str]) -> Optional[str]:
         return _validate_password(v) if v is not None else None
 
 
@@ -223,7 +256,7 @@ def create_user(
     user_id = f"usr-{req.username}-{uuid4().hex[:8]}"
     now_iso = datetime.now(timezone.utc).isoformat()
     pwd_hash = hash_password(req.password)
-    email = str(req.email).strip().lower() if req.email else None
+    email = req.email
 
     with db.transaction() as cur:
         cur.execute("SELECT id, name FROM roles WHERE id = ?;", (req.role_id,))
@@ -326,7 +359,7 @@ def update_user(
             "is_active": existing["is_active"],
         }
 
-        new_email = str(req.email).strip().lower() if req.email is not None else existing["email"]
+        new_email = req.email if req.email is not None else existing["email"]
         new_role = req.role_id if req.role_id is not None else existing["role_id"]
         new_station = req.station_code if req.station_code is not None else existing["station_code"]
         new_name = req.full_name if req.full_name is not None else existing["full_name"]

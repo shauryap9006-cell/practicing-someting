@@ -810,12 +810,13 @@ def get_crew_alerts():
 def get_station_connections(
     code: str,
     run_date: Optional[str] = Query(None, description="Date YYYY-MM-DD"),
-    min_transfer_min: int = Query(
-        default_factory=lambda: settings.DEFAULT_MIN_CONNECTION_TIME_MIN,
-        ge=5, le=60, description="Minimum connection transfer time in minutes",
+    min_transfer_min: Optional[int] = Query(
+        None, ge=5, le=60, description="Minimum connection transfer time in minutes (defaults to configured value)"
     ),
 ):
     """Evaluates junction interchange connection feasibility and hold-decision tradeoffs."""
+    if min_transfer_min is None:
+        min_transfer_min = settings.DEFAULT_MIN_CONNECTION_TIME_MIN
     db = get_db()
     clock = get_clock()
     engine = ConnectionCustodyEngine(db)
