@@ -37,7 +37,7 @@
 | 1.5 | ML-001 | GRU docs vs runtime drift | 🟠 P1 | 20m | ☑ |
 | 1.6 | GIT-001 | 1.06 GiB history rewrite | 🟠 P1 | 60m | ☐ |
 | 2.1 | DEV-001 | Makefile --workers 2 | 🟡 P2 | 5m | ☑ |
-| 2.2 | VULN-001 | npm vulnerabilities | 🟡 P2 | 30m | ☐ |
+| 2.2 | VULN-001 | npm vulnerabilities | 🟡 P2 | 30m | ☑ |
 | 2.3 | LIC-001 | No LICENSE | 🟡 P2 | 10m | ☐ |
 | 2.4 | SEC-004 | Known seed passwords | 🟡 P2 | 60m | ☐ |
 | 2.5 | OBS-001 | No /metrics, print() logging | 🟡 P2 | 90m | ☐ |
