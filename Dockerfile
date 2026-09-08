@@ -7,6 +7,12 @@ LABEL maintainer="RailTwin-X SIH Team" \
       description="RailTwin-X Delay Intelligence API Server" \
       version="4.0.0"
 
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    RAILTWIN_API_HOST=0.0.0.0 \
+    RAILTWIN_API_PORT=8000 \
+    RAILTWIN_UVICORN_WORKERS=1
+
 # System dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
@@ -26,21 +32,25 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY . .
 
 # Create necessary directories
-RUN mkdir -p artifacts data/cache
+RUN mkdir -p artifacts data/cache data/backups
 
 # Seed database on build (passenger mode) — for demo/CI only.
 # Runtime deployments should mount an external database path and run migrations.
 RUN python -m data.seed --network=passenger
 
-# Train models (if not pre-built) — comment out for fast image builds
-# RUN python -m ml.train && python -m ml.model_seq && python -m ml.ensemble && python -m ml.evaluate
+# Run as an unprivileged user; the data volume must be writable by this uid.
+RUN useradd --system --uid 10001 --create-home railtwin \
+    && chown -R railtwin:railtwin /app
+USER railtwin
 
 # Expose API port
 EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8000/readyz || exit 1
+    CMD curl -f "http://localhost:${RAILTWIN_API_PORT}/readyz" || exit 1
 
-# Start the API server
-CMD ["python", "-m", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+# Single worker by default: rate limiting, idempotency, SSE slots, the simulated
+# clock and the live tracker loop are process-local and SQLite is single-writer.
+# Scale horizontally with separate containers + shared cache if needed.
+CMD ["sh", "-c", "python -m uvicorn api.main:app --host \"$RAILTWIN_API_HOST\" --port \"$RAILTWIN_API_PORT\" --workers \"$RAILTWIN_UVICORN_WORKERS\" --proxy-headers"]

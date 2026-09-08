@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   api:
     build:
@@ -8,16 +6,21 @@ services:
     image: railtwin-x:v4
     container_name: railtwin_api
     ports:
-      - "8000:8000"
+      - "${RAILTWIN_API_PORT:-8000}:${RAILTWIN_API_PORT:-8000}"
     environment:
       - RAILTWIN_DB_PATH=/app/data/railtwin.db
       - RAILTWIN_ARTIFACTS_DIR=/app/ml/artifacts
       - RAILTWIN_API_HOST=0.0.0.0
-      - RAILTWIN_API_PORT=8000
+      - RAILTWIN_API_PORT=${RAILTWIN_API_PORT:-8000}
+      - RAILTWIN_UVICORN_WORKERS=${RAILTWIN_UVICORN_WORKERS:-1}
       - RAILTWIN_ENV=${RAILTWIN_ENV:-development}
       - RAILTWIN_JWT_SECRET_KEY=${RAILTWIN_JWT_SECRET_KEY:?RAILTWIN_JWT_SECRET_KEY must be set}
       - RAILTWIN_CORS_ORIGINS=${RAILTWIN_CORS_ORIGINS:-["http://localhost:5173"]}
       - RAILTWIN_OPENWA_WEBHOOK_SECRET=${RAILTWIN_OPENWA_WEBHOOK_SECRET:-}
+      - RAILTWIN_TRUST_PROXY_HEADERS=${RAILTWIN_TRUST_PROXY_HEADERS:-false}
+      - RAILTWIN_DEMO_ALLOW_CLOCK_CONTROL=${RAILTWIN_DEMO_ALLOW_CLOCK_CONTROL:-false}
+      - RAILTWIN_DEFAULT_STATION_CODE=${RAILTWIN_DEFAULT_STATION_CODE:-NDLS}
+      - RAILTWIN_DEFAULT_JUNCTION_CODE=${RAILTWIN_DEFAULT_JUNCTION_CODE:-CNB}
     volumes:
       # Persist operational data. Model artifacts stay immutable in the image
       # and are verified at startup rather than being masked by an empty volume.
@@ -25,14 +28,13 @@ services:
       - railtwin_cache:/app/data/cache
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/readyz"]
+      test: ["CMD", "curl", "-f", "http://localhost:${RAILTWIN_API_PORT:-8000}/readyz"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 30s
 
   # Nightly pipeline cron runner (optional — runs on host via Makefile instead)
-  # Uncomment to run nightly pipeline inside Docker
   # nightly:
   #   image: railtwin-x:v4
   #   container_name: railtwin_nightly
