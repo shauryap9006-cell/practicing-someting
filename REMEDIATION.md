@@ -42,7 +42,7 @@
 | 2.4 | SEC-004 | Known seed passwords | 🟡 P2 | 60m | ☑ |
 | 2.5 | OBS-001 | No /metrics, print() logging | 🟡 P2 | 90m | ☑ |
 | 2.6 | ML-002 | CV Fold 6 collapse | 🟡 P2 | 40m | ☑ |
-| 2.7 | MIG-001 | No rollback migrations | 🟡 P2 | 90m | ☐ |
+| 2.7 | MIG-001 | No rollback migrations | 🟡 P2 | 90m | ☑ |
 | 2.8 | PRIV-001 | No PII retention (DPDP) | 🟡 P2 | 60m | ☐ |
 | 2.9 | ARCH-001 | 1,337-line God router | 🟡 P2 | 180m | ☐ |
 | 2.10 | ARCH-002 | Duplicate frontends | 🟡 P2 | 120m | ☐ |

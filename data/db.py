@@ -6,6 +6,12 @@ and table inspection against the single-file SQLite database.
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+_REPO_ROOT = str(Path(__file__).resolve().parent.parent)
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
 from engine.clocks import get_clock, now_iso
 
 import logging
@@ -128,7 +134,11 @@ class Database:
             return int(cur.fetchone()[0])
 
 
-    def apply_migrations(self, migrations_dir: Optional[Path | str] = None) -> List[str]:
+    def apply_migrations(
+        self,
+        migrations_dir: Optional[Path | str] = None,
+        target_version: Optional[int] = None,
+    ) -> List[str]:
         """Applies pending SQL migration files in ascending order and records them in schema_migrations."""
         mdir = Path(migrations_dir) if migrations_dir else MIGRATIONS_DIR
         applied: List[str] = []
@@ -152,12 +162,14 @@ class Database:
             cursor.execute("SELECT version FROM schema_migrations ORDER BY version ASC;")
             applied_versions = {row[0] for row in cursor.fetchall()}
 
-            migration_files = sorted(mdir.glob("*.sql"))
+            migration_files = sorted([f for f in mdir.glob("*.sql") if not f.name.endswith(".down.sql")])
             for mfile in migration_files:
                 match = re.match(r"^(\d+)_", mfile.name)
                 if not match:
                     continue
                 version = int(match.group(1))
+                if target_version is not None and version > target_version:
+                    continue
                 if version not in applied_versions:
                     sql_content = mfile.read_text(encoding="utf-8")
                     try:
@@ -178,6 +190,100 @@ class Database:
             conn.close()
 
         return applied
+
+    def downgrade_migrations(
+        self,
+        steps: int = 1,
+        target_version: Optional[int] = None,
+        migrations_dir: Optional[Path | str] = None,
+    ) -> List[str]:
+        """Rolls back applied SQL migrations in descending order using paired .down.sql files."""
+        mdir = Path(migrations_dir) if migrations_dir else MIGRATIONS_DIR
+        downgraded: List[str] = []
+        if not mdir.exists():
+            return downgraded
+
+        conn = self.get_connection()
+        try:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS schema_migrations (
+                    version INTEGER PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    applied_at TEXT NOT NULL
+                );
+                """
+            )
+            conn.commit()
+
+            cursor = conn.cursor()
+            cursor.execute("SELECT version, name FROM schema_migrations ORDER BY version DESC;")
+            applied_rows = cursor.fetchall()
+            if not applied_rows:
+                return downgraded
+
+            # Build map of version -> down file
+            down_files: Dict[int, Path] = {}
+            for f in mdir.glob("*.down.sql"):
+                match = re.match(r"^(\d+)_", f.name)
+                if match:
+                    down_files[int(match.group(1))] = f
+
+            for row in applied_rows:
+                version, name = row[0], row[1]
+                if target_version is not None:
+                    if version <= target_version:
+                        break
+                elif len(downgraded) >= steps:
+                    break
+
+                down_file = down_files.get(version)
+                if not down_file:
+                    raise FileNotFoundError(
+                        f"Missing paired downgrade script for migration {name} (version {version})"
+                    )
+
+                sql_content = down_file.read_text(encoding="utf-8")
+                try:
+                    cursor.executescript(sql_content)
+                except sqlite3.OperationalError as e:
+                    err_msg = str(e).lower()
+                    if "no such column" in err_msg or "no such index" in err_msg or "no such table" in err_msg:
+                        pass
+                    else:
+                        raise
+
+                cursor.execute("DELETE FROM schema_migrations WHERE version = ?;", (version,))
+                conn.commit()
+                downgraded.append(down_file.name)
+        finally:
+            conn.close()
+
+        return downgraded
+
+    def get_migration_status(self, migrations_dir: Optional[Path | str] = None) -> dict:
+        """Returns applied and pending migrations."""
+        mdir = Path(migrations_dir) if migrations_dir else MIGRATIONS_DIR
+        applied = []
+        conn = self.get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='schema_migrations';")
+            if cursor.fetchone():
+                cursor.execute("SELECT version, name, applied_at FROM schema_migrations ORDER BY version ASC;")
+                applied = [dict(r) for r in cursor.fetchall()]
+        finally:
+            conn.close()
+
+        applied_versions = {r["version"] for r in applied}
+        all_up_files = sorted([f for f in mdir.glob("*.sql") if not f.name.endswith(".down.sql")])
+        pending = []
+        for f in all_up_files:
+            m = re.match(r"^(\d+)_", f.name)
+            if m and int(m.group(1)) not in applied_versions:
+                pending.append({"version": int(m.group(1)), "name": f.name})
+
+        return {"applied": applied, "pending": pending}
 
     def init_schema(self, schema_file: Optional[Path | str] = None) -> None:
         """Initializes tables, indexes, and constraints from schema.sql and applies migrations."""
@@ -436,10 +542,42 @@ def get_db(db_path: Optional[Path | str] = None) -> Database:
 
 
 if __name__ == "__main__":
-    print("=== RailTwin-X Database Initialization Demo ===")
+    import argparse
+    parser = argparse.ArgumentParser(description="RailTwin-X Database & Migration CLI")
+    parser.add_argument("--init", action="store_true", help="Initialize schema and apply all migrations")
+    parser.add_argument("--migrate", action="store_true", help="Apply pending forward migrations")
+    parser.add_argument("--target", type=int, default=None, help="Target migration version to apply")
+    parser.add_argument("--downgrade", type=int, default=None, metavar="N", help="Rollback N migrations")
+    parser.add_argument("--downgrade-to", type=int, default=None, metavar="VERSION", help="Rollback to specified version")
+    parser.add_argument("--status", action="store_true", help="Show migration status")
+
+    args = parser.parse_args()
     db = get_db()
-    db.init_schema()
-    counts = db.table_counts()
-    print("Database schema successfully initialized. Table row counts:")
-    for tbl, cnt in counts.items():
-        print(f"  - {tbl}: {cnt} rows")
+
+    if args.downgrade is not None:
+        print(f"Rolling back {args.downgrade} migration(s)...")
+        rolled = db.downgrade_migrations(steps=args.downgrade)
+        print(f"Rolled back {len(rolled)} migration(s): {rolled}")
+    elif args.downgrade_to is not None:
+        print(f"Rolling back to version {args.downgrade_to}...")
+        rolled = db.downgrade_migrations(target_version=args.downgrade_to)
+        print(f"Rolled back {len(rolled)} migration(s): {rolled}")
+    elif args.migrate:
+        print("Applying pending forward migrations...")
+        applied = db.apply_migrations(target_version=args.target)
+        print(f"Applied {len(applied)} migration(s): {applied}")
+    elif args.status:
+        st = db.get_migration_status()
+        print(f"Applied migrations ({len(st['applied'])}):")
+        for m in st["applied"]:
+            print(f"  v{m['version']}: {m['name']} (applied {m['applied_at']})")
+        print(f"Pending migrations ({len(st['pending'])}):")
+        for m in st["pending"]:
+            print(f"  v{m['version']}: {m['name']}")
+    else:
+        print("=== RailTwin-X Database Initialization Demo ===")
+        db.init_schema()
+        counts = db.table_counts()
+        print("Database schema successfully initialized. Table row counts:")
+        for tbl, cnt in counts.items():
+            print(f"  - {tbl}: {cnt} rows")
