@@ -2,14 +2,23 @@
 
 Populates the 9 standard Indian Railways roles and default operational accounts with
 cryptographically secure password hashes.
+
+Security note: the DEFAULT_USERS passwords below are well-known, publicly
+documented values intended ONLY for local development and the automated test
+suite (tests/test_rbac.py logs in with them directly). Seeding these fixed
+passwords in a production environment is refused: seed_roles_and_users()
+generates a fresh random password per account instead and returns them once
+for the operator to securely distribute and force a reset on first login.
 """
 
 from __future__ import annotations
 
 import json
+import secrets
 from datetime import datetime, timezone
 from typing import Optional
 
+from config import settings
 from api.auth import STANDARD_ROLES, hash_password
 from data.db import Database, get_db
 
@@ -108,13 +117,22 @@ DEFAULT_USERS = [
 
 
 def seed_roles_and_users(db: Optional[Database] = None) -> dict[str, int]:
-    """Seeds the standard roles and users into the database idempotently."""
+    """Seeds the standard roles and users into the database idempotently.
+
+    In production (settings.ENV == 'production'), the well-known DEFAULT_USERS
+    passwords are never written to the database. Instead, a fresh
+    cryptographically random password is generated per account and returned
+    in the result under 'generated_credentials' so the operator can
+    distribute them securely and require an immediate reset.
+    """
     database = db or get_db()
     database.init_schema()
     now_iso = datetime.now(timezone.utc).isoformat()
+    is_production = settings.ENV.strip().lower() == "production"
 
     roles_count = 0
     users_count = 0
+    generated_credentials: dict[str, str] = {}
 
     with database.transaction() as cur:
         # 1. Seed Roles
