@@ -208,12 +208,67 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("RAILTWIN_RATE_LIMIT_BURST", "RATE_LIMIT_BURST"),
         description="Max burst tokens above the steady RATE_LIMIT_RPM rate",
     )
+    TRUST_PROXY_HEADERS: bool = Field(
+        default=False,
+        description="Only honour X-Forwarded-For for rate limiting when the API sits behind a trusted reverse proxy",
+    )
+    RESPONSE_CACHE_TTL_SECONDS: float = Field(default=5.0, ge=0.0, le=300.0)
+    IDEMPOTENCY_TTL_SECONDS: int = Field(default=24 * 60 * 60, ge=60, le=7 * 24 * 60 * 60)
+    WEBHOOK_MAX_TIMESTAMP_AGE_SECONDS: int = Field(default=300, ge=30, le=3600)
+    MIN_PASSWORD_LENGTH: int = Field(default=12, ge=8, le=128)
+
+    # 13. Domain defaults (previously scattered as literals across routers/services)
+    DEFAULT_STATION_CODE: str = Field(
+        default="NDLS",
+        description="Fallback station scope used when a caller does not specify one",
+    )
+    DEFAULT_JUNCTION_CODE: str = Field(
+        default="CNB",
+        description="Default interchange junction for cascade/ripple analysis and health smoke tests",
+    )
+    DEMO_DEFAULT_TRAIN_NO: str = Field(default="12301", description="Default corridor train for demo surfaces and smoke tests")
+    DEMO_DEFAULT_DESTINATION_CODE: str = Field(default="LKO", description="Default destination for demo time-machine")
+    DEMO_DEFAULT_RUN_DATE: str = Field(
+        default="",
+        description="Fallback run date (YYYY-MM-DD) for demo replays; empty resolves to the latest recorded run",
+    )
+    DELAY_ON_TIME_MAX_MIN: int = Field(default=15, ge=0, description="Delays up to this are shown green")
+    DELAY_MODERATE_MAX_MIN: int = Field(default=60, ge=0, description="Delays up to this are shown amber, beyond is red")
+    HORIZON_1H_MAX_KM: float = Field(default=90.0, gt=0)
+    HORIZON_3H_MAX_KM: float = Field(default=250.0, gt=0)
+    OFFICIAL_RUNRATE_RECOVERY_KM_PER_MIN: float = Field(
+        default=30.0,
+        gt=0,
+        description="Official timetable slack recovery assumption: 1 minute recovered per N km",
+    )
+    RAKE_MIN_TURNAROUND_BUFFER_MIN: int = Field(default=90, ge=0, description="Minimum rake cleaning/inspection buffer")
+    DEFAULT_RAKE_TURNAROUND_MIN: int = Field(default=240, ge=0)
+    DEFAULT_MIN_CONNECTION_TIME_MIN: int = Field(default=15, ge=1, le=120)
+    TELEMETRY_STALE_SECONDS: int = Field(default=900, ge=30, description="Snapshot age after which the feed is flagged STALE")
+    NOTIFY_DEMO_CONTROLLER_PHONE: str = Field(
+        default="",
+        description="Sandbox phone for controller-role alerts when NOTIFY_DEMO_MODE is on (never hardcode real numbers)",
+    )
+    NOTIFY_DEMO_FIELD_PHONE: str = Field(
+        default="",
+        description="Sandbox phone for field-staff alerts when NOTIFY_DEMO_MODE is on",
+    )
 
     @model_validator(mode="after")
     def validate_runtime_safety(self) -> "Settings":
         """Reject deployment configurations that would silently weaken security."""
         environment = self.ENV.strip().lower()
+        if self.NOTIFY_DEMO_MODE and not (self.NOTIFY_DEMO_CONTROLLER_PHONE.strip() and self.NOTIFY_DEMO_FIELD_PHONE.strip()):
+            raise ValueError(
+                "RAILTWIN_NOTIFY_DEMO_MODE requires RAILTWIN_NOTIFY_DEMO_CONTROLLER_PHONE and RAILTWIN_NOTIFY_DEMO_FIELD_PHONE"
+            )
+        if self.DELAY_MODERATE_MAX_MIN < self.DELAY_ON_TIME_MAX_MIN:
+            raise ValueError("RAILTWIN_DELAY_MODERATE_MAX_MIN must be >= RAILTWIN_DELAY_ON_TIME_MAX_MIN")
+        if self.HORIZON_3H_MAX_KM <= self.HORIZON_1H_MAX_KM:
+            raise ValueError("RAILTWIN_HORIZON_3H_MAX_KM must be greater than RAILTWIN_HORIZON_1H_MAX_KM")
         if environment == "production":
+            if self.DEMO_ALLOW_CLOCK_CONTROL:
+                raise ValueError("RAILTWIN_DEMO_ALLOW_CLOCK_CONTROL must be false in production")
             if self.ALLOW_SYNTHETIC_FALLBACK:
                 raise ValueError("RAILTWIN_ALLOW_SYNTHETIC_FALLBACK must be false in production")
             secret = self.JWT_SECRET_KEY.strip()
