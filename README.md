@@ -69,6 +69,10 @@ The 1-click script starts the FastAPI server on port 8000, launches the Vite fro
 ## 🧪 Verification & Automated Audits
 
 ```bash
+# 0. Install dependencies (install requirements-dev.txt for development/testing)
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
+
 # 1. Run full backend unit and regression test suite (268+ tests)
 pytest -q
 
