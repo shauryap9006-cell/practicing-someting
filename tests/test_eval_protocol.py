@@ -109,3 +109,29 @@ def test_metrics_as_code_schema_validation():
     assert "rolling_origin_cv" in data
     assert "proof_table" in data
     assert "metrics_by_horizon" in data
+
+
+def test_cv_fold_sample_guard_and_tail_exclusion():
+    """Verifies that folds with insufficient samples or truncated tail windows are excluded (ML-002)."""
+    evaluator = Evaluator()
+    folds = evaluator.run_rolling_origin_cv(num_folds=6, embargo_days=2, min_test_samples=1000)
+    assert len(folds) == 6
+
+    # Fold 6 has truncated 1-day tail window and must be excluded with exclusion_reason
+    fold6 = folds[5]
+    assert fold6["excluded"] is True
+    assert "truncated_tail_window" in fold6["exclusion_reason"]
+    assert fold6["samples"] > 0  # Raw metrics preserved
+
+    # Folds 1..5 have full 2-day span and >= 1000 samples -> not excluded
+    for f in folds[:5]:
+        assert f["excluded"] is False
+        assert f["samples"] >= 1000
+
+    # Verify custom min_test_samples threshold exclusion
+    high_threshold_folds = evaluator.run_rolling_origin_cv(num_folds=6, embargo_days=2, min_test_samples=9000)
+    for f in high_threshold_folds:
+        if (f.get("samples") or 0) < 9000:
+            assert f["excluded"] is True
+            assert f.get("excluded_low_samples") is True
+

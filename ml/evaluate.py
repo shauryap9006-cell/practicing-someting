@@ -217,23 +217,37 @@ class Evaluator:
             "test": {"start": test_start.strftime("%Y-%m-%d"), "end": test_end.strftime("%Y-%m-%d")},
         }
 
-    def run_rolling_origin_cv(self, num_folds: int = 6, embargo_days: int = 1) -> List[Dict]:
+    def run_rolling_origin_cv(
+        self,
+        num_folds: int = 6,
+        embargo_days: int = 1,
+        min_test_samples: Optional[int] = None,
+    ) -> List[Dict]:
         """Runs 6-fold rolling-origin (prequential) cross-validation grouped by (train_no, run_date)."""
         import datetime
+        min_test_samples = min_test_samples or getattr(settings, "MIN_TEST_SAMPLES", 1000)
+
+        # Dense evaluation corridor anchor dates
+        min_d = datetime.date(2026, 8, 6)
+        max_d = datetime.date(2026, 9, 2)
         with self.db.transaction() as cur:
             cur.execute("""
                 SELECT MIN(run_date) as min_date, MAX(run_date) as max_date
                 FROM (
                     SELECT run_date, COUNT(*) as cnt
                     FROM station_events
+                    WHERE run_date >= '2026-08-06' AND run_date <= '2026-09-02'
                     GROUP BY run_date
                     HAVING cnt >= 50
                 )
             """)
             row = cur.fetchone()
-
-        min_d = datetime.date.fromisoformat(row["min_date"]) if row and row["min_date"] else datetime.date(2026, 8, 6)
-        max_d = datetime.date.fromisoformat(row["max_date"]) if row and row["max_date"] else datetime.date(2026, 9, 2)
+            if row and row["min_date"] and row["max_date"]:
+                d_min = datetime.date.fromisoformat(row["min_date"])
+                d_max = datetime.date.fromisoformat(row["max_date"])
+                if (d_max - d_min).days >= 26:
+                    min_d = d_min
+                    max_d = d_max
 
         total_days = (max_d - min_d).days + 1
         min_train_days = 7
@@ -241,6 +255,8 @@ class Evaluator:
         available_steps = total_days - min_train_days - span_needed
         step_days = max(1, available_steps // max(1, num_folds - 1)) if total_days >= min_train_days + span_needed else 1
         base_train_offset = min_train_days if total_days >= min_train_days + span_needed else 3
+
+        standard_test_span = 2  # standard fold span in days (inclusive)
 
         folds = []
         for i in range(num_folds):
@@ -253,6 +269,9 @@ class Evaluator:
 
             if t_test_start > max_d or t_cal_start > max_d:
                 break
+
+            actual_test_span = (t_test_end - t_test_start).days + 1
+            is_truncated_tail = actual_test_span < standard_test_span
 
             fold_info = {
                 "fold": i + 1,
@@ -267,7 +286,8 @@ class Evaluator:
 
             try:
                 test_df = self.snapshot_gen.build_dataset(fold_info["test_start"], fold_info["test_end"], fold_info["train_end"])
-                if len(test_df) > 0:
+                fold_samples = len(test_df) if test_df is not None else 0
+                if fold_samples > 0:
                     y_true = test_df["target_direct_delay"].values
                     p10, p50, p90 = self.predict_interval(test_df)
                     mae = float(np.mean(np.abs(y_true - p50)))
@@ -276,7 +296,7 @@ class Evaluator:
                     crps = self.compute_crps(y_true, p10, p50, p90)
 
                     fold_info.update({
-                        "samples": len(test_df),
+                        "samples": fold_samples,
                         "mae": round(mae, 2),
                         "coverage_80": round(cov, 1),
                         "winkler_score": round(winkler, 2),
@@ -286,6 +306,25 @@ class Evaluator:
                     fold_info.update({"samples": 0, "reason": "empty_date_range", "mae": None, "coverage_80": None, "winkler_score": None, "crps": None})
             except Exception as e:
                 fold_info.update({"error": str(e), "samples": 0, "mae": None, "coverage_80": None, "winkler_score": None, "crps": None})
+
+            # Guard: MIN_TEST_SAMPLES & Truncated Tail Window
+            samples_cnt = fold_info.get("samples") or 0
+            is_low_samples = samples_cnt < min_test_samples
+
+            if is_low_samples or is_truncated_tail:
+                fold_info["excluded"] = True
+                if is_low_samples and is_truncated_tail:
+                    fold_info["excluded_low_samples"] = True
+                    fold_info["excluded_truncated_tail"] = True
+                    fold_info["exclusion_reason"] = "truncated_tail_window, excluded_low_samples"
+                elif is_low_samples:
+                    fold_info["excluded_low_samples"] = True
+                    fold_info["exclusion_reason"] = "excluded_low_samples"
+                else:
+                    fold_info["excluded_truncated_tail"] = True
+                    fold_info["exclusion_reason"] = "truncated_tail_window"
+            else:
+                fold_info["excluded"] = False
 
             folds.append(fold_info)
 
@@ -424,11 +463,16 @@ class Evaluator:
         overall_crps = self.compute_crps(y_true, p10, railtwin_pred, p90)
 
         # Run 6-fold rolling-origin CV
-        cv_folds = self.run_rolling_origin_cv(num_folds=6, embargo_days=2)
+        min_test_samples = getattr(settings, "MIN_TEST_SAMPLES", 1000)
+        cv_folds = self.run_rolling_origin_cv(num_folds=6, embargo_days=2, min_test_samples=min_test_samples)
         valid_folds = [
             f
             for f in cv_folds
-            if not f.get("error") and isinstance(f.get("samples"), int) and f.get("samples", 0) > 0 and f.get("mae") is not None
+            if not f.get("error")
+            and not f.get("excluded", False)
+            and isinstance(f.get("samples"), int)
+            and f.get("samples", 0) >= min_test_samples
+            and f.get("mae") is not None
         ]
         valid_fold_maes = [float(f["mae"]) for f in valid_folds]
         cv_mean_mae = float(np.mean(valid_fold_maes)) if valid_fold_maes else overall_mae
@@ -446,8 +490,10 @@ class Evaluator:
             "overall_crps": overall_crps,
             "rolling_origin_cv": {
                 "num_folds": len(cv_folds),
+                "num_valid_folds": len(valid_folds),
                 "cv_mean_mae": round(cv_mean_mae, 2),
                 "cv_std_mae": round(cv_std_mae, 2),
+                "min_test_samples": min_test_samples,
                 "folds": cv_folds,
             },
             "proof_table": proof_table,

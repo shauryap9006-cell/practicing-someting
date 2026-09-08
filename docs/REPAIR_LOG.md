@@ -47,7 +47,7 @@
   - Moved dynamic TSR kinematic penalty to the end as an additive post-adjustment to won model output.
 - `scripts/migrations/015_route_cum_km.sql`: Created `route_cum_km` table and populated 1,205 entries from `route_stations` with distance monotonicity verified.
 - `ml/features_v3.py`: Separated try/except blocks around `route_cum_km` and `route_stations` fallback with explicit warning logging.
-- `ml/evaluate.py`: Derived CV window from data-dense window (`2026-08-06` to `2026-09-02`). Added determinism seeds (`random_state=42`, `deterministic=True`). Regenerated `ml/artifacts/metrics.json` with all 6 folds containing valid samples (>0) and computed MAEs (mean CV MAE: 10.63 min).
+- `ml/evaluate.py`: Derived CV window from data-dense window (`2026-08-06` to `2026-09-02`). Added determinism seeds (`random_state=42`, `deterministic=True`). Added MIN_TEST_SAMPLES guard (1000) and truncated tail-window exclusion (ML-002). Regenerated `ml/artifacts/metrics.json` with 5 valid folds (mean CV MAE: 10.66 min, std: 0.35 min) and Fold 6 excluded due to truncated tail window.
 - `ml/train.py`: Added global determinism seeds and LightGBM parameters (`random_state=42`, `deterministic=True`).
 - Tests: Added `tests/test_phase2_ml_integrity.py` asserting D01 ensemble serving, additive TSR penalty, D02 GRU gating, and D09 quantile monotonicity. Suite passed: 275/275 tests green. Cryptographic ledger verified: (True, 5622, None).
 

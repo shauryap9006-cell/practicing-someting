@@ -86,6 +86,11 @@ class Settings(BaseSettings):
     LGBM_LEARNING_RATE: float = 0.05
     LGBM_N_ESTIMATORS: int = 600
     LGBM_MIN_CHILD_SAMPLES: int = 40
+    MIN_TEST_SAMPLES: int = Field(
+        default=1000,
+        validation_alias=AliasChoices("RAILTWIN_MIN_TEST_SAMPLES", "MIN_TEST_SAMPLES"),
+        description="Minimum test samples required for a CV fold to be included in aggregate metrics",
+    )
 
     # 7. Operations & Platform Optimization (M4)
     MAX_REOPT_PASSES: int = 50
