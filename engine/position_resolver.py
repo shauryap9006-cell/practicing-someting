@@ -140,6 +140,17 @@ class PositionResolver:
             raw_ev = cur.fetchone()
             ev_dict = dict(raw_ev) if raw_ev else {}
 
+        # If the latest recorded telemetry is older than 24 hours, it belongs to a historical journey, not the current run
+        if ev_dict.get("event_time"):
+            try:
+                ev_dt = datetime.datetime.fromisoformat(ev_dict["event_time"].replace("Z", "+00:00"))
+                if ev_dt.tzinfo is None:
+                    ev_dt = ev_dt.replace(tzinfo=IST_TIMEZONE)
+                if (t_now - ev_dt).total_seconds() > 86400.0:
+                    ev_dict = {}
+            except Exception:
+                pass
+
         # Explicit assertion: any candidate event with event_time > now must be IMPOSSIBLE by construction
         if ev_dict.get("event_time"):
             assert ev_dict["event_time"] <= now_iso, (

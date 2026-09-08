@@ -28,7 +28,7 @@
 | # | ID | Issue | Phase | Est | Done |
 |---|----|-------|-------|-----|------|
 | 0.1 | SEC-001/002 | Live keys on disk + tracked in git | 🚨 P0 | 15m | ☑ |
-| 0.2 | DAT-001 | Corrupted DB, 8 failing tests | 🚨 P0 | 45m | ☐ |
+| 0.2 | DAT-001 | Corrupted DB, 8 failing tests | 🚨 P0 | 45m | ☑ |
 | 0.3 | DEP-001 | Docker omits frontend | 🚨 P0 | 60m | ☐ |
 | 1.1 | HAR-001 | localhost QR codes | 🟠 P1 | 15m | ☐ |
 | 1.2 | PERF-001 | GET requests write to SQLite | 🟠 P1 | 90m | ☐ |

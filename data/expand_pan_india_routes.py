@@ -1,6 +1,7 @@
 """RailTwin-X Pan-India Route Expansion Script.
 
-Assigns realistic national railway corridors across India to all trains in the database:
+Assigns realistic national railway corridors across India to trains in the database
+that lack existing route definitions:
 1. Northern Mainline (Delhi - Kanpur - Lucknow)
 2. Eastern Trunk (Delhi - Kanpur - Prayagraj - Varanasi - DDU - Patna - Howrah)
 3. Western Trunk (Delhi - Mathura - Kota - Ratlam - Vadodara - Surat - Mumbai)
@@ -12,10 +13,25 @@ Assigns realistic national railway corridors across India to all trains in the d
 9. Northeast Frontier (Patna - Barauni - Katihar - New Jalpaiguri - Guwahati - Dibrugarh)
 10. Northern Hill / Border (Delhi - Ambala - Ludhiana - Amritsar - Jammu - Katra)
 11. Western Regional (Mumbai - Surat - Vadodara - Ahmedabad)
+
+Safety Guarantees:
+- Never executes wholesale DELETE FROM route_stations.
+- Never touches corridor trains (12034, 12301, 2421, or NDLS..CNB..LKO corridor).
+- No modulo-hash guessing fallback; unknown routes are skipped with a warning.
+- Defaults to --dry-run (zero writes). Requires explicit --apply to write to database.
 """
 
+from __future__ import annotations
+
+import argparse
 import datetime
+import logging
+from typing import Dict, List, Optional, Set
+
 from data.db import get_db
+
+logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
+logger = logging.getLogger(__name__)
 
 # Pre-defined All-India Corridors using real station codes in stations table
 CORRIDORS = {
@@ -63,11 +79,16 @@ CORRIDORS = {
     ],
 }
 
-def determine_corridor(train_no: str, name: str) -> list[str]:
+# Explicit corridor train protection set
+PROTECTED_TRAIN_NUMBERS: Set[str] = {"12034", "12301", "2421"}
+
+
+def determine_corridor(train_no: str, name: str) -> Optional[List[str]]:
+    """Deterministically match a train to a corridor based on name, or return None."""
     n = name.upper()
-    
-    # Check specific destinations in name
-    if "MUMBAI" in n or "TEJAS" in n and "MUMBAI" in n:
+
+    # Check specific destinations / keywords in name
+    if "MUMBAI" in n or ("TEJAS" in n and "MUMBAI" in n):
         return CORRIDORS["WESTERN_MUMBAI"]
     if "HOWRAH" in n or "SEALDAH" in n or "POORVA" in n:
         return CORRIDORS["EASTERN_TRUNK"]
@@ -87,45 +108,98 @@ def determine_corridor(train_no: str, name: str) -> list[str]:
         return CORRIDORS["WESTERN_AHMEDABAD"]
     if "PURI" in n or "ORISSA" in n or "NEELACHAL" in n:
         return CORRIDORS["EAST_COAST"]
-    if "LUCKNOW" in n or "SHATABDI" in n and "LUCKNOW" in n or "GOMTI" in n or "SHRAM SHAKTI" in n:
+    if (
+        "LUCKNOW" in n
+        or "KANPUR" in n
+        or "CNB" in n
+        or "GOMTI" in n
+        or "SHRAM SHAKTI" in n
+        or "SHATABDI" in n
+    ):
         return CORRIDORS["DELHI_LUCKNOW"]
-    
-    # Hash-based distribution across Pan-India routes for remaining general express trains
-    corridor_keys = list(CORRIDORS.keys())
-    hash_val = sum(ord(c) for c in str(train_no))
-    chosen_key = corridor_keys[hash_val % len(corridor_keys)]
-    return CORRIDORS[chosen_key]
 
-def run():
+    # Explicit policy: NEVER guess via hash fallback. Skip unmatched trains.
+    logger.warning(
+        "Could not determine explicit corridor for train %s (%s). Skipping.",
+        train_no,
+        name,
+    )
+    return None
+
+
+def run(apply: bool = False) -> None:
+    """Run route expansion with dry-run safety by default."""
+    dry_run = not apply
+    if dry_run:
+        logger.info("[DRY RUN MODE] No database changes will be committed. Run with --apply to write.")
+    else:
+        logger.info("[APPLY MODE] Changes will be committed to database.")
+
     db = get_db()
     with db.transaction() as cur:
+        # Find all trains that already have routes defined
+        cur.execute("SELECT DISTINCT train_no FROM route_stations")
+        existing_route_trains = {str(r[0]) for r in cur.fetchall()}
+
+        # Scan for existing corridor sequences to dynamically protect corridor trains
+        cur.execute(
+            """
+            SELECT train_no, GROUP_CONCAT(station_code) as stns
+            FROM route_stations
+            GROUP BY train_no
+            """
+        )
+        for r in cur.fetchall():
+            stns = str(r["stns"] or "")
+            if "NDLS" in stns and "CNB" in stns and "LKO" in stns:
+                PROTECTED_TRAIN_NUMBERS.add(str(r["train_no"]))
+
         # Get all trains
         cur.execute("SELECT train_no, name, class, priority FROM trains")
         trains = cur.fetchall()
-        print(f"[INFO] Found {len(trains)} trains in database.")
+        logger.info(
+            "Found %d trains in database (%d already have routes; %d protected corridor trains).",
+            len(trains),
+            len(existing_route_trains),
+            len(PROTECTED_TRAIN_NUMBERS),
+        )
 
         # Get stations map
         cur.execute("SELECT code, name, lat, lon FROM stations")
         station_map = {r["code"]: dict(r) for r in cur.fetchall()}
 
-        # Clear existing route_stations
-        cur.execute("DELETE FROM route_stations")
-        print("[INFO] Cleared old route_stations table.")
-
         seeded_routes = 0
-        corridor_counts = {}
+        skipped_existing = 0
+        skipped_protected = 0
+        skipped_no_match = 0
+        corridor_counts: Dict[str, int] = {}
 
         for idx, t in enumerate(trains):
             t_no = str(t["train_no"])
             name = str(t["name"])
             priority = int(t["priority"] or 2)
-            
+
+            # Guard 1: Safety check against overwriting protected corridor trains
+            if t_no in PROTECTED_TRAIN_NUMBERS:
+                skipped_protected += 1
+                continue
+
+            # Guard 2: Only INSERT missing trains; NEVER modify or overwrite existing routes
+            if t_no in existing_route_trains:
+                skipped_existing += 1
+                continue
+
             raw_route = determine_corridor(t_no, name)
+            if not raw_route:
+                skipped_no_match += 1
+                continue
+
             # Filter to stations that exist in stations table
             valid_stations = [s for s in raw_route if s in station_map]
-            
             if len(valid_stations) < 2:
-                valid_stations = ["NDLS", "GZB", "ALJN", "TDL", "ETW", "CNB", "ON", "LKO"]
+                logger.warning("Train %s matched corridor but fewer than 2 valid stations found. Skipping.", t_no)
+                skipped_no_match += 1
+                continue
 
             # Reverse half of trains for UP / DN bidirectional operations
             is_up = (int(t_no[-1]) % 2 != 0)
@@ -140,7 +214,6 @@ def run():
 
             cum_dist = 0.0
             for seq, stn_code in enumerate(route, start=1):
-                stn_info = station_map.get(stn_code)
                 if seq == 1:
                     sched_arr = None
                     sched_dep = curr_time.strftime("%H:%M")
@@ -163,22 +236,49 @@ def run():
                     curr_time += datetime.timedelta(minutes=halt_min)
                     sched_dep = curr_time.strftime("%H:%M")
 
-                cur.execute(
-                    """
-                    INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, halt_min, distance_km)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    (t_no, seq, stn_code, sched_arr, sched_dep, halt_min, round(cum_dist, 1))
-                )
+                if apply:
+                    cur.execute(
+                        """
+                        INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, halt_min, distance_km)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (t_no, seq, stn_code, sched_arr, sched_dep, halt_min, round(cum_dist, 1)),
+                    )
+
             seeded_routes += 1
             start_stn, end_stn = route[0], route[-1]
             pair_key = f"{start_stn} <-> {end_stn}"
             corridor_counts[pair_key] = corridor_counts.get(pair_key, 0) + 1
 
-        print(f"[SUCCESS] Seeded {seeded_routes} full Pan-India train routes into route_stations!")
-        print("[INFO] Sample corridor distribution:")
-        for k, v in list(corridor_counts.items())[:12]:
-            print(f"  {k}: {v} trains")
+        if dry_run:
+            logger.info(
+                "[DRY RUN COMPLETE] Planned %d new routes (skipped: %d existing, %d protected, %d unmatched). 0 rows written.",
+                seeded_routes,
+                skipped_existing,
+                skipped_protected,
+                skipped_no_match,
+            )
+        else:
+            logger.info(
+                "[SUCCESS] Seeded %d new train routes into route_stations! (Skipped: %d existing, %d protected, %d unmatched).",
+                seeded_routes,
+                skipped_existing,
+                skipped_protected,
+                skipped_no_match,
+            )
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="RailTwin-X Pan-India Route Expansion")
+    parser.add_argument(
+        "--apply",
+        action="store_true",
+        default=False,
+        help="Apply changes to the database. If omitted, runs in safe dry-run mode.",
+    )
+    args = parser.parse_args()
+    run(apply=args.apply)
+
 
 if __name__ == "__main__":
-    run()
+    main()
