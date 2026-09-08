@@ -167,16 +167,31 @@ def seed_roles_and_users(db: Optional[Database] = None) -> dict[str, int]:
             else:
                 actual_password = u["password"]
             pwd_hash = hash_password(actual_password)
-            cur.execute(
-                """
-                INSERT INTO users (id, username, email, password_hash, role_id, station_code, full_name, is_active, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
+            must_change = 0 if is_production else 1
+            if is_production:
+                upsert_sql = """
+                INSERT INTO users (id, username, email, password_hash, role_id, station_code, full_name, is_active, created_at, must_change_password)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
                 ON CONFLICT(username) DO UPDATE SET
                     email = excluded.email,
                     role_id = excluded.role_id,
                     station_code = excluded.station_code,
                     full_name = excluded.full_name;
-                """,
+                """
+            else:
+                upsert_sql = """
+                INSERT INTO users (id, username, email, password_hash, role_id, station_code, full_name, is_active, created_at, must_change_password)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+                ON CONFLICT(username) DO UPDATE SET
+                    email = excluded.email,
+                    password_hash = excluded.password_hash,
+                    role_id = excluded.role_id,
+                    station_code = excluded.station_code,
+                    full_name = excluded.full_name,
+                    must_change_password = excluded.must_change_password;
+                """
+            cur.execute(
+                upsert_sql,
                 (
                     u["id"],
                     u["username"],
@@ -186,6 +201,7 @@ def seed_roles_and_users(db: Optional[Database] = None) -> dict[str, int]:
                     u["station_code"],
                     u["full_name"],
                     now_iso,
+                    must_change,
                 ),
             )
             

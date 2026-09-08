@@ -17,11 +17,28 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
-from fastapi import Depends, HTTPException, Security, status
+from fastapi import Depends, HTTPException, Request, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from data.db import Database, get_db
 from config import settings
+
+# Insecure known/demo passwords disallowed during password change (SEC-004)
+KNOWN_PASSWORD_BLACKLIST = {
+    "RailTwinAdmin2026!",
+    "StationMaster2026!",
+    "DyStationMaster2026!",
+    "CrewController2026!",
+    "SectionController2026!",
+    "TrackEngineer2026!",
+    "TTEOfficer2026!",
+    "CommercialInsp2026!",
+    "ViewerGuest2026!",
+    "StationMasterCNB2026!",
+    "password1234",
+    "admin123456",
+    "password123",
+}
 
 if settings.ENV.strip().lower() == "production" and len(settings.JWT_SECRET_KEY.strip()) < 32:
     raise RuntimeError("RAILTWIN_JWT_SECRET_KEY must be configured before starting in production")
@@ -212,6 +229,7 @@ def decode_refresh_token(token: str) -> Dict[str, Any]:
 def get_current_user(
     auth: Optional[HTTPAuthorizationCredentials] = Security(security_bearer),
     db: Database = Depends(get_db),
+    request: Request = None,
 ) -> Dict[str, Any]:
     """FastAPI dependency to extract and validate the authenticated user from the Authorization header."""
     if not auth or not auth.credentials:
@@ -228,6 +246,7 @@ def get_current_user(
         cur.execute(
             """
             SELECT u.id, u.username, u.email, u.role_id, u.station_code, u.full_name, u.is_active,
+                   u.must_change_password,
                    r.name as role_name, r.permissions_json
             FROM users u
             JOIN roles r ON u.role_id = r.id
@@ -245,6 +264,15 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    token_must_change = bool(payload.get("must_change_password", False))
+    if token_must_change:
+        path = request.url.path if request is not None else ""
+        if not path.startswith("/api/auth/"):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Password change required. You must change your temporary password at /api/auth/change-password before accessing system resources.",
+            )
+
     return {
         "id": row["id"],
         "username": row["username"],
@@ -254,6 +282,7 @@ def get_current_user(
         "station_code": row["station_code"],
         "full_name": row["full_name"],
         "permissions_json": row["permissions_json"],
+        "must_change_password": bool(row["must_change_password"]) if "must_change_password" in row.keys() else False,
     }
 
 

@@ -39,7 +39,7 @@
 | 2.1 | DEV-001 | Makefile --workers 2 | 🟡 P2 | 5m | ☑ |
 | 2.2 | VULN-001 | npm vulnerabilities | 🟡 P2 | 30m | ☑ |
 | 2.3 | LIC-001 | No LICENSE | 🟡 P2 | 10m | ☑ |
-| 2.4 | SEC-004 | Known seed passwords | 🟡 P2 | 60m | ☐ |
+| 2.4 | SEC-004 | Known seed passwords | 🟡 P2 | 60m | ☑ |
 | 2.5 | OBS-001 | No /metrics, print() logging | 🟡 P2 | 90m | ☐ |
 | 2.6 | ML-002 | CV Fold 6 collapse | 🟡 P2 | 40m | ☐ |
 | 2.7 | MIG-001 | No rollback migrations | 🟡 P2 | 90m | ☐ |
