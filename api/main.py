@@ -293,7 +293,7 @@ app.add_exception_handler(Exception, unhandled_exception_handler)
 # HTTP Compression Middleware (F35)
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
-# Configure CORS for Next.js dashboard integration
+# Configure CORS for Vite/React frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,

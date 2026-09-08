@@ -87,6 +87,6 @@ mobile app · OR-Tools · any 15th feature. New ideas → roadmap slide, not cod
 
 ## 6. Stack & Data (locked)
 
-**Stack:** PyTorch · LightGBM · SimPy · networkx · pandas · scikit-learn · FastAPI · Open-Meteo · Next.js · recharts · SQLite.
+**Stack:** PyTorch · LightGBM · SimPy · networkx · pandas · scikit-learn · FastAPI · Open-Meteo · Vite + React · recharts · SQLite.
 
 **Data:** 150 daily trains (passenger + DFC freight), Northern Railway corridor (NDLS-CNB-DDU), 3-adapter fallback chain (RapidAPI → Live Scrape → Deterministic Mock Replay), idempotent SQLite storage with quality gates.

@@ -79,7 +79,7 @@ flowchart TB
         FastAPI --> WSStream
     end
 
-    subgraph ClientLayer["6. Next.js Controller Dashboard"]
+    subgraph ClientLayer["6. Vite/React Controller Dashboard"]
         LiveGantt["Live Platform Gantt Chart"]
         ConflictFeed["Real-Time Conflict Alerts"]
         TimelineView["Calibrated Train Journey Timeline"]
