@@ -2,6 +2,7 @@
   "name": "railtwin-x",
   "version": "2.0.0",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "dev": "npm --prefix web run dev",
     "build": "npm --prefix web run build",
