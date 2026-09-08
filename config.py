@@ -241,6 +241,12 @@ class Settings(BaseSettings):
         gt=0,
         description="Official timetable slack recovery assumption: 1 minute recovered per N km",
     )
+    SECTION_CAPACITY_HEADWAY_KM: float = Field(
+        default=10.0,
+        gt=0,
+        description="Planning headway used to derive block-section train capacity (length_km / headway_km)",
+    )
+    TSR_MIN_SPEED_KMPH: int = Field(default=20, ge=5, le=60, description="Floor for demo-injected caution orders")
     RAKE_MIN_TURNAROUND_BUFFER_MIN: int = Field(default=90, ge=0, description="Minimum rake cleaning/inspection buffer")
     DEFAULT_RAKE_TURNAROUND_MIN: int = Field(default=240, ge=0)
     DEFAULT_MIN_CONNECTION_TIME_MIN: int = Field(default=15, ge=1, le=120)
