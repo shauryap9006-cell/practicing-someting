@@ -317,122 +317,18 @@ def get_network_state():
     )
 
 
-@router.get("/stations/{code}", response_model=StationSummaryResponse)
-def get_station_summary(code: str):
-    """Returns the station contract consumed by the authenticated dashboard shell."""
-    station_code = code.strip().upper()
-    db = get_db()
-    clock = get_clock()
-    with db.transaction() as cur:
-        cur.execute("SELECT code, name, zone, platforms FROM stations WHERE code = ?", (station_code,))
-        station = cur.fetchone()
-        if not station:
-            raise HTTPException(status_code=404, detail={"code": "STATION_NOT_FOUND", "message": f"Station {station_code} not found", "retryable": False})
-        cur.execute("SELECT COUNT(DISTINCT train_no) AS count FROM route_stations WHERE station_code = ?", (station_code,))
-        active_trains = int(cur.fetchone()["count"])
-        cur.execute(
-            "SELECT AVG(COALESCE(delay_arr_min, delay_dep_min, 0)) AS avg_delay FROM station_events WHERE station_code = ?",
-            (station_code,),
-        )
-        avg_delay_row = cur.fetchone()
-        cur.execute(
-            "SELECT COUNT(*) AS count FROM notifications WHERE target_role IN ('station_master', 'dy_sm') AND state IN ('queued', 'sent', 'escalated')",
-        )
-        advisories_row = cur.fetchone()
-        cur.execute(
-            "SELECT COUNT(*) AS count FROM crew_rosters WHERE station_code = ? AND status = 'BREACH_WARNING'",
-            (station_code,),
-        )
-        crew_row = cur.fetchone()
-
-    conflicts = 0
-    try:
-        _, conflicts_list = PlatformManager(db).get_station_gantt(station_code)
-        conflicts = len(conflicts_list)
-    except Exception:
-        # A station summary remains useful when optional platform data is absent.
-        conflicts = 0
-
-    zone = station["zone"] or "Railway"
-    name = station["name"]
-    return StationSummaryResponse(
-        code=station["code"],
-        name=name,
-        fullName=f"{name} Junction",
-        division=f"{zone} Division",
-        zone=zone,
-        platformsCount=int(station["platforms"] or 0),
-        activeTrainsCount=active_trains,
-        platformConflictsCount=conflicts,
-        pendingAdvisoriesCount=int(advisories_row["count"] if advisories_row else 0),
-        crewWarningsCount=int(crew_row["count"] if crew_row else 0),
-        corridorAvgDelayMinutes=round(float(avg_delay_row["avg_delay"] or 0.0), 1) if avg_delay_row else 0.0,
-        updated_at=clock.now_iso(),
-        clock_mode=clock.mode,
-    )
-
-
 # ----------------------------------------------------
-# 5. Station Platform Gantt (F8)
+# 2. Stations & Platforms Domain (Extracted to api/routers/stations.py)
 # ----------------------------------------------------
-@router.get("/stations/{code}/gantt", response_model=StationGanttResponse)
-def get_station_gantt(code: str):
-    """Returns platform occupancy Gantt blocks and detected conflicts for a station."""
-    station_code = code.upper()
-    db = get_db()
-    clock = get_clock()
-    pm = PlatformManager(db)
+from api.routers.stations import (
+    router as stations_router,
+    get_station_summary,
+    get_station_gantt,
+    reoptimize_station_platforms,
+    get_station_connections,
+)
 
-    with db.transaction() as cur:
-        cur.execute("SELECT name, platforms FROM stations WHERE code = ?", (station_code,))
-        stn_row = cur.fetchone()
-        if not stn_row:
-            raise HTTPException(status_code=404, detail={"code": "STATION_NOT_FOUND", "message": f"Station {station_code} not found", "retryable": False})
-
-    blocks, conflicts = pm.get_station_gantt(station_code)
-
-    return StationGanttResponse(
-        station_code=station_code,
-        station_name=stn_row["name"],
-        total_platforms=int(stn_row["platforms"]),
-        conflicts_count=len(conflicts),
-        blocks=[PlatformGanttBlock(**b.to_dict()) for b in blocks],
-        conflicts=[PlatformGanttConflict(**c.to_dict()) for c in conflicts],
-        updated_at=clock.now_iso(),
-        clock_mode=clock.mode,
-    )
-
-
-# ----------------------------------------------------
-# 6. Station Platform Re-Optimize (F9)
-# ----------------------------------------------------
-@router.post("/stations/{code}/reoptimize", response_model=ReoptimizeResponse)
-def reoptimize_station_platforms(
-    code: str,
-    body: Optional[ReoptimizeRequest] = None,
-    current_user: dict = Depends(require_role(["station_master", "dy_sm", "admin"])),
-):
-    """One-click self-healing platform re-optimizer resolving all conflicts in <2s."""
-    station_code = code.upper()
-    assert_station_scope(current_user, station_code)
-    db = get_db()
-    clock = get_clock()
-    pm = PlatformManager(db)
-    target_date = body.target_date if body else None
-    blocks, _ = pm.get_station_gantt(station_code, target_date=target_date)
-    reopt_blocks, diff = pm.reoptimize_platforms(station_code, blocks)
-
-    return ReoptimizeResponse(
-        station_code=station_code,
-        conflicts_before=diff.conflicts_before,
-        conflicts_after=diff.conflicts_after,
-        resolved_conflicts=diff.resolved_conflicts,
-        swaps_performed=diff.swaps_performed,
-        execution_time_seconds=diff.execution_time_seconds,
-        blocks=[PlatformGanttBlock(**b.to_dict()) for b in reopt_blocks],
-        updated_at=clock.now_iso(),
-        clock_mode=clock.mode,
-    )
+router.include_router(stations_router)
 
 
 # ----------------------------------------------------
@@ -511,42 +407,6 @@ def get_crew_alerts():
     )
 
 
-# ----------------------------------------------------
-# 8b. Connection Custody Engine (Proposal 1)
-# ----------------------------------------------------
-@router.get("/stations/{code}/connections", response_model=None)
-def get_station_connections(
-    code: str,
-    run_date: Optional[str] = Query(None, description="Date YYYY-MM-DD"),
-    min_transfer_min: Optional[int] = Query(
-        None, ge=5, le=60, description="Minimum connection transfer time in minutes (defaults to configured value)"
-    ),
-):
-    """Evaluates junction interchange connection feasibility and hold-decision tradeoffs."""
-    if min_transfer_min is None:
-        min_transfer_min = settings.DEFAULT_MIN_CONNECTION_TIME_MIN
-    db = get_db()
-    clock = get_clock()
-    engine = ConnectionCustodyEngine(db)
-    connections = engine.evaluate_station_connections(
-        station_code=code,
-        run_date=run_date,
-        min_connection_time_min=min_transfer_min,
-    )
-
-    at_risk_count = sum(1 for c in connections if c.status in ("AT_RISK", "CRITICAL_MISSED", "MISSED"))
-    advisories_count = sum(1 for c in connections if c.hold_advisory is not None)
-
-    return {
-        "status": "OK",
-        "station_code": code.upper(),
-        "run_date": run_date or clock.today_str(),
-        "total_connections_monitored": len(connections),
-        "at_risk_count": at_risk_count,
-        "hold_advisories_active": advisories_count,
-        "connections": [c.to_dict() for c in connections],
-        "as_of": clock.now_iso(),
-    }
 
 
 # ----------------------------------------------------
