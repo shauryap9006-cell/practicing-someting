@@ -7,13 +7,11 @@ contact numbers, and use the current clock for inspection timestamps.
 
 from __future__ import annotations
 
-from engine.clocks import now_iso
-
 import sqlite3
-from datetime import datetime, timezone
 from typing import List, Tuple
 
 from config import settings
+from engine.clocks import now_iso
 
 
 def _sample_level_crossings(now_iso: str) -> List[Tuple]:

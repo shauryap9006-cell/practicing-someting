@@ -82,6 +82,7 @@ In `notifications/dispatcher.py`, the channel is selected via `settings.WHATSAPP
 ```python
 if settings.WHATSAPP_PROVIDER == "meta":
     from notifications.channels.meta_cloud import MetaCloudChannel
+
     self.openwa = MetaCloudChannel()
 else:
     self.openwa = OpenWAChannel()

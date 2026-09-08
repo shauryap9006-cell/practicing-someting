@@ -13,7 +13,8 @@ import logging
 import threading
 import time
 from collections import deque
-from typing import Dict, List, Optional, Tuple
+from typing import Dict
+
 from fastapi import HTTPException, Request, status
 
 from api.auth import hash_password, verify_password
@@ -178,4 +179,3 @@ def reset_auth_limiter() -> None:
 def verify_dummy_password(password: str) -> None:
     """Performs Argon2id verification against dummy hash for constant-time anti-enumeration."""
     verify_password(password, _DUMMY_HASH)
-

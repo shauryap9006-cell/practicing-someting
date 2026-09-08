@@ -1,11 +1,6 @@
 """Determinism Verification Test Suite for RailTwin-X Replay Demo Engine (Part B / Phase B3)."""
 
-import copy
-import json
-import pytest
-
 from scripts.demo_replay import run_replay
-from data.db import Database, get_db
 
 
 def test_demo_replay_offline_execution():
@@ -54,6 +49,9 @@ def test_demo_replay_strict_determinism():
             assert ev1["remaining_conflicts"] == ev2["remaining_conflicts"]
 
     # 2. Assert headline numbers match
-    assert run_1["headline_numbers"]["attributed_delta_min"] == run_2["headline_numbers"]["attributed_delta_min"]
+    assert (
+        run_1["headline_numbers"]["attributed_delta_min"]
+        == run_2["headline_numbers"]["attributed_delta_min"]
+    )
     assert run_1["headline_numbers"]["primary_cause"] == run_2["headline_numbers"]["primary_cause"]
     assert run_1["headline_numbers"]["reopt_swaps"] == run_2["headline_numbers"]["reopt_swaps"]

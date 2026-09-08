@@ -11,8 +11,7 @@ import json
 import sqlite3
 import threading
 import time
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 from data.db import Database, get_db
 from engine.clocks import get_clock
@@ -55,19 +54,23 @@ def record_audit(
     actor_role: str,
     action: str,
     table_name: str,
-    record_id: Union[str, int],
+    record_id: Union[str, int, None] = None,
     before_state: Optional[Union[Dict[str, Any], str]] = None,
     after_state: Optional[Union[Dict[str, Any], str]] = None,
 ) -> Dict[str, Any]:
     """Records an append-only, SHA-256 chained audit log entry with concurrency safety.
-    
+
     Accepts either an active sqlite3.Cursor (inside an existing transaction) or a Database instance.
     """
     clock = get_clock()
-    record_id_str = str(record_id)
-    
-    before_str = json.dumps(before_state, sort_keys=True) if isinstance(before_state, dict) else before_state
-    after_str = json.dumps(after_state, sort_keys=True) if isinstance(after_state, dict) else after_state
+    record_id_str = str(record_id) if record_id is not None else ""
+
+    before_str = (
+        json.dumps(before_state, sort_keys=True) if isinstance(before_state, dict) else before_state
+    )
+    after_str = (
+        json.dumps(after_state, sort_keys=True) if isinstance(after_state, dict) else after_state
+    )
 
     def _execute_audit(cur: sqlite3.Cursor) -> Dict[str, Any]:
         prev_hash = get_last_audit_hash(cur)
@@ -138,7 +141,7 @@ def record_audit(
             if "locked" not in str(err).lower() and "busy" not in str(err).lower():
                 raise
             last_error = err
-        time.sleep(0.01 * (2 ** attempt))
+        time.sleep(0.01 * (2**attempt))
     assert last_error is not None
     raise last_error
 
@@ -236,7 +239,7 @@ def verify_audit_log(db: Optional[Database] = None) -> Tuple[bool, int, int]:
 
 def verify_audit_chain_integrity(db: Optional[Database] = None) -> Tuple[bool, int, Optional[str]]:
     """Verifies the complete SHA-256 cryptographic chain of the audit_log table.
-    
+
     Returns:
         (is_valid, total_records_checked, error_message_if_invalid)
     """

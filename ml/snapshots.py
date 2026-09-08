@@ -16,17 +16,16 @@ import datetime
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
+
 import numpy as np
 import pandas as pd
 
-from config import settings
 from data.db import Database, get_db
 from engine.position_resolver import PositionResolver
+from engine.spatial_context import DaySpatialIndex, build_trajectories
 from engine.track_graph import TrackGraph
-from engine.spatial_context import build_trajectories, DaySpatialIndex
 from ml.features import (
     FEATURE_NAMES,
-    FEATURE_NAMES_V1,
     FEATURE_NAMES_V2,
     TrainFeatureVector,
     validate_feature_dataframe,
@@ -67,7 +66,6 @@ def _compute_fog_flag_at_hour(base_fog_flag: int, sched_arr: Optional[str]) -> i
         return 1 if 4 <= hour <= 10 else 0
     except (ValueError, IndexError):
         return base_fog_flag
-
 
 
 class SnapshotGenerator:
@@ -121,7 +119,9 @@ class SnapshotGenerator:
 
             # Rake links
             try:
-                cur.execute("SELECT incoming_train, outgoing_train, station_code, turnaround_min FROM rake_links")
+                cur.execute(
+                    "SELECT incoming_train, outgoing_train, station_code, turnaround_min FROM rake_links"
+                )
                 self._cached_rake_links = {r["outgoing_train"]: dict(r) for r in cur.fetchall()}
             except Exception:
                 self._cached_rake_links = {}
@@ -173,9 +173,7 @@ class SnapshotGenerator:
     ) -> Tuple[int, float]:
         """Calculates active TSR count and maximum slowdown percentage on remaining route."""
         remaining_stns = [
-            r["station_code"]
-            for r in route
-            if current_seq <= int(r["seq"]) <= target_seq
+            r["station_code"] for r in route if current_seq <= int(r["seq"]) <= target_seq
         ]
         if len(remaining_stns) < 2:
             return 0, 0.0
@@ -190,7 +188,9 @@ class SnapshotGenerator:
         active_tsrs = []
         try:
             with self.db.transaction() as cur:
-                cur.execute("SELECT from_code, to_code, speed_limit_kmph, is_active FROM speed_restrictions WHERE is_active = 1")
+                cur.execute(
+                    "SELECT from_code, to_code, speed_limit_kmph, is_active FROM speed_restrictions WHERE is_active = 1"
+                )
                 active_tsrs = [dict(r) for r in cur.fetchall()]
         except Exception:
             active_tsrs = [t for t in (self._cached_tsrs or []) if t.get("is_active", 1)]
@@ -217,11 +217,17 @@ class SnapshotGenerator:
         # Fast path: Load from materialized hist_baselines table in O(1) time
         with self.db.transaction() as cur:
             try:
-                cur.execute("SELECT train_no, station_code, avg_delay, p90_delay FROM hist_baselines")
+                cur.execute(
+                    "SELECT train_no, station_code, avg_delay, p90_delay FROM hist_baselines"
+                )
                 base_rows = cur.fetchall()
                 if base_rows and len(base_rows) > 0:
-                    avg_delay_map = {(r["train_no"], r["station_code"]): float(r["avg_delay"]) for r in base_rows}
-                    p90_delay_map = {(r["train_no"], r["station_code"]): float(r["p90_delay"]) for r in base_rows}
+                    avg_delay_map = {
+                        (r["train_no"], r["station_code"]): float(r["avg_delay"]) for r in base_rows
+                    }
+                    p90_delay_map = {
+                        (r["train_no"], r["station_code"]): float(r["p90_delay"]) for r in base_rows
+                    }
                     chronic_map = {}
                     chronic_p90_map = {}
                     for r in base_rows:
@@ -230,7 +236,9 @@ class SnapshotGenerator:
                             chronic_map[t] = []
                         chronic_map[t].append(float(r["avg_delay"]))
                     chronic_mean_map = {k: float(np.mean(v)) for k, v in chronic_map.items()}
-                    chronic_p90_mean_map = {k: float(np.percentile(v, 90)) for k, v in chronic_map.items()}
+                    chronic_p90_mean_map = {
+                        k: float(np.percentile(v, 90)) for k, v in chronic_map.items()
+                    }
 
                     self._cached_train_stats = {
                         "train_cutoff_date": train_cutoff_date,
@@ -244,7 +252,9 @@ class SnapshotGenerator:
                 pass
 
         # Fallback: compute from station_events
-        print(f"[INFO] Computing historical baseline stats strictly on dates <= {train_cutoff_date} (Leakage Safe)...")
+        print(
+            f"[INFO] Computing historical baseline stats strictly on dates <= {train_cutoff_date} (Leakage Safe)..."
+        )
         with self.db.transaction() as cur:
             cur.execute(
                 """
@@ -282,7 +292,6 @@ class SnapshotGenerator:
             "chronic_map": chronic_map,
             "chronic_p90_map": chronic_p90_map,
         }
-
 
     def extract_features_at_snapshot(
         self,
@@ -336,7 +345,9 @@ class SnapshotGenerator:
         chronic_p90_map = self._cached_train_stats.get("chronic_p90_map", {})
 
         hist_avg = avg_map.get((train_no, target_stn_code), chronic_map.get(train_no, 5.0))
-        hist_p90 = p90_map.get((train_no, target_stn_code), chronic_p90_map.get(train_no, max(hist_avg, 5.0)))
+        hist_p90 = p90_map.get(
+            (train_no, target_stn_code), chronic_p90_map.get(train_no, max(hist_avg, 5.0))
+        )
 
         # F11-F12: Timetable & Congestion
         sched_halt = int(target_stop["halt_min"])
@@ -414,7 +425,11 @@ class SnapshotGenerator:
                                 (inc_train, run_date_str, turn_stn, query_time_iso, query_time_iso),
                             )
                             inc_row = cur.fetchone()
-                            delay_val = float(inc_row["delay_arr_min"]) if inc_row and inc_row["delay_arr_min"] is not None else 0.0
+                            delay_val = (
+                                float(inc_row["delay_arr_min"])
+                                if inc_row and inc_row["delay_arr_min"] is not None
+                                else 0.0
+                            )
                             upstream_rake_delay_min = max(0.0, delay_val)
                             self._incoming_rake_delay_cache[cache_k] = upstream_rake_delay_min
                     except Exception:
@@ -422,7 +437,9 @@ class SnapshotGenerator:
                         upstream_rake_delay_min = 0.0
 
                 rake_incoming_delay = upstream_rake_delay_min
-                upstream_rake_buffer_remaining_min = max(0.0, turnaround_min - upstream_rake_delay_min)
+                upstream_rake_buffer_remaining_min = max(
+                    0.0, turnaround_min - upstream_rake_delay_min
+                )
 
         # F30: Crew Duty Pressure (Phase 2 - hours beyond 8h duty cycle = 480 min)
         crew_duty_pressure = 0.0
@@ -539,6 +556,7 @@ class SnapshotGenerator:
          local_occupancy_pct, minutes_since_obs_scaled, rake_linked_to_self]
         """
         import math
+
         tokens = np.zeros((max_k, 12), dtype=np.float32)
         mask = np.zeros(max_k, dtype=bool)
 
@@ -570,9 +588,17 @@ class SnapshotGenerator:
         for j in cand_indices:
             cand_train = list(spatial_index.idx.keys())[list(spatial_index.idx.values()).index(j)]
             d_km = diff_km[j]
-            same_dir = (is_up[j] == my_is_up)
+            same_dir = is_up[j] == my_is_up
             opp_single = 1.0 if not same_dir else 0.0
-            rake_link = 1.0 if (self._cached_rake_links and cand_train in self._cached_rake_links and self._cached_rake_links[cand_train].get("incoming_train") == train_no) else 0.0
+            rake_link = (
+                1.0
+                if (
+                    self._cached_rake_links
+                    and cand_train in self._cached_rake_links
+                    and self._cached_rake_links[cand_train].get("incoming_train") == train_no
+                )
+                else 0.0
+            )
             score = 3.0 * rake_link + 2.0 * math.exp(-abs(d_km) / 20.0) + 1.5 * opp_single + 1.0
             cand_scores.append((score, j, cand_train, d_km, dl[j], same_dir, opp_single, rake_link))
 
@@ -584,7 +610,7 @@ class SnapshotGenerator:
             tokens[k_idx, 1] = 1.0 if ("12" in c_tno or "22" in c_tno) else 0.0  # is_premium
             tokens[k_idx, 2] = 0.0  # is_local
             tokens[k_idx, 3] = float(np.clip(delay / 60.0, -1.0, 5.0))  # delay_min_scaled
-            tokens[k_idx, 4] = float(np.clip(d_km / 60.0, -1.0, 1.0))   # dist_gap_km_scaled
+            tokens[k_idx, 4] = float(np.clip(d_km / 60.0, -1.0, 1.0))  # dist_gap_km_scaled
             tokens[k_idx, 5] = 1.0 if same_dir else 0.0
             tokens[k_idx, 6] = float(opp_single)
             tokens[k_idx, 7] = 0.8  # sched_speed_scaled
@@ -626,7 +652,10 @@ class SnapshotGenerator:
         if not hasattr(self, "_weather_cache"):
             with self.db.transaction() as cur:
                 cur.execute("SELECT station_code, date, fog_flag, precip_mm FROM weather")
-                self._weather_cache = {(r["station_code"], r["date"]): (int(r["fog_flag"]), float(r["precip_mm"])) for r in cur.fetchall()}
+                self._weather_cache = {
+                    (r["station_code"], r["date"]): (int(r["fog_flag"]), float(r["precip_mm"]))
+                    for r in cur.fetchall()
+                }
                 cur.execute(
                     """
                     SELECT station_code, fog_flag, precip_mm, MAX(date) as max_date
@@ -635,7 +664,8 @@ class SnapshotGenerator:
                     """
                 )
                 self._weather_station_latest = {
-                    r["station_code"]: (int(r["fog_flag"]), float(r["precip_mm"])) for r in cur.fetchall()
+                    r["station_code"]: (int(r["fog_flag"]), float(r["precip_mm"]))
+                    for r in cur.fetchall()
                 }
 
         if (station_code, date_str) in self._weather_cache:
@@ -663,7 +693,10 @@ class SnapshotGenerator:
         if key in self._active_trains_cache:
             return self._active_trains_cache[key]
 
-        if hasattr(self.track_graph, "_events_cache") and date_str in self.track_graph._events_cache:
+        if (
+            hasattr(self.track_graph, "_events_cache")
+            and date_str in self.track_graph._events_cache
+        ):
             events = self.track_graph._events_cache[date_str]
             active_trains = {e["train_no"] for e in events if e["collected_at"] <= query_time_iso}
             res = max(1, len(active_trains))
@@ -682,9 +715,7 @@ class SnapshotGenerator:
         self._active_trains_cache[key] = res
         return res
 
-    def build_dataset(
-        self, start_date: str, end_date: str, train_cutoff_date: str
-    ) -> pd.DataFrame:
+    def build_dataset(self, start_date: str, end_date: str, train_cutoff_date: str) -> pd.DataFrame:
         """Constructs complete training/testing snapshot dataset across specified date range with parquet caching.
 
         F23 FIX: Uses engine.spatial_context.DaySpatialIndex (km-based minute grid) per
@@ -692,12 +723,15 @@ class SnapshotGenerator:
         destination as direction proxy -- broken for 184-unique-destination corridor).
         """
         import hashlib
+
         cache_dir = Path(__file__).parent.parent / "data" / "cache"
         cache_dir.mkdir(parents=True, exist_ok=True)
         # Cache version bumped to v7 to force rebuild after v2 causal features additions
         feat_sig = f"v7_v2causal_{len(FEATURE_NAMES_V2)}_{'_'.join(FEATURE_NAMES_V2)}"
         feat_hash = hashlib.md5(feat_sig.encode()).hexdigest()[:8]
-        cache_file = cache_dir / f"snap_{start_date}_{end_date}_{train_cutoff_date}_{feat_hash}.parquet"
+        cache_file = (
+            cache_dir / f"snap_{start_date}_{end_date}_{train_cutoff_date}_{feat_hash}.parquet"
+        )
 
         if cache_file.exists():
             try:
@@ -712,7 +746,9 @@ class SnapshotGenerator:
         self._load_metadata_caches()
         self.compute_train_period_statistics(train_cutoff_date)
 
-        print(f"[INFO] Building snapshot dataset from {start_date} to {end_date} (F23-fixed spatial)...")
+        print(
+            f"[INFO] Building snapshot dataset from {start_date} to {end_date} (F23-fixed spatial)..."
+        )
 
         with self.db.transaction() as cur:
             cur.execute(
@@ -731,8 +767,7 @@ class SnapshotGenerator:
 
         # Build in-memory fast incoming rake delay cache
         self._incoming_rake_delay_cache = {
-            (ev["train_no"], ev["run_date"]): float(ev["delay_arr_min"] or 0.0)
-            for ev in all_events
+            (ev["train_no"], ev["run_date"]): float(ev["delay_arr_min"] or 0.0) for ev in all_events
         }
 
         # Prepopulate track_graph._events_cache for instant point-in-time filtering (legacy)
@@ -792,7 +827,11 @@ class SnapshotGenerator:
 
                 for k_idx in range(len(run_events) - 1):
                     curr_ev = run_events[k_idx]
-                    prev_delay = run_events[k_idx - 1]["delay_arr_min"] if k_idx > 0 else curr_ev["delay_arr_min"]
+                    prev_delay = (
+                        run_events[k_idx - 1]["delay_arr_min"]
+                        if k_idx > 0
+                        else curr_ev["delay_arr_min"]
+                    )
                     curr_delay = float(curr_ev["delay_arr_min"] or 0.0)
                     curr_seq = int(curr_ev["seq"])
                     if curr_seq < 1 or curr_seq > len(route):
@@ -827,9 +866,12 @@ class SnapshotGenerator:
                             tc_step["min_predicted_headway_next_station"] = 60.0
                         else:
                             tc_step = {
-                                "trains_ahead_30k": 0, "trains_behind_30k": 0,
-                                "opposing_trains_30k": 0, "min_predicted_headway_next_station": 60.0,
-                                "sum_delay_trains_ahead_30k": 0.0, "section_occupancy_pct": 0.0,
+                                "trains_ahead_30k": 0,
+                                "trains_behind_30k": 0,
+                                "opposing_trains_30k": 0,
+                                "min_predicted_headway_next_station": 60.0,
+                                "sum_delay_trains_ahead_30k": 0.0,
+                                "section_occupancy_pct": 0.0,
                             }
                     except Exception:
                         # Fallback to legacy track_graph (safe, never breaks)
@@ -912,12 +954,16 @@ class SnapshotGenerator:
                 )
             elif frac < 0.30:
                 # Soft warn: expected for early-archive CV folds and small test fixtures
-                print(f"  [WARN] {c}: nonzero={frac:.3f} < 0.30 (dataset size={len(out_df):,}. "
-                      f"Full archive reaches 46.5%. NOT an error.)")
+                print(
+                    f"  [WARN] {c}: nonzero={frac:.3f} < 0.30 (dataset size={len(out_df):,}. "
+                    f"Full archive reaches 46.5%. NOT an error.)"
+                )
         # opposing_trains_30k: just verify column is present (0% is physically correct)
         opp_frac = out_df["opposing_trains_30k"].ne(0).mean()
-        print(f"  [DENSITY] opposing_trains_30k: nonzero={opp_frac:.3f} "
-              f"(single-direction corridor -- 0% is correct, not a bug)")
+        print(
+            f"  [DENSITY] opposing_trains_30k: nonzero={opp_frac:.3f} "
+            f"(single-direction corridor -- 0% is correct, not a bug)"
+        )
         if all_pass:
             print("[DENSITY CHECK] PASS -- spatial features above hard threshold")
 
@@ -933,7 +979,9 @@ if __name__ == "__main__":
     print("=== Snapshot Generator Demo ===")
     sg = SnapshotGenerator()
     with sg.db.transaction() as cur:
-        cur.execute("SELECT MIN(run_date) as min_date, MAX(run_date) as max_date FROM station_events")
+        cur.execute(
+            "SELECT MIN(run_date) as min_date, MAX(run_date) as max_date FROM station_events"
+        )
         row = cur.fetchone()
     d_start = row["min_date"] if row and row["min_date"] else "2026-01-01"
     d_dt = datetime.date.fromisoformat(d_start)

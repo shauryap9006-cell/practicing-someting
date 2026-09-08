@@ -7,7 +7,6 @@ Verifies:
 4. Strict Pydantic schema parsing adherence in api.schemas.TrainEtaResponse.
 """
 
-import pytest
 from api.predictor import get_predictor_service
 from api.schemas import TrainEtaResponse
 

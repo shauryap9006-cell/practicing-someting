@@ -9,13 +9,11 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import shutil
 import sqlite3
 import tempfile
-from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from data.db import Database, get_db
 from engine.clocks import ist_now, now_iso
@@ -100,17 +98,23 @@ def create_database_backup(
     }
 
 
-def enforce_retention_policy(backup_dir: Path, max_daily: int = 7, max_weekly: int = 4) -> List[str]:
+def enforce_retention_policy(
+    backup_dir: Path, max_daily: int = 7, max_weekly: int = 4
+) -> List[str]:
     """Prunes older backup files exceeding the retention window."""
     removed = []
-    daily_backups = sorted(backup_dir.glob("railtwin_backup_daily_*.db"), key=lambda p: p.stat().st_mtime)
+    daily_backups = sorted(
+        backup_dir.glob("railtwin_backup_daily_*.db"), key=lambda p: p.stat().st_mtime
+    )
     if len(daily_backups) > max_daily:
         to_remove = daily_backups[:-max_daily]
         for p in to_remove:
             p.unlink(missing_ok=True)
             removed.append(p.name)
 
-    weekly_backups = sorted(backup_dir.glob("railtwin_backup_weekly_*.db"), key=lambda p: p.stat().st_mtime)
+    weekly_backups = sorted(
+        backup_dir.glob("railtwin_backup_weekly_*.db"), key=lambda p: p.stat().st_mtime
+    )
     if len(weekly_backups) > max_weekly:
         to_remove = weekly_backups[:-max_weekly]
         for p in to_remove:
@@ -157,7 +161,7 @@ if __name__ == "__main__":
     res = create_database_backup()
     print(f"Created Backup: {res['filename']} ({res['size_bytes']} bytes)")
     print(f"SHA-256: {res['checksum_sha256']}")
-    
+
     print("Verifying restore in scratch database...")
     v_res = verify_backup_file(res["path"])
     print(f"Integrity Check: {v_res['integrity_check']} (Valid: {v_res['is_valid']})")

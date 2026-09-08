@@ -7,6 +7,7 @@ SimPy PriorityResources (for single-line bottlenecks) and Resources (for station
 from __future__ import annotations
 
 from typing import Dict, Optional, Tuple
+
 import networkx as nx
 import simpy
 
@@ -41,7 +42,9 @@ class CorridorGraph:
                 self.platform_resources[code] = simpy.Resource(self.env, capacity=stn["platforms"])
 
             # 2. Load Sections & Priority/Standard Resources
-            cur.execute("SELECT from_code, to_code, distance_km, single_line, max_speed_kmph FROM sections")
+            cur.execute(
+                "SELECT from_code, to_code, distance_km, single_line, max_speed_kmph FROM sections"
+            )
             sections = cur.fetchall()
 
             for sec in sections:
@@ -51,7 +54,8 @@ class CorridorGraph:
                 max_spd = int(sec["max_speed_kmph"])
 
                 self.graph.add_edge(
-                    u, v,
+                    u,
+                    v,
                     distance_km=dist,
                     single_line=is_single,
                     max_speed_kmph=max_spd,
@@ -85,4 +89,6 @@ if __name__ == "__main__":
     print("=== Corridor Graph Demo ===")
     env = simpy.Environment()
     cg = CorridorGraph(env)
-    print(f"Graph loaded with {len(cg.graph.nodes)} stations and {len(cg.graph.edges)} track sections.")
+    print(
+        f"Graph loaded with {len(cg.graph.nodes)} stations and {len(cg.graph.edges)} track sections."
+    )

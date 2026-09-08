@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from engine.clocks import now_iso
-
-import datetime
 from typing import Dict, Optional
+
+from engine.clocks import now_iso
 
 
 class WhatsAppHealthTracker:
@@ -28,7 +27,12 @@ class WhatsAppHealthTracker:
             self._status = "needs_qr"
         elif "disconnect" in normalized or "close" in normalized or normalized == "stopped":
             self._status = "disconnected"
-        elif "down" in normalized or "error" in normalized or "timeout" in normalized or "failed" in normalized:
+        elif (
+            "down" in normalized
+            or "error" in normalized
+            or "timeout" in normalized
+            or "failed" in normalized
+        ):
             self._status = "down"
         else:
             self._status = status

@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-from engine.clocks import ist_now, IST_TIMEZONE
-
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends
 
 from config import settings
 from data.db import Database, get_db
+from engine.clocks import IST_TIMEZONE, ist_now
 
 router = APIRouter(prefix="/api/system", tags=["System Diagnostics & Degraded Mode (I6)"])
 logger = logging.getLogger(__name__)
@@ -94,5 +93,6 @@ def get_system_status(db: Database = Depends(get_db)):
 def get_system_model_info():
     """Returns governance information, artifact SHA, and serving status for the promoted model (F15)."""
     from api.predictor import get_predictor_service
+
     predictor = get_predictor_service()
     return predictor.get_model_info()

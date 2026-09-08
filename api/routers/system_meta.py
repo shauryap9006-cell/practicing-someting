@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Optional
+
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import JSONResponse
 
@@ -16,7 +17,7 @@ from api.services.meta_service import (
     get_schema_migration_count,
 )
 from config import settings
-from data.db import Database, get_db
+from data.db import get_db
 from engine.clocks import get_clock
 from engine.prediction_ledger import PredictionLedger
 from engine.sim_clock import get_sim_clock
@@ -51,7 +52,9 @@ def get_model_performance():
     """Returns canonical model performance benchmarks, proof tables, and honest horizon cards from metrics.json."""
     metrics_path = settings.ARTIFACTS_DIR / "metrics.json"
     if not metrics_path.exists():
-        raise HTTPException(status_code=503, detail="Metrics artifact ml/artifacts/metrics.json not found.")
+        raise HTTPException(
+            status_code=503, detail="Metrics artifact ml/artifacts/metrics.json not found."
+        )
 
     with open(metrics_path, "r", encoding="utf-8") as f:
         metrics = json.load(f)
@@ -60,12 +63,24 @@ def get_model_performance():
     h1_km = settings.HORIZON_1H_MAX_KM
     h3_km = settings.HORIZON_3H_MAX_KM
     horizon_specs = [
-        ("1h", f"1h (<={h1_km:g}km)", f"1 h (<={h1_km:g}km)",
-         "Within the first horizon band train physics dominates; ties with the frozen-delay baseline are published honestly."),
-        ("3h", f"3h ({h1_km:g}-{h3_km:g}km)", f"3 h ({h1_km:g}-{h3_km:g}km)",
-         "Regional horizon captures turnaround buffers, rake deficit, and section headway before stations see it."),
-        ("6h", f"6h (>{h3_km:g}km)", f"6 h (>{h3_km:g}km)",
-         "Deep corridor foresight: static run-rate baselines degrade while the calibrated cone is preserved."),
+        (
+            "1h",
+            f"1h (<={h1_km:g}km)",
+            f"1 h (<={h1_km:g}km)",
+            "Within the first horizon band train physics dominates; ties with the frozen-delay baseline are published honestly.",
+        ),
+        (
+            "3h",
+            f"3h ({h1_km:g}-{h3_km:g}km)",
+            f"3 h ({h1_km:g}-{h3_km:g}km)",
+            "Regional horizon captures turnaround buffers, rake deficit, and section headway before stations see it.",
+        ),
+        (
+            "6h",
+            f"6h (>{h3_km:g}km)",
+            f"6 h (>{h3_km:g}km)",
+            "Deep corridor foresight: static run-rate baselines degrade while the calibrated cone is preserved.",
+        ),
     ]
 
     horizon_cards = []
@@ -85,20 +100,22 @@ def get_model_performance():
         else:
             badge, verdict = "UNVERIFIED", "No evaluation data for this horizon"
 
-        horizon_cards.append({
-            "horizon": horizon,
-            "horizon_label": label,
-            "mae": mae,
-            "baseline_b1_mae": b1,
-            "baseline_b2_mae": format_metric(m, "mae_b2"),
-            "baseline_b3_mae": format_metric(m, "mae_b3"),
-            "improvement_vs_official_pct": improvement,
-            "coverage_80_pct": format_metric(m, "coverage_80_percent", 1),
-            "winkler_score": format_metric(m, "winkler_score"),
-            "verdict": verdict,
-            "status_badge": badge,
-            "narrative": narrative,
-        })
+        horizon_cards.append(
+            {
+                "horizon": horizon,
+                "horizon_label": label,
+                "mae": mae,
+                "baseline_b1_mae": b1,
+                "baseline_b2_mae": format_metric(m, "mae_b2"),
+                "baseline_b3_mae": format_metric(m, "mae_b3"),
+                "improvement_vs_official_pct": improvement,
+                "coverage_80_pct": format_metric(m, "coverage_80_percent", 1),
+                "winkler_score": format_metric(m, "winkler_score"),
+                "verdict": verdict,
+                "status_badge": badge,
+                "narrative": narrative,
+            }
+        )
 
     return {
         "status": "OK",
@@ -223,6 +240,7 @@ def get_health():
     ]
     missing_artifacts = [path.name for path in required_artifacts if not path.is_file()]
     from ml.artifact_integrity import verify_artifacts
+
     integrity_ready, integrity_failures = verify_artifacts(settings.ARTIFACTS_DIR)
 
     # Evaluation metrics fold analysis
@@ -239,8 +257,11 @@ def get_health():
             folds = metrics.get("rolling_origin_cv", {}).get("folds", [])
             total_folds_count = len(folds)
             valid_folds = [
-                f for f in folds
-                if not f.get("error") and isinstance(f.get("samples"), int) and f.get("samples", 0) > 0
+                f
+                for f in folds
+                if not f.get("error")
+                and isinstance(f.get("samples"), int)
+                and f.get("samples", 0) > 0
             ]
             valid_folds_count = len(valid_folds)
             if total_folds_count > 0:
@@ -259,8 +280,11 @@ def get_health():
     smoke_test_error: Optional[str] = None
     try:
         from api.predictor import get_predictor_service
+
         ps = get_predictor_service()
-        test_pred = ps.predict_train_eta(settings.DEMO_DEFAULT_TRAIN_NO, settings.DEFAULT_JUNCTION_CODE)
+        test_pred = ps.predict_train_eta(
+            settings.DEMO_DEFAULT_TRAIN_NO, settings.DEFAULT_JUNCTION_CODE
+        )
         if test_pred and ("pred_delay_p50" in test_pred or "predicted_delay_min" in test_pred):
             smoke_test_ready = True
         else:
@@ -270,8 +294,14 @@ def get_health():
         smoke_test_error = type(exc).__name__
 
     models_ready = not missing_artifacts and integrity_ready and smoke_test_ready
-    model_failures = missing_artifacts + integrity_failures + ([f"smoke_test: {smoke_test_error}"] if not smoke_test_ready else [])
-    models_status = "loaded and verified" if models_ready else f"unavailable: {', '.join(model_failures)}"
+    model_failures = (
+        missing_artifacts
+        + integrity_failures
+        + ([f"smoke_test: {smoke_test_error}"] if not smoke_test_ready else [])
+    )
+    models_status = (
+        "loaded and verified" if models_ready else f"unavailable: {', '.join(model_failures)}"
+    )
 
     migrations_ready = False
     migration_status = "missing"
@@ -284,8 +314,9 @@ def get_health():
 
     # Inspect live tracker liveness
     try:
-        from engine.live_tracker import get_live_tracker
         from api.sse_limits import active_sse_connections
+        from engine.live_tracker import get_live_tracker
+
         tracker = get_live_tracker(db)
         last_tick = tracker.last_tick_time
         if last_tick:
@@ -306,7 +337,13 @@ def get_health():
             with open(drift_rep_path, "r", encoding="utf-8") as f:
                 d_data = json.load(f)
                 drift_val = d_data.get("overall_status", "GREEN")
-                trust_val = "HIGH" if drift_val == "GREEN" else "MODERATE" if drift_val == "AMBER" else "DEGRADED"
+                trust_val = (
+                    "HIGH"
+                    if drift_val == "GREEN"
+                    else "MODERATE"
+                    if drift_val == "AMBER"
+                    else "DEGRADED"
+                )
         except Exception:
             pass
 

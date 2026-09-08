@@ -88,9 +88,7 @@ def purge_expired_pii(
     try:
         tables = {
             r[0]
-            for r in conn.execute(
-                "SELECT name FROM sqlite_master WHERE type='table';"
-            ).fetchall()
+            for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table';").fetchall()
         }
     finally:
         conn.close()
@@ -235,7 +233,8 @@ def main() -> int:
         help=f"Path to SQLite database (default: {settings.DB_PATH})",
     )
     parser.add_argument(
-        "-v", "--verbose",
+        "-v",
+        "--verbose",
         action="store_true",
         default=False,
         help="Enable verbose logging output",
@@ -252,9 +251,7 @@ def main() -> int:
     should_apply = args.apply and not args.dry_run
     db = Database(Path(args.db_path)) if args.db_path else get_db()
 
-    print(
-        f"=== RailTwin-X PII Retention Purge ({'APPLY' if should_apply else 'DRY-RUN'}) ==="
-    )
+    print(f"=== RailTwin-X PII Retention Purge ({'APPLY' if should_apply else 'DRY-RUN'}) ===")
     res = purge_expired_pii(
         db=db,
         days=args.days,
@@ -263,7 +260,9 @@ def main() -> int:
 
     print(f"Retention Window : {res['retention_days']} days")
     print(f"Cutoff Timestamp : {res['cutoff_time_ist']}")
-    print(f"Mode             : {'APPLIED (DB updated)' if should_apply else 'DRY-RUN (no changes made)'}")
+    print(
+        f"Mode             : {'APPLIED (DB updated)' if should_apply else 'DRY-RUN (no changes made)'}"
+    )
     print("--------------------------------------------------")
     print(f"Delay Certificates Redacted : {res['delay_certificates']}")
     print(f"Notification Logs Purged    : {res['notification_log']}")

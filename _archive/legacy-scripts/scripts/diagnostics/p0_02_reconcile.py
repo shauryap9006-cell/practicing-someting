@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Recompute every number ever reported. Every FAIL is a finding."""
 import math
 from pathlib import Path

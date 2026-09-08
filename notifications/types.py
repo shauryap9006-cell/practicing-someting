@@ -26,6 +26,7 @@ class ChannelType(str, Enum):
 @dataclass
 class StaffRecipient:
     """Recipient resolved from the staff database table."""
+
     staff_id: str
     name: str
     role: str
@@ -47,6 +48,7 @@ class StaffRecipient:
 @dataclass
 class AlertEvent:
     """Universal notification payload routed through NotificationDispatcher."""
+
     severity: str  # "HIGH", "MEDIUM", "LOW"
     event_type: str  # "conflict", "crew_fatigue", "advisory", "maintenance", "system"
     title: str
@@ -71,7 +73,7 @@ class AlertEvent:
         lines.append(f"*Alert:* {self.title}")
         if self.body:
             lines.append(f"*Details:* {self.body}")
-        
+
         if self.ack_id:
             lines.append(
                 f"\n*ACTION REQUIRED:*\nReply `ACK {self.ack_id}` to accept\nReply `ESC {self.ack_id}` to escalate/reject"

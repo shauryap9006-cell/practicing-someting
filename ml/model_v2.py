@@ -11,9 +11,11 @@ Upgrades vs v1:
   5. Median-anchored 7-level monotone quantile head (0.05..0.95)
   6. CRPS-approx + Winkler training objective
 """
+
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -180,11 +182,14 @@ class NeighborInteraction(nn.Module):
         ctx_sq = ctx.squeeze(1)
         if all_pad.any():
             ctx_sq = torch.where(all_pad.unsqueeze(-1), torch.zeros_like(ctx_sq), ctx_sq)
-        return self.norm(own + ctx_sq), w.squeeze(1) if w is not None else torch.zeros((own.size(0), nbr.size(1)), device=own.device)
+        return self.norm(own + ctx_sq), w.squeeze(1) if w is not None else torch.zeros(
+            (own.size(0), nbr.size(1)), device=own.device
+        )
 
 
 class SeqSchema:
     """Single source of truth for sequence feature channels and normalization schema (Bug 5)."""
+
     COLS = [
         "arr_delay",
         "dep_delay",
@@ -257,7 +262,9 @@ class RailTwinGRUv2(nn.Module):
         device = seq.device
 
         if nbr is None:
-            nbr = torch.zeros((batch_size, 8, self.nbr_feat_dim), dtype=torch.float32, device=device)
+            nbr = torch.zeros(
+                (batch_size, 8, self.nbr_feat_dim), dtype=torch.float32, device=device
+            )
         if nbr_mask is None:
             nbr_mask = torch.zeros((batch_size, 8), dtype=torch.bool, device=device)
 
@@ -281,7 +288,7 @@ class RailTwinGRUv2(nn.Module):
         h_fused = g * h_int + (1.0 - g) * h_own
         q_norm = self.head(h_fused)  # [B, K] normalized
         # De-normalize explicitly using arrival delay stats (Bug 5)
-        q = q_norm * sd[:, ch_arr:ch_arr+1] + mu[:, ch_arr:ch_arr+1]
+        q = q_norm * sd[:, ch_arr : ch_arr + 1] + mu[:, ch_arr : ch_arr + 1]
         return {
             "quantiles": q,
             "nbr_attn": nbr_w,
@@ -292,4 +299,3 @@ class RailTwinGRUv2(nn.Module):
     def legacy_view(q: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
         """Maps 7-quantile output to the interlock's (q10, q50, q90) contract."""
         return q[:, IDX_Q10], q[:, IDX_Q50], q[:, IDX_Q90]
-

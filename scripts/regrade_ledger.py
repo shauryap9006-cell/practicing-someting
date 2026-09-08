@@ -1,4 +1,4 @@
-﻿"""scripts/regrade_ledger.py — Gate 3.4 Branch A: Reset polluted ledger grades.
+"""scripts/regrade_ledger.py — Gate 3.4 Branch A: Reset polluted ledger grades.
 
 Resets the 544 polluted rows where actual_delay = 0.0 at target_station = 'GZB',
 returning them to un-graded state (actual_delay = NULL, actual_timestamp = NULL,
@@ -6,6 +6,7 @@ error_min = NULL, in_band = NULL, winkler_score = NULL).
 Because these graded fields are OUTSIDE the block hash, the SHA-256 chain integrity
 is preserved unbroken before and after.
 """
+
 from __future__ import annotations
 
 import sys
@@ -43,11 +44,15 @@ def main():
     print("=" * 70)
 
     pre_valid, pre_count, pre_broken = ledger.verify_chain_integrity()
-    print(f"[PRE-CHECK] Integrity valid: {pre_valid} (verified {pre_count} blocks, broken: {pre_broken})")
+    print(
+        f"[PRE-CHECK] Integrity valid: {pre_valid} (verified {pre_count} blocks, broken: {pre_broken})"
+    )
     assert pre_valid, "Ledger integrity check failed before regrading!"
 
     with db.transaction() as cur:
-        cur.execute("SELECT COUNT(*) FROM eta_prediction_ledger WHERE actual_delay = 0.0 AND target_station = 'GZB';")
+        cur.execute(
+            "SELECT COUNT(*) FROM eta_prediction_ledger WHERE actual_delay = 0.0 AND target_station = 'GZB';"
+        )
         polluted_count = cur.fetchone()[0]
     print(f"[AUDIT] Found {polluted_count} polluted rows (actual_delay=0.0 at GZB)")
 
@@ -55,7 +60,9 @@ def main():
     print(f"[UPDATE] Reset {updated} polluted rows to NULL.")
 
     post_valid, post_count, post_broken = ledger.verify_chain_integrity()
-    print(f"[POST-CHECK] Integrity valid: {post_valid} (verified {post_count} blocks, broken: {post_broken})")
+    print(
+        f"[POST-CHECK] Integrity valid: {post_valid} (verified {post_count} blocks, broken: {post_broken})"
+    )
     assert post_valid, "Ledger integrity check failed after regrading!"
     assert post_count >= pre_count, f"Block count decreased! {post_count} < {pre_count}"
 

@@ -1,21 +1,16 @@
 """Unit and property-based tests for RailTwinGRUv2 architecture (Task T4)."""
+
 from __future__ import annotations
 
-import pytest
-import torch
 import numpy as np
-from hypothesis import given, strategies as st, settings
+import torch
 
 from ml.model_v2 import (
     ALPHAS_V2,
-    IDX_Q10,
-    IDX_Q50,
-    IDX_Q90,
-    MonotoneQuantileHead,
     JourneyNorm,
-    FiLM,
-    RailTwinGRUv2,
+    MonotoneQuantileHead,
     PinballCRPSLoss,
+    RailTwinGRUv2,
 )
 
 
@@ -98,14 +93,18 @@ def test_gradient_flow_on_one_stop_journey():
 
 def test_journey_norm_masked_statistics():
     """JourneyNorm calculates mean and variance strictly on non-padded elements."""
-    x = torch.tensor([
-        [[10.0, 5.0], [20.0, 15.0], [0.0, 0.0]],
-        [[30.0, 10.0], [0.0, 0.0], [0.0, 0.0]],
-    ])  # [2, 3, 2]
-    mask = torch.tensor([
-        [True, True, False],
-        [True, False, False],
-    ])
+    x = torch.tensor(
+        [
+            [[10.0, 5.0], [20.0, 15.0], [0.0, 0.0]],
+            [[30.0, 10.0], [0.0, 0.0], [0.0, 0.0]],
+        ]
+    )  # [2, 3, 2]
+    mask = torch.tensor(
+        [
+            [True, True, False],
+            [True, False, False],
+        ]
+    )
 
     mu, sd = JourneyNorm.masked_stats(x, mask)
     assert mu.shape == (2, 2)
@@ -118,15 +117,16 @@ def test_journey_norm_masked_statistics():
 def test_journeynorm_denormalization_channel_schema():
     """Verify that de-normalization strictly maps to SeqSchema.ARR_DELAY channel (Bug 5)."""
     from ml.model_v2 import SeqSchema
+
     model = RailTwinGRUv2(hidden_dim=32, gru_layers=1)
-    
+
     # Mock head to output constant 1.0
     class MockHead(torch.nn.Module):
         def forward(self, h):
             return torch.ones((h.size(0), len(ALPHAS_V2)), dtype=torch.float32)
-    
+
     model.head = MockHead()
-    
+
     # Construct sequence where arr_delay has mean=20.0, sd=5.0
     # and dep_delay has mean=50.0, sd=10.0
     seq = torch.zeros((1, 4, 8), dtype=torch.float32)
@@ -134,17 +134,16 @@ def test_journeynorm_denormalization_channel_schema():
     seq[0, 1, SeqSchema.ARR_DELAY] = 25.0
     seq[0, 0, SeqSchema.DEP_DELAY] = 40.0
     seq[0, 1, SeqSchema.DEP_DELAY] = 60.0
-    
+
     mask = torch.tensor([[True, True, False, False]])
     stn_ids = torch.zeros((1, 4), dtype=torch.long)
     ctx = torch.zeros((1, 34), dtype=torch.float32)
-    
+
     out = model(seq, stn_ids, mask, ctx)
     q = out["quantiles"]
-    
+
     # Expected: mu_arr + 1.0 * sd_arr = 20.0 + 5.0 = 25.0
     # NOT dep_delay stats (50 + 10 = 60)
     mu_arr, sd_arr = JourneyNorm.masked_stats(seq[..., [SeqSchema.ARR_DELAY]], mask)
     expected_q = (mu_arr + sd_arr).item()
     assert np.isclose(q[0, 0].item(), expected_q, atol=1e-3)
-

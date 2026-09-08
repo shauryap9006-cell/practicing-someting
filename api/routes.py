@@ -12,44 +12,54 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from api.routers.trains import (
-    router as trains_router,
-    get_train_eta,
-    get_train_journey,
-    get_train_autopsy,
-    get_pnr_status,
-)
-from api.routers.stations import (
-    router as stations_router,
-    get_station_summary,
-    get_station_gantt,
-    reoptimize_station_platforms,
-    get_station_connections,
-)
-from api.routers.ops import (
-    router as ops_router,
-    get_network_state,
-    simulate_what_if,
-    get_crew_alerts,
+from api.routers.advisory import (
+    get_train_conflicts,
+    post_advisory_ack,
+    post_brain_advise,
+    whatsapp_inbound_webhook,
 )
 from api.routers.advisory import (
     router as advisory_router,
-    post_brain_advise,
-    get_train_conflicts,
-    post_advisory_ack,
-    whatsapp_inbound_webhook,
+)
+from api.routers.ops import (
+    get_crew_alerts,
+    get_network_state,
+    simulate_what_if,
+)
+from api.routers.ops import (
+    router as ops_router,
+)
+from api.routers.stations import (
+    get_station_connections,
+    get_station_gantt,
+    get_station_summary,
+    reoptimize_station_platforms,
+)
+from api.routers.stations import (
+    router as stations_router,
+)
+from api.routers.system_meta import (
+    get_evaluation_summary,
+    get_health,
+    get_meta_clock,
+    get_meta_stations,
+    get_meta_trains,
+    get_model_performance,
+    get_models_meta,
+    get_prediction_ledger_scoreboard,
+    verify_prediction_ledger_chain,
 )
 from api.routers.system_meta import (
     router as system_meta_router,
-    get_evaluation_summary,
-    get_model_performance,
-    get_prediction_ledger_scoreboard,
-    verify_prediction_ledger_chain,
-    get_models_meta,
-    get_meta_stations,
-    get_meta_trains,
-    get_meta_clock,
-    get_health,
+)
+from api.routers.trains import (
+    get_pnr_status,
+    get_train_autopsy,
+    get_train_eta,
+    get_train_journey,
+)
+from api.routers.trains import (
+    router as trains_router,
 )
 from api.services.advisory_service import record_advisory_ack
 

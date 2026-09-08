@@ -1,6 +1,5 @@
-import time
-from fastapi.testclient import TestClient
 import pytest
+from fastapi.testclient import TestClient
 
 from api.main import app
 from api.passenger_routes import _SNAPSHOT_CACHE

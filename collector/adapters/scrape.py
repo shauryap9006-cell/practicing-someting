@@ -9,11 +9,11 @@ from __future__ import annotations
 import datetime
 import re
 import time
-from typing import List, Optional
+
 import requests
 
-from config import settings
 from collector.adapters.base import LiveSource, StationEvent
+from config import settings
 from engine.clocks import get_clock
 
 
@@ -24,18 +24,18 @@ class ScrapeSource(LiveSource):
         self.timeout = settings.REQUEST_TIMEOUT_SECONDS
         self.delay = settings.POLITE_SCRAPE_DELAY_SECONDS
         self.session = requests.Session()
-        self.session.headers.update({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept": "application/json, text/html, */*",
-        })
+        self.session.headers.update(
+            {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "application/json, text/html, */*",
+            }
+        )
 
     @property
     def source_name(self) -> str:
         return "WebScrape"
 
-    def fetch_running_status(
-        self, train_no: str, run_date: datetime.date
-    ) -> list[StationEvent]:
+    def fetch_running_status(self, train_no: str, run_date: datetime.date) -> list[StationEvent]:
         """Scrapes and parses running status from public railway status portals."""
         # Polite rate limiting
         time.sleep(self.delay)
@@ -44,7 +44,12 @@ class ScrapeSource(LiveSource):
         url = f"https://erail.in/data.aspx?Action=TRAINLIVE&TrainNo={train_no}&Date={run_date.strftime('%d-%b-%Y')}"
         try:
             resp = self.session.get(url, timeout=self.timeout)
-            if resp.status_code == 200 and resp.text.strip() and "INVALID" not in resp.text.upper() and len(resp.text) >= 50:
+            if (
+                resp.status_code == 200
+                and resp.text.strip()
+                and "INVALID" not in resp.text.upper()
+                and len(resp.text) >= 50
+            ):
                 return self._parse_erail_raw_response(train_no, run_date, resp.text)
         except Exception:
             pass
@@ -122,7 +127,10 @@ class ScrapeSource(LiveSource):
         date_str = run_date.strftime("%Y-%m-%d")
 
         # Regex match for station table rows: code, arr, dep, delay
-        pattern = re.compile(r'<tr[^>]*>.*?<td[^>]*>([A-Z0-9]{2,6})</td>.*?<td[^>]*>(\d{2}:\d{2}|--)</td>.*?<td[^>]*>(\d{2}:\d{2}|--)</td>.*?<td[^>]*>(-?\d+)\s*m?</td>', re.DOTALL | re.IGNORECASE)
+        pattern = re.compile(
+            r"<tr[^>]*>.*?<td[^>]*>([A-Z0-9]{2,6})</td>.*?<td[^>]*>(\d{2}:\d{2}|--)</td>.*?<td[^>]*>(\d{2}:\d{2}|--)</td>.*?<td[^>]*>(-?\d+)\s*m?</td>",
+            re.DOTALL | re.IGNORECASE,
+        )
         matches = pattern.findall(html)
         for idx, (stn, arr, dep, delay_str) in enumerate(matches, start=1):
             sched_arr = arr if arr != "--" else None
@@ -151,4 +159,3 @@ if __name__ == "__main__":
     print("=== Scraper Adapter Demo ===")
     src = ScrapeSource()
     print(f"Source: {src.source_name}, Ready to scrape with polite delay = {src.delay}s")
-

@@ -9,12 +9,10 @@ Tests:
 
 from __future__ import annotations
 
-import math
-from hypothesis import given, strategies as st
-import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 
-from engine.position_resolver import PositionRecord
-from ml.drift import CUSUMDetector, ADWINDetector
+from ml.drift import CUSUMDetector
 from safety.interlock import validate_prediction_through_interlock
 
 

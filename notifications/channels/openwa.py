@@ -7,8 +7,9 @@ Zero per-message cost. Clean REST interface.
 from __future__ import annotations
 
 import re
-import httpx
 from typing import Optional
+
+import httpx
 
 from config import settings
 from notifications.health import get_health_tracker
@@ -89,4 +90,3 @@ class OpenWAChannel:
         except Exception as err:
             health.set_whatsapp_status("down", event_type=str(err))
             return False
-

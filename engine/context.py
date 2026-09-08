@@ -15,16 +15,16 @@ from __future__ import annotations
 import datetime
 import threading
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
+from collector.weather import WeatherEngine
 from config import settings
 from data.db import Database, get_db
-from engine.clocks import get_clock, IST_TIMEZONE
-from engine.rakes import RakeResolver
+from engine.clocks import IST_TIMEZONE, get_clock
 from engine.ops import PlatformManager
+from engine.rakes import RakeResolver
 from engine.spatial_context import spatial_index_cache
-from collector.weather import WeatherEngine
 
 
 @dataclass
@@ -270,7 +270,9 @@ class ContextEngine:
                         return ctx
 
         # 1. Resolve Route Geometry & Station
-        resolved_stn, resolved_km = self._resolve_station_and_km(train_no, current_station_code, current_km)
+        resolved_stn, resolved_km = self._resolve_station_and_km(
+            train_no, current_station_code, current_km
+        )
 
         # Layer 1: Weather
         weather_ctx = self._enrich_weather(resolved_stn, target_date, t_now)
@@ -338,7 +340,9 @@ class ContextEngine:
                     return w_ctx
 
         with self.db.transaction() as cur:
-            synthetic_allowed = settings.ALLOW_SYNTHETIC_FALLBACK or settings.DEFAULT_CLOCK_MODE.lower() == "replay"
+            synthetic_allowed = (
+                settings.ALLOW_SYNTHETIC_FALLBACK or settings.DEFAULT_CLOCK_MODE.lower() == "replay"
+            )
             weather_available = False
             # 1. Try hourly micro-weather table first
             cur.execute(
@@ -355,13 +359,23 @@ class ContextEngine:
             if hourly_row:
                 weather_available = any(
                     hourly_row[field] is not None
-                    for field in ("temperature_2m", "relative_humidity_2m", "precipitation", "visibility", "fog_flag")
+                    for field in (
+                        "temperature_2m",
+                        "relative_humidity_2m",
+                        "precipitation",
+                        "visibility",
+                        "fog_flag",
+                    )
                 )
                 temp = float(hourly_row["temperature_2m"] or 25.0)
                 humid = float(hourly_row["relative_humidity_2m"] or 60.0)
                 precip = float(hourly_row["precipitation"] or 0.0)
                 raw_vis = hourly_row["visibility"]
-                vis_km = float(raw_vis / 1000.0) if raw_vis is not None else (0.8 if hourly_row["fog_flag"] else 10.0)
+                vis_km = (
+                    float(raw_vis / 1000.0)
+                    if raw_vis is not None
+                    else (0.8 if hourly_row["fog_flag"] else 10.0)
+                )
                 fog = int(hourly_row["fog_flag"] or 0)
             else:
                 # 2. Try daily weather summary table
@@ -392,16 +406,22 @@ class ContextEngine:
                         temp = 14.5 if is_winter else 29.0
                         humid = 88.0 if is_winter else 55.0
                         precip = 0.0
-                        fog = 1 if is_winter and (temp < settings.FOG_MAX_TEMP_CELSIUS and humid > settings.FOG_MIN_HUMIDITY_PERCENT) else 0
+                        fog = (
+                            1
+                            if is_winter
+                            and (
+                                temp < settings.FOG_MAX_TEMP_CELSIUS
+                                and humid > settings.FOG_MIN_HUMIDITY_PERCENT
+                            )
+                            else 0
+                        )
                         vis_km = 0.5 if fog else 10.0
                     else:
                         temp = humid = precip = 0.0
                         fog = 0
                         vis_km = 0.0
 
-        is_caution = bool(
-            weather_available or synthetic_allowed
-        ) and bool(
+        is_caution = bool(weather_available or synthetic_allowed) and bool(
             fog == 1
             or precip >= settings.HEAVY_RAIN_THRESHOLD_MM
             or (temp < settings.FOG_MAX_TEMP_CELSIUS and humid > settings.FOG_MIN_HUMIDITY_PERCENT)
@@ -544,7 +564,9 @@ class ContextEngine:
             )
             out_route = cur.fetchone()
 
-        in_delay = int(in_ev["delay_arr_min"]) if in_ev and in_ev["delay_arr_min"] is not None else 0
+        in_delay = (
+            int(in_ev["delay_arr_min"]) if in_ev and in_ev["delay_arr_min"] is not None else 0
+        )
         in_sched_arr = in_ev["sched_arr"] if in_ev and in_ev["sched_arr"] else "08:00"
         out_sched_dep = out_route["sched_dep"] if out_route and out_route["sched_dep"] else "12:00"
 
@@ -572,9 +594,7 @@ class ContextEngine:
             official_ntes_status="ON TIME" if not is_doomed else "DOOMED_DELAY",
         )
 
-    def _enrich_platform(
-        self, train_no: str, station_code: str, date_str: str
-    ) -> PlatformContext:
+    def _enrich_platform(self, train_no: str, station_code: str, date_str: str) -> PlatformContext:
         """Determines platform berthing, scheduled dwell, and platform conflict status."""
         try:
             blocks, conflicts = self.platform_manager.get_station_gantt(station_code, date_str)
@@ -586,7 +606,9 @@ class ContextEngine:
             conflict_train = None
             conflict_dur = 0
             if is_conflicted:
-                c = next((x for x in conflicts if x.train_1 == train_no or x.train_2 == train_no), None)
+                c = next(
+                    (x for x in conflicts if x.train_1 == train_no or x.train_2 == train_no), None
+                )
                 if c:
                     conflict_train = c.train_2 if c.train_1 == train_no else c.train_1
                     conflict_dur = c.overlap_duration_min
@@ -616,12 +638,12 @@ class ContextEngine:
             j = idx.idx.get(train_no)
             feats = idx.features(minute_of_day, j, current_km)
 
-            ahead = int(feats.get("trains_ahead_30k", 0))
-            behind = int(feats.get("trains_behind_30k", 0))
-            opp = int(feats.get("opposing_trains_30k", 0))
-            delay_ahead = float(feats.get("sum_delay_trains_ahead_30k", 0.0))
-            occupancy = float(feats.get("section_occupancy_pct", 0.0))
-            is_congested = (occupancy >= 70.0 or ahead >= 2 or delay_ahead >= 20.0)
+            ahead = int(float(str(feats.get("trains_ahead_30k", 0))))
+            behind = int(float(str(feats.get("trains_behind_30k", 0))))
+            opp = int(float(str(feats.get("opposing_trains_30k", 0))))
+            delay_ahead = float(str(feats.get("sum_delay_trains_ahead_30k", 0.0)))
+            occupancy = float(str(feats.get("section_occupancy_pct", 0.0)))
+            is_congested = occupancy >= 70.0 or ahead >= 2 or delay_ahead >= 20.0
 
             return SpatialCongestionContext(
                 trains_ahead_30k=ahead,
@@ -676,4 +698,6 @@ if __name__ == "__main__":
     print(f"  - Active TSRs: {len(ctx.active_tsrs)} items")
     print(f"  - Rake Doom: {ctx.rake.is_doomed} (Deficit: {ctx.rake.turnaround_deficit_min}m)")
     print(f"  - Platform: PF {ctx.platform.platform} (Conflicted: {ctx.platform.is_conflicted})")
-    print(f"  - Spatial Congestion: {ctx.spatial.trains_ahead_30k} ahead, Occ: {ctx.spatial.section_occupancy_pct}%")
+    print(
+        f"  - Spatial Congestion: {ctx.spatial.trains_ahead_30k} ahead, Occ: {ctx.spatial.section_occupancy_pct}%"
+    )

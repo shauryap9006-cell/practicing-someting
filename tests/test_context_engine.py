@@ -1,11 +1,11 @@
 """Unit and Integration Tests for RailTwin-X ContextEngine (Pipeline 07, Phase A4)."""
 
 import datetime
+
 import pytest
 
 from config import settings
-from data.db import Database, get_db
-from engine.clocks import RealClock, ReplayClock, set_global_clock
+from data.db import get_db
 from engine.context import ContextEngine, TrainContext, get_context_engine
 
 
@@ -92,10 +92,10 @@ def test_enrich_5_layers_known_train(context_engine):
 def test_context_engine_caching_performance(context_engine):
     """Verifies that second retrieval within TTL hits in-memory cache."""
     today_str = datetime.date.today().strftime("%Y-%m-%d")
-    
+
     # First call: populates cache
     ctx1 = context_engine.get_train_context("12301", today_str, "NDLS", 0.0, force_refresh=True)
-    
+
     # Second call: fast cache hit
     start_time = datetime.datetime.now()
     ctx2 = context_engine.get_train_context("12301", today_str, "NDLS", 0.0, force_refresh=False)

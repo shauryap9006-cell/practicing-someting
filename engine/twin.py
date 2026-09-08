@@ -12,18 +12,19 @@ Pure mathematical equations of motion with ZERO database dependencies:
 9. Monotonic distance: km is strictly non-decreasing.
 10. Multi-scale sub-stepping for numerical stability under high clock acceleration.
 """
+
 from __future__ import annotations
 
 import datetime
-import math
 import random
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 
 @dataclass
 class TwinStop:
     """A scheduled stop along a train route."""
+
     station_code: str
     seq: int
     km: float
@@ -37,6 +38,7 @@ class TwinStop:
 @dataclass
 class TwinTrainState:
     """Full kinematic state of a simulated train."""
+
     train_no: str
     km: float
     speed_kmh: float
@@ -90,7 +92,7 @@ class TwinEngine:
         if current_speed_kmh <= 0.0:
             return 0.0
         v_mps = current_speed_kmh / 3.6
-        d_m = (v_mps ** 2) / (2.0 * self.brake_mps2)
+        d_m = (v_mps**2) / (2.0 * self.brake_mps2)
         return d_m / 1000.0
 
     def create_train_state(
@@ -117,7 +119,9 @@ class TwinEngine:
         ]
         parsed_stops.sort(key=lambda s: s.seq)
 
-        init_km = start_km if start_km is not None else (parsed_stops[0].km if parsed_stops else 0.0)
+        init_km = (
+            start_km if start_km is not None else (parsed_stops[0].km if parsed_stops else 0.0)
+        )
         init_idx = 0
         if start_km is not None and parsed_stops:
             for idx, stp in enumerate(parsed_stops):
@@ -135,7 +139,9 @@ class TwinEngine:
             phase=start_phase,
             current_stop_idx=init_idx,
             stops=parsed_stops,
-            dwell_remaining_sec=float(parsed_stops[init_idx].halt_min * 60.0) if parsed_stops else 120.0,
+            dwell_remaining_sec=float(parsed_stops[init_idx].halt_min * 60.0)
+            if parsed_stops
+            else 120.0,
             source="simulated",
         )
 
@@ -207,18 +213,20 @@ class TwinEngine:
                 # Depart station
                 cur_stop = state.current_stop
                 station_code = cur_stop.station_code if cur_stop else "STN"
-                events.append({
-                    "event_type": "DEPARTURE",
-                    "train_no": state.train_no,
-                    "station_code": station_code,
-                    "seq": cur_stop.seq if cur_stop else 1,
-                    "km": state.km,
-                    "timestamp": sim_time_iso,
-                    "sched_arr": cur_stop.sched_arr if cur_stop else None,
-                    "sched_dep": cur_stop.sched_dep if cur_stop else None,
-                    "delay_dep_min": 0.0,
-                    "source": "simulated",
-                })
+                events.append(
+                    {
+                        "event_type": "DEPARTURE",
+                        "train_no": state.train_no,
+                        "station_code": station_code,
+                        "seq": cur_stop.seq if cur_stop else 1,
+                        "km": state.km,
+                        "timestamp": sim_time_iso,
+                        "sched_arr": cur_stop.sched_arr if cur_stop else None,
+                        "sched_dep": cur_stop.sched_dep if cur_stop else None,
+                        "delay_dep_min": 0.0,
+                        "source": "simulated",
+                    }
+                )
                 state.phase = "DEPART"
                 state.held_reason = None
                 # Move target to next stop
@@ -251,7 +259,7 @@ class TwinEngine:
             target_speed = float(section_max_speed_kmh)
 
         if fog_active:
-            target_speed *= (1.0 - self.fog_reduction_pct)
+            target_speed *= 1.0 - self.fog_reduction_pct
             current_phase = "FOG"
 
         if active_tsr_kmh is not None and active_tsr_kmh < target_speed:
@@ -282,23 +290,27 @@ class TwinEngine:
                 try:
                     dt = datetime.datetime.fromisoformat(sim_time_iso)
                     sh, sm = [int(x) for x in next_halt.sched_arr.split(":")[:2]]
-                    sched_dt = datetime.datetime(dt.year, dt.month, dt.day, sh, sm, tzinfo=dt.tzinfo)
+                    sched_dt = datetime.datetime(
+                        dt.year, dt.month, dt.day, sh, sm, tzinfo=dt.tzinfo
+                    )
                     delay_min = max(0.0, (dt - sched_dt).total_seconds() / 60.0)
                 except Exception:
                     pass
 
-            events.append({
-                "event_type": "ARRIVAL",
-                "train_no": state.train_no,
-                "station_code": next_halt.station_code if next_halt else "STN",
-                "seq": next_halt.seq if next_halt else 1,
-                "km": target_km,
-                "timestamp": sim_time_iso,
-                "sched_arr": next_halt.sched_arr if next_halt else None,
-                "sched_dep": next_halt.sched_dep if next_halt else None,
-                "delay_arr_min": round(delay_min, 1),
-                "source": "simulated",
-            })
+            events.append(
+                {
+                    "event_type": "ARRIVAL",
+                    "train_no": state.train_no,
+                    "station_code": next_halt.station_code if next_halt else "STN",
+                    "seq": next_halt.seq if next_halt else 1,
+                    "km": target_km,
+                    "timestamp": sim_time_iso,
+                    "sched_arr": next_halt.sched_arr if next_halt else None,
+                    "sched_dep": next_halt.sched_dep if next_halt else None,
+                    "delay_arr_min": round(delay_min, 1),
+                    "source": "simulated",
+                }
+            )
             return state, events
 
         # If inside stopping distance, enter APPROACH and brake
@@ -337,4 +349,6 @@ class TwinEngine:
             state.ema_speed_kmh = 0.0
         else:
             alpha = 0.5  # 3-tick EMA smoothing factor (2 / (3 + 1))
-            state.ema_speed_kmh = round(alpha * state.speed_kmh + (1.0 - alpha) * state.ema_speed_kmh, 1)
+            state.ema_speed_kmh = round(
+                alpha * state.speed_kmh + (1.0 - alpha) * state.ema_speed_kmh, 1
+            )

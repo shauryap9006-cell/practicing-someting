@@ -119,7 +119,9 @@ def test_lost_and_found_workflow(auth_headers):
     assert resp.json()["status"] == "UNCLAIMED"
 
     # 2. Query Unclaimed Items
-    list_resp = client.get("/api/commercial/lost-found?station_code=NDLS&status=UNCLAIMED", headers=auth_headers)
+    list_resp = client.get(
+        "/api/commercial/lost-found?station_code=NDLS&status=UNCLAIMED", headers=auth_headers
+    )
     assert list_resp.status_code == 200
     items = list_resp.json()
     assert any(i["id"] == item_id for i in items)
@@ -130,7 +132,9 @@ def test_lost_and_found_workflow(auth_headers):
         "claimant_id_proof": "Aadhaar XXXX-XXXX-1234",
         "claimant_phone": "+919811223344",
     }
-    claim_resp = client.put(f"/api/commercial/lost-found/{item_id}/claim", json=claim_req, headers=auth_headers)
+    claim_resp = client.put(
+        f"/api/commercial/lost-found/{item_id}/claim", json=claim_req, headers=auth_headers
+    )
     assert claim_resp.status_code == 200
     assert claim_resp.json()["status"] == "CLAIMED"
     assert claim_resp.json()["claimant_name"] == "Amit Kumar"
@@ -151,7 +155,9 @@ def test_delay_certificate_verification_url_honors_public_url(monkeypatch, auth_
     resp = client.post("/api/commercial/delay-certificate", json=cert_req, headers=auth_headers)
     assert resp.status_code == 200
     data = resp.json()
-    assert data["verification_url"].startswith("https://railtwin-ir.gov.in/api/commercial/delay-certificate/verify/")
+    assert data["verification_url"].startswith(
+        "https://railtwin-ir.gov.in/api/commercial/delay-certificate/verify/"
+    )
 
 
 def test_production_public_url_validation():
@@ -174,14 +180,17 @@ def test_production_public_url_validation():
     assert s.PUBLIC_URL == "https://railtwin.indianrail.gov.in"
 
     # Should fail if localhost
-    with pytest.raises(ValueError, match="RAILTWIN_PUBLIC_URL must not contain localhost or 127.0.0.1"):
+    with pytest.raises(
+        ValueError, match="RAILTWIN_PUBLIC_URL must not contain localhost or 127.0.0.1"
+    ):
         Settings(**valid_prod_kwargs, PUBLIC_URL="http://localhost:8000")
 
     # Should fail if 127.0.0.1
-    with pytest.raises(ValueError, match="RAILTWIN_PUBLIC_URL must not contain localhost or 127.0.0.1"):
+    with pytest.raises(
+        ValueError, match="RAILTWIN_PUBLIC_URL must not contain localhost or 127.0.0.1"
+    ):
         Settings(**valid_prod_kwargs, PUBLIC_URL="http://127.0.0.1:8000")
 
     # Should fail if invalid url scheme
     with pytest.raises(ValueError, match="RAILTWIN_PUBLIC_URL must be a valid http"):
         Settings(**valid_prod_kwargs, PUBLIC_URL="not-a-url")
-

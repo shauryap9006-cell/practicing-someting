@@ -13,24 +13,21 @@ Covers:
 
 from __future__ import annotations
 
-import math
-import numpy as np
-import pytest
-
 from engine.track_exact.ekf import EdgeEKF
+from engine.track_exact.fusion import TrackExactEngine, TrackStateEstimate
 from engine.track_exact.hmm_mapmatch import RailHMMMapMatcher, TrackSegment, point_polyline_distance
 from engine.track_exact.imm import JunctionIMM
-from engine.track_exact.mht import MultiHypothesisTracker, TrackHypothesis
-from engine.track_exact.fusion import TrackExactEngine, TrackStateEstimate
-from engine.conflicts import ConflictScanner, ProbabilisticConflictRecord
-from safety.interlock import check_fusion_integrity, validate_prediction_through_interlock
+from engine.track_exact.mht import MultiHypothesisTracker
+
 from collector.adapters.mock_replay import HighFrequencyTelemetryGenerator
 from data.db import Database
-
+from engine.conflicts import ConflictScanner
+from safety.interlock import check_fusion_integrity, validate_prediction_through_interlock
 
 # ==============================================================================
 # 1. LAYER 1: EDGE EKF & RAIM ANTI-SPOOFING TESTS
 # ==============================================================================
+
 
 def test_ekf_dead_reckoning_and_gnss_update():
     """Verifies that 100 Hz IMU propagation accurately dead-reckons position and GNSS updates converge."""
@@ -90,6 +87,7 @@ def test_ekf_raim_chi_square_spoof_rejection():
 # 2. LAYER 2: HMM MAP-MATCHING & TOPOLOGY TESTS
 # ==============================================================================
 
+
 def test_hmm_point_polyline_distance():
     """Tests Euclidean distance projection to polyline segments."""
     polyline = [(0.0, 0.0), (100.0, 0.0)]
@@ -128,6 +126,7 @@ def test_hmm_mapmatch_topology_constraint():
 # 3. LAYER 2: IMM TURNOUT VS TSR MODE DETECTION TESTS
 # ==============================================================================
 
+
 def test_imm_tsr_vs_turnout_discrimination():
     """Verifies that IMM discriminates mainline TSR deceleration from turnout curve entry."""
     imm = JunctionIMM(dt=1.0)
@@ -159,6 +158,7 @@ def test_imm_tsr_vs_turnout_discrimination():
 # ==============================================================================
 # 4. LAYER 2: MULTI-HYPOTHESIS TRACKING & GROUND-TRUTH COLLAPSE TESTS
 # ==============================================================================
+
 
 def test_mht_hypothesis_competition_and_balise_collapse():
     """Verifies hypothesis competition under ambiguity and instant collapse upon Kavach Balise trigger."""
@@ -192,6 +192,7 @@ def test_mht_hypothesis_competition_and_balise_collapse():
 # ==============================================================================
 # 5. LAYER 3: SAFETY INTERLOCK RULE 6 (FUSION INTEGRITY) TESTS
 # ==============================================================================
+
 
 def test_safety_rule_6_fusion_integrity():
     """Verifies pure-function check_fusion_integrity and integration with interlock validator."""
@@ -269,13 +270,14 @@ def test_safety_rule_6_fusion_integrity():
 # 6. LAYER 3: PROBABILISTIC CONFLICT SCANNER TESTS
 # ==============================================================================
 
+
 def test_probabilistic_conflict_scanner(tmp_path):
     """Verifies that conflict scanner computes expectation over track hypotheses."""
     db = Database(tmp_path / "test_conflicts.db")
     db.init_schema()
 
     scanner = ConflictScanner(db=db)
-    
+
     # 1. Deterministic default (P=1.0)
     conflicts_det = scanner.scan_probabilistic_conflicts(train_no="12001")
     for c in conflicts_det:
@@ -294,6 +296,7 @@ def test_probabilistic_conflict_scanner(tmp_path):
 # ==============================================================================
 # 7. END-TO-END PIPELINE & TELEMETRY STREAM SIMULATION TESTS
 # ==============================================================================
+
 
 def test_end_to_end_track_exact_pipeline():
     """Runs complete 30s multi-sensor telemetry simulation through TrackExactEngine."""
@@ -335,5 +338,5 @@ def test_end_to_end_track_exact_pipeline():
     assert isinstance(estimate, TrackStateEstimate)
     assert estimate.track_id == "UP_MAIN"
     assert estimate.p_track == 1.0  # Confirmed by balise
-    assert estimate.v > 20.0        # High speed maintained smoothly
+    assert estimate.v > 20.0  # High speed maintained smoothly
     assert estimate.to_dict()["track_id"] == "UP_MAIN"

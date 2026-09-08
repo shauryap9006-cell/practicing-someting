@@ -6,10 +6,10 @@ Layer 3: TrackExactEngine orchestrator & TrackStateEstimate
 """
 
 from engine.track_exact.ekf import EdgeEKF
+from engine.track_exact.fusion import TrackExactEngine, TrackStateEstimate
 from engine.track_exact.hmm_mapmatch import RailHMMMapMatcher, TrackSegment, point_polyline_distance
 from engine.track_exact.imm import JunctionIMM
 from engine.track_exact.mht import MultiHypothesisTracker, TrackHypothesis
-from engine.track_exact.fusion import TrackExactEngine, TrackStateEstimate
 
 __all__ = [
     "EdgeEKF",

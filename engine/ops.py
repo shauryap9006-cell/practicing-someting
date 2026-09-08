@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import copy
 import datetime
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple, Union
 
 from config import settings
 from data.db import Database, get_db
@@ -146,7 +146,9 @@ class PlatformManager:
         for idx, r in enumerate(rows):
             t_no = r["train_no"]
             # Assumed policy: Deterministic platform assignment fallback using config seed
-            assigned_platform = (abs(hash((t_no, settings.DEFAULT_PLATFORM_HASH_SEED))) % max_platforms) + 1
+            assigned_platform = (
+                abs(hash((t_no, settings.DEFAULT_PLATFORM_HASH_SEED))) % max_platforms
+            ) + 1
 
             # Determine start and end time in IST
             arr_time = r["actual_arr"] or r["sched_arr"] or "08:00"
@@ -212,6 +214,7 @@ class PlatformManager:
     ) -> Tuple[List[PlatformBlock], ReoptDiff]:
         """Greedy + Local-Search Re-Optimizer resolving conflicts in <0.05s."""
         import time
+
         start_time = time.monotonic()
 
         # Save snapshot for rollback
@@ -260,7 +263,9 @@ class PlatformManager:
                 overlaps = 0
                 for other in blocks_by_plat[cand_plat]:
                     if other.train_no != target_block.train_no:
-                        if max(target_block.start_dt(), other.start_dt()) < min(target_block.end_dt(), other.end_dt()):
+                        if max(target_block.start_dt(), other.start_dt()) < min(
+                            target_block.end_dt(), other.end_dt()
+                        ):
                             overlaps += 1
 
                 penalty = overlaps + (0.5 if cand_plat != orig_platform else 0.0)
@@ -278,19 +283,23 @@ class PlatformManager:
                 blocks_by_plat[best_platform].append(target_block)
                 moved_trains.add(target_block.train_no)
 
-                swaps.append({
-                    "train_no": target_block.train_no,
-                    "from_platform": orig_platform,
-                    "to_platform": best_platform,
-                })
+                swaps.append(
+                    {
+                        "train_no": target_block.train_no,
+                        "from_platform": orig_platform,
+                        "to_platform": best_platform,
+                    }
+                )
             else:
                 moved_trains.add(target_block.train_no)
 
         # Recalculate final conflict state
         final_conflicts = self._detect_conflicts(station_code, working_blocks)
-        conflicted_trains = {c.train_1 for c in final_conflicts} | {c.train_2 for c in final_conflicts}
+        conflicted_trains = {c.train_1 for c in final_conflicts} | {
+            c.train_2 for c in final_conflicts
+        }
         for b in working_blocks:
-            b.is_conflicted = (b.train_no in conflicted_trains)
+            b.is_conflicted = b.train_no in conflicted_trains
 
         exec_duration = time.monotonic() - start_time
 
@@ -398,6 +407,7 @@ class CrewDutyEngine:
     def dispatch_crew_alerts(self, alerts: List[CrewAlert]) -> List[dict]:
         """Dispatches AlertEvents for projected crew duty breaches to station controllers and loco pilots."""
         from notifications import AlertEvent, get_dispatcher
+
         dispatcher = get_dispatcher(self.db)
         results = []
 
@@ -497,7 +507,14 @@ class ConnectionCustodyEngine:
                 """,
                 (stn, target_date),
             )
-            live_delays = {r["train_no"]: float(r["delay_arr_min"] if r["delay_arr_min"] is not None else (r["delay_dep_min"] or 0.0)) for r in cur.fetchall()}
+            live_delays = {
+                r["train_no"]: float(
+                    r["delay_arr_min"]
+                    if r["delay_arr_min"] is not None
+                    else (r["delay_dep_min"] or 0.0)
+                )
+                for r in cur.fetchall()
+            }
 
             # Query historical baselines for delay variance
             cur.execute(
@@ -519,7 +536,7 @@ class ConnectionCustodyEngine:
             parts = [int(x) for x in time_str.split(":")[:2]]
             return parts[0] * 60 + parts[1]
 
-        def _to_time_str(mins: int) -> str:
+        def _to_time_str(mins: Union[int, float]) -> str:
             m = max(0, int(mins))
             return f"{(m // 60) % 24:02d}:{m % 60:02d}"
 
@@ -567,11 +584,15 @@ class ConnectionCustodyEngine:
                     prob = 98.5
                     conn_status = "SECURE"
                 elif c_dep_m >= (p50_arr_m + min_connection_time_min):
-                    ratio = (c_dep_m - (p50_arr_m + min_connection_time_min)) / max(1.0, (p90_arr_m - p50_arr_m))
+                    ratio = (c_dep_m - (p50_arr_m + min_connection_time_min)) / max(
+                        1.0, (p90_arr_m - p50_arr_m)
+                    )
                     prob = 50.0 + ratio * 45.0
                     conn_status = "SECURE" if prob >= 80.0 else "AT_RISK"
                 elif c_dep_m >= (p10_arr_m + min_connection_time_min):
-                    ratio = (c_dep_m - (p10_arr_m + min_connection_time_min)) / max(1.0, (p50_arr_m - p10_arr_m))
+                    ratio = (c_dep_m - (p10_arr_m + min_connection_time_min)) / max(
+                        1.0, (p50_arr_m - p10_arr_m)
+                    )
                     prob = 10.0 + ratio * 40.0
                     conn_status = "CRITICAL_MISSED"
                 else:
@@ -586,17 +607,31 @@ class ConnectionCustodyEngine:
                         c_dict = dict(c)
                         c_class = str(c_dict.get("class", "express") or "express").lower()
                         # Dynamic capacity based on train class
-                        capacity = 1100 if ("rajdhani" in c_class or "shatabdi" in c_class or "vande" in c_class) else 1650
+                        capacity = (
+                            1100
+                            if (
+                                "rajdhani" in c_class or "shatabdi" in c_class or "vande" in c_class
+                            )
+                            else 1650
+                        )
                         onboard_pax = int(capacity * 0.82)
                         est_transfer_pax = max(12, int(onboard_pax * 0.04))
 
                         # Scheduled headway to next departing service
                         later_departures = [
-                            _to_mins(other["sched_dep"]) for other in departing_trains
-                            if str(other["train_no"]) != c_no and _to_mins(other["sched_dep"]) > c_dep_m
+                            _to_mins(other["sched_dep"])
+                            for other in departing_trains
+                            if str(other["train_no"]) != c_no
+                            and _to_mins(other["sched_dep"]) > c_dep_m
                         ]
-                        next_train_headway_m = (min(later_departures) - c_dep_m) if later_departures else 240
-                        pax_hours_saved = round((est_transfer_pax * next_train_headway_m - onboard_pax * needed_hold_m) / 60.0, 1)
+                        next_train_headway_m = (
+                            (min(later_departures) - c_dep_m) if later_departures else 240
+                        )
+                        pax_hours_saved = round(
+                            (est_transfer_pax * next_train_headway_m - onboard_pax * needed_hold_m)
+                            / 60.0,
+                            1,
+                        )
 
                         if pax_hours_saved > 0:
                             hold_advisory = {
@@ -630,8 +665,6 @@ class ConnectionCustodyEngine:
         return connections
 
 
-
-
 if __name__ == "__main__":
     print("=== Operations Layer Demo ===")
     pm = PlatformManager()
@@ -641,10 +674,14 @@ if __name__ == "__main__":
         sample_code = stn_row["code"] if stn_row else "STN1"
 
     blocks, conflicts = pm.get_station_gantt(sample_code)
-    print(f"{sample_code}: {len(blocks)} platform blocks, {len(conflicts)} initial conflicts detected.")
+    print(
+        f"{sample_code}: {len(blocks)} platform blocks, {len(conflicts)} initial conflicts detected."
+    )
     if conflicts:
         reopt_blocks, diff = pm.reoptimize_platforms(sample_code, blocks)
-        print(f"Re-optimization complete in {diff.execution_time_seconds:.3f}s: {diff.resolved_conflicts} conflicts resolved with {len(diff.swaps_performed)} swaps.")
+        print(
+            f"Re-optimization complete in {diff.execution_time_seconds:.3f}s: {diff.resolved_conflicts} conflicts resolved with {len(diff.swaps_performed)} swaps."
+        )
 
     crew_eng = CrewDutyEngine()
     alerts = crew_eng.evaluate_crew_alerts()

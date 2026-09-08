@@ -6,7 +6,6 @@ Demonstrates 3 operational scenarios through the live Brain Advisory API:
 3. Scenario C: Spatial network conflict scenario (single-line meet advisory)
 """
 
-import json
 from api.brain import BrainOrchestrator
 from data.db import get_db
 
@@ -38,6 +37,7 @@ def run_demo():
     # 2. Scenario B: Adversarial Drifting Train (Safety Interlock Enforcement)
     print("\n--- SCENARIO 2: DRIFTING DELAY WITH SAFETY INTERLOCK CLAMP ---")
     from safety.interlock import validate_prediction_through_interlock
+
     interlock_out = validate_prediction_through_interlock(
         features={"current_delay": 120.0, "km_remaining": 10.0, "hops_remaining": 1},
         raw_p10=0.0,
@@ -54,13 +54,16 @@ def run_demo():
     # 3. Scenario C: Conflict Scanner Detection
     print("\n--- SCENARIO 3: CONFLICT SCANNER (OPPOSING MEET & HEADWAY) ---")
     from engine.conflicts import ConflictScanner
+
     scanner = ConflictScanner(db)
     conflicts = scanner.scan_train_conflicts(train_a)
     print(f"Active/Projected Conflicts for #{train_a}: {len(conflicts)}")
     for i, c in enumerate(conflicts[:3], 1):
         print(f"  Conflict #{i}: [{c.conflict_type}] with #{c.with_train} at {c.station_code}")
         print(f"    Gap: {c.predicted_gap_min:.1f} min | Severity: {c.severity}")
-        print(f"    Suggested Advisory Action: {c.suggested_action} (Human Ack: {c.human_ack_required})")
+        print(
+            f"    Suggested Advisory Action: {c.suggested_action} (Human Ack: {c.human_ack_required})"
+        )
 
     print("\n" + "=" * 80)
     print("[SUCCESS] ALL LIVE BRAIN SCENARIOS VERIFIED ADVISORY & DETERMINISTIC.")

@@ -22,10 +22,10 @@ from starlette.responses import JSONResponse
 
 from config import settings
 
-
 # ---------------------------------------------------------------------------
 # 1. In-memory TTL Response Cache
 # ---------------------------------------------------------------------------
+
 
 class _CacheEntry:
     __slots__ = ("body", "status_code", "headers", "expires_at")
@@ -54,9 +54,7 @@ def _cache_key(request: Request) -> str:
 
 
 def _should_cache(request: Request) -> bool:
-    return request.method == "GET" and any(
-        request.url.path.startswith(p) for p in _CACHE_PREFIXES
-    )
+    return request.method == "GET" and any(request.url.path.startswith(p) for p in _CACHE_PREFIXES)
 
 
 def _prune_cache(now: float) -> None:
@@ -66,7 +64,9 @@ def _prune_cache(now: float) -> None:
         _CACHE.pop(key, None)
     if len(_CACHE) > _CACHE_MAX_ENTRIES:
         # Evict oldest-expiring entries first to keep memory bounded.
-        for key, _ in sorted(_CACHE.items(), key=lambda kv: kv[1].expires_at)[: len(_CACHE) - _CACHE_MAX_ENTRIES]:
+        for key, _ in sorted(_CACHE.items(), key=lambda kv: kv[1].expires_at)[
+            : len(_CACHE) - _CACHE_MAX_ENTRIES
+        ]:
             _CACHE.pop(key, None)
 
 
@@ -118,12 +118,14 @@ class ResponseCacheMiddleware(BaseHTTPMiddleware):
 # 2. Token-Bucket Rate Limiter
 # ---------------------------------------------------------------------------
 
-_BUCKETS: Dict[str, Tuple[float, float]] = {}   # ip -> (tokens, last_refill_ts)
+_BUCKETS: Dict[str, Tuple[float, float]] = {}  # ip -> (tokens, last_refill_ts)
 _BUCKET_LOCK = asyncio.Lock()
 _BUCKET_PRUNE_INTERVAL_SEC = 60.0
 _BUCKET_LAST_PRUNE = 0.0
 _LOOPBACK_HOSTS = frozenset({"unknown", "testclient", "127.0.0.1", "localhost", "::1"})
-_UNLIMITED_PATHS = frozenset({"/v1/health", "/healthz", "/readyz", "/docs", "/redoc", "/openapi.json", "/"})
+_UNLIMITED_PATHS = frozenset(
+    {"/v1/health", "/healthz", "/readyz", "/docs", "/redoc", "/openapi.json", "/"}
+)
 
 
 def _get_client_ip(request: Request) -> str:
@@ -182,7 +184,9 @@ class TokenBucketRateLimiter(BaseHTTPMiddleware):
 
             if tokens < 1.0:
                 _BUCKETS[ip] = (tokens, now)
-                retry_after = int((1.0 - tokens) / bucket_refill_rate) + 1 if bucket_refill_rate > 0 else 60
+                retry_after = (
+                    int((1.0 - tokens) / bucket_refill_rate) + 1 if bucket_refill_rate > 0 else 60
+                )
                 return JSONResponse(
                     status_code=429,
                     content={
@@ -205,7 +209,9 @@ class TokenBucketRateLimiter(BaseHTTPMiddleware):
 # 3. Mutation Idempotency Middleware (F46)
 # ---------------------------------------------------------------------------
 
-_IDEMPOTENCY_CACHE: Dict[str, Tuple[int, bytes, dict, float]] = {}  # key -> (status, body, headers, expires_at)
+_IDEMPOTENCY_CACHE: Dict[
+    str, Tuple[int, bytes, dict, float]
+] = {}  # key -> (status, body, headers, expires_at)
 _IDEMPOTENCY_INFLIGHT: Dict[str, asyncio.Event] = {}
 _IDEMPOTENCY_LOCK = asyncio.Lock()
 _IDEMPOTENCY_MAX_KEY_LENGTH = 256

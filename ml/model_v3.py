@@ -8,16 +8,25 @@ Features:
    gated on 6 observable regime signals with auxiliary load-balancing loss.
 5. 100% Monotone Quantile Output Guarantee by construction (convex combination of monotone vectors).
 """
+
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
 ALPHAS_V3: Tuple[float, ...] = (0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95)
-GATE_CTX_INDICES: List[int] = [21, 11, 4, 2, 15, 18]  # fog_dawn, prio, sched_min, staleness_vel, occ_pct, rake_linked
+GATE_CTX_INDICES: List[int] = [
+    21,
+    11,
+    4,
+    2,
+    15,
+    18,
+]  # fog_dawn, prio, sched_min, staleness_vel, occ_pct, rake_linked
 
 
 class MonotoneQuantileHead(nn.Module):
@@ -69,7 +78,9 @@ class RegimeMoEHead(nn.Module):
         super().__init__()
         self.n_experts = n_experts
         self.alphas = alphas
-        self.experts = nn.ModuleList([MonotoneQuantileHead(hidden_dim, alphas) for _ in range(n_experts)])
+        self.experts = nn.ModuleList(
+            [MonotoneQuantileHead(hidden_dim, alphas) for _ in range(n_experts)]
+        )
         self.gate = nn.Sequential(
             nn.Linear(gate_dim, 32),
             nn.ReLU(),
@@ -79,7 +90,7 @@ class RegimeMoEHead(nn.Module):
     def forward(self, h: Tensor, gate_ctx: Tensor) -> Tuple[Tensor, Tensor, Tensor]:
         w = torch.softmax(self.gate(gate_ctx), dim=-1)  # [B, n_experts]
         expert_outputs = [self.experts[i](h) for i in range(self.n_experts)]
-        q = sum(w[:, i:i+1] * expert_outputs[i] for i in range(self.n_experts))
+        q = sum(w[:, i : i + 1] * expert_outputs[i] for i in range(self.n_experts))
 
         load = w.mean(dim=0)
         aux = (load * torch.log(load + 1e-9)).sum()  # load-balancing (Shazeer 2017)
@@ -150,7 +161,9 @@ class NeighborInteraction(nn.Module):
         ctx_sq = ctx.squeeze(1)
         if all_pad.any():
             ctx_sq = torch.where(all_pad.unsqueeze(-1), torch.zeros_like(ctx_sq), ctx_sq)
-        return self.norm(own + ctx_sq), w.squeeze(1) if w is not None else torch.zeros((own.size(0), nbr.size(1)), device=own.device)
+        return self.norm(own + ctx_sq), w.squeeze(1) if w is not None else torch.zeros(
+            (own.size(0), nbr.size(1)), device=own.device
+        )
 
 
 class RailTwinGRUv3(nn.Module):
@@ -206,11 +219,11 @@ class RailTwinGRUv3(nn.Module):
     ) -> Dict[str, Tensor]:
         B, T, _ = seq.shape
         stn_e = self.station_emb(station_ids)  # [B, T, E]
-        x = torch.cat([seq, stn_e], dim=-1)   # [B, T, F+E]
-        x_mod = self.film(x, ctx)             # [B, T, F+E]
+        x = torch.cat([seq, stn_e], dim=-1)  # [B, T, F+E]
+        x_mod = self.film(x, ctx)  # [B, T, F+E]
 
-        out, _ = self.gru(x_mod)              # [B, T, H]
-        h_pool = self.pool(out, seq_mask)     # [B, H]
+        out, _ = self.gru(x_mod)  # [B, T, H]
+        h_pool = self.pool(out, seq_mask)  # [B, H]
 
         if nbr is not None and nbr_mask is not None:
             h_inter, nbr_w = self.nbr(h_pool, nbr, nbr_mask)
@@ -302,7 +315,9 @@ class PinballCRPSLoss(nn.Module):
         self.w = w_weight
         self.aux_weight = aux_weight
 
-    def forward(self, preds: Tensor, target: Tensor, aux_loss: Tensor) -> Tuple[Tensor, Dict[str, float]]:
+    def forward(
+        self, preds: Tensor, target: Tensor, aux_loss: Tensor
+    ) -> Tuple[Tensor, Dict[str, float]]:
         err = target.unsqueeze(-1) - preds  # [B, K]
         a = self.alphas.view(1, -1)
         pin = torch.maximum(a * err, (a - 1.0) * err)

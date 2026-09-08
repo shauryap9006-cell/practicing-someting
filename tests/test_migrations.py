@@ -10,11 +10,9 @@ Tests:
 from __future__ import annotations
 
 import re
-import sqlite3
 from pathlib import Path
-import pytest
 
-from data.db import Database, MIGRATIONS_DIR
+from data.db import MIGRATIONS_DIR, Database
 
 
 def test_all_migrations_have_paired_downgrade_scripts():
@@ -30,7 +28,9 @@ def test_all_migrations_have_paired_downgrade_scripts():
 
         stem = up_file.stem
         down_file = up_file.parent / f"{stem}.down.sql"
-        assert down_file.exists(), f"Missing paired downgrade script: {down_file.name} for {up_file.name}"
+        assert down_file.exists(), (
+            f"Missing paired downgrade script: {down_file.name} for {up_file.name}"
+        )
         assert down_file.stat().st_size > 0, f"Downgrade script {down_file.name} is empty"
 
 
@@ -56,7 +56,12 @@ def test_fresh_db_build_and_downgrade_roundtrip(tmp_path: Path):
         user_cols = [r[1] for r in conn.execute("PRAGMA table_info(users);").fetchall()]
         assert "must_change_password" in user_cols
 
-        indexes = [r[1] for r in conn.execute("SELECT type, name FROM sqlite_master WHERE type='index';").fetchall()]
+        indexes = [
+            r[1]
+            for r in conn.execute(
+                "SELECT type, name FROM sqlite_master WHERE type='index';"
+            ).fetchall()
+        ]
         assert "idx_audit_prev" in indexes
     finally:
         conn.close()
@@ -83,7 +88,12 @@ def test_fresh_db_build_and_downgrade_roundtrip(tmp_path: Path):
         user_cols = [r[1] for r in conn.execute("PRAGMA table_info(users);").fetchall()]
         assert "must_change_password" not in user_cols
 
-        indexes = [r[1] for r in conn.execute("SELECT type, name FROM sqlite_master WHERE type='index';").fetchall()]
+        indexes = [
+            r[1]
+            for r in conn.execute(
+                "SELECT type, name FROM sqlite_master WHERE type='index';"
+            ).fetchall()
+        ]
         assert "idx_audit_prev" not in indexes
     finally:
         conn.close()
@@ -105,7 +115,12 @@ def test_fresh_db_build_and_downgrade_roundtrip(tmp_path: Path):
         user_cols = [r[1] for r in conn.execute("PRAGMA table_info(users);").fetchall()]
         assert "must_change_password" in user_cols
 
-        indexes = [r[1] for r in conn.execute("SELECT type, name FROM sqlite_master WHERE type='index';").fetchall()]
+        indexes = [
+            r[1]
+            for r in conn.execute(
+                "SELECT type, name FROM sqlite_master WHERE type='index';"
+            ).fetchall()
+        ]
         assert "idx_audit_prev" in indexes
     finally:
         conn.close()
@@ -128,7 +143,9 @@ def test_downgrade_to_target_version(tmp_path: Path):
     conn = db.get_connection()
     try:
         # route_cum_km table (created in v15) should be dropped
-        tbl = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='route_cum_km';").fetchone()
+        tbl = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='route_cum_km';"
+        ).fetchone()
         assert tbl is None
     finally:
         conn.close()
@@ -137,7 +154,9 @@ def test_downgrade_to_target_version(tmp_path: Path):
     db.apply_migrations(target_version=15)
     conn = db.get_connection()
     try:
-        tbl = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='route_cum_km';").fetchone()
+        tbl = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='route_cum_km';"
+        ).fetchone()
         assert tbl is not None
     finally:
         conn.close()
@@ -164,7 +183,10 @@ def test_fresh_db_rebuild_from_scratch(tmp_path: Path):
 
     conn = db.get_connection()
     try:
-        tables = [r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table';").fetchall()]
+        tables = [
+            r[0]
+            for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table';").fetchall()
+        ]
         assert "route_cum_km" in tables
         assert "auth_sessions" in tables
     finally:

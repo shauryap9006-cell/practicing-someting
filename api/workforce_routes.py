@@ -9,17 +9,16 @@ Provides:
 
 from __future__ import annotations
 
-from engine.clocks import get_clock, now_iso, ist_now, today_str
-
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from api.auth import assert_station_scope, effective_station_scope, get_current_user, require_role
 from data.audit import record_audit
 from data.db import Database, get_db
+from engine.clocks import get_clock, ist_now
 from notifications.dispatcher import notify
 
 router = APIRouter(prefix="/api/workforce", tags=["Workforce & Crew Intelligence (Phase 4)"])
@@ -41,7 +40,9 @@ class BreathalyzerTestCreate(BaseModel):
 @router.post("/breathalyzer", response_model=Dict[str, Any])
 def record_breathalyzer_test(
     req: BreathalyzerTestCreate,
-    current_user: Dict[str, Any] = Depends(require_role(["station_master", "dy_sm", "crew_controller", "admin"])),
+    current_user: Dict[str, Any] = Depends(
+        require_role(["station_master", "dy_sm", "crew_controller", "admin"])
+    ),
     db: Database = Depends(get_db),
 ):
     """Logs a Digital Breathalyzer test. Zero tolerance: Any reading > 0.00 triggers immediate duty lock and emergency alert."""
@@ -79,14 +80,24 @@ def record_breathalyzer_test(
             action="BREATHALYZER_TEST_LOGGED",
             table_name="breathalyzer_tests",
             record_id=str(test_id),
-            after_state={"staff": req.staff_name, "reading": req.reading_mg_100ml, "passed": passed},
+            after_state={
+                "staff": req.staff_name,
+                "reading": req.reading_mg_100ml,
+                "passed": passed,
+            },
         )
 
     # If test failed, dispatch urgent safety interlock alarm
     if passed == 0:
         notify(
             event_type="BREATHALYZER_FAILED",
-            target_roles=["station_master", "dy_sm", "crew_controller", "section_controller", "admin"],
+            target_roles=[
+                "station_master",
+                "dy_sm",
+                "crew_controller",
+                "section_controller",
+                "admin",
+            ],
             severity="critical",
             title=f"🚨 BREATHALYZER POSITIVE: {req.staff_name} ({req.role.upper()})",
             message=(
@@ -94,7 +105,11 @@ def record_breathalyzer_test(
                 f"({req.reading_mg_100ml} mg/100ml) for Train #{req.train_no or 'N/A'}. "
                 f"Crew member LOCKED OUT. Immediate replacement mandatory."
             ),
-            payload={"staff_id": req.staff_id, "reading": req.reading_mg_100ml, "train_no": req.train_no},
+            payload={
+                "staff_id": req.staff_id,
+                "reading": req.reading_mg_100ml,
+                "train_no": req.train_no,
+            },
             db=db,
         )
 
@@ -144,7 +159,9 @@ class CrewSignOnRequest(BaseModel):
 @router.post("/crew/sign-on", response_model=Dict[str, Any])
 def crew_sign_on(
     req: CrewSignOnRequest,
-    current_user: Dict[str, Any] = Depends(require_role(["crew_controller", "station_master", "admin"])),
+    current_user: Dict[str, Any] = Depends(
+        require_role(["crew_controller", "station_master", "admin"])
+    ),
     db: Database = Depends(get_db),
 ):
     """Signs on train running crew (Loco Pilot, ALP, Guard) and starts duty hours tracking."""
@@ -205,7 +222,9 @@ def crew_sign_on(
 @router.post("/crew/{roster_id}/sign-off", response_model=Dict[str, Any])
 def crew_sign_off(
     roster_id: int,
-    current_user: Dict[str, Any] = Depends(require_role(["crew_controller", "station_master", "admin"])),
+    current_user: Dict[str, Any] = Depends(
+        require_role(["crew_controller", "station_master", "admin"])
+    ),
     db: Database = Depends(get_db),
 ):
     """Signs off running crew, calculates exact duty duration, and sets required rest period."""
@@ -272,10 +291,50 @@ def list_crew_roster(
         if c == 0:
             now_iso = now_dt.isoformat()
             sample_crew = [
-                ("CRW-LP-101", "Virender Singh", "loco_pilot", "12004", "NDLS", now_iso, 10.0, "ON_DUTY", now_iso),
-                ("CRW-ALP-102", "Suresh Kumar", "alp", "12004", "NDLS", now_iso, 10.0, "ON_DUTY", now_iso),
-                ("CRW-GD-103", "Anil Meena", "guard", "12004", "NDLS", now_iso, 10.0, "ON_DUTY", now_iso),
-                ("CRW-LP-104", "Rajesh Sharma", "loco_pilot", "12424", "NDLS", now_iso, 10.0, "ON_DUTY", now_iso),
+                (
+                    "CRW-LP-101",
+                    "Virender Singh",
+                    "loco_pilot",
+                    "12004",
+                    "NDLS",
+                    now_iso,
+                    10.0,
+                    "ON_DUTY",
+                    now_iso,
+                ),
+                (
+                    "CRW-ALP-102",
+                    "Suresh Kumar",
+                    "alp",
+                    "12004",
+                    "NDLS",
+                    now_iso,
+                    10.0,
+                    "ON_DUTY",
+                    now_iso,
+                ),
+                (
+                    "CRW-GD-103",
+                    "Anil Meena",
+                    "guard",
+                    "12004",
+                    "NDLS",
+                    now_iso,
+                    10.0,
+                    "ON_DUTY",
+                    now_iso,
+                ),
+                (
+                    "CRW-LP-104",
+                    "Rajesh Sharma",
+                    "loco_pilot",
+                    "12424",
+                    "NDLS",
+                    now_iso,
+                    10.0,
+                    "ON_DUTY",
+                    now_iso,
+                ),
             ]
             for cr in sample_crew:
                 cur.execute(
@@ -327,7 +386,11 @@ def check_crew_breaches(
 ):
     """Detects crew approaching or exceeding the 10-hour duty limit (or 14-hour HOA)."""
     all_crew = list_crew_roster(station_code=station_code, current_user=current_user, db=db)
-    breaches = [c for c in all_crew if c.get("is_near_breach") or c.get("elapsed_duty_hours", 0) > c.get("duty_hours_limit", 10)]
+    breaches = [
+        c
+        for c in all_crew
+        if c.get("is_near_breach") or c.get("elapsed_duty_hours", 0) > c.get("duty_hours_limit", 10)
+    ]
     return breaches
 
 
@@ -383,7 +446,12 @@ def assign_staff_shift(
             after_state={"staff": req.staff_name, "shift": f"{req.shift_date} {req.shift_type}"},
         )
 
-    return {"id": s_id, "staff_name": req.staff_name, "shift_date": req.shift_date, "shift_type": req.shift_type}
+    return {
+        "id": s_id,
+        "staff_name": req.staff_name,
+        "shift_date": req.shift_date,
+        "shift_type": req.shift_type,
+    }
 
 
 @router.get("/shifts", response_model=List[Dict[str, Any]])
@@ -402,13 +470,49 @@ def list_staff_shifts(
         cur.execute("SELECT COUNT(*) as count FROM staff_shifts;")
         c = cur.fetchone()["count"]
         if c == 0:
-            today_str = today_str()
+            today_str = get_clock().today_str()
             now_iso = get_clock().now_iso()
             sample_shifts = [
-                ("usr-sm-ndls-01", "Station Master Day", "station_master", "NDLS", today_str, "morning", "PRESENT", now_iso),
-                ("usr-dysm-01", "Dy. Station Master Morning", "dy_sm", "NDLS", today_str, "morning", "PRESENT", now_iso),
-                ("usr-section-ctrl-01", "Section Controller Main", "section_controller", "NDLS", today_str, "morning", "PRESENT", now_iso),
-                ("usr-crew-ctrl-01", "Crew Controller Day", "crew_controller", "NDLS", today_str, "morning", "PRESENT", now_iso),
+                (
+                    "usr-sm-ndls-01",
+                    "Station Master Day",
+                    "station_master",
+                    "NDLS",
+                    today_str,
+                    "morning",
+                    "PRESENT",
+                    now_iso,
+                ),
+                (
+                    "usr-dysm-01",
+                    "Dy. Station Master Morning",
+                    "dy_sm",
+                    "NDLS",
+                    today_str,
+                    "morning",
+                    "PRESENT",
+                    now_iso,
+                ),
+                (
+                    "usr-section-ctrl-01",
+                    "Section Controller Main",
+                    "section_controller",
+                    "NDLS",
+                    today_str,
+                    "morning",
+                    "PRESENT",
+                    now_iso,
+                ),
+                (
+                    "usr-crew-ctrl-01",
+                    "Crew Controller Day",
+                    "crew_controller",
+                    "NDLS",
+                    today_str,
+                    "morning",
+                    "PRESENT",
+                    now_iso,
+                ),
             ]
             for s in sample_shifts:
                 cur.execute(
@@ -458,11 +562,61 @@ def list_sahayak_roster(
         if c == 0:
             now_iso = get_clock().now_iso()
             sample_sahayaks = [
-                ("COOLIE-101", "Ram Charan", "+919876543201", "NDLS", 1, "morning", 1, 150.0, now_iso),
-                ("COOLIE-102", "Mohan Lal", "+919876543202", "NDLS", 1, "morning", 1, 150.0, now_iso),
-                ("COOLIE-103", "Jagdish Prasad", "+919876543203", "NDLS", 2, "morning", 1, 150.0, now_iso),
-                ("COOLIE-104", "Dharmendra Yadav", "+919876543204", "NDLS", 3, "morning", 1, 150.0, now_iso),
-                ("COOLIE-105", "Rameshwar Dayal", "+919876543205", "NDLS", 4, "morning", 1, 150.0, now_iso),
+                (
+                    "COOLIE-101",
+                    "Ram Charan",
+                    "+919876543201",
+                    "NDLS",
+                    1,
+                    "morning",
+                    1,
+                    150.0,
+                    now_iso,
+                ),
+                (
+                    "COOLIE-102",
+                    "Mohan Lal",
+                    "+919876543202",
+                    "NDLS",
+                    1,
+                    "morning",
+                    1,
+                    150.0,
+                    now_iso,
+                ),
+                (
+                    "COOLIE-103",
+                    "Jagdish Prasad",
+                    "+919876543203",
+                    "NDLS",
+                    2,
+                    "morning",
+                    1,
+                    150.0,
+                    now_iso,
+                ),
+                (
+                    "COOLIE-104",
+                    "Dharmendra Yadav",
+                    "+919876543204",
+                    "NDLS",
+                    3,
+                    "morning",
+                    1,
+                    150.0,
+                    now_iso,
+                ),
+                (
+                    "COOLIE-105",
+                    "Rameshwar Dayal",
+                    "+919876543205",
+                    "NDLS",
+                    4,
+                    "morning",
+                    1,
+                    150.0,
+                    now_iso,
+                ),
             ]
             for sk in sample_sahayaks:
                 cur.execute(
@@ -493,7 +647,9 @@ def list_sahayak_roster(
 @router.put("/sahayak/{sahayak_id}/duty", response_model=Dict[str, Any])
 def toggle_sahayak_duty(
     sahayak_id: int,
-    current_user: Dict[str, Any] = Depends(require_role(["station_master", "dy_sm", "commercial_inspector", "admin"])),
+    current_user: Dict[str, Any] = Depends(
+        require_role(["station_master", "dy_sm", "commercial_inspector", "admin"])
+    ),
     db: Database = Depends(get_db),
 ):
     """Toggles Sahayak on-duty / off-duty status."""
@@ -525,4 +681,9 @@ def toggle_sahayak_duty(
             after_state={"on_duty": new_duty},
         )
 
-    return {"id": sahayak_id, "badge_number": row["badge_number"], "on_duty": bool(new_duty), "updated_at": now_iso}
+    return {
+        "id": sahayak_id,
+        "badge_number": row["badge_number"],
+        "on_duty": bool(new_duty),
+        "updated_at": now_iso,
+    }

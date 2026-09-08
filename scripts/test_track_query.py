@@ -1,6 +1,6 @@
-import urllib.request
-import urllib.parse
 import json
+import urllib.parse
+import urllib.request
 
 # Overpass query to find the actual railway tracks along the corridor
 query = """
@@ -14,9 +14,7 @@ out geom;
 
 url = "https://overpass-api.de/api/interpreter"
 req = urllib.request.Request(
-    url,
-    data=query.encode("utf-8"),
-    headers={"User-Agent": "RailTwinX-TrackFinder/1.0"}
+    url, data=query.encode("utf-8"), headers={"User-Agent": "RailTwinX-TrackFinder/1.0"}
 )
 
 try:
@@ -25,6 +23,11 @@ try:
         elements = data.get("elements", [])
         print("Fetched elements:", len(elements))
         for el in elements[:5]:
-            print("Element:", el.get("type"), el.get("tags", {}).get("name"), el.get("tags", {}).get("ref"))
+            print(
+                "Element:",
+                el.get("type"),
+                el.get("tags", {}).get("name"),
+                el.get("tags", {}).get("ref"),
+            )
 except Exception as e:
     print("Error:", e)

@@ -110,7 +110,9 @@ def convert_to_ist_iso(val: str) -> str:
         return s
 
 
-def scan_database(db_path: str) -> Tuple[Dict[str, Dict[str, Dict[str, int]]], Dict[str, List[str]]]:
+def scan_database(
+    db_path: str,
+) -> Tuple[Dict[str, Dict[str, Dict[str, int]]], Dict[str, List[str]]]:
     """Scans all tables and timestamp columns, classifying format distributions."""
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
@@ -125,7 +127,12 @@ def scan_database(db_path: str) -> Tuple[Dict[str, Dict[str, Dict[str, int]]], D
     for table in tables:
         cur.execute(f"PRAGMA table_info({table});")
         cols = [r["name"] for r in cur.fetchall()]
-        matched_cols = [c for c in cols if c.lower() in TIMESTAMP_COLUMN_NAMES or any(k in c.lower() for k in ["_at", "_time", "timestamp"])]
+        matched_cols = [
+            c
+            for c in cols
+            if c.lower() in TIMESTAMP_COLUMN_NAMES
+            or any(k in c.lower() for k in ["_at", "_time", "timestamp"])
+        ]
 
         for col in matched_cols:
             try:
@@ -191,7 +198,9 @@ def apply_repairs(db_path: str, table_columns: Dict[str, List[str]]) -> Dict[str
     with conn:
         for table, cols in table_columns.items():
             for col in cols:
-                cur.execute(f"SELECT rowid, {col} FROM {table} WHERE {col} IS NOT NULL AND {col} != '';")
+                cur.execute(
+                    f"SELECT rowid, {col} FROM {table} WHERE {col} IS NOT NULL AND {col} != '';"
+                )
                 rows = cur.fetchall()
                 batch = []
                 for rowid, val in rows:
@@ -213,9 +222,13 @@ def apply_repairs(db_path: str, table_columns: Dict[str, List[str]]) -> Dict[str
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Repair and normalize database timestamps to IST (+05:30).")
+    parser = argparse.ArgumentParser(
+        description="Repair and normalize database timestamps to IST (+05:30)."
+    )
     parser.add_argument("--db", default="data/railtwin.db", help="Path to SQLite database")
-    parser.add_argument("--apply", action="store_true", help="Apply changes (defaults to DRY-RUN mode)")
+    parser.add_argument(
+        "--apply", action="store_true", help="Apply changes (defaults to DRY-RUN mode)"
+    )
     args = parser.parse_args()
 
     db_path = args.db
@@ -232,7 +245,9 @@ def main():
     total_ist = 0
     total_to_convert = 0
 
-    print(f"{'Table':<25} {'Column':<25} {'IST (+05:30)':<15} {'UTC (Z/00:00)':<15} {'Naive':<10} {'Action':<10}")
+    print(
+        f"{'Table':<25} {'Column':<25} {'IST (+05:30)':<15} {'UTC (Z/00:00)':<15} {'Naive':<10} {'Action':<10}"
+    )
     print("-" * 105)
 
     for table in sorted(stats.keys()):
@@ -247,10 +262,14 @@ def main():
             total_to_convert += to_convert
 
             action = f"Convert {to_convert}" if to_convert > 0 else "OK"
-            print(f"{table:<25} {col:<25} {ist_count:<15} {utc_count:<15} {naive_count:<10} {action:<10}")
+            print(
+                f"{table:<25} {col:<25} {ist_count:<15} {utc_count:<15} {naive_count:<10} {action:<10}"
+            )
 
     print("-" * 105)
-    print(f"SUMMARY: {total_ist} already canonical IST | {total_to_convert} rows to convert to IST (+05:30)\n")
+    print(
+        f"SUMMARY: {total_ist} already canonical IST | {total_to_convert} rows to convert to IST (+05:30)\n"
+    )
 
     if not args.apply:
         print("[DRY-RUN COMPLETE] Zero modifications written to disk.")
@@ -259,7 +278,9 @@ def main():
 
     print(">>> Applying timestamp normalization to database...")
     updates = apply_repairs(db_path, table_columns)
-    print(f"Successfully repaired {sum(updates.values())} timestamp entries across {len(updates)} columns.")
+    print(
+        f"Successfully repaired {sum(updates.values())} timestamp entries across {len(updates)} columns."
+    )
     print("Database is now 100% canonical IST (+05:30).")
 
 

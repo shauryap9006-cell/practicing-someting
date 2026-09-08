@@ -4,10 +4,10 @@ Spawns 8 concurrent threads × 20 appends each (160 total concurrent writes),
 asserts that no race condition forks the hash chain, all receipts are stored,
 and verify_chain_integrity() confirms an unbroken cryptographic chain.
 """
+
 from __future__ import annotations
 
 import concurrent.futures
-import pytest
 
 from data.db import get_db
 from engine.prediction_ledger import PredictionLedger
@@ -65,6 +65,7 @@ def test_ledger_high_concurrency_race_condition():
 def test_eta_endpoint_concurrency_no_db_locks():
     """Hits ETA endpoint ~50 times concurrently; asserts zero database lock errors, flushes, verifies chain."""
     from fastapi.testclient import TestClient
+
     from api.main import app
     from engine.prediction_ledger import flush_now
 
@@ -103,4 +104,3 @@ def test_eta_endpoint_concurrency_no_db_locks():
     is_valid, count, broken_id = ledger.verify_chain_integrity()
     assert is_valid is True, f"Hash chain broken at ID {broken_id}"
     assert broken_id is None
-

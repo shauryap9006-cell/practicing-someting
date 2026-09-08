@@ -7,8 +7,9 @@ Supports MSG91, Fast2SMS, and local deterministic Mock provider.
 from __future__ import annotations
 
 import re
-import httpx
 from typing import Optional
+
+import httpx
 
 from config import settings
 

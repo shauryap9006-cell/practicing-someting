@@ -40,7 +40,7 @@ def test_ip_rate_limit_sixth_attempt_blocked():
             json={"username": f"user_{i}", "password": "WrongPassword123!"},
             headers=ip_headers,
         )
-        assert resp.status_code == 401, f"Attempt {i+1} should return 401, got {resp.status_code}"
+        assert resp.status_code == 401, f"Attempt {i + 1} should return 401, got {resp.status_code}"
 
     # 6th attempt from the same IP must be rate-limited with 429
     resp_sixth = client.post(
@@ -70,7 +70,7 @@ def test_username_lockout_after_five_failed_attempts():
 
     # 5 failed attempts using distinct IPs to avoid IP rate limit
     for i in range(5):
-        ip_headers = {"X-Forwarded-For": f"10.0.1.{i+1}"}
+        ip_headers = {"X-Forwarded-For": f"10.0.1.{i + 1}"}
         resp = client.post(
             "/api/auth/login",
             json={"username": target_user, "password": f"BadPassword{i}"},
@@ -123,13 +123,16 @@ def test_anti_enumeration_byte_identical_responses():
     assert resp_unknown.status_code == 401
     assert resp_wrong_pw.status_code == 401
     assert resp_unknown.content == resp_wrong_pw.content
-    assert resp_unknown.headers.get("WWW-Authenticate") == resp_wrong_pw.headers.get("WWW-Authenticate") == "Bearer"
+    assert (
+        resp_unknown.headers.get("WWW-Authenticate")
+        == resp_wrong_pw.headers.get("WWW-Authenticate")
+        == "Bearer"
+    )
 
 
 def test_lockout_expires_after_ttl(monkeypatch):
     """Verifies that lockouts are TTL-based and expire automatically."""
     import time
-    from api import auth_limiter
 
     current_time = 10000.0
     monkeypatch.setattr(time, "monotonic", lambda: current_time)
@@ -139,7 +142,7 @@ def test_lockout_expires_after_ttl(monkeypatch):
         resp = client.post(
             "/api/auth/login",
             json={"username": "admin", "password": "WrongPassword!"},
-            headers={"X-Forwarded-For": f"10.30.1.{i+1}"},
+            headers={"X-Forwarded-For": f"10.30.1.{i + 1}"},
         )
         assert resp.status_code == 401
 

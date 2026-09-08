@@ -10,14 +10,13 @@ from __future__ import annotations
 import atexit
 import collections
 import hashlib
-import json
 import logging
 import threading
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from data.db import Database, get_db
-from engine.clocks import get_clock, IST_TIMEZONE
+from engine.clocks import IST_TIMEZONE, get_clock
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +39,7 @@ def _normalize_iso_ist(ts: Optional[str]) -> str:
         return dt.astimezone(IST_TIMEZONE).isoformat()
     except Exception:
         return s
+
 
 MAX_QUEUE_SIZE = 10000
 FLUSH_BATCH_THRESHOLD = 100
@@ -175,8 +175,12 @@ class PredictionLedger:
                 );
                 """
             )
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_ledger_train ON eta_prediction_ledger(train_no, query_timestamp);")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_ledger_hash ON eta_prediction_ledger(receipt_hash);")
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ledger_train ON eta_prediction_ledger(train_no, query_timestamp);"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ledger_hash ON eta_prediction_ledger(receipt_hash);"
+            )
 
     def flush_now(self) -> int:
         """Flushes buffered receipts to the database immediately."""
@@ -216,17 +220,19 @@ class PredictionLedger:
                 )
                 _QUEUE.popleft()
 
-            _QUEUE.append((
-                receipt_hash,
-                prev_hash,
-                train_no,
-                stn_code,
-                q_ts,
-                p10_val,
-                p50_val,
-                p90_val,
-                now_iso,
-            ))
+            _QUEUE.append(
+                (
+                    receipt_hash,
+                    prev_hash,
+                    train_no,
+                    stn_code,
+                    q_ts,
+                    p10_val,
+                    p50_val,
+                    p90_val,
+                    now_iso,
+                )
+            )
 
             if len(_QUEUE) >= FLUSH_BATCH_THRESHOLD:
                 _FLUSH_EVENT.set()
@@ -314,6 +320,7 @@ class PredictionLedger:
         if graded_tuples:
             try:
                 from ml.conformal import ConformalPIDController
+
                 pid = ConformalPIDController(group_key="global", target_alpha=0.20, db=self.db)
                 for y, p10, p90 in graded_tuples:
                     pid.update(y_true=y, p10_pred=p10, p90_pred=p90)

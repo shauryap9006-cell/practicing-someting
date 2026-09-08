@@ -9,16 +9,15 @@ Tests:
 """
 
 from pathlib import Path
+
 import pytest
-import numpy as np
-import pandas as pd
 
 from data.db import Database
 from data.seed import run_full_seed
+from ml.evaluate import Evaluator
 from ml.features import FEATURE_NAMES, validate_feature_dataframe
 from ml.snapshots import SnapshotGenerator
 from ml.train import ModelTrainer
-from ml.evaluate import Evaluator
 
 
 @pytest.fixture(scope="module")

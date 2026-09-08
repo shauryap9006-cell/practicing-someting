@@ -35,48 +35,20 @@ logger = logging.getLogger(__name__)
 
 # Pre-defined All-India Corridors using real station codes in stations table
 CORRIDORS = {
-    "DELHI_LUCKNOW": [
-        "NDLS", "GZB", "ALJN", "TDL", "ETW", "CNB", "ON", "LKO"
-    ],
-    "EASTERN_TRUNK": [
-        "NDLS", "GZB", "ALJN", "CNB", "PRYJ", "BSB", "DDU", "GAYA", "ASN", "HWH"
-    ],
-    "EASTERN_PATNA": [
-        "NDLS", "CNB", "PRYJ", "DDU", "DNR", "PNBE", "BJU", "MFP", "SPJ", "DBG"
-    ],
-    "WESTERN_MUMBAI": [
-        "NDLS", "MTJ", "KOTA", "RTM", "BRC", "ST", "MMCT", "CSMT"
-    ],
-    "WESTERN_AHMEDABAD": [
-        "NDLS", "REWARI", "JP", "AII", "ABR", "PNU", "ADI"
-    ],
-    "GRAND_TRUNK_CHENNAI": [
-        "NDLS", "AGC", "GWL", "VGLJ", "BPL", "NGP", "BPQ", "KZJ", "BZA", "MAS"
-    ],
-    "KARNATAKA_BENGALURU": [
-        "NDLS", "AGC", "VGLJ", "BPL", "NGP", "WADI", "GTL", "SBC", "MYS"
-    ],
-    "NORTHEAST_DIBRUGARH": [
-        "NDLS", "CNB", "PRYJ", "DDU", "PNBE", "KIR", "NJP", "GHY", "DBRG"
-    ],
-    "KONKAN_KERALA": [
-        "CSMT", "PUNE", "RN", "MAO", "MAQ", "CAN", "CLT", "ERS", "QLN", "TVC"
-    ],
-    "SOUTHERN_INTERCITY": [
-        "CSMT", "PUNE", "SUR", "WADI", "GTL", "RU", "MAS"
-    ],
-    "EAST_COAST": [
-        "HWH", "KGP", "ROU", "TATA", "BBS", "KUR", "PURI", "VSKP", "RJY", "BZA", "MAS"
-    ],
-    "NORTH_JAMMU": [
-        "NDLS", "SRE", "UMB", "CDG", "LDH", "JUC", "ASR", "JAT", "SVDK"
-    ],
-    "CENTRAL_HOWRAH": [
-        "CSMT", "PUNE", "BSL", "NGP", "DURG", "R", "BSP", "ROU", "TATA", "HWH"
-    ],
-    "MUMBAI_AHMEDABAD": [
-        "CSMT", "MMCT", "ST", "BRC", "ADI"
-    ],
+    "DELHI_LUCKNOW": ["NDLS", "GZB", "ALJN", "TDL", "ETW", "CNB", "ON", "LKO"],
+    "EASTERN_TRUNK": ["NDLS", "GZB", "ALJN", "CNB", "PRYJ", "BSB", "DDU", "GAYA", "ASN", "HWH"],
+    "EASTERN_PATNA": ["NDLS", "CNB", "PRYJ", "DDU", "DNR", "PNBE", "BJU", "MFP", "SPJ", "DBG"],
+    "WESTERN_MUMBAI": ["NDLS", "MTJ", "KOTA", "RTM", "BRC", "ST", "MMCT", "CSMT"],
+    "WESTERN_AHMEDABAD": ["NDLS", "REWARI", "JP", "AII", "ABR", "PNU", "ADI"],
+    "GRAND_TRUNK_CHENNAI": ["NDLS", "AGC", "GWL", "VGLJ", "BPL", "NGP", "BPQ", "KZJ", "BZA", "MAS"],
+    "KARNATAKA_BENGALURU": ["NDLS", "AGC", "VGLJ", "BPL", "NGP", "WADI", "GTL", "SBC", "MYS"],
+    "NORTHEAST_DIBRUGARH": ["NDLS", "CNB", "PRYJ", "DDU", "PNBE", "KIR", "NJP", "GHY", "DBRG"],
+    "KONKAN_KERALA": ["CSMT", "PUNE", "RN", "MAO", "MAQ", "CAN", "CLT", "ERS", "QLN", "TVC"],
+    "SOUTHERN_INTERCITY": ["CSMT", "PUNE", "SUR", "WADI", "GTL", "RU", "MAS"],
+    "EAST_COAST": ["HWH", "KGP", "ROU", "TATA", "BBS", "KUR", "PURI", "VSKP", "RJY", "BZA", "MAS"],
+    "NORTH_JAMMU": ["NDLS", "SRE", "UMB", "CDG", "LDH", "JUC", "ASR", "JAT", "SVDK"],
+    "CENTRAL_HOWRAH": ["CSMT", "PUNE", "BSL", "NGP", "DURG", "R", "BSP", "ROU", "TATA", "HWH"],
+    "MUMBAI_AHMEDABAD": ["CSMT", "MMCT", "ST", "BRC", "ADI"],
 }
 
 # Explicit corridor train protection set
@@ -131,7 +103,9 @@ def run(apply: bool = False) -> None:
     """Run route expansion with dry-run safety by default."""
     dry_run = not apply
     if dry_run:
-        logger.info("[DRY RUN MODE] No database changes will be committed. Run with --apply to write.")
+        logger.info(
+            "[DRY RUN MODE] No database changes will be committed. Run with --apply to write."
+        )
     else:
         logger.info("[APPLY MODE] Changes will be committed to database.")
 
@@ -197,12 +171,15 @@ def run(apply: bool = False) -> None:
             # Filter to stations that exist in stations table
             valid_stations = [s for s in raw_route if s in station_map]
             if len(valid_stations) < 2:
-                logger.warning("Train %s matched corridor but fewer than 2 valid stations found. Skipping.", t_no)
+                logger.warning(
+                    "Train %s matched corridor but fewer than 2 valid stations found. Skipping.",
+                    t_no,
+                )
                 skipped_no_match += 1
                 continue
 
             # Reverse half of trains for UP / DN bidirectional operations
-            is_up = (int(t_no[-1]) % 2 != 0)
+            is_up = int(t_no[-1]) % 2 != 0
             route = valid_stations if is_up else list(reversed(valid_stations))
 
             # Timings

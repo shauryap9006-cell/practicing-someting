@@ -9,6 +9,7 @@ Enforces 7 hard pre-training verification gates on `feature_snapshots_v3`:
   G-6: Manual Audit Inspection (20 sampled rows against raw database truth)
   G-7: Cryptographic SHA-256 Manifest Freeze
 """
+
 from __future__ import annotations
 
 import datetime as dt
@@ -17,7 +18,7 @@ import json
 import sqlite3
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional
 
 import numpy as np
 from scipy import stats
@@ -37,12 +38,18 @@ SPLIT_CLAUSES = {
 def gate_1_liveliness(con: sqlite3.Connection) -> None:
     """G-1: Ensures zero dead or constant features on train and val splits."""
     print("\n[GATE G-1] Evaluating Feature Liveliness & Information Content...")
-    cols = [r[1] for r in con.execute("PRAGMA table_info(feature_snapshots_v3)").fetchall() if r[1].startswith("f_")]
+    cols = [
+        r[1]
+        for r in con.execute("PRAGMA table_info(feature_snapshots_v3)").fetchall()
+        if r[1].startswith("f_")
+    ]
     fails = []
 
     for f in cols:
         for split in ("train", "val"):
-            rows = con.execute(f"SELECT {f} FROM feature_snapshots_v3 WHERE {SPLIT_CLAUSES[split]}").fetchall()
+            rows = con.execute(
+                f"SELECT {f} FROM feature_snapshots_v3 WHERE {SPLIT_CLAUSES[split]}"
+            ).fetchall()
             if not rows:
                 fails.append(f"{f}@{split}(empty)")
                 continue
@@ -51,17 +58,22 @@ def gate_1_liveliness(con: sqlite3.Connection) -> None:
                 fails.append(f"{f}@{split}(var={a.var():.2e}, nunique={len(np.unique(a))})")
 
     assert not fails, f"G-1 DEAD FEATURES DETECTED: {fails} — HALT before training."
-    print(f"  --> G-1 PASS: All {len(cols)} features active and alive on both train and val splits.")
+    print(
+        f"  --> G-1 PASS: All {len(cols)} features active and alive on both train and val splits."
+    )
 
 
 def gate_2_leakage(con: sqlite3.Connection) -> None:
     """G-2: Verifies strict point-in-time calculation (perturbing future events has 0 effect)."""
     print("\n[GATE G-2] Verifying Temporal Leakage Isolation...")
     # Sample 50 snapshots
-    cur = con.execute("SELECT train_no, run_date, target_station, as_of FROM feature_snapshots_v3 ORDER BY RANDOM() LIMIT 50")
+    cur = con.execute(
+        "SELECT train_no, run_date, target_station, as_of FROM feature_snapshots_v3 ORDER BY RANDOM() LIMIT 50"
+    )
     sample_rows = cur.fetchall()
 
     from ml.features_v3 import V3FeatureBuilder
+
     builder = V3FeatureBuilder(seeds_dir="data/seeds")
 
     diffs = 0
@@ -79,7 +91,9 @@ def gate_2_leakage(con: sqlite3.Connection) -> None:
         ).fetchone()
         t_arr_str = sched_arr_row[0] if sched_arr_row and sched_arr_row[0] else "12:00"
         parts = t_arr_str.split(":")
-        arr_dt = dt.datetime(as_of_dt.year, as_of_dt.month, as_of_dt.day, int(parts[0]), int(parts[1]), 0)
+        arr_dt = dt.datetime(
+            as_of_dt.year, as_of_dt.month, as_of_dt.day, int(parts[0]), int(parts[1]), 0
+        )
 
         # Baseline snapshot features
         f_base = builder.build_snapshot_features(t_no, r_date, target_stn, as_of_dt, arr_dt)
@@ -120,15 +134,24 @@ def gate_3_fabrication(con: sqlite3.Connection) -> None:
     i_p90 = cols.index("f_hist_p90")
     i_avg = cols.index("f_hist_recency_avg")
     r_p90 = stats.spearmanr(data[:, i_p90], data[:, i_avg]).statistic
-    assert r_p90 < 0.95, f"hist_p90 is a rescaled mean (rho={r_p90:.3f}) — must be true empirical percentile."
-    print(f"  --> G-3 PASS: 0 fabricated duplicates detected. hist_p90 vs hist_avg rho = {r_p90:.3f} < 0.95.", flush=True)
+    assert r_p90 < 0.95, (
+        f"hist_p90 is a rescaled mean (rho={r_p90:.3f}) — must be true empirical percentile."
+    )
+    print(
+        f"  --> G-3 PASS: 0 fabricated duplicates detected. hist_p90 vs hist_avg rho = {r_p90:.3f} < 0.95.",
+        flush=True,
+    )
 
 
 def gate_4_regime_sanity(con: sqlite3.Connection) -> None:
     """G-4: Asserts winter fog signature and diurnal/spatial dynamic variance."""
     print("\n[GATE G-4] Checking Regime Signatures & Spatial Variance...")
-    fog_bench_sql = f"SELECT AVG(f_fog_dawn) FROM feature_snapshots_v3 WHERE {SPLIT_CLAUSES['bench_fog']}"
-    normal_bench_sql = f"SELECT AVG(f_fog_dawn) FROM feature_snapshots_v3 WHERE {SPLIT_CLAUSES['bench_normal']}"
+    fog_bench_sql = (
+        f"SELECT AVG(f_fog_dawn) FROM feature_snapshots_v3 WHERE {SPLIT_CLAUSES['bench_fog']}"
+    )
+    normal_bench_sql = (
+        f"SELECT AVG(f_fog_dawn) FROM feature_snapshots_v3 WHERE {SPLIT_CLAUSES['bench_normal']}"
+    )
 
     fb = float(con.execute(fog_bench_sql).fetchone()[0] or 0.0)
     nb = float(con.execute(normal_bench_sql).fetchone()[0] or 0.0)
@@ -137,8 +160,12 @@ def gate_4_regime_sanity(con: sqlite3.Connection) -> None:
     print(f"  Normal Benchmark avg(f_fog_dawn)     = {nb:.4f} (target < 0.05)")
 
     assert fb > 0.05, f"G-4 Fog signature too weak on winter benchmark: {fb:.4f} <= 0.05"
-    assert nb < 0.05, f"G-4 Fog signature falsely active on summer normal benchmark: {nb:.4f} >= 0.05"
-    assert fb / max(1e-4, nb) >= 3.0, f"G-4 Fog contrast ratio too weak: ratio={fb/max(1e-4, nb):.1f}"
+    assert nb < 0.05, (
+        f"G-4 Fog signature falsely active on summer normal benchmark: {nb:.4f} >= 0.05"
+    )
+    assert fb / max(1e-4, nb) >= 3.0, (
+        f"G-4 Fog contrast ratio too weak: ratio={fb / max(1e-4, nb):.1f}"
+    )
 
     # Spatial features must vary WITHIN a single day
     var_rows = con.execute(
@@ -174,7 +201,9 @@ def gate_5_coverage(con: sqlite3.Connection) -> None:
     tsr_active = cur.fetchone()[0]
     total_snaps = con.execute("SELECT COUNT(*) FROM feature_snapshots_v3").fetchone()[0]
     tsr_pct = (tsr_active / max(1, total_snaps)) * 100.0
-    print(f"  TSR active coverage across snapshots: {tsr_pct:.1f}% ({tsr_active:,}/{total_snaps:,})")
+    print(
+        f"  TSR active coverage across snapshots: {tsr_pct:.1f}% ({tsr_active:,}/{total_snaps:,})"
+    )
 
     print("  --> G-5 PASS: Domain registries meet full coverage requirements.")
 
@@ -192,10 +221,14 @@ def gate_6_manual_audit(con: sqlite3.Connection) -> None:
         """
     )
     rows = cur.fetchall()
-    print(f"{'Train':<8} {'Date':<11} {'Target':<7} {'H(m)':<5} {'y(min)':<8} {'CurDel':<8} {'Vel':<6} {'KmRem':<8} {'Fog':<5} {'Rake':<5}")
+    print(
+        f"{'Train':<8} {'Date':<11} {'Target':<7} {'H(m)':<5} {'y(min)':<8} {'CurDel':<8} {'Vel':<6} {'KmRem':<8} {'Fog':<5} {'Rake':<5}"
+    )
     print("-" * 75)
     for r in rows:
-        print(f"{r[0]:<8} {r[1]:<11} {r[2]:<7} {r[3]:<5.0f} {r[4]:<8.1f} {r[5]:<8.1f} {r[6]:<6.1f} {r[7]:<8.1f} {r[8]:<5.2f} {r[9]:<5.0f}")
+        print(
+            f"{r[0]:<8} {r[1]:<11} {r[2]:<7} {r[3]:<5.0f} {r[4]:<8.1f} {r[5]:<8.1f} {r[6]:<6.1f} {r[7]:<8.1f} {r[8]:<5.2f} {r[9]:<5.0f}"
+        )
     print("  --> G-6 PASS: Audit inspection logged with human_ack_required=True.")
 
 
@@ -205,7 +238,9 @@ def gate_7_freeze(con: sqlite3.Connection) -> Dict[str, Any]:
     h = hashlib.sha256()
     total_rows = 0
 
-    for r in con.execute("SELECT * FROM feature_snapshots_v3 ORDER BY train_no, run_date, target_station, as_of"):
+    for r in con.execute(
+        "SELECT * FROM feature_snapshots_v3 ORDER BY train_no, run_date, target_station, as_of"
+    ):
         h.update(repr(tuple(r)).encode())
         total_rows += 1
 

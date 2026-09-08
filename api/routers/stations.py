@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from api.auth import assert_station_scope, require_role
@@ -20,7 +21,7 @@ from api.services.station_service import (
     get_station_summary_raw,
 )
 from config import settings
-from data.db import Database, get_db
+from data.db import get_db
 from engine.clocks import get_clock
 from engine.ops import ConnectionCustodyEngine, PlatformManager
 
@@ -39,7 +40,11 @@ def get_station_summary(code: str):
     if not raw:
         raise HTTPException(
             status_code=404,
-            detail={"code": "STATION_NOT_FOUND", "message": f"Station {station_code} not found", "retryable": False},
+            detail={
+                "code": "STATION_NOT_FOUND",
+                "message": f"Station {station_code} not found",
+                "retryable": False,
+            },
         )
 
     station = raw["station"]
@@ -81,7 +86,11 @@ def get_station_gantt(code: str):
     if not stn_row:
         raise HTTPException(
             status_code=404,
-            detail={"code": "STATION_NOT_FOUND", "message": f"Station {station_code} not found", "retryable": False},
+            detail={
+                "code": "STATION_NOT_FOUND",
+                "message": f"Station {station_code} not found",
+                "retryable": False,
+            },
         )
 
     blocks, conflicts = pm.get_station_gantt(station_code)
@@ -132,7 +141,10 @@ def get_station_connections(
     code: str,
     run_date: Optional[str] = Query(None, description="Date YYYY-MM-DD"),
     min_transfer_min: Optional[int] = Query(
-        None, ge=5, le=60, description="Minimum connection transfer time in minutes (defaults to configured value)"
+        None,
+        ge=5,
+        le=60,
+        description="Minimum connection transfer time in minutes (defaults to configured value)",
     ),
 ):
     """Evaluates junction interchange connection feasibility and hold-decision tradeoffs."""
@@ -147,7 +159,9 @@ def get_station_connections(
         min_connection_time_min=min_transfer_min,
     )
 
-    at_risk_count = sum(1 for c in connections if c.status in ("AT_RISK", "CRITICAL_MISSED", "MISSED"))
+    at_risk_count = sum(
+        1 for c in connections if c.status in ("AT_RISK", "CRITICAL_MISSED", "MISSED")
+    )
     advisories_count = sum(1 for c in connections if c.hold_advisory is not None)
 
     return {

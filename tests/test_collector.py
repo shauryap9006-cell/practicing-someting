@@ -9,6 +9,7 @@ Tests:
 
 import datetime
 from pathlib import Path
+
 import pytest
 
 from collector.adapters.base import StationEvent
@@ -43,9 +44,45 @@ def test_quality_gate_sanity():
     """Verifies that delays outside bounds are quarantined."""
     gate = QualityGate(max_delay_min=600, min_delay_min=-120)
     events = [
-        StationEvent("12034", "2026-08-27", 1, "CNB", "06:00", "06:00", "06:05", "06:05", 0, 0, "2026-08-27T06:00:00+05:30"),
-        StationEvent("12034", "2026-08-27", 2, "ALJN", "08:30", "19:00", "08:35", "19:05", 630, 630, "2026-08-27T08:30:00+05:30"), # >600m
-        StationEvent("12034", "2026-08-27", 3, "NDLS", "10:30", "10:45", "10:30", "10:45", 15, 15, "2026-08-27T10:30:00+05:30"),
+        StationEvent(
+            "12034",
+            "2026-08-27",
+            1,
+            "CNB",
+            "06:00",
+            "06:00",
+            "06:05",
+            "06:05",
+            0,
+            0,
+            "2026-08-27T06:00:00+05:30",
+        ),
+        StationEvent(
+            "12034",
+            "2026-08-27",
+            2,
+            "ALJN",
+            "08:30",
+            "19:00",
+            "08:35",
+            "19:05",
+            630,
+            630,
+            "2026-08-27T08:30:00+05:30",
+        ),  # >600m
+        StationEvent(
+            "12034",
+            "2026-08-27",
+            3,
+            "NDLS",
+            "10:30",
+            "10:45",
+            "10:30",
+            "10:45",
+            15,
+            15,
+            "2026-08-27T10:30:00+05:30",
+        ),
     ]
     report = gate.validate_events(events)
     assert report.passed_count == 2
@@ -57,8 +94,32 @@ def test_quality_gate_monotonicity():
     """Verifies that actual arrival times going backwards are quarantined."""
     gate = QualityGate()
     events = [
-        StationEvent("12034", "2026-08-27", 1, "CNB", "06:00", "06:00", "06:05", "06:05", 0, 0, "2026-08-27T06:00:00+05:30"),
-        StationEvent("12034", "2026-08-27", 2, "ALJN", "08:30", "05:30", "08:35", "05:35", 0, 0, "2026-08-27T08:30:00+05:30"), # Non-monotonic
+        StationEvent(
+            "12034",
+            "2026-08-27",
+            1,
+            "CNB",
+            "06:00",
+            "06:00",
+            "06:05",
+            "06:05",
+            0,
+            0,
+            "2026-08-27T06:00:00+05:30",
+        ),
+        StationEvent(
+            "12034",
+            "2026-08-27",
+            2,
+            "ALJN",
+            "08:30",
+            "05:30",
+            "08:35",
+            "05:35",
+            0,
+            0,
+            "2026-08-27T08:30:00+05:30",
+        ),  # Non-monotonic
     ]
     report = gate.validate_events(events)
     assert report.passed_count == 1

@@ -11,9 +11,8 @@ leakage-free track context features for ML brain models:
 
 from __future__ import annotations
 
-import datetime
-import math
 from typing import Dict, List, Optional, Tuple
+
 import networkx as nx
 
 from data.db import Database, get_db
@@ -50,7 +49,9 @@ class TrackGraph:
                 )
 
             # 2. Sections
-            cur.execute("SELECT from_code, to_code, distance_km, single_line, max_speed_kmph FROM sections")
+            cur.execute(
+                "SELECT from_code, to_code, distance_km, single_line, max_speed_kmph FROM sections"
+            )
             for sec in cur.fetchall():
                 u, v = sec["from_code"], sec["to_code"]
                 sec_dict = {
@@ -185,7 +186,9 @@ class TrackGraph:
         headways_next_stn: List[float] = []
 
         # Reference scheduled arrival at next station
-        sched_arr_next = route[current_seq]["sched_arr"] if current_seq < len(route) else curr_stop["sched_arr"]
+        sched_arr_next = (
+            route[current_seq]["sched_arr"] if current_seq < len(route) else curr_stop["sched_arr"]
+        )
         try:
             h_ref, m_ref = map(int, sched_arr_next.split(":"))
             ref_min_of_day = h_ref * 60 + m_ref
@@ -206,7 +209,7 @@ class TrackGraph:
             o_delay = float(ot["delay_arr_min"] or 0.0)
 
             # Check if trains share corridor direction
-            same_direction = (self._routes_dest.get(o_no) == my_dest)
+            same_direction = self._routes_dest.get(o_no) == my_dest
 
             if same_direction:
                 dist_delta = o_km - curr_km
@@ -241,4 +244,3 @@ class TrackGraph:
             "sum_delay_trains_ahead_30k": float(sum_delay_ahead),
             "section_occupancy_pct": float(section_occupancy),
         }
-

@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """(a) 4.11-digit-coincidence recompute  (b) PIT histogram from gate artifacts
 (c) full-suite execution."""
 import sys, os, subprocess

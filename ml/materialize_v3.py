@@ -7,13 +7,14 @@ isolation ($t \\le \\text{as\\_of}$) across the locked temporal splits:
 - BENCH_v3: 2025-11-30 to 2026-01-01 (Fog Core, SEALED)
 - BENCH_NORMAL: 2026-02-01 to 2026-08-31 (SEALED)
 """
+
 from __future__ import annotations
 
 import datetime as dt
 import sqlite3
 import sys
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -84,8 +85,12 @@ def materialize_v3_snapshots(
     with con:
         con.execute(DDL)
         con.execute("CREATE INDEX IF NOT EXISTS idx_v3_run_date ON feature_snapshots_v3(run_date);")
-        con.execute("CREATE INDEX IF NOT EXISTS idx_v3_train_date ON feature_snapshots_v3(train_no, run_date);")
-        con.execute("CREATE INDEX IF NOT EXISTS idx_v3_horizon ON feature_snapshots_v3(horizon_min);")
+        con.execute(
+            "CREATE INDEX IF NOT EXISTS idx_v3_train_date ON feature_snapshots_v3(train_no, run_date);"
+        )
+        con.execute(
+            "CREATE INDEX IF NOT EXISTS idx_v3_horizon ON feature_snapshots_v3(horizon_min);"
+        )
         con.execute("DELETE FROM feature_snapshots_v3;")
 
     print("[INFO] Querying target journeys from station_events...", flush=True)
@@ -190,7 +195,10 @@ def materialize_v3_snapshots(
                 snapshots_to_insert.clear()
 
         if idx > 0 and idx % 10000 == 0:
-            print(f"  Processed {idx:,}/{len(targets):,} target stops ({total_inserted:,} snapshots inserted)...", flush=True)
+            print(
+                f"  Processed {idx:,}/{len(targets):,} target stops ({total_inserted:,} snapshots inserted)...",
+                flush=True,
+            )
 
     if snapshots_to_insert:
         with con:

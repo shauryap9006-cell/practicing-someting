@@ -1,6 +1,6 @@
-import urllib.request
-import urllib.parse
 import json
+import urllib.parse
+import urllib.request
 
 query = """
 [out:json][timeout:60];
@@ -17,9 +17,7 @@ out skel qt;
 
 url = "https://overpass-api.de/api/interpreter"
 req = urllib.request.Request(
-    url,
-    data=query.encode("utf-8"),
-    headers={"User-Agent": "RailTwinX-TrackGeometryExtractor/1.0"}
+    url, data=query.encode("utf-8"), headers={"User-Agent": "RailTwinX-TrackGeometryExtractor/1.0"}
 )
 
 try:
@@ -31,6 +29,9 @@ try:
         nodes = {e["id"]: (e["lon"], e["lat"]) for e in elements if e.get("type") == "node"}
         print(f"Relations: {len(relations)}, Ways: {len(ways)}, Nodes: {len(nodes)}")
         for r in relations:
-            print("Found route:", r.get("tags", {}).get("name", "Unknown").encode("ascii", "ignore").decode())
+            print(
+                "Found route:",
+                r.get("tags", {}).get("name", "Unknown").encode("ascii", "ignore").decode(),
+            )
 except Exception as e:
     print("Error:", e)

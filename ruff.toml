@@ -1,0 +1,77 @@
+# Ruff configuration for RailTwin-X
+line-length = 100
+target-version = "py311"
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "node_modules",
+    "web",
+    "livewall",
+    "dist",
+    "build",
+    "__pycache__",
+    "_archive",
+]
+
+[lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = [
+    # E501: Line length handled by formatter / long SQL & prompt strings
+    "E501",
+    # E402: Module level import not at top of file (sys.path / config bootstrapping in scripts & tests)
+    "E402",
+    # E401: Multiple imports on one line in legacy scripts
+    "E401",
+    # E741: Ambiguous variable names (e.g. single-letter index variables in math formulas)
+    "E741",
+    # E702: Multiple statements on one line in legacy helpers
+    "E702",
+    # W291: Trailing whitespace (handled by formatter)
+    "W291",
+    # W293: Blank line contains whitespace (handled by formatter)
+    "W293",
+    # B006: Mutable default arguments in legacy models/helpers
+    "B006",
+    # B007: Loop control variable not used
+    "B007",
+    # B008: Do not perform function call in argument defaults (FastAPI Depends/Query pattern)
+    "B008",
+    # B904: Within except clause, raise ... from err (legacy exception chaining)
+    "B904",
+    # B905: zip() without an explicit strict= parameter
+    "B905",
+    # F811: Redefinition of unused name / pytest test fixtures & overloads
+    "F811",
+    # F841: Local variable assigned to but never used in scripts and test assertions
+    "F841",
+    # F541: f-string without placeholders in legacy loggers
+    "F541",
+    # UP006: Use type instead of Type
+    "UP006",
+    # UP007: Use X | Y for type annotations (compatibility with older typing)
+    "UP007",
+    # UP015: Redundant open mode parameter
+    "UP015",
+    # UP017: datetime.timezone.utc vs datetime.UTC
+    "UP017",
+    # UP032: Use f-string instead of format call
+    "UP032",
+    # UP034: Avoid extraneous parentheses to unpack
+    "UP034",
+    # UP035: Deprecated typing imports
+    "UP035",
+    # UP037: Remove quotes from type annotation
+    "UP037",
+    # UP041: Use builtin timeout error
+    "UP041",
+    # UP042: Class inherits from object
+    "UP042",
+    # UP045: Use X | None instead of Optional[X] in legacy type annotations
+    "UP045",
+]
+
+[format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"

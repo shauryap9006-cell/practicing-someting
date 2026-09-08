@@ -8,9 +8,10 @@ conformal 80% coverage.
 from __future__ import annotations
 
 import json
+import random
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-import random
+
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
@@ -49,7 +50,7 @@ class Evaluator:
     def _load_models(self, prefix: str) -> Dict[float, lgb.Booster]:
         models = {}
         for q in settings.QUANTILE_ALPHAS:
-            path = self.artifacts_dir / f"{prefix}_q{int(q*100)}.txt"
+            path = self.artifacts_dir / f"{prefix}_q{int(q * 100)}.txt"
             if not path.exists():
                 raise FileNotFoundError(f"Model file not found: {path}")
             models[q] = lgb.Booster(model_file=str(path))
@@ -97,11 +98,13 @@ class Evaluator:
             if lr_path.exists():
                 try:
                     import joblib
+
                     lr_model = joblib.load(lr_path)
                 except Exception:
                     pass
             if lr_model is None:
                 from sklearn.linear_model import LinearRegression
+
                 lr_model = LinearRegression()
                 split_info = self.manifest.get("split_info", {})
                 start_d = split_info.get("start_date", "2026-07-31")
@@ -163,7 +166,9 @@ class Evaluator:
         return p10, p50, p90
 
     @staticmethod
-    def compute_winkler_score(y_true: np.ndarray, p10: np.ndarray, p90: np.ndarray, alpha: float = 0.20) -> float:
+    def compute_winkler_score(
+        y_true: np.ndarray, p10: np.ndarray, p90: np.ndarray, alpha: float = 0.20
+    ) -> float:
         """Computes Winkler interval score for sharpness + coverage: W = (u-l) + (2/alpha)*(l-y)*1{y<l} + (2/alpha)*(y-u)*1{y>u}."""
         width = p90 - p10
         under_penalty = (2.0 / alpha) * np.maximum(0.0, p10 - y_true)
@@ -172,7 +177,9 @@ class Evaluator:
         return float(np.mean(scores))
 
     @staticmethod
-    def compute_crps(y_true: np.ndarray, p10: np.ndarray, p50: np.ndarray, p90: np.ndarray) -> float:
+    def compute_crps(
+        y_true: np.ndarray, p10: np.ndarray, p50: np.ndarray, p90: np.ndarray
+    ) -> float:
         """Computes Continuous Ranked Probability Score (CRPS) averaged over quantile pinball losses."""
         losses = []
         for q, pred in zip([0.1, 0.5, 0.9], [p10, p50, p90]):
@@ -191,6 +198,7 @@ class Evaluator:
     ) -> Dict[str, Dict[str, str]]:
         """Constructs strictly disjoint (Train / Calibration / Test) splits with an embargo gap to prevent leakage."""
         import datetime
+
         min_d = datetime.date.fromisoformat(min_date_str)
         max_d = datetime.date.fromisoformat(max_date_str)
         total_days = (max_d - min_d).days + 1
@@ -210,11 +218,17 @@ class Evaluator:
         test_end = max_d
 
         return {
-            "train": {"start": train_start.strftime("%Y-%m-%d"), "end": train_end.strftime("%Y-%m-%d")},
+            "train": {
+                "start": train_start.strftime("%Y-%m-%d"),
+                "end": train_end.strftime("%Y-%m-%d"),
+            },
             "embargo_1": {"days": embargo_days},
             "cal": {"start": cal_start.strftime("%Y-%m-%d"), "end": cal_end.strftime("%Y-%m-%d")},
             "embargo_2": {"days": embargo_days},
-            "test": {"start": test_start.strftime("%Y-%m-%d"), "end": test_end.strftime("%Y-%m-%d")},
+            "test": {
+                "start": test_start.strftime("%Y-%m-%d"),
+                "end": test_end.strftime("%Y-%m-%d"),
+            },
         }
 
     def run_rolling_origin_cv(
@@ -225,6 +239,7 @@ class Evaluator:
     ) -> List[Dict]:
         """Runs 6-fold rolling-origin (prequential) cross-validation grouped by (train_no, run_date)."""
         import datetime
+
         min_test_samples = min_test_samples or getattr(settings, "MIN_TEST_SAMPLES", 1000)
 
         # Dense evaluation corridor anchor dates
@@ -253,7 +268,11 @@ class Evaluator:
         min_train_days = 7
         span_needed = 2 * embargo_days + 2
         available_steps = total_days - min_train_days - span_needed
-        step_days = max(1, available_steps // max(1, num_folds - 1)) if total_days >= min_train_days + span_needed else 1
+        step_days = (
+            max(1, available_steps // max(1, num_folds - 1))
+            if total_days >= min_train_days + span_needed
+            else 1
+        )
         base_train_offset = min_train_days if total_days >= min_train_days + span_needed else 3
 
         standard_test_span = 2  # standard fold span in days (inclusive)
@@ -285,7 +304,9 @@ class Evaluator:
             }
 
             try:
-                test_df = self.snapshot_gen.build_dataset(fold_info["test_start"], fold_info["test_end"], fold_info["train_end"])
+                test_df = self.snapshot_gen.build_dataset(
+                    fold_info["test_start"], fold_info["test_end"], fold_info["train_end"]
+                )
                 fold_samples = len(test_df) if test_df is not None else 0
                 if fold_samples > 0:
                     y_true = test_df["target_direct_delay"].values
@@ -295,17 +316,37 @@ class Evaluator:
                     winkler = self.compute_winkler_score(y_true, p10, p90)
                     crps = self.compute_crps(y_true, p10, p50, p90)
 
-                    fold_info.update({
-                        "samples": fold_samples,
-                        "mae": round(mae, 2),
-                        "coverage_80": round(cov, 1),
-                        "winkler_score": round(winkler, 2),
-                        "crps": round(crps, 2),
-                    })
+                    fold_info.update(
+                        {
+                            "samples": fold_samples,
+                            "mae": round(mae, 2),
+                            "coverage_80": round(cov, 1),
+                            "winkler_score": round(winkler, 2),
+                            "crps": round(crps, 2),
+                        }
+                    )
                 else:
-                    fold_info.update({"samples": 0, "reason": "empty_date_range", "mae": None, "coverage_80": None, "winkler_score": None, "crps": None})
+                    fold_info.update(
+                        {
+                            "samples": 0,
+                            "reason": "empty_date_range",
+                            "mae": None,
+                            "coverage_80": None,
+                            "winkler_score": None,
+                            "crps": None,
+                        }
+                    )
             except Exception as e:
-                fold_info.update({"error": str(e), "samples": 0, "mae": None, "coverage_80": None, "winkler_score": None, "crps": None})
+                fold_info.update(
+                    {
+                        "error": str(e),
+                        "samples": 0,
+                        "mae": None,
+                        "coverage_80": None,
+                        "winkler_score": None,
+                        "crps": None,
+                    }
+                )
 
             # Guard: MIN_TEST_SAMPLES & Truncated Tail Window
             samples_cnt = fold_info.get("samples") or 0
@@ -333,6 +374,7 @@ class Evaluator:
     def evaluate_test_set(self) -> dict:
         """Evaluates on held-out test week and generates F14 proof table with B1/B2/B3 comparisons."""
         import datetime
+
         split_info = self.manifest.get("split_info", {})
         test_start = split_info.get("test_start")
         test_end = split_info.get("test_end")
@@ -376,12 +418,16 @@ class Evaluator:
 
         # 3. Baseline B3: Scikit-Learn Linear Regression trained on train_core
         from sklearn.linear_model import LinearRegression
+
         lr_bench_path = self.artifacts_dir / "model_lr_benchmark.pkl"
         if lr_bench_path.exists():
             import joblib
+
             lr_bench = joblib.load(lr_bench_path)
         else:
-            train_df = self.snapshot_gen.build_dataset(start_date or "2026-07-31", train_cutoff, train_cutoff)
+            train_df = self.snapshot_gen.build_dataset(
+                start_date or "2026-07-31", train_cutoff, train_cutoff
+            )
             lr_bench = LinearRegression()
             lr_bench.fit(train_df[FEATURE_NAMES], train_df["target_direct_delay"])
         b3_pred = np.maximum(0.0, lr_bench.predict(test_df[FEATURE_NAMES]))
@@ -426,20 +472,22 @@ class Evaluator:
             winkler_h = self.compute_winkler_score(y_h, p10_h, p90_h)
             crps_h = self.compute_crps(y_h, p10_h, rt_h, p90_h)
 
-            proof_table.append({
-                "Horizon": h_name,
-                "Samples (n)": n_samples,
-                "B1 (Frozen)": f"{mae_b1:.1f} min",
-                "B2 (Official)": f"{mae_b2:.1f} min",
-                "B3 (Linear Reg)": f"{mae_b3:.1f} min",
-                "RailTwin-X MAE": f"**{mae_rt:.1f} +/- {ci_95:.2f} min**",
-                "HitRate (<=10m)": f"{hit_rate_10:.1f}%",
-                "80% Band Coverage": f"{coverage_80:.1f}%",
-                "Winkler Score": f"{winkler_h:.2f}",
-                "CRPS": f"{crps_h:.2f}",
-                "Improvement vs B2": f"**{((mae_b2 - mae_rt)/mae_b2)*100:.1f}%**",
-                "Improvement vs B3": f"**{((mae_b3 - mae_rt)/mae_b3)*100:.1f}%**",
-            })
+            proof_table.append(
+                {
+                    "Horizon": h_name,
+                    "Samples (n)": n_samples,
+                    "B1 (Frozen)": f"{mae_b1:.1f} min",
+                    "B2 (Official)": f"{mae_b2:.1f} min",
+                    "B3 (Linear Reg)": f"{mae_b3:.1f} min",
+                    "RailTwin-X MAE": f"**{mae_rt:.1f} +/- {ci_95:.2f} min**",
+                    "HitRate (<=10m)": f"{hit_rate_10:.1f}%",
+                    "80% Band Coverage": f"{coverage_80:.1f}%",
+                    "Winkler Score": f"{winkler_h:.2f}",
+                    "CRPS": f"{crps_h:.2f}",
+                    "Improvement vs B2": f"**{((mae_b2 - mae_rt) / mae_b2) * 100:.1f}%**",
+                    "Improvement vs B3": f"**{((mae_b3 - mae_rt) / mae_b3) * 100:.1f}%**",
+                }
+            )
 
             metrics_by_horizon[h_name] = {
                 "n_samples": n_samples,
@@ -452,8 +500,8 @@ class Evaluator:
                 "coverage_80_percent": coverage_80,
                 "winkler_score": winkler_h,
                 "crps": crps_h,
-                "improvement_vs_b2_percent": ((mae_b2 - mae_rt)/mae_b2)*100,
-                "improvement_vs_b3_percent": ((mae_b3 - mae_rt)/mae_b3)*100,
+                "improvement_vs_b2_percent": ((mae_b2 - mae_rt) / mae_b2) * 100,
+                "improvement_vs_b3_percent": ((mae_b3 - mae_rt) / mae_b3) * 100,
             }
 
         overall_errors = np.abs(railtwin_pred - y_true)
@@ -464,7 +512,9 @@ class Evaluator:
 
         # Run 6-fold rolling-origin CV
         min_test_samples = getattr(settings, "MIN_TEST_SAMPLES", 1000)
-        cv_folds = self.run_rolling_origin_cv(num_folds=6, embargo_days=2, min_test_samples=min_test_samples)
+        cv_folds = self.run_rolling_origin_cv(
+            num_folds=6, embargo_days=2, min_test_samples=min_test_samples
+        )
         valid_folds = [
             f
             for f in cv_folds
@@ -545,12 +595,16 @@ class Evaluator:
             print("\n===== PER-CLASS METRICS (F12) =====")
             for cls_name, m in per_class_metrics.items():
                 star = " <-- PS TARGET" if cls_name == "coaching" else ""
-                print(f"  {cls_name:10s}: n={m['n']:6,}  MAE={m['mae']:.2f}  Coverage={m['coverage_80']:.1f}%  Winkler={m['winkler']:.2f}{star}")
+                print(
+                    f"  {cls_name:10s}: n={m['n']:6,}  MAE={m['mae']:.2f}  Coverage={m['coverage_80']:.1f}%  Winkler={m['winkler']:.2f}{star}"
+                )
 
             if "coaching" in per_class_metrics:
                 coaching_mae = per_class_metrics["coaching"]["mae"]
                 summary["coaching_mae_headline"] = coaching_mae
-                print(f"\n  [HEADLINE] Coaching MAE = {coaching_mae:.2f} min (PS-26028 primary target)")
+                print(
+                    f"\n  [HEADLINE] Coaching MAE = {coaching_mae:.2f} min (PS-26028 primary target)"
+                )
 
         summary["per_class"] = per_class_metrics
 
@@ -559,14 +613,29 @@ class Evaluator:
         with open(metrics_file, "w", encoding="utf-8") as f:
             json.dump(summary, f, indent=2)
 
-        print("\n======================= F14 PROOF TABLE (Held-Out Test Week) =======================")
-        headers = ["Horizon", "Samples (n)", "B1 (Frozen)", "B2 (Official)", "B3 (Linear Reg)", "RailTwin-X MAE", "HitRate (<=10m)", "80% Band Coverage", "Improvement vs B2", "Improvement vs B3"]
+        print(
+            "\n======================= F14 PROOF TABLE (Held-Out Test Week) ======================="
+        )
+        headers = [
+            "Horizon",
+            "Samples (n)",
+            "B1 (Frozen)",
+            "B2 (Official)",
+            "B3 (Linear Reg)",
+            "RailTwin-X MAE",
+            "HitRate (<=10m)",
+            "80% Band Coverage",
+            "Improvement vs B2",
+            "Improvement vs B3",
+        ]
         print("| " + " | ".join(headers) + " |")
         print("| " + " | ".join(["---"] * len(headers)) + " |")
         for row in proof_table:
             vals = [str(row[h]) for h in headers]
             print("| " + " | ".join(vals) + " |")
-        print("====================================================================================\n")
+        print(
+            "====================================================================================\n"
+        )
 
         return summary
 

@@ -14,9 +14,11 @@ import sys
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from pathlib import Path
+from typing import Any
 from uuid import uuid4
 
 from prometheus_fastapi_instrumentator import Instrumentator
+
 from engine.clocks import ist_now
 
 _current_request_id: ContextVar[str] = ContextVar("current_request_id", default="")
@@ -86,44 +88,46 @@ try:
 except Exception:
     pass
 
+import torch
+import uvicorn
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
+from starlette.responses import Response
 from starlette.staticfiles import StaticFiles
 from starlette.types import Scope
-from starlette.responses import Response
-import torch
-import uvicorn
 
-from config import settings
-from data.db import get_db
-from api.routes import get_health, router as v1_router
-from api.auth_routes import router as auth_router
 from api.access_routes import router as access_router
-from api.audit_routes import router as audit_router
-from api.notification_routes import router as notification_router
-from api.timetable_routes import router as timetable_router
-from api.board_routes import router as board_router
-from api.platform_routes import router as platform_router
-from api.block_routes import router as block_router
-from api.planner_routes import router as planner_router
-from api.system_routes import router as system_router
-from api.safety_routes import router as safety_router
-from api.workforce_routes import router as workforce_router
-from api.section_routes import router as section_router
 from api.admin_routes import router as admin_router
+from api.audit_routes import router as audit_router
+from api.auth_routes import router as auth_router
+from api.block_routes import router as block_router
+from api.board_routes import router as board_router
+from api.commercial_routes import router as commercial_router
+from api.demo_routes import router as demo_router
 from api.handover_routes import router as handover_router
 from api.infra_routes import router as infra_router
-from api.ops_routes import router as ops_router
-from api.commercial_routes import router as commercial_router
-from api.live_routes import router as live_router
 from api.live_events_routes import router as live_events_router
-from api.demo_routes import router as demo_router
-from api.passenger_routes import router as passenger_router
-from engine.live_tracker import get_live_tracker
+from api.live_routes import router as live_router
 from api.middleware import IdempotencyMiddleware, ResponseCacheMiddleware, TokenBucketRateLimiter
+from api.notification_routes import router as notification_router
+from api.ops_routes import router as ops_router
+from api.passenger_routes import router as passenger_router
+from api.planner_routes import router as planner_router
+from api.platform_routes import router as platform_router
+from api.routes import get_health
+from api.routes import router as v1_router
+from api.safety_routes import router as safety_router
+from api.section_routes import router as section_router
+from api.system_routes import router as system_router
+from api.timetable_routes import router as timetable_router
+from api.workforce_routes import router as workforce_router
+from config import settings
+from data.db import get_db
+from engine.live_tracker import get_live_tracker
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -139,11 +143,15 @@ async def lifespan(app: FastAPI):
     db.init_schema()
     db.materialize_historical_baselines()
     counts = db.table_counts()
-    logger.info("SQLite Database initialized with %s station events.", f"{counts.get('station_events', 0):,}")
+    logger.info(
+        "SQLite Database initialized with %s station events.",
+        f"{counts.get('station_events', 0):,}",
+    )
 
     # Initialize SimulatedClock as global clock (F02, F28)
-    from engine.sim_clock import get_sim_clock
     from engine.clocks import set_global_clock
+    from engine.sim_clock import get_sim_clock
+
     sim_clock = get_sim_clock(db)
     set_global_clock(sim_clock)
 
@@ -156,6 +164,7 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down RailTwin-X API Server...")
     await tracker.stop()
     from engine.prediction_ledger import stop_flusher
+
     stop_flusher()
 
 
@@ -174,6 +183,7 @@ class RequestContextMiddleware:
 
         token = _current_request_id.set(request_id)
         try:
+
             async def send_with_request_id(message):
                 if message["type"] == "http.response.start":
                     headers = list(message.get("headers", []))
@@ -196,14 +206,19 @@ async def security_headers(request: Request, call_next):
     response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
     response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
-    response.headers.setdefault("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'; base-uri 'none'")
+    response.headers.setdefault(
+        "Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+    )
     if settings.ENV.strip().lower() == "production":
-        response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+        response.headers.setdefault(
+            "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
+        )
     return response
 
 
 def _error_payload(detail, status_code: int, request_id: str) -> dict:
     """Normalizes framework and application errors without leaking internals."""
+    safe_detail: Any
     if isinstance(detail, dict):
         code = str(detail.get("code", f"HTTP_{status_code}"))
         message = str(detail.get("message", "Request failed"))
@@ -229,7 +244,9 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     return JSONResponse(
         status_code=exc.status_code,
         headers=exc.headers,
-        content=_error_payload(exc.detail, exc.status_code, getattr(request.state, "request_id", "")),
+        content=_error_payload(
+            exc.detail, exc.status_code, getattr(request.state, "request_id", "")
+        ),
     )
 
 
@@ -252,7 +269,9 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 async def unhandled_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code=500,
-        content=_error_payload("Internal server error", 500, getattr(request.state, "request_id", "")),
+        content=_error_payload(
+            "Internal server error", 500, getattr(request.state, "request_id", "")
+        ),
     )
 
 
@@ -267,8 +286,8 @@ app = FastAPI(
 
 app.middleware("http")(security_headers)
 
-app.add_exception_handler(HTTPException, http_exception_handler)
-app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(HTTPException, http_exception_handler)  # type: ignore[arg-type]
+app.add_exception_handler(RequestValidationError, validation_exception_handler)  # type: ignore[arg-type]
 app.add_exception_handler(Exception, unhandled_exception_handler)
 
 # HTTP Compression Middleware (F35)
@@ -351,7 +370,6 @@ def liveness_probe():
 def readiness_probe():
     """Readiness probe backed by the same dependency/model checks as /v1/health."""
     return get_health()
-
 
 
 from starlette.exceptions import HTTPException as StarletteHTTPException

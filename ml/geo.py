@@ -3,6 +3,7 @@
 Calculates Haversine distances between corridor stations and the 12 weather stations,
 producing a deterministic lookup table for weather feature resolution.
 """
+
 from __future__ import annotations
 
 import json
@@ -29,7 +30,10 @@ WEATHER_STATIONS = {
 def haversine_km(a: Tuple[float, float], b: Tuple[float, float]) -> float:
     """Calculates great-circle distance between two (lat, lon) pairs in kilometers."""
     la1, lo1, la2, lo2 = map(math.radians, (a[0], a[1], b[0], b[1]))
-    h = math.sin((la2 - la1) / 2) ** 2 + math.cos(la1) * math.cos(la2) * math.sin((lo2 - lo1) / 2) ** 2
+    h = (
+        math.sin((la2 - la1) / 2) ** 2
+        + math.cos(la1) * math.cos(la2) * math.sin((lo2 - lo1) / 2) ** 2
+    )
     return 2 * 6371 * math.asin(math.sqrt(max(0.0, min(1.0, h))))
 
 
@@ -61,4 +65,6 @@ def build_nearest_station_map(
 
 if __name__ == "__main__":
     m = build_nearest_station_map()
-    print(f"Mapped {len(m)} stations to 12 weather stations. Saved to data/seeds/weather_station_map.json")
+    print(
+        f"Mapped {len(m)} stations to 12 weather stations. Saved to data/seeds/weather_station_map.json"
+    )

@@ -3,6 +3,7 @@
 24 features, all causal, point-in-time ($t \\le \\text{as\\_of}$), single source of truth
 for training dataset materialization and live prediction serving (zero train/serve skew).
 """
+
 from __future__ import annotations
 
 import bisect
@@ -13,13 +14,12 @@ import sqlite3
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from data.db import Database, get_db
 
 FEATURE_VERSION = 3
 HORIZONS_MIN = (60, 180, 360)
@@ -69,6 +69,7 @@ PRIORITY_MAP = {
 @dataclass
 class FeatureSnapshotV3:
     """Strongly typed 24-dimensional feature snapshot."""
+
     train_no: str
     run_date: str
     target_station: str
@@ -150,7 +151,13 @@ class V3FeatureBuilder:
             )
             for r in cur.fetchall():
                 ts_raw = str(r[6]).replace("T", " ").split("+")[0].split("Z")[0].strip()
-                ts_str = ts_raw if len(ts_raw) == 19 else f"{ts_raw}:00" if len(ts_raw) == 16 else f"{ts_raw} 00:00:00"
+                ts_str = (
+                    ts_raw
+                    if len(ts_raw) == 19
+                    else f"{ts_raw}:00"
+                    if len(ts_raw) == 16
+                    else f"{ts_raw} 00:00:00"
+                )
                 # Parse minute of day
                 try:
                     time_part = ts_str.split(" ")[1]
@@ -172,12 +179,15 @@ class V3FeatureBuilder:
                 }
                 self.events_by_journey.setdefault((d["train_no"], d["run_date"]), []).append(d)
                 self.events_by_date.setdefault(d["run_date"], []).append(d)
-                self.events_by_date_minute.setdefault(d["run_date"], {}).setdefault(min_of_day, []).append(d)
+                self.events_by_date_minute.setdefault(d["run_date"], {}).setdefault(
+                    min_of_day, []
+                ).append(d)
         except Exception:
             pass
 
     def _load_static(self) -> None:
         """Loads static JSON registries into fast memory indexes."""
+
         def load_seed(filename: str) -> Any:
             path = self.seeds_dir / filename
             if not path.exists():
@@ -214,7 +224,10 @@ class V3FeatureBuilder:
             self.rake_links = load_seed("rake_links.json")
 
         self.rake_out_map: Dict[str, Dict[str, Any]] = {}
-        for l in sorted(self.rake_links, key=lambda x: (1 if x.get("source") == "seed" else 0, float(x.get("corr", 0.0)))):
+        for l in sorted(
+            self.rake_links,
+            key=lambda x: (1 if x.get("source") == "seed" else 0, float(x.get("corr", 0.0))),
+        ):
             outg = str(l.get("outgoing") or l.get("outgoing_train"))
             self.rake_out_map[outg] = l
 
@@ -222,6 +235,7 @@ class V3FeatureBuilder:
         self.weather_map = load_seed("weather_station_map.json")
         if not self.weather_map:
             from ml.geo import build_nearest_station_map
+
             self.weather_map = build_nearest_station_map()
 
         # Cumulative distances from route_cum_km table
@@ -232,18 +246,26 @@ class V3FeatureBuilder:
 
         rows = []
         try:
-            cur = self.con.execute("SELECT train_no, station_code, seq, cum_km FROM route_cum_km ORDER BY train_no, seq")
+            cur = self.con.execute(
+                "SELECT train_no, station_code, seq, cum_km FROM route_cum_km ORDER BY train_no, seq"
+            )
             rows = cur.fetchall()
         except Exception as e_cum:
             import logging
-            logging.warning(f"[WARN] Failed to query route_cum_km, falling back to route_stations: {e_cum}")
+
+            logging.warning(
+                f"[WARN] Failed to query route_cum_km, falling back to route_stations: {e_cum}"
+            )
 
         if not rows:
             try:
-                cur = self.con.execute("SELECT train_no, station_code, seq, distance_km FROM route_stations ORDER BY train_no, seq")
+                cur = self.con.execute(
+                    "SELECT train_no, station_code, seq, distance_km FROM route_stations ORDER BY train_no, seq"
+                )
                 rows = cur.fetchall()
             except Exception as e_rs:
                 import logging
+
                 logging.error(f"[ERROR] Failed to query route_stations fallback: {e_rs}")
                 rows = []
 
@@ -284,7 +306,9 @@ class V3FeatureBuilder:
                 """
             )
             for r in cur.fetchall():
-                self.weather_hourly_cache[(str(r["station_code"]), str(r["date"]), int(r["hour"]))] = (
+                self.weather_hourly_cache[
+                    (str(r["station_code"]), str(r["date"]), int(r["hour"]))
+                ] = (
                     float(r["temperature_2m"] or 20.0),
                     float(r["precipitation"] or 0.0),
                     int(r["fog_flag"] or 0),
@@ -365,19 +389,29 @@ class V3FeatureBuilder:
         if obs_events:
             last_event = obs_events[-1]
             last_stn = str(last_event["station_code"])
-            current_delay = float(last_event["delay_arr_min"] if last_event["delay_arr_min"] is not None else (last_event["delay_dep_min"] or 0.0))
+            current_delay = float(
+                last_event["delay_arr_min"]
+                if last_event["delay_arr_min"] is not None
+                else (last_event["delay_dep_min"] or 0.0)
+            )
             last_km = float(last_event["cum_km"] or 0.0)
             last_ts_str = str(last_event["event_time"])
 
             try:
                 last_dt = dt.datetime.fromisoformat(last_ts_str).replace(tzinfo=None)
-                staleness_min = max(0.0, (as_of_dt.replace(tzinfo=None) - last_dt).total_seconds() / 60.0)
+                staleness_min = max(
+                    0.0, (as_of_dt.replace(tzinfo=None) - last_dt).total_seconds() / 60.0
+                )
             except Exception:
                 staleness_min = 0.0
 
             if len(obs_events) >= 2:
                 prev_event = obs_events[-2]
-                prev_delay = float(prev_event["delay_arr_min"] if prev_event["delay_arr_min"] is not None else (prev_event["delay_dep_min"] or 0.0))
+                prev_delay = float(
+                    prev_event["delay_arr_min"]
+                    if prev_event["delay_arr_min"] is not None
+                    else (prev_event["delay_dep_min"] or 0.0)
+                )
                 delay_velocity = current_delay - prev_delay
             else:
                 delay_velocity = 0.0
@@ -395,7 +429,11 @@ class V3FeatureBuilder:
         km_remaining = max(0.0, target_km - last_km)
 
         sched_min_to_target = max(
-            0.0, (sched_arr_target_dt.replace(tzinfo=None) - as_of_dt.replace(tzinfo=None)).total_seconds() / 60.0
+            0.0,
+            (
+                sched_arr_target_dt.replace(tzinfo=None) - as_of_dt.replace(tzinfo=None)
+            ).total_seconds()
+            / 60.0,
         )
 
         # 3. Diurnal & Calendar signals
@@ -432,7 +470,11 @@ class V3FeatureBuilder:
                 if sr["train_no"] == train_no:
                     continue
                 other_km = sr["cum_km"]
-                other_delay = float(sr["delay_arr_min"] if sr["delay_arr_min"] is not None else (sr["delay_dep_min"] or 0.0))
+                other_delay = float(
+                    sr["delay_arr_min"]
+                    if sr["delay_arr_min"] is not None
+                    else (sr["delay_dep_min"] or 0.0)
+                )
                 delta_km = other_km - last_km
 
                 if 0.0 < delta_km <= 30.0:
@@ -460,21 +502,32 @@ class V3FeatureBuilder:
                 inc_events = self.events_by_journey.get((inc_train, prev_date), [])
 
             matching = [
-                e for e in inc_events
+                e
+                for e in inc_events
                 if e["station_code"] == term_stn and e["event_time"] <= as_of_str
             ]
             if matching:
                 last_inc = matching[-1]
-                inc_delay = float(last_inc["delay_arr_min"] if last_inc["delay_arr_min"] is not None else (last_inc["delay_dep_min"] or 0.0))
+                inc_delay = float(
+                    last_inc["delay_arr_min"]
+                    if last_inc["delay_arr_min"] is not None
+                    else (last_inc["delay_dep_min"] or 0.0)
+                )
             elif inc_events:
                 # If incoming journey happened earlier without terminal stop event recorded, take max observed delay
-                delays = [float(e["delay_arr_min"] or e["delay_dep_min"] or 0.0) for e in inc_events if e["event_time"] <= as_of_str]
+                delays = [
+                    float(e["delay_arr_min"] or e["delay_dep_min"] or 0.0)
+                    for e in inc_events
+                    if e["event_time"] <= as_of_str
+                ]
                 inc_delay = float(delays[-1]) if delays else 0.0
             else:
                 inc_delay = 0.0
 
             upstream_rake_net_delay = max(0.0, inc_delay - turnaround_buf)
-            upstream_rake_buf_pct = min(100.0, max(0.0, (inc_delay / max(1.0, turnaround_buf)) * 100.0))
+            upstream_rake_buf_pct = min(
+                100.0, max(0.0, (inc_delay / max(1.0, turnaround_buf)) * 100.0)
+            )
         else:
             rake_linked = 0.0
             upstream_rake_net_delay = 0.0
@@ -489,7 +542,9 @@ class V3FeatureBuilder:
         cur_seq = self.route_seq_map.get((train_no, last_stn), 0) if obs_events else 0
 
         route_stations_list = [
-            stn for stn, s_idx, _ in self.train_routes.get(train_no, []) if cur_seq <= s_idx <= target_seq
+            stn
+            for stn, s_idx, _ in self.train_routes.get(train_no, [])
+            if cur_seq <= s_idx <= target_seq
         ]
         route_station_set = set(route_stations_list)
 

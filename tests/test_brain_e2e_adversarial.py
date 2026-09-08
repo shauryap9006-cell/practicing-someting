@@ -13,18 +13,16 @@ Validates 10 adversarial and edge-case drills across the complete API and Brain 
 10. Nominal on-time train (PROCEED_NOMINAL emitted, latency < 2s budget, human_ack_required = True)
 """
 
-import math
-import pytest
 from fastapi.testclient import TestClient
 
-from api.main import app
 from api.auth import create_access_token
-from api.brain import BrainOrchestrator
-from data.db import Database, get_db
-
+from api.main import app
+from data.db import get_db
 
 client = TestClient(app)
-AUTH_HEADERS = {"Authorization": f"Bearer {create_access_token({'sub': 'admin', 'role_id': 'admin'})}"}
+AUTH_HEADERS = {
+    "Authorization": f"Bearer {create_access_token({'sub': 'admin', 'role_id': 'admin'})}"
+}
 
 
 def test_e2e_1_missing_train_number():
@@ -48,6 +46,7 @@ def test_e2e_2_non_existent_train():
 def test_e2e_3_adversarial_nan_input():
     """Drill 3: Feature vector with NaN triggers safety interlock clamp and LOW tier."""
     from safety.interlock import validate_prediction_through_interlock
+
     report = validate_prediction_through_interlock(
         features={"current_delay": float("nan"), "km_remaining": 100.0, "hops_remaining": 2},
         raw_p10=10.0,
@@ -62,6 +61,7 @@ def test_e2e_3_adversarial_nan_input():
 def test_e2e_4_extreme_delay_underflow():
     """Drill 4: Extreme negative delay is clamped to physical bounds."""
     from safety.interlock import validate_prediction_through_interlock
+
     report = validate_prediction_through_interlock(
         features={"current_delay": -500.0, "km_remaining": 50.0, "hops_remaining": 1},
         raw_p10=-100.0,
@@ -76,6 +76,7 @@ def test_e2e_4_extreme_delay_underflow():
 def test_e2e_5_impossible_kinematic_recovery():
     """Drill 5: Rejecting unfeasible 120m delay recovery over 10km."""
     from safety.interlock import validate_prediction_through_interlock
+
     report = validate_prediction_through_interlock(
         features={"current_delay": 120.0, "km_remaining": 10.0, "hops_remaining": 1},
         raw_p10=0.0,
@@ -90,6 +91,7 @@ def test_e2e_5_impossible_kinematic_recovery():
 def test_e2e_6_model_quantile_crossing():
     """Drill 6: Inverted model quantiles clamped monotonically."""
     from safety.interlock import validate_prediction_through_interlock
+
     report = validate_prediction_through_interlock(
         features={"current_delay": 20.0, "km_remaining": 100.0, "hops_remaining": 2},
         raw_p10=50.0,
@@ -103,6 +105,7 @@ def test_e2e_6_model_quantile_crossing():
 def test_e2e_7_excessive_quantile_width():
     """Drill 7: Spread > 180m clamped."""
     from safety.interlock import validate_prediction_through_interlock
+
     report = validate_prediction_through_interlock(
         features={"current_delay": 20.0, "km_remaining": 100.0, "hops_remaining": 2},
         raw_p10=0.0,
@@ -116,6 +119,7 @@ def test_e2e_7_excessive_quantile_width():
 def test_e2e_8_single_line_opposing_conflict():
     """Drill 8: Opposing movements on single-line block produce hold_at_loop recommendation."""
     from engine.conflicts import ConflictRecord
+
     rec = ConflictRecord(
         conflict_id="CONF-1",
         target_train="12001",
@@ -134,6 +138,7 @@ def test_e2e_8_single_line_opposing_conflict():
 def test_e2e_9_station_headway_conflict():
     """Drill 9: Arrival headway < 5m triggers advisory alert."""
     from engine.conflicts import ConflictRecord
+
     rec = ConflictRecord(
         conflict_id="CONF-2",
         target_train="12001",

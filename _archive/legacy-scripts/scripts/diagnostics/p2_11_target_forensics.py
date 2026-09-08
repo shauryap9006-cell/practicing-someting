@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Per-split target bounds, units audit, quality-gate check, and era-null-rate confounder scan."""
 import sqlite3, gzip, shutil, json, sys, subprocess
 from pathlib import Path

@@ -55,9 +55,7 @@ class LiveSource(ABC):
         pass
 
     @abstractmethod
-    def fetch_running_status(
-        self, train_no: str, run_date: datetime.date
-    ) -> list[StationEvent]:
+    def fetch_running_status(self, train_no: str, run_date: datetime.date) -> list[StationEvent]:
         """Fetches and parses live running status into normalized StationEvents.
 
         Raises:

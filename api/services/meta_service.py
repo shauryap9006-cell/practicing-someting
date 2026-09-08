@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Tuple
+
 from data.db import Database
 
 
-def get_paginated_stations(db: Database, limit: int, offset: int) -> Tuple[List[Dict[str, Any]], int]:
+def get_paginated_stations(
+    db: Database, limit: int, offset: int
+) -> Tuple[List[Dict[str, Any]], int]:
     """Returns a page of stations and total station count."""
     with db.transaction() as cur:
         cur.execute("SELECT COUNT(*) AS count FROM stations")

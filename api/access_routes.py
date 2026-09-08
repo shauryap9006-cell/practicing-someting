@@ -2,16 +2,13 @@
 
 from __future__ import annotations
 
-from engine.clocks import now_iso
-
-from datetime import datetime, timezone
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from data.db import Database, get_db
-
+from engine.clocks import now_iso
 
 router = APIRouter(prefix="/api/access-requests", tags=["Access Requests"])
 
@@ -47,7 +44,9 @@ def create_access_request(
         existing = cur.fetchone()
         if existing:
             return AccessRequestResponse(
-                request_id=existing["request_id"], status="pending", requested_at=existing["requested_at"]
+                request_id=existing["request_id"],
+                status="pending",
+                requested_at=existing["requested_at"],
             )
         cur.execute(
             """

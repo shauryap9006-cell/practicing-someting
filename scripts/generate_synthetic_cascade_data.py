@@ -1,4 +1,4 @@
-﻿"""RailTwin-X Synthetic Cascade Data Generator (SimPy Engine).
+"""RailTwin-X Synthetic Cascade Data Generator (SimPy Engine).
 
 Runs parameterized discrete-event simulations over the corridor with stochastic shocks,
 generating causal attribution training records for the exact sim_ledger table.
@@ -10,7 +10,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import os
 import random
 import sys
 from pathlib import Path
@@ -68,9 +67,13 @@ def generate_synthetic_simulations(
         )
         total_ledger_events += len(events)
         if i % 25 == 0 or i == num_runs:
-            print(f"  [Run {i:03d}/{num_runs:03d}] Generated {len(events)} events (Cumulative: {total_ledger_events:,} ledger rows)")
+            print(
+                f"  [Run {i:03d}/{num_runs:03d}] Generated {len(events)} events (Cumulative: {total_ledger_events:,} ledger rows)"
+            )
 
-    print(f"[SUCCESS] Completed {num_runs} simulation runs. Total ledger events added: {total_ledger_events:,}")
+    print(
+        f"[SUCCESS] Completed {num_runs} simulation runs. Total ledger events added: {total_ledger_events:,}"
+    )
     return {
         "runs_executed": num_runs,
         "total_ledger_events_generated": total_ledger_events,
@@ -78,9 +81,15 @@ def generate_synthetic_simulations(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generate synthetic cascade delay datasets with SimPy.")
-    parser.add_argument("--runs", type=int, default=100, help="Number of simulation runs (default: 100)")
-    parser.add_argument("--hours", type=float, default=12.0, help="Hours per simulation (default: 12.0)")
+    parser = argparse.ArgumentParser(
+        description="Generate synthetic cascade delay datasets with SimPy."
+    )
+    parser.add_argument(
+        "--runs", type=int, default=100, help="Number of simulation runs (default: 100)"
+    )
+    parser.add_argument(
+        "--hours", type=float, default=12.0, help="Hours per simulation (default: 12.0)"
+    )
     args = parser.parse_args()
 
     summary = generate_synthetic_simulations(num_runs=args.runs, hours_per_run=args.hours)

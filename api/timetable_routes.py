@@ -6,10 +6,6 @@ train schedule CRUD, validation engine, bulk seed/RapidAPI import, and version d
 
 from __future__ import annotations
 
-from engine.clocks import get_clock, now_iso, ist_now
-
-import json
-from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -18,6 +14,7 @@ from pydantic import BaseModel, Field
 from api.auth import assert_station_scope, effective_station_scope, get_current_user, require_role
 from data.audit import record_audit
 from data.db import Database, get_db
+from engine.clocks import get_clock, ist_now
 from notifications.dispatcher import notify
 
 router = APIRouter(prefix="/api/timetable", tags=["Timetable Manager (A1)"])
@@ -75,8 +72,8 @@ def list_timetable_versions(
             GROUP BY v.id
             ORDER BY v.created_at DESC
             LIMIT ? OFFSET ?;
-            """
-            , (limit, offset)
+            """,
+            (limit, offset),
         )
         rows = cur.fetchall()
 
@@ -101,7 +98,9 @@ def list_timetable_versions(
 @router.post("/versions", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
 def create_timetable_version(
     req: TimetableVersionCreate,
-    current_user: Dict[str, Any] = Depends(require_role(["admin", "station_master", "section_controller"])),
+    current_user: Dict[str, Any] = Depends(
+        require_role(["admin", "station_master", "section_controller"])
+    ),
     db: Database = Depends(get_db),
 ):
     """Creates a new working timetable version in DRAFT state."""
@@ -211,7 +210,9 @@ def get_version_entries(
 @router.post("/entries", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
 def create_timetable_entry(
     req: TimetableEntryCreate,
-    current_user: Dict[str, Any] = Depends(require_role(["admin", "station_master", "section_controller"])),
+    current_user: Dict[str, Any] = Depends(
+        require_role(["admin", "station_master", "section_controller"])
+    ),
     db: Database = Depends(get_db),
 ):
     """Creates a new stop entry in a draft timetable version."""
@@ -221,9 +222,13 @@ def create_timetable_entry(
         cur.execute("SELECT status FROM timetable_versions WHERE id = ?;", (req.version_id,))
         v_row = cur.fetchone()
         if not v_row:
-            raise HTTPException(status_code=404, detail=f"Timetable version '{req.version_id}' not found.")
+            raise HTTPException(
+                status_code=404, detail=f"Timetable version '{req.version_id}' not found."
+            )
         if v_row["status"] != "draft":
-            raise HTTPException(status_code=400, detail="Cannot add entries to a published or archived timetable.")
+            raise HTTPException(
+                status_code=400, detail="Cannot add entries to a published or archived timetable."
+            )
 
         cur.execute(
             """
@@ -257,7 +262,11 @@ def create_timetable_entry(
             action="TIMETABLE_ENTRY_CREATED",
             table_name="timetable_entries",
             record_id=entry_id,
-            after_state={"train_no": req.train_no, "station_code": req.station_code, "stop_seq": req.stop_seq},
+            after_state={
+                "train_no": req.train_no,
+                "station_code": req.station_code,
+                "stop_seq": req.stop_seq,
+            },
         )
 
     return {"id": entry_id, "status": "created", "train_no": req.train_no}
@@ -267,7 +276,9 @@ def create_timetable_entry(
 def update_timetable_entry(
     entry_id: int,
     req: TimetableEntryUpdate,
-    current_user: Dict[str, Any] = Depends(require_role(["admin", "station_master", "section_controller"])),
+    current_user: Dict[str, Any] = Depends(
+        require_role(["admin", "station_master", "section_controller"])
+    ),
     db: Database = Depends(get_db),
 ):
     """Updates an existing timetable stop entry (e.g. schedule, platform, or cancellation)."""
@@ -275,11 +286,15 @@ def update_timetable_entry(
         cur.execute("SELECT * FROM timetable_entries WHERE id = ?;", (entry_id,))
         existing = cur.fetchone()
         if not existing:
-            raise HTTPException(status_code=404, detail=f"Timetable entry with ID {entry_id} not found.")
+            raise HTTPException(
+                status_code=404, detail=f"Timetable entry with ID {entry_id} not found."
+            )
         assert_station_scope(current_user, existing["station_code"])
 
         # Check version status
-        cur.execute("SELECT status FROM timetable_versions WHERE id = ?;", (existing["version_id"],))
+        cur.execute(
+            "SELECT status FROM timetable_versions WHERE id = ?;", (existing["version_id"],)
+        )
         v_row = cur.fetchone()
         if v_row and v_row["status"] == "archived":
             raise HTTPException(status_code=400, detail="Cannot edit archived timetable versions.")
@@ -290,10 +305,20 @@ def update_timetable_entry(
         new_arr = req.sched_arr if req.sched_arr is not None else existing["sched_arr"]
         new_dep = req.sched_dep if req.sched_dep is not None else existing["sched_dep"]
         new_halt = req.halt_min if req.halt_min is not None else existing["halt_min"]
-        new_pf = req.platform_default if req.platform_default is not None else existing["platform_default"]
+        new_pf = (
+            req.platform_default
+            if req.platform_default is not None
+            else existing["platform_default"]
+        )
         new_days = req.days_of_run if req.days_of_run is not None else existing["days_of_run"]
-        new_canc = int(req.is_cancelled) if req.is_cancelled is not None else existing["is_cancelled"]
-        new_reason = req.cancellation_reason if req.cancellation_reason is not None else existing["cancellation_reason"]
+        new_canc = (
+            int(req.is_cancelled) if req.is_cancelled is not None else existing["is_cancelled"]
+        )
+        new_reason = (
+            req.cancellation_reason
+            if req.cancellation_reason is not None
+            else existing["cancellation_reason"]
+        )
 
         cur.execute(
             """
@@ -304,8 +329,17 @@ def update_timetable_entry(
             WHERE id = ?;
             """,
             (
-                new_name, new_type, new_dir, new_arr, new_dep,
-                new_halt, new_pf, new_days, new_canc, new_reason, entry_id
+                new_name,
+                new_type,
+                new_dir,
+                new_arr,
+                new_dep,
+                new_halt,
+                new_pf,
+                new_days,
+                new_canc,
+                new_reason,
+                entry_id,
             ),
         )
 
@@ -316,7 +350,11 @@ def update_timetable_entry(
             action="TIMETABLE_ENTRY_UPDATED",
             table_name="timetable_entries",
             record_id=entry_id,
-            after_state={"train_no": existing["train_no"], "platform_default": new_pf, "is_cancelled": new_canc},
+            after_state={
+                "train_no": existing["train_no"],
+                "platform_default": new_pf,
+                "is_cancelled": new_canc,
+            },
         )
 
     return {"id": entry_id, "status": "updated"}
@@ -330,7 +368,10 @@ def delete_timetable_entry(
 ):
     """Deletes an entry from a draft timetable."""
     with db.transaction() as cur:
-        cur.execute("SELECT version_id, train_no, station_code FROM timetable_entries WHERE id = ?;", (entry_id,))
+        cur.execute(
+            "SELECT version_id, train_no, station_code FROM timetable_entries WHERE id = ?;",
+            (entry_id,),
+        )
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Entry not found.")
@@ -361,11 +402,18 @@ def validate_timetable_version(
     issues = []
 
     with db.transaction() as cur:
-        cur.execute("SELECT * FROM timetable_entries WHERE version_id = ? ORDER BY train_no, stop_seq;", (version_id,))
+        cur.execute(
+            "SELECT * FROM timetable_entries WHERE version_id = ? ORDER BY train_no, stop_seq;",
+            (version_id,),
+        )
         entries = cur.fetchall()
 
     if not entries:
-        return {"is_valid": False, "total_entries": 0, "issues": ["Timetable version contains zero entries."]}
+        return {
+            "is_valid": False,
+            "total_entries": 0,
+            "issues": ["Timetable version contains zero entries."],
+        }
 
     # Check negative dwell & times
     for e in entries:
@@ -381,7 +429,9 @@ def validate_timetable_version(
                     f"Train #{e['train_no']} at {e['station_code']}: Negative dwell detected (arr={arr}, dep={dep})"
                 )
         if e["platform_default"] <= 0 or e["platform_default"] > 24:
-            issues.append(f"Train #{e['train_no']} at {e['station_code']}: Invalid platform {e['platform_default']}")
+            issues.append(
+                f"Train #{e['train_no']} at {e['station_code']}: Invalid platform {e['platform_default']}"
+            )
 
     is_valid = len(issues) == 0
     return {
@@ -404,7 +454,9 @@ def import_seed_timetable(
         cur.execute("SELECT status FROM timetable_versions WHERE id = ?;", (version_id,))
         v_row = cur.fetchone()
         if not v_row or v_row["status"] != "draft":
-            raise HTTPException(status_code=400, detail="Can only import into draft timetable versions.")
+            raise HTTPException(
+                status_code=400, detail="Can only import into draft timetable versions."
+            )
 
         # Fetch master trains and route stations
         cur.execute(
@@ -420,7 +472,11 @@ def import_seed_timetable(
 
         imported_count = 0
         for r in routes:
-            t_type = "express" if r["class"] in ("rajdhani", "shatabdi", "superfast") else ("freight" if "rake" in r["class"] or "freight" in r["class"] else "passenger")
+            t_type = (
+                "express"
+                if r["class"] in ("rajdhani", "shatabdi", "superfast")
+                else ("freight" if "rake" in r["class"] or "freight" in r["class"] else "passenger")
+            )
             direction = "UP" if int(r["train_no"]) % 2 != 0 else "DOWN"
 
             cur.execute(
@@ -460,7 +516,10 @@ def publish_timetable_version(
     if not val["is_valid"]:
         raise HTTPException(
             status_code=400,
-            detail={"message": "Timetable validation failed before publishing.", "issues": val["issues"]},
+            detail={
+                "message": "Timetable validation failed before publishing.",
+                "issues": val["issues"],
+            },
         )
 
     now_iso = get_clock().now_iso()

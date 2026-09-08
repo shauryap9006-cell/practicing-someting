@@ -4,19 +4,19 @@ Verifies auto-aggregation of open operational registers, dual digital signature 
 and status transitions from draft -> signed -> acknowledged.
 """
 
-import pytest
 from fastapi.testclient import TestClient
 
 from api.auth import create_access_token
 from api.main import app
-from data.db import Database, get_db
 
 client = TestClient(app)
 
 
 def test_handover_current_summary():
     """Verifies that current handover summary returns auto-collected operational data."""
-    sm_token = create_access_token({"sub": "sm_ndls", "role_id": "station_master", "station_code": "NDLS"})
+    sm_token = create_access_token(
+        {"sub": "sm_ndls", "role_id": "station_master", "station_code": "NDLS"}
+    )
     response = client.get(
         "/api/handover/current?station_code=NDLS",
         headers={"Authorization": f"Bearer {sm_token}"},
@@ -31,8 +31,12 @@ def test_handover_current_summary():
 
 def test_handover_full_signature_lifecycle():
     """Verifies complete lifecycle: Draft -> Outgoing Sign -> Incoming Acknowledgment."""
-    sm_out_token = create_access_token({"sub": "sm_ndls", "role_id": "station_master", "station_code": "NDLS"})
-    sm_in_token = create_access_token({"sub": "dysm_ndls", "role_id": "dy_sm", "station_code": "NDLS"})
+    sm_out_token = create_access_token(
+        {"sub": "sm_ndls", "role_id": "station_master", "station_code": "NDLS"}
+    )
+    sm_in_token = create_access_token(
+        {"sub": "dysm_ndls", "role_id": "dy_sm", "station_code": "NDLS"}
+    )
 
     # 1. Create draft
     draft_resp = client.post(
@@ -53,7 +57,9 @@ def test_handover_full_signature_lifecycle():
     # 2. Outgoing sign-out
     sign_resp = client.post(
         f"/api/handover/{handover_id}/sign-out",
-        json={"operational_notes": "Platform 3 track circuit inspection scheduled at 14:00. All clear."},
+        json={
+            "operational_notes": "Platform 3 track circuit inspection scheduled at 14:00. All clear."
+        },
         headers={"Authorization": f"Bearer {sm_out_token}"},
     )
     assert sign_resp.status_code == 200
@@ -73,8 +79,12 @@ def test_handover_full_signature_lifecycle():
 
 def test_handover_ack_before_sign_rejected():
     """Verifies that an incoming staff member cannot acknowledge an unsigned draft."""
-    sm_out_token = create_access_token({"sub": "sm_ndls", "role_id": "station_master", "station_code": "NDLS"})
-    sm_in_token = create_access_token({"sub": "dysm_ndls", "role_id": "dy_sm", "station_code": "NDLS"})
+    sm_out_token = create_access_token(
+        {"sub": "sm_ndls", "role_id": "station_master", "station_code": "NDLS"}
+    )
+    sm_in_token = create_access_token(
+        {"sub": "dysm_ndls", "role_id": "dy_sm", "station_code": "NDLS"}
+    )
 
     # Create draft
     draft_resp = client.post(
@@ -96,4 +106,6 @@ def test_handover_ack_before_sign_rejected():
         headers={"Authorization": f"Bearer {sm_in_token}"},
     )
     assert ack_resp.status_code == 400
-    assert "cannot be acknowledged before outgoing Station Master signs" in ack_resp.json()["detail"]
+    assert (
+        "cannot be acknowledged before outgoing Station Master signs" in ack_resp.json()["detail"]
+    )

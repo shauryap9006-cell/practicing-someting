@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Any, Dict, List
+
+from fastapi import APIRouter, Depends
 
 from api.auth import assert_station_scope, require_role
 from api.schemas import (
@@ -21,7 +22,7 @@ from api.services.ops_service import (
     get_network_state_raw,
 )
 from config import settings
-from data.db import Database, get_db
+from data.db import get_db
 from engine.clocks import get_clock
 from engine.ops import CrewDutyEngine, PlatformManager
 from engine.simulator import CascadeSimulator
@@ -42,7 +43,7 @@ def get_network_state():
     events_rows = raw["events"]
     tsr_rows = raw["tsrs"]
 
-    routes_by_train = {}
+    routes_by_train: Dict[str, List[Dict[str, Any]]] = {}
     for r in all_routes:
         t = r["train_no"]
         if t not in routes_by_train:
@@ -64,7 +65,11 @@ def get_network_state():
             if ev:
                 cur_seq = int(ev["seq"])
                 last_stn = ev["station_code"]
-                d_min = int(ev["delay_arr_min"] if ev["delay_arr_min"] is not None else (ev["delay_dep_min"] or 0))
+                d_min = int(
+                    ev["delay_arr_min"]
+                    if ev["delay_arr_min"] is not None
+                    else (ev["delay_dep_min"] or 0)
+                )
                 if cur_seq < len(route):
                     next_stn = route[cur_seq]["station_code"]
                 else:
@@ -139,7 +144,9 @@ def get_network_state():
 @router.post("/simulate/what-if", response_model=WhatIfResponse)
 def simulate_what_if(
     req: WhatIfRequest,
-    current_user: dict = Depends(require_role(["station_master", "dy_sm", "section_controller", "admin"])),
+    current_user: dict = Depends(
+        require_role(["station_master", "dy_sm", "section_controller", "admin"])
+    ),
 ):
     """Simulates injection of operational shock and computes network cascade ripple."""
     db = get_db()
@@ -163,7 +170,8 @@ def simulate_what_if(
 
     affected_list = [
         {"train_no": t, "total_delay_min": d, "is_primary_target": (t == req.train_no)}
-        for t, d in total_delays.items() if d > 0
+        for t, d in total_delays.items()
+        if d > 0
     ]
 
     return WhatIfResponse(

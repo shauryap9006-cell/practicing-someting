@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Optional
+
 from data.db import Database, get_db
 from engine.clocks import get_clock
 

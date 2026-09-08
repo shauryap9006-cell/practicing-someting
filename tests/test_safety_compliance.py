@@ -13,7 +13,6 @@ from fastapi.testclient import TestClient
 
 from api.auth import create_access_token
 from api.main import app
-from data.db import Database, get_db
 
 client = TestClient(app)
 
@@ -137,7 +136,9 @@ def test_sop_emergency_runner(auth_headers):
     assert run_data["status"] == "IN_PROGRESS"
 
     # 3. Complete Step 1
-    step_resp = client.post(f"/api/safety/sop/{run_id}/step", json={"step_index": 0}, headers=auth_headers)
+    step_resp = client.post(
+        f"/api/safety/sop/{run_id}/step", json={"step_index": 0}, headers=auth_headers
+    )
     assert step_resp.status_code == 200
     assert step_resp.json()["total_completed"] == 1
 

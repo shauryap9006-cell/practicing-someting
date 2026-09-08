@@ -7,16 +7,14 @@ critical alerts, and provides the global `notify()` event bus helper.
 
 from __future__ import annotations
 
-from engine.clocks import RealClock, get_clock, now_iso, ist_now, IST_TIMEZONE
-
 import json
 import time
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Set, Union
 
 from config import settings
-from data.audit import record_audit
 from data.db import Database, get_db
+from engine.clocks import IST_TIMEZONE, RealClock, get_clock
 from notifications.channels.inapp import InAppChannel
 from notifications.channels.openwa import OpenWAChannel
 from notifications.channels.sms import SMSChannel
@@ -24,9 +22,17 @@ from notifications.types import AlertEvent, StaffRecipient
 
 # Severity aliases accepted by notify(); anything else falls back to 'info'.
 _SEVERITY_ALIASES = {
-    "info": "info", "low": "info", "minor": "info",
-    "warning": "warning", "warn": "warning", "medium": "warning", "major": "warning",
-    "critical": "critical", "high": "critical", "error": "critical", "emergency": "critical",
+    "info": "info",
+    "low": "info",
+    "minor": "info",
+    "warning": "warning",
+    "warn": "warning",
+    "medium": "warning",
+    "major": "warning",
+    "critical": "critical",
+    "high": "critical",
+    "error": "critical",
+    "emergency": "critical",
 }
 
 
@@ -115,7 +121,9 @@ class NotificationDispatcher:
 
         controller_phone, field_phone = _demo_phones()
 
-        if not raw_recipients and (settings.ALLOW_SYNTHETIC_FALLBACK or settings.DEFAULT_CLOCK_MODE.lower() == "replay"):
+        if not raw_recipients and (
+            settings.ALLOW_SYNTHETIC_FALLBACK or settings.DEFAULT_CLOCK_MODE.lower() == "replay"
+        ):
             # Synthetic replay staff for the requested station; phones are only
             # populated from the configured sandbox numbers.
             raw_recipients = [
@@ -167,7 +175,9 @@ class NotificationDispatcher:
 
         return filtered_recipients
 
-    def _is_rate_limited(self, staff_id: str, severity: str, bypass_rate_limit: bool = False) -> bool:
+    def _is_rate_limited(
+        self, staff_id: str, severity: str, bypass_rate_limit: bool = False
+    ) -> bool:
         if bypass_rate_limit or severity.upper() in ("HIGH", "CRITICAL"):
             return False
         last_time = self._last_sent_map.get(staff_id, 0.0)
@@ -187,13 +197,15 @@ class NotificationDispatcher:
         for staff in recipients:
             if self._is_rate_limited(staff.staff_id, event.severity, bypass_rate_limit):
                 self.inapp.log_dispatch(staff, event, "rate_limited", "skipped_rate_limit")
-                results.append({
-                    "staff_id": staff.staff_id,
-                    "name": staff.name,
-                    "phone": staff.phone,
-                    "status": "rate_limited",
-                    "channel": None,
-                })
+                results.append(
+                    {
+                        "staff_id": staff.staff_id,
+                        "name": staff.name,
+                        "phone": staff.phone,
+                        "status": "rate_limited",
+                        "channel": None,
+                    }
+                )
                 continue
 
             message_text = event.formatted_text(staff.name)
@@ -210,13 +222,15 @@ class NotificationDispatcher:
                 channels_used.add("whatsapp")
                 self._last_sent_map[staff.staff_id] = time.time()
                 self.inapp.log_dispatch(staff, event, channel, status)
-                results.append({
-                    "staff_id": staff.staff_id,
-                    "name": staff.name,
-                    "phone": staff.phone,
-                    "status": status,
-                    "channel": channel,
-                })
+                results.append(
+                    {
+                        "staff_id": staff.staff_id,
+                        "name": staff.name,
+                        "phone": staff.phone,
+                        "status": status,
+                        "channel": channel,
+                    }
+                )
             else:
                 if event.severity.upper() in ("HIGH", "CRITICAL"):
                     sms_success = False
@@ -230,24 +244,28 @@ class NotificationDispatcher:
                     channels_used.add("sms")
                     self._last_sent_map[staff.staff_id] = time.time()
                     self.inapp.log_dispatch(staff, event, channel, status)
-                    results.append({
-                        "staff_id": staff.staff_id,
-                        "name": staff.name,
-                        "phone": staff.phone,
-                        "status": status,
-                        "channel": channel,
-                    })
+                    results.append(
+                        {
+                            "staff_id": staff.staff_id,
+                            "name": staff.name,
+                            "phone": staff.phone,
+                            "status": status,
+                            "channel": channel,
+                        }
+                    )
                 else:
                     status = "wa_failed_no_fallback"
                     channel = "whatsapp"
                     self.inapp.log_dispatch(staff, event, channel, status)
-                    results.append({
-                        "staff_id": staff.staff_id,
-                        "name": staff.name,
-                        "phone": staff.phone,
-                        "status": status,
-                        "channel": channel,
-                    })
+                    results.append(
+                        {
+                            "staff_id": staff.staff_id,
+                            "name": staff.name,
+                            "phone": staff.phone,
+                            "status": status,
+                            "channel": channel,
+                        }
+                    )
 
         return {
             "event_type": event.event_type,
@@ -317,7 +335,11 @@ def notify(
 
     # If warning or critical, trigger field dispatcher
     dispatcher = get_dispatcher(database)
-    legacy_severity = "HIGH" if sev_normalized == "critical" else ("MEDIUM" if sev_normalized == "warning" else "LOW")
+    legacy_severity = (
+        "HIGH"
+        if sev_normalized == "critical"
+        else ("MEDIUM" if sev_normalized == "warning" else "LOW")
+    )
     alert_event = AlertEvent(
         severity=legacy_severity,
         event_type=event_type,
@@ -419,16 +441,18 @@ def escalate_unacked_notifications(
                     """,
                     (now_iso, r["id"]),
                 )
-                escalated_items.append({
-                    "id": r["id"],
-                    "event_type": r["event_type"],
-                    "severity": r["severity"],
-                    "title": f"[ESCALATED] {r['title']}",
-                    "message": f"Unacknowledged after {int(age_min)} minutes. Escalated to Station Master / Supervisor. Original alert: {r['message']}",
-                    "station_code": r["station_code"] or settings.DEFAULT_STATION_CODE,
-                    "created_at": r["created_at"],
-                    "escalated_at": now_iso,
-                })
+                escalated_items.append(
+                    {
+                        "id": r["id"],
+                        "event_type": r["event_type"],
+                        "severity": r["severity"],
+                        "title": f"[ESCALATED] {r['title']}",
+                        "message": f"Unacknowledged after {int(age_min)} minutes. Escalated to Station Master / Supervisor. Original alert: {r['message']}",
+                        "station_code": r["station_code"] or settings.DEFAULT_STATION_CODE,
+                        "created_at": r["created_at"],
+                        "escalated_at": now_iso,
+                    }
+                )
 
     # Outbound alert to the originating station's Station Master and Admin
     dispatcher = get_dispatcher(database)

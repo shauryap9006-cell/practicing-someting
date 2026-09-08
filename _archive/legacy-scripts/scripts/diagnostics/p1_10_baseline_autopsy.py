@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Decide: Branch A (champion integration bug) / Branch B (corrupt targets) /
 Branch C (wrong DB lineage). HALT if Branch B."""
 import sqlite3, gzip, shutil, json, os, sys

@@ -8,8 +8,9 @@ Verifies:
 """
 
 import pytest
+
 from data.db import Database
-from engine.conflicts import ConflictScanner, ConflictRecord
+from engine.conflicts import ConflictScanner
 
 
 @pytest.fixture
@@ -20,46 +21,96 @@ def conflict_db(tmp_path):
 
     with db.transaction() as cur:
         # Seed Stations
-        cur.execute("INSERT INTO stations (code, name, lat, lon, platforms, is_junction) VALUES ('STN_A', 'Alpha', 28.0, 77.0, 4, 1)")
-        cur.execute("INSERT INTO stations (code, name, lat, lon, platforms, is_junction) VALUES ('STN_B', 'Bravo', 28.3, 77.4, 3, 0)")
-        cur.execute("INSERT INTO stations (code, name, lat, lon, platforms, is_junction) VALUES ('STN_C', 'Charlie', 28.6, 77.8, 4, 1)")
+        cur.execute(
+            "INSERT INTO stations (code, name, lat, lon, platforms, is_junction) VALUES ('STN_A', 'Alpha', 28.0, 77.0, 4, 1)"
+        )
+        cur.execute(
+            "INSERT INTO stations (code, name, lat, lon, platforms, is_junction) VALUES ('STN_B', 'Bravo', 28.3, 77.4, 3, 0)"
+        )
+        cur.execute(
+            "INSERT INTO stations (code, name, lat, lon, platforms, is_junction) VALUES ('STN_C', 'Charlie', 28.6, 77.8, 4, 1)"
+        )
 
         # Sections: A-B (single line), B-C (double line)
-        cur.execute("INSERT INTO sections (from_code, to_code, distance_km, single_line, max_speed_kmph) VALUES ('STN_A', 'STN_B', 25.0, 1, 100)")
-        cur.execute("INSERT INTO sections (from_code, to_code, distance_km, single_line, max_speed_kmph) VALUES ('STN_B', 'STN_C', 35.0, 0, 120)")
+        cur.execute(
+            "INSERT INTO sections (from_code, to_code, distance_km, single_line, max_speed_kmph) VALUES ('STN_A', 'STN_B', 25.0, 1, 100)"
+        )
+        cur.execute(
+            "INSERT INTO sections (from_code, to_code, distance_km, single_line, max_speed_kmph) VALUES ('STN_B', 'STN_C', 35.0, 0, 120)"
+        )
 
         # Trains
-        cur.execute("INSERT INTO trains (train_no, name, class, priority) VALUES ('T1', 'Train 1', 'superfast', 1)")
-        cur.execute("INSERT INTO trains (train_no, name, class, priority) VALUES ('T2', 'Train 2', 'mail', 3)")
-        cur.execute("INSERT INTO trains (train_no, name, class, priority) VALUES ('T3', 'Opposing Train 3', 'superfast', 2)")
-        cur.execute("INSERT INTO trains (train_no, name, class, priority) VALUES ('T4', 'Safe Follower', 'passenger', 4)")
+        cur.execute(
+            "INSERT INTO trains (train_no, name, class, priority) VALUES ('T1', 'Train 1', 'superfast', 1)"
+        )
+        cur.execute(
+            "INSERT INTO trains (train_no, name, class, priority) VALUES ('T2', 'Train 2', 'mail', 3)"
+        )
+        cur.execute(
+            "INSERT INTO trains (train_no, name, class, priority) VALUES ('T3', 'Opposing Train 3', 'superfast', 2)"
+        )
+        cur.execute(
+            "INSERT INTO trains (train_no, name, class, priority) VALUES ('T4', 'Safe Follower', 'passenger', 4)"
+        )
 
         # Routes
         # T1 (A->B->C): Arr B at 08:30
-        cur.execute("INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, distance_km) VALUES ('T1', 1, 'STN_A', '08:00', '08:05', 0.0)")
-        cur.execute("INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, distance_km) VALUES ('T1', 2, 'STN_B', '08:30', '08:35', 25.0)")
-        cur.execute("INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, distance_km) VALUES ('T1', 3, 'STN_C', '09:15', '09:20', 60.0)")
+        cur.execute(
+            "INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, distance_km) VALUES ('T1', 1, 'STN_A', '08:00', '08:05', 0.0)"
+        )
+        cur.execute(
+            "INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, distance_km) VALUES ('T1', 2, 'STN_B', '08:30', '08:35', 25.0)"
+        )
+        cur.execute(
+            "INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, distance_km) VALUES ('T1', 3, 'STN_C', '09:15', '09:20', 60.0)"
+        )
 
         # T2 (A->B->C): Arr B at 08:33 (3 min gap from T1 -> Headway conflict)
-        cur.execute("INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, distance_km) VALUES ('T2', 1, 'STN_A', '08:05', '08:10', 0.0)")
-        cur.execute("INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, distance_km) VALUES ('T2', 2, 'STN_B', '08:33', '08:38', 25.0)")
-        cur.execute("INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, distance_km) VALUES ('T2', 3, 'STN_C', '09:20', '09:25', 60.0)")
+        cur.execute(
+            "INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, distance_km) VALUES ('T2', 1, 'STN_A', '08:05', '08:10', 0.0)"
+        )
+        cur.execute(
+            "INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, distance_km) VALUES ('T2', 2, 'STN_B', '08:33', '08:38', 25.0)"
+        )
+        cur.execute(
+            "INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, distance_km) VALUES ('T2', 3, 'STN_C', '09:20', '09:25', 60.0)"
+        )
 
         # T3 Opposing (C->B->A): Arr B at 08:34 (Single-line conflict with T1 and T2)
-        cur.execute("INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, distance_km) VALUES ('T3', 1, 'STN_C', '08:00', '08:05', 0.0)")
-        cur.execute("INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, distance_km) VALUES ('T3', 2, 'STN_B', '08:34', '08:39', 35.0)")
-        cur.execute("INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, distance_km) VALUES ('T3', 3, 'STN_A', '09:05', '09:10', 60.0)")
+        cur.execute(
+            "INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, distance_km) VALUES ('T3', 1, 'STN_C', '08:00', '08:05', 0.0)"
+        )
+        cur.execute(
+            "INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, distance_km) VALUES ('T3', 2, 'STN_B', '08:34', '08:39', 35.0)"
+        )
+        cur.execute(
+            "INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, distance_km) VALUES ('T3', 3, 'STN_A', '09:05', '09:10', 60.0)"
+        )
 
         # T4 (A->B->C): Arr B at 09:00 (30 min gap -> Clean pass)
-        cur.execute("INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, distance_km) VALUES ('T4', 1, 'STN_A', '08:35', '08:40', 0.0)")
-        cur.execute("INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, distance_km) VALUES ('T4', 2, 'STN_B', '09:00', '09:05', 25.0)")
-        cur.execute("INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, distance_km) VALUES ('T4', 3, 'STN_C', '09:45', '09:50', 60.0)")
+        cur.execute(
+            "INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, distance_km) VALUES ('T4', 1, 'STN_A', '08:35', '08:40', 0.0)"
+        )
+        cur.execute(
+            "INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, distance_km) VALUES ('T4', 2, 'STN_B', '09:00', '09:05', 25.0)"
+        )
+        cur.execute(
+            "INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, distance_km) VALUES ('T4', 3, 'STN_C', '09:45', '09:50', 60.0)"
+        )
 
         # Events
-        cur.execute("INSERT INTO station_events (train_no, run_date, seq, station_code, sched_arr, actual_arr, sched_dep, actual_dep, delay_arr_min, delay_dep_min, collected_at) VALUES ('T1', '2026-08-25', 1, 'STN_A', '08:00', '08:00', '08:05', '08:05', 0, 0, '2026-08-25T08:05:00+05:30')")
-        cur.execute("INSERT INTO station_events (train_no, run_date, seq, station_code, sched_arr, actual_arr, sched_dep, actual_dep, delay_arr_min, delay_dep_min, collected_at) VALUES ('T2', '2026-08-25', 1, 'STN_A', '08:05', '08:05', '08:10', '08:10', 0, 0, '2026-08-25T08:10:00+05:30')")
-        cur.execute("INSERT INTO station_events (train_no, run_date, seq, station_code, sched_arr, actual_arr, sched_dep, actual_dep, delay_arr_min, delay_dep_min, collected_at) VALUES ('T3', '2026-08-25', 1, 'STN_C', '08:00', '08:00', '08:05', '08:05', 0, 0, '2026-08-25T08:05:00+05:30')")
-        cur.execute("INSERT INTO station_events (train_no, run_date, seq, station_code, sched_arr, actual_arr, sched_dep, actual_dep, delay_arr_min, delay_dep_min, collected_at) VALUES ('T4', '2026-08-25', 1, 'STN_A', '08:35', '08:35', '08:40', '08:40', 0, 0, '2026-08-25T08:40:00+05:30')")
+        cur.execute(
+            "INSERT INTO station_events (train_no, run_date, seq, station_code, sched_arr, actual_arr, sched_dep, actual_dep, delay_arr_min, delay_dep_min, collected_at) VALUES ('T1', '2026-08-25', 1, 'STN_A', '08:00', '08:00', '08:05', '08:05', 0, 0, '2026-08-25T08:05:00+05:30')"
+        )
+        cur.execute(
+            "INSERT INTO station_events (train_no, run_date, seq, station_code, sched_arr, actual_arr, sched_dep, actual_dep, delay_arr_min, delay_dep_min, collected_at) VALUES ('T2', '2026-08-25', 1, 'STN_A', '08:05', '08:05', '08:10', '08:10', 0, 0, '2026-08-25T08:10:00+05:30')"
+        )
+        cur.execute(
+            "INSERT INTO station_events (train_no, run_date, seq, station_code, sched_arr, actual_arr, sched_dep, actual_dep, delay_arr_min, delay_dep_min, collected_at) VALUES ('T3', '2026-08-25', 1, 'STN_C', '08:00', '08:00', '08:05', '08:05', 0, 0, '2026-08-25T08:05:00+05:30')"
+        )
+        cur.execute(
+            "INSERT INTO station_events (train_no, run_date, seq, station_code, sched_arr, actual_arr, sched_dep, actual_dep, delay_arr_min, delay_dep_min, collected_at) VALUES ('T4', '2026-08-25', 1, 'STN_A', '08:35', '08:35', '08:40', '08:40', 0, 0, '2026-08-25T08:40:00+05:30')"
+        )
 
     return db
 

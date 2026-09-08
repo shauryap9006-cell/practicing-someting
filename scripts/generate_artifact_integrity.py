@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
-from pathlib import Path
 
 from config import settings
 from ml.artifact_integrity import INTEGRITY_FILE_NAME, MODEL_ARTIFACT_NAMES, sha256_file
@@ -21,7 +20,9 @@ def main() -> None:
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "files": {name: sha256_file(artifacts_dir / name) for name in MODEL_ARTIFACT_NAMES},
     }
-    (artifacts_dir / INTEGRITY_FILE_NAME).write_text(json.dumps(inventory, indent=2) + "\n", encoding="utf-8")
+    (artifacts_dir / INTEGRITY_FILE_NAME).write_text(
+        json.dumps(inventory, indent=2) + "\n", encoding="utf-8"
+    )
     print(f"Wrote {artifacts_dir / INTEGRITY_FILE_NAME}")
 
 

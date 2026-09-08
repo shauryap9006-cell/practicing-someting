@@ -18,7 +18,8 @@ from __future__ import annotations
 import json
 import random
 from pathlib import Path
-from typing import Dict, Optional, Tuple, Any, Union
+from typing import Any, Dict, Optional, Tuple, Union
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -179,7 +180,9 @@ class NonCrossingGRUQuantileModel(nn.Module):
 
         # Handle optional context vector (defaults to zeros if omitted)
         if context is None:
-            context = torch.zeros((batch_size, self.context_dim), dtype=torch.float32, device=device)
+            context = torch.zeros(
+                (batch_size, self.context_dim), dtype=torch.float32, device=device
+            )
         elif context.dim() == 1:
             context = context.unsqueeze(0)
 
@@ -192,10 +195,14 @@ class NonCrossingGRUQuantileModel(nn.Module):
         # Encode context & station embeddings (F07, F09)
         ctx_emb = self.context_encoder(context)  # [B, hidden_dim]
         stn_emb = self.station_embed(target_station_idx)  # [B, station_embed_dim]
-        combined_context = torch.cat([ctx_emb, stn_emb], dim=-1)  # [B, hidden_dim + station_embed_dim]
+        combined_context = torch.cat(
+            [ctx_emb, stn_emb], dim=-1
+        )  # [B, hidden_dim + station_embed_dim]
 
         # Covariate initial state for GRU
-        h0 = self.h0_proj(ctx_emb).unsqueeze(0).repeat(self.num_layers, 1, 1)  # [num_layers, B, hidden_dim]
+        h0 = (
+            self.h0_proj(ctx_emb).unsqueeze(0).repeat(self.num_layers, 1, 1)
+        )  # [num_layers, B, hidden_dim]
 
         # GRU Forward Pass
         out, _ = self.gru(x, h0)  # [B, seq_len, hidden_dim]
@@ -205,7 +212,7 @@ class NonCrossingGRUQuantileModel(nn.Module):
 
         if mask is None:
             # Auto-detect padding (where all features are 0.0)
-            mask = (x.abs().sum(dim=-1) > 1e-6)  # [B, seq_len]
+            mask = x.abs().sum(dim=-1) > 1e-6  # [B, seq_len]
 
         # Mask invalid/padded positions with -1e9 before softmax
         attn_scores = attn_scores.masked_fill(~mask.unsqueeze(-1), -1e9)
@@ -254,6 +261,7 @@ class GRUChallengerTrainer:
         max_d = row["max_d"] if row and row["max_d"] else "2026-08-27"
 
         import datetime
+
         max_dt = datetime.date.fromisoformat(max_d)
         min_dt = datetime.date.fromisoformat(min_d)
         total_days = (max_dt - min_dt).days + 1
@@ -270,16 +278,26 @@ class GRUChallengerTrainer:
         test_start = test_start_dt.strftime("%Y-%m-%d")
         test_end = max_dt.strftime("%Y-%m-%d")
 
-        print(f"[INFO] GRU Time-Split: TRAIN [{start_date} to {train_cutoff}], TEST [{test_start} to {test_end}]", flush=True)
+        print(
+            f"[INFO] GRU Time-Split: TRAIN [{start_date} to {train_cutoff}], TEST [{test_start} to {test_end}]",
+            flush=True,
+        )
 
         builder = SequenceDatasetBuilder(self.db, seq_len=8)
         X_train, y_train = builder.build_dataset(start_date, train_cutoff)
         X_test, y_test = builder.build_dataset(test_start, test_end)
 
-        print(f"[INFO] Built {len(X_train):,} training sequences and {len(X_test):,} testing sequences.", flush=True)
+        print(
+            f"[INFO] Built {len(X_train):,} training sequences and {len(X_test):,} testing sequences.",
+            flush=True,
+        )
 
-        train_loader = DataLoader(RailwaySequenceDataset(X_train, y_train), batch_size=batch_size, shuffle=True)
-        test_loader = DataLoader(RailwaySequenceDataset(X_test, y_test), batch_size=batch_size, shuffle=False)
+        train_loader = DataLoader(
+            RailwaySequenceDataset(X_train, y_train), batch_size=batch_size, shuffle=True
+        )
+        test_loader = DataLoader(
+            RailwaySequenceDataset(X_test, y_test), batch_size=batch_size, shuffle=False
+        )
 
         model = NonCrossingGRUQuantileModel(
             input_dim=8,
@@ -331,7 +349,10 @@ class GRUChallengerTrainer:
             else:
                 patience_counter += 1
 
-            print(f"  Epoch [{epoch:02d}/{epochs:02d}] - Train Loss: {epoch_loss:.4f} | Val Loss: {val_epoch_loss:.4f} (Best: {best_val_loss:.4f})", flush=True)
+            print(
+                f"  Epoch [{epoch:02d}/{epochs:02d}] - Train Loss: {epoch_loss:.4f} | Val Loss: {val_epoch_loss:.4f} (Best: {best_val_loss:.4f})",
+                flush=True,
+            )
 
             if patience_counter >= patience:
                 print(f"  [EARLY STOPPING] Early stopping at epoch {epoch}.", flush=True)
@@ -365,7 +386,9 @@ class GRUChallengerTrainer:
             coverage_80 = 0.0
             crossing_violations = 0
 
-        print(f"[RESULT] GRU Challenger Test MAE: {test_mae:.2f} min | 80% Coverage: {coverage_80:.1f}% | Crossing Violations: {crossing_violations}")
+        print(
+            f"[RESULT] GRU Challenger Test MAE: {test_mae:.2f} min | 80% Coverage: {coverage_80:.1f}% | Crossing Violations: {crossing_violations}"
+        )
 
         weights_path = self.artifacts_dir / "model_gru_challenger.pt"
         torch.save(model.state_dict(), weights_path)

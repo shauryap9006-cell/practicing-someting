@@ -12,7 +12,8 @@ from __future__ import annotations
 import json
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
+
 import lightgbm as lgb
 import numpy as np
 import torch
@@ -20,7 +21,7 @@ from scipy.optimize import nnls
 
 from config import settings
 from data.db import Database, get_db
-from ml.conformal import MondrianCQR, enforce_quantile_order, winkler_score, crps_score
+from ml.conformal import MondrianCQR, enforce_quantile_order
 from ml.features import FEATURE_NAMES
 from ml.model_seq import NonCrossingGRUQuantileModel
 from ml.seq_dataset import SequenceDatasetBuilder
@@ -53,7 +54,7 @@ def fit_stacking_weights(
     y = np.asarray(y_true, dtype=float)
     gbm = np.asarray(gbm_preds, dtype=float)
     gru = np.asarray(gru_preds, dtype=float) if gru_preds is not None else gbm
-    lr  = np.asarray(lr_preds, dtype=float)  if lr_preds  is not None else gbm
+    lr = np.asarray(lr_preds, dtype=float) if lr_preds is not None else gbm
     hops = np.asarray(hops_vec, dtype=float)
     km = np.asarray(km_vec, dtype=float) if km_vec is not None else hops * 30.0
     # B1: frozen delay (current_delay) — best possible for 1h
@@ -64,16 +65,16 @@ def fit_stacking_weights(
     weights_by_horizon: Dict[str, Tuple[float, float, float, float, float]] = {}
 
     buckets = [
-        ("short",  (km <= 90)),
-        ("medium", (km > 90)  & (km <= 250)),
-        ("long",   (km > 250)),
+        ("short", (km <= 90)),
+        ("medium", (km > 90) & (km <= 250)),
+        ("long", (km > 250)),
     ]
 
     # Fallbacks: (gbm, gru, lr, b1, b3)
     FALLBACKS = {
-        "short":  (0.05, 0.05, 0.00, 0.85, 0.05),  # B1 dominates at 1h
+        "short": (0.05, 0.05, 0.00, 0.85, 0.05),  # B1 dominates at 1h
         "medium": (0.40, 0.20, 0.10, 0.20, 0.10),
-        "long":   (0.35, 0.15, 0.10, 0.05, 0.35),  # B3 matters at 6h
+        "long": (0.35, 0.15, 0.10, 0.05, 0.35),  # B3 matters at 6h
     }
 
     for name, mask in buckets:
@@ -82,8 +83,10 @@ def fit_stacking_weights(
             w = FALLBACKS[name]
             weights_by_horizon[name] = w
             if verbose:
-                print(f"[NNLS] {name:8s}: n={n:5d}  FALLBACK  gbm={w[0]:.3f} gru={w[1]:.3f} "
-                      f"lr={w[2]:.3f} b1={w[3]:.3f} b3={w[4]:.3f}  status=FALLBACK")
+                print(
+                    f"[NNLS] {name:8s}: n={n:5d}  FALLBACK  gbm={w[0]:.3f} gru={w[1]:.3f} "
+                    f"lr={w[2]:.3f} b1={w[3]:.3f} b3={w[4]:.3f}  status=FALLBACK"
+                )
             continue
 
         # 5-candidate matrix: [gbm | gru | lr | B1 | B3]
@@ -96,13 +99,18 @@ def fit_stacking_weights(
         else:
             w_norm = np.array(FALLBACKS[name])
         weights_by_horizon[name] = (
-            float(w_norm[0]), float(w_norm[1]), float(w_norm[2]),
-            float(w_norm[3]), float(w_norm[4]),
+            float(w_norm[0]),
+            float(w_norm[1]),
+            float(w_norm[2]),
+            float(w_norm[3]),
+            float(w_norm[4]),
         )
         if verbose:
-            print(f"[NNLS] {name:8s}: n={n:5d}  residual={residual:.4f}  "
-                  f"gbm={w_norm[0]:.3f} gru={w_norm[1]:.3f} lr={w_norm[2]:.3f} "
-                  f"b1_frozen={w_norm[3]:.3f} b3_linear={w_norm[4]:.3f}  status=OPTIMIZED")
+            print(
+                f"[NNLS] {name:8s}: n={n:5d}  residual={residual:.4f}  "
+                f"gbm={w_norm[0]:.3f} gru={w_norm[1]:.3f} lr={w_norm[2]:.3f} "
+                f"b1_frozen={w_norm[3]:.3f} b3_linear={w_norm[4]:.3f}  status=OPTIMIZED"
+            )
 
     return weights_by_horizon
 
@@ -130,9 +138,9 @@ class EnsemblePredictor:
         self.mondrian_cqr = MondrianCQR(target_coverage=0.80)
         # 5-tuple: (gbm, gru, lr, b1_frozen, b3_linear)
         self.stacking_weights: Dict[str, Tuple[float, float, float, float, float]] = {
-            "short":  (0.05, 0.05, 0.00, 0.85, 0.05),
+            "short": (0.05, 0.05, 0.00, 0.85, 0.05),
             "medium": (0.40, 0.20, 0.10, 0.20, 0.10),
-            "long":   (0.35, 0.15, 0.10, 0.05, 0.35),
+            "long": (0.35, 0.15, 0.10, 0.05, 0.35),
         }
 
         self._load_models()
@@ -144,7 +152,7 @@ class EnsemblePredictor:
 
         # 1. Load LightGBM Boosters
         for q in [0.1, 0.5, 0.9]:
-            path = self.artifacts_dir / f"model_direct_q{int(q*100)}.txt"
+            path = self.artifacts_dir / f"model_direct_q{int(q * 100)}.txt"
             if path.exists():
                 self._gbm_models[q] = lgb.Booster(model_file=str(path))
 
@@ -152,8 +160,12 @@ class EnsemblePredictor:
         gru_path = self.artifacts_dir / "model_gru_challenger.pt"
         if gru_path.exists():
             try:
-                gru = NonCrossingGRUQuantileModel(input_dim=8, hidden_dim=128, num_layers=2, dropout=0.2).to(self.device)
-                gru.load_state_dict(torch.load(gru_path, map_location=self.device, weights_only=True))
+                gru = NonCrossingGRUQuantileModel(
+                    input_dim=8, hidden_dim=128, num_layers=2, dropout=0.2
+                ).to(self.device)
+                gru.load_state_dict(
+                    torch.load(gru_path, map_location=self.device, weights_only=True)
+                )
                 gru.eval()
                 self._gru_model = gru
             except Exception as e:
@@ -177,9 +189,7 @@ class EnsemblePredictor:
                 if "cqr_mondrian" in mf:
                     self.mondrian_cqr.group_q_hats = mf["cqr_mondrian"]
                 if "stacking_weights" in mf:
-                    self.stacking_weights = {
-                        k: tuple(v) for k, v in mf["stacking_weights"].items()
-                    }
+                    self.stacking_weights = {k: tuple(v) for k, v in mf["stacking_weights"].items()}
             except Exception as e:
                 print(f"[WARN] Failed to load CQR calibration from manifest: {e}")
 
@@ -196,9 +206,15 @@ class EnsemblePredictor:
         is_np = isinstance(feature_df, np.ndarray)
         feat_input = feature_df if is_np else feature_df[FEATURE_NAMES]
 
-        gbm_p10 = float(self._gbm_models[0.1].predict(feat_input)[0]) if 0.1 in self._gbm_models else 5.0
-        gbm_p50 = float(self._gbm_models[0.5].predict(feat_input)[0]) if 0.5 in self._gbm_models else 10.0
-        gbm_p90 = float(self._gbm_models[0.9].predict(feat_input)[0]) if 0.9 in self._gbm_models else 20.0
+        gbm_p10 = (
+            float(self._gbm_models[0.1].predict(feat_input)[0]) if 0.1 in self._gbm_models else 5.0
+        )
+        gbm_p50 = (
+            float(self._gbm_models[0.5].predict(feat_input)[0]) if 0.5 in self._gbm_models else 10.0
+        )
+        gbm_p90 = (
+            float(self._gbm_models[0.9].predict(feat_input)[0]) if 0.9 in self._gbm_models else 20.0
+        )
 
         # 2. Linear Regression Benchmark Prediction
         lr_p50 = gbm_p50
@@ -220,17 +236,27 @@ class EnsemblePredictor:
             km = 50.0
 
         if km <= 90:
-            w_gbm, w_gru, w_lr, w_b1, w_b3 = self.stacking_weights.get("short", (0.05, 0.05, 0.00, 0.85, 0.05))
+            w_gbm, w_gru, w_lr, w_b1, w_b3 = self.stacking_weights.get(
+                "short", (0.05, 0.05, 0.00, 0.85, 0.05)
+            )
         elif km <= 250:
-            w_gbm, w_gru, w_lr, w_b1, w_b3 = self.stacking_weights.get("medium", (0.40, 0.20, 0.10, 0.20, 0.10))
+            w_gbm, w_gru, w_lr, w_b1, w_b3 = self.stacking_weights.get(
+                "medium", (0.40, 0.20, 0.10, 0.20, 0.10)
+            )
         else:
-            w_gbm, w_gru, w_lr, w_b1, w_b3 = self.stacking_weights.get("long", (0.35, 0.15, 0.10, 0.05, 0.35))
+            w_gbm, w_gru, w_lr, w_b1, w_b3 = self.stacking_weights.get(
+                "long", (0.35, 0.15, 0.10, 0.05, 0.35)
+            )
 
         # B1: frozen delay from feature_df (current_delay IS feature 0)
         if is_np:
             b1_p50 = float(feature_df[0, 0])
         else:
-            b1_p50 = float(feature_df["current_delay"].iloc[0]) if "current_delay" in feature_df.columns else 0.0
+            b1_p50 = (
+                float(feature_df["current_delay"].iloc[0])
+                if "current_delay" in feature_df.columns
+                else 0.0
+            )
 
         # 3. GRU Predictions & Blending
         if self._gru_model is not None and seq_tensor is not None:
@@ -244,20 +270,36 @@ class EnsemblePredictor:
                     gru_p50 = float(q50_t.cpu().numpy().item())
                     gru_p90 = float(q90_t.cpu().numpy().item())
 
-                raw_p50 = (w_gbm * gbm_p50 + w_gru * gru_p50 + w_lr * lr_p50
-                           + w_b1 * b1_p50 + w_b3 * lr_p50)
-                raw_p10 = (w_gbm * gbm_p10 + w_gru * gru_p10
-                           + w_lr * max(0.0, lr_p50 - 5.0)
-                           + w_b1 * max(0.0, b1_p50 - 5.0)
-                           + w_b3 * max(0.0, lr_p50 - 5.0))
-                raw_p90 = (w_gbm * gbm_p90 + w_gru * gru_p90
-                           + w_lr * (lr_p50 + 10.0)
-                           + w_b1 * (b1_p50 + 10.0)
-                           + w_b3 * (lr_p50 + 10.0))
+                raw_p50 = (
+                    w_gbm * gbm_p50
+                    + w_gru * gru_p50
+                    + w_lr * lr_p50
+                    + w_b1 * b1_p50
+                    + w_b3 * lr_p50
+                )
+                raw_p10 = (
+                    w_gbm * gbm_p10
+                    + w_gru * gru_p10
+                    + w_lr * max(0.0, lr_p50 - 5.0)
+                    + w_b1 * max(0.0, b1_p50 - 5.0)
+                    + w_b3 * max(0.0, lr_p50 - 5.0)
+                )
+                raw_p90 = (
+                    w_gbm * gbm_p90
+                    + w_gru * gru_p90
+                    + w_lr * (lr_p50 + 10.0)
+                    + w_b1 * (b1_p50 + 10.0)
+                    + w_b3 * (lr_p50 + 10.0)
+                )
 
                 # 4. Ensemble-Level Mondrian CQR adjustment
                 cal_p10, cal_p90, _ = self.mondrian_cqr.adjust_interval(
-                    raw_p10, raw_p90, raw_p50=raw_p50, hops=float(h), km=float(km), train_class=train_class
+                    raw_p10,
+                    raw_p90,
+                    raw_p50=raw_p50,
+                    hops=float(h),
+                    km=float(km),
+                    train_class=train_class,
                 )
                 return enforce_quantile_order(cal_p10, raw_p50, cal_p90)
             except Exception:
@@ -265,10 +307,18 @@ class EnsemblePredictor:
 
         # Fallback: 5-candidate blend without GRU
         raw_p50 = w_gbm * gbm_p50 + w_lr * lr_p50 + w_b1 * b1_p50 + w_b3 * lr_p50
-        raw_p10 = (w_gbm * gbm_p10 + w_lr * max(0.0, lr_p50 - 5.0)
-                   + w_b1 * max(0.0, b1_p50 - 5.0) + w_b3 * max(0.0, lr_p50 - 5.0))
-        raw_p90 = (w_gbm * gbm_p90 + w_lr * (lr_p50 + 10.0)
-                   + w_b1 * (b1_p50 + 10.0) + w_b3 * (lr_p50 + 10.0))
+        raw_p10 = (
+            w_gbm * gbm_p10
+            + w_lr * max(0.0, lr_p50 - 5.0)
+            + w_b1 * max(0.0, b1_p50 - 5.0)
+            + w_b3 * max(0.0, lr_p50 - 5.0)
+        )
+        raw_p90 = (
+            w_gbm * gbm_p90
+            + w_lr * (lr_p50 + 10.0)
+            + w_b1 * (b1_p50 + 10.0)
+            + w_b3 * (lr_p50 + 10.0)
+        )
 
         cal_p10, cal_p90, _ = self.mondrian_cqr.adjust_interval(
             raw_p10, raw_p90, raw_p50=raw_p50, hops=float(h), km=float(km), train_class=train_class
@@ -277,7 +327,9 @@ class EnsemblePredictor:
 
     def evaluate_gate_and_update_registry(self) -> Dict[str, Any]:
         """Evaluates Champion (LightGBM) vs Challenger (GRU) vs Ensemble against promotion gate."""
-        print("[INFO] Evaluating Models Against Promotion Gate (with Wilcoxon Hypothesis Testing & Ensemble CQR)...")
+        print(
+            "[INFO] Evaluating Models Against Promotion Gate (with Wilcoxon Hypothesis Testing & Ensemble CQR)..."
+        )
         sg = SnapshotGenerator(self.db)
         manifest_path = self.artifacts_dir / "manifest.json"
 
@@ -340,44 +392,65 @@ class EnsemblePredictor:
         n_align = min(len(gbm_p50), len(p50_gru)) if len(p50_gru) > 0 else len(gbm_p50)
         # Disjoint split: 60% fit, 40% out-of-sample eval (Bug 9)
         n_fit = max(10, int(0.6 * n_align))
-        
+
         y_fit = y_true[:n_fit]
         gbm_fit_p50 = gbm_p50[:n_fit]
-        gru_fit_p50 = (p50_gru[:n_fit] if len(p50_gru) > 0 else gbm_fit_p50)
+        gru_fit_p50 = p50_gru[:n_fit] if len(p50_gru) > 0 else gbm_fit_p50
         hops_fit = hops_vec[:n_fit]
         km_fit = km_vec[:n_fit]
         lr_fit = gbm_fit_p50
         if self._lr_model is not None:
             try:
-                lr_fit = np.maximum(0.0, self._lr_model.predict(direct_test[FEATURE_NAMES].iloc[:n_fit]))
+                lr_fit = np.maximum(
+                    0.0, self._lr_model.predict(direct_test[FEATURE_NAMES].iloc[:n_fit])
+                )
             except Exception:
                 lr_fit = gbm_fit_p50
-        b1_fit = direct_test["current_delay"].values[:n_fit] if "current_delay" in direct_test.columns else np.zeros(n_fit)
+        b1_fit = (
+            direct_test["current_delay"].values[:n_fit]
+            if "current_delay" in direct_test.columns
+            else np.zeros(n_fit)
+        )
 
         # Fit weights on fit window ONLY
         self.stacking_weights = fit_stacking_weights(
-            y_fit, gbm_fit_p50, gru_fit_p50, lr_fit,
-            hops_vec=hops_fit, km_vec=km_fit,
-            b1_preds=b1_fit, b3_preds=lr_fit,
-            verbose=True
+            y_fit,
+            gbm_fit_p50,
+            gru_fit_p50,
+            lr_fit,
+            hops_vec=hops_fit,
+            km_vec=km_fit,
+            b1_preds=b1_fit,
+            b3_preds=lr_fit,
+            verbose=True,
         )
 
         # Evaluate strictly on out-of-sample evaluation window
         y_eval = y_true[n_fit:n_align]
         gbm_eval_p50 = gbm_p50[n_fit:n_align]
-        gru_eval_p50 = (p50_gru[n_fit:n_align] if len(p50_gru) > 0 else gbm_eval_p50)
+        gru_eval_p50 = p50_gru[n_fit:n_align] if len(p50_gru) > 0 else gbm_eval_p50
         lr_eval = gbm_eval_p50
         if self._lr_model is not None:
             try:
-                lr_eval = np.maximum(0.0, self._lr_model.predict(direct_test[FEATURE_NAMES].iloc[n_fit:n_align]))
+                lr_eval = np.maximum(
+                    0.0, self._lr_model.predict(direct_test[FEATURE_NAMES].iloc[n_fit:n_align])
+                )
             except Exception:
                 lr_eval = gbm_eval_p50
-        b1_eval = direct_test["current_delay"].values[n_fit:n_align] if "current_delay" in direct_test.columns else np.zeros(len(y_eval))
+        b1_eval = (
+            direct_test["current_delay"].values[n_fit:n_align]
+            if "current_delay" in direct_test.columns
+            else np.zeros(len(y_eval))
+        )
 
         w_s = self.stacking_weights.get("short", (0.05, 0.05, 0.00, 0.85, 0.05))
-        ens_eval_p50 = (w_s[0] * gbm_eval_p50 + w_s[1] * gru_eval_p50 + w_s[2] * lr_eval
-                        + (w_s[3] if len(w_s) > 3 else 0.0) * b1_eval
-                        + (w_s[4] if len(w_s) > 4 else 0.0) * lr_eval)
+        ens_eval_p50 = (
+            w_s[0] * gbm_eval_p50
+            + w_s[1] * gru_eval_p50
+            + w_s[2] * lr_eval
+            + (w_s[3] if len(w_s) > 3 else 0.0) * b1_eval
+            + (w_s[4] if len(w_s) > 4 else 0.0) * lr_eval
+        )
 
         ens_eval_errors = np.abs(y_eval - ens_eval_p50)
         gbm_eval_errors = np.abs(y_eval - gbm_eval_p50)
@@ -402,25 +475,30 @@ class EnsemblePredictor:
                 )
                 eval_lo.append(float(lo))
                 eval_hi.append(float(hi))
-            ens_cov = float(np.mean((y_eval >= np.asarray(eval_lo)) & (y_eval <= np.asarray(eval_hi))) * 100.0)
+            ens_cov = float(
+                np.mean((y_eval >= np.asarray(eval_lo)) & (y_eval <= np.asarray(eval_hi))) * 100.0
+            )
         else:
             ens_cov = 0.0
 
         # Statistical significance on OUT-OF-SAMPLE evaluation errors (Bug 9)
         from scipy import stats
+
         p_value = 1.0
         if len(y_eval) >= 20:
             try:
                 diffs = gbm_eval_errors - ens_eval_errors
                 if np.any(diffs != 0):
-                    stat_res = stats.wilcoxon(gbm_eval_errors, ens_eval_errors, alternative="greater")
+                    stat_res = stats.wilcoxon(
+                        gbm_eval_errors, ens_eval_errors, alternative="greater"
+                    )
                     p_value = float(stat_res.pvalue)
             except Exception as e:
                 print(f"[WARN] Wilcoxon out-of-sample hypothesis test failed: {e}")
                 p_value = 0.5
 
-        statistically_significant = (p_value < 0.05)
-        mae_improved = (gru_mae < gbm_mae)
+        statistically_significant = p_value < 0.05
+        mae_improved = gru_mae < gbm_mae
 
         challenger_promoted = False
         winner = "LightGBM_Quantile_Direct"
@@ -432,9 +510,27 @@ class EnsemblePredictor:
             winner = "PyTorch_GRU_Quantile"
             winner_mae = gru_mae
             winner_cov = gru_cov
-            print(f"[PROMOTION GATE] Challenger PyTorch GRU PASSED promotion gate! (MAE: {gru_mae:.2f}m vs GBM: {gbm_mae:.2f}m, Wilcoxon p={p_value:.4f})")
+            print(
+                f"[PROMOTION GATE] Challenger PyTorch GRU PASSED promotion gate! (MAE: {gru_mae:.2f}m vs GBM: {gbm_mae:.2f}m, Wilcoxon p={p_value:.4f})"
+            )
         else:
-            print(f"[PROMOTION GATE] Champion LightGBM retained. (GBM MAE: {gbm_mae:.2f}m, GRU MAE: {gru_mae:.2f}m, Wilcoxon p={p_value:.4f})")
+            print(
+                f"[PROMOTION GATE] Champion LightGBM retained. (GBM MAE: {gbm_mae:.2f}m, GRU MAE: {gru_mae:.2f}m, Wilcoxon p={p_value:.4f})"
+            )
+
+        if len(y_eval) > 0 and len(eval_lo) == len(y_eval):
+            y_arr = np.asarray(y_eval)
+            lo_arr = np.asarray(eval_lo)
+            hi_arr = np.asarray(eval_hi)
+            diff_w = hi_arr - lo_arr
+            alpha = 0.2
+            pen_under = (2.0 / alpha) * (lo_arr - y_arr) * (y_arr < lo_arr)
+            pen_over = (2.0 / alpha) * (y_arr - hi_arr) * (y_arr > hi_arr)
+            ens_winkler = float(np.mean(diff_w + pen_under + pen_over))
+            ens_crps = float(np.mean(np.abs(y_arr - ens_eval_p50)))
+        else:
+            ens_winkler = 0.0
+            ens_crps = 0.0
 
         registry = {
             "evaluated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -445,7 +541,9 @@ class EnsemblePredictor:
                 "latency_ms": round(t_gbm if winner.startswith("LightGBM") else t_gru, 3),
             },
             "challenger": {
-                "model_name": "PyTorch_GRU_Quantile" if winner.startswith("LightGBM") else "LightGBM_Quantile_Direct",
+                "model_name": "PyTorch_GRU_Quantile"
+                if winner.startswith("LightGBM")
+                else "LightGBM_Quantile_Direct",
                 "mae_min": round(gru_mae if winner.startswith("LightGBM") else gbm_mae, 2),
                 "coverage_80_pct": round(gru_cov if winner.startswith("LightGBM") else gbm_cov, 1),
                 "latency_ms": round(t_gru if winner.startswith("LightGBM") else t_gbm, 3),

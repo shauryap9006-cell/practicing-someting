@@ -6,8 +6,7 @@ and shunting / non-timetable movement logging with conflict checking.
 
 from __future__ import annotations
 
-import json
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -16,7 +15,7 @@ from pydantic import BaseModel, Field
 from api.auth import assert_station_scope, effective_station_scope, get_current_user, require_role
 from data.audit import record_audit
 from data.db import Database, get_db
-from engine.clocks import get_clock, IST_TIMEZONE
+from engine.clocks import IST_TIMEZONE, get_clock
 from notifications.dispatcher import notify
 
 router = APIRouter(prefix="/api/ops", tags=["Station Operations & Actuals (A4 & A6)"])
@@ -55,7 +54,9 @@ class SetOutRequest(BaseModel):
 
 class ShuntingMoveCreate(BaseModel):
     station_code: str = Field("NDLS", description="Station code")
-    move_type: str = Field("loco_attach", description="loco_attach, loco_detach, rake_release, yard_shunt, empty_haul")
+    move_type: str = Field(
+        "loco_attach", description="loco_attach, loco_detach, rake_release, yard_shunt, empty_haul"
+    )
     loco_id: str = Field(..., description="Locomotive identifier e.g. WAP7-30214")
     rake_id: Optional[str] = Field(None, description="Rake identifier")
     from_track: str = Field(..., description="Starting track or platform e.g. PF1, Yard-Line-4")
@@ -148,7 +149,12 @@ def record_set_in(
             action="TRAIN_SET_IN_CONFIRMED",
             table_name="ad_events",
             record_id=event_id,
-            after_state={"train_no": train_no, "station_code": stn, "platform": req.platform, "actual_ts": actual_time},
+            after_state={
+                "train_no": train_no,
+                "station_code": stn,
+                "platform": req.platform,
+                "actual_ts": actual_time,
+            },
         )
 
     # Emit notification
@@ -235,7 +241,12 @@ def record_set_out(
             action="TRAIN_SET_OUT_CONFIRMED",
             table_name="ad_events",
             record_id=event_id,
-            after_state={"train_no": train_no, "station_code": stn, "platform": req.platform, "actual_ts": actual_time},
+            after_state={
+                "train_no": train_no,
+                "station_code": stn,
+                "platform": req.platform,
+                "actual_ts": actual_time,
+            },
         )
 
     # Emit notification
@@ -310,7 +321,9 @@ def list_ad_events(
 @router.post("/shunting", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
 def create_shunting_move(
     req: ShuntingMoveCreate,
-    current_user: Dict[str, Any] = Depends(require_role(["station_master", "dy_sm", "engineer", "admin"])),
+    current_user: Dict[str, Any] = Depends(
+        require_role(["station_master", "dy_sm", "engineer", "admin"])
+    ),
     db: Database = Depends(get_db),
 ):
     """Logs a non-timetable shunting move and checks for platform conflicts."""
@@ -428,7 +441,9 @@ def list_shunting_moves(
 def update_shunting_status(
     move_id: int,
     req: ShuntingStatusUpdate,
-    current_user: Dict[str, Any] = Depends(require_role(["station_master", "dy_sm", "engineer", "admin"])),
+    current_user: Dict[str, Any] = Depends(
+        require_role(["station_master", "dy_sm", "engineer", "admin"])
+    ),
     db: Database = Depends(get_db),
 ):
     """Updates the status of a shunting movement."""

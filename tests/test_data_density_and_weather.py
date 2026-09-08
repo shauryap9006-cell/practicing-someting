@@ -6,12 +6,11 @@ Verifies:
 3. Exponential Decay Sample Weights (F25): 90-day half-life weighting across historical archive.
 """
 
-import datetime
 import math
-import numpy as np
+
 import pytest
-from ml.snapshots import SnapshotGenerator, _compute_fog_flag_at_hour
-from ml.features import FEATURE_NAMES
+
+from ml.snapshots import SnapshotGenerator
 
 
 def test_passage_time_weather_fog_shift():

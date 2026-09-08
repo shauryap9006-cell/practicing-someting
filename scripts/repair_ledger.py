@@ -5,6 +5,7 @@ each block hash from canonical stored fields, resolves any concurrency-forked
 branches into a linear unbroken SHA-256 hash chain, and prints an idempotent
 before/after diff of all repaired blocks.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -44,15 +45,17 @@ def repair_ledger(db: Database) -> list[dict]:
             computed_hash = hashlib.sha256(raw_block.encode("utf-8")).hexdigest()
 
             if old_prev != expected_prev or old_hash != computed_hash:
-                diffs.append({
-                    "block_id": r_id,
-                    "train_no": r["train_no"],
-                    "station": r["target_station"],
-                    "old_prev": old_prev[:12] + "...",
-                    "new_prev": expected_prev[:12] + "...",
-                    "old_hash": old_hash[:12] + "...",
-                    "new_hash": computed_hash[:12] + "...",
-                })
+                diffs.append(
+                    {
+                        "block_id": r_id,
+                        "train_no": r["train_no"],
+                        "station": r["target_station"],
+                        "old_prev": old_prev[:12] + "...",
+                        "new_prev": expected_prev[:12] + "...",
+                        "old_hash": old_hash[:12] + "...",
+                        "new_hash": computed_hash[:12] + "...",
+                    }
+                )
                 cur.execute(
                     "UPDATE eta_prediction_ledger SET prev_hash = ?, receipt_hash = ? WHERE id = ?;",
                     (expected_prev, computed_hash, r_id),
@@ -76,24 +79,32 @@ def main():
     print("=" * 70)
 
     pre_valid, pre_count, pre_broken = ledger.verify_chain_integrity()
-    print(f"[PRE-CHECK] Integrity valid: {pre_valid} (verified {pre_count} blocks, broken at ID: {pre_broken})")
+    print(
+        f"[PRE-CHECK] Integrity valid: {pre_valid} (verified {pre_count} blocks, broken at ID: {pre_broken})"
+    )
 
     diffs = repair_ledger(db)
 
     if diffs:
         print(f"\n[REPAIR] Repaired {len(diffs)} blocks:")
-        print(f"{'Block ID':<10} {'Train':<8} {'Station':<8} {'Prev Hash (Old -> New)':<32} {'Block Hash (Old -> New)':<32}")
+        print(
+            f"{'Block ID':<10} {'Train':<8} {'Station':<8} {'Prev Hash (Old -> New)':<32} {'Block Hash (Old -> New)':<32}"
+        )
         print("-" * 90)
         for d in diffs:
             prev_diff = f"{d['old_prev']} -> {d['new_prev']}"
             hash_diff = f"{d['old_hash']} -> {d['new_hash']}"
-            print(f"{d['block_id']:<10} {d['train_no']:<8} {d['station']:<8} {prev_diff:<32} {hash_diff:<32}")
+            print(
+                f"{d['block_id']:<10} {d['train_no']:<8} {d['station']:<8} {prev_diff:<32} {hash_diff:<32}"
+            )
     else:
         print("\n[REPAIR] No repairs needed. Ledger is already cryptographically intact.")
 
     post_valid, post_count, post_broken = ledger.verify_chain_integrity()
     print("\n" + "=" * 70)
-    print(f"[POST-CHECK] Integrity valid: {post_valid} (total blocks verified: {post_count}, broken: {post_broken})")
+    print(
+        f"[POST-CHECK] Integrity valid: {post_valid} (total blocks verified: {post_count}, broken: {post_broken})"
+    )
     print("=" * 70)
 
     if not post_valid:

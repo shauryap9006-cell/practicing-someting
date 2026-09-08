@@ -7,12 +7,11 @@ Tests:
 4. Advisory crew duty-breach projection calculations.
 """
 
-from pathlib import Path
 import pytest
 
 from data.db import Database
 from data.seed import run_full_seed
-from engine.ops import PlatformBlock, PlatformManager, CrewDutyEngine
+from engine.ops import CrewDutyEngine, PlatformBlock, PlatformManager
 
 
 @pytest.fixture(scope="module")

@@ -8,17 +8,15 @@ Provides:
 
 from __future__ import annotations
 
-from engine.clocks import get_clock, now_iso
-
-from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from api.auth import assert_station_scope, effective_station_scope, get_current_user, require_role
 from data.audit import record_audit
 from data.db import Database, get_db
+from engine.clocks import get_clock
 from notifications.dispatcher import notify
 
 router = APIRouter(tags=["Maintenance & Infrastructure (Phase 5)"])
@@ -84,7 +82,11 @@ def register_rake_bpc(
             action="RAKE_BPC_REGISTERED",
             table_name="rakes",
             record_id=req.rake_id,
-            after_state={"bpc": req.bpc_number, "valid_until": req.bpc_valid_until, "brake_power": req.brake_power_percent},
+            after_state={
+                "bpc": req.bpc_number,
+                "valid_until": req.bpc_valid_until,
+                "brake_power": req.brake_power_percent,
+            },
         )
 
     return {"rake_id": req.rake_id, "bpc_number": req.bpc_number, "status": "ACTIVE"}
@@ -106,9 +108,42 @@ def list_rakes(
         c = cur.fetchone()["count"]
         if c == 0:
             sample_rakes = [
-                ("RAKE-12004-A", "12004", "BPC-NR-2026-891", "2026-08-25", "2026-08-31", "PREMIUM", 100.0, 5.0, 18, "ACTIVE"),
-                ("RAKE-12424-B", "12424", "BPC-NR-2026-892", "2026-08-24", "2026-08-30", "PREMIUM", 98.5, 5.0, 22, "ACTIVE"),
-                ("RAKE-FRT-901", "BOXN-901", "BPC-CC-2026-104", "2026-08-01", "2026-08-27", "CC_INTENSIVE", 85.0, 4.8, 58, "OVERDUE"),
+                (
+                    "RAKE-12004-A",
+                    "12004",
+                    "BPC-NR-2026-891",
+                    "2026-08-25",
+                    "2026-08-31",
+                    "PREMIUM",
+                    100.0,
+                    5.0,
+                    18,
+                    "ACTIVE",
+                ),
+                (
+                    "RAKE-12424-B",
+                    "12424",
+                    "BPC-NR-2026-892",
+                    "2026-08-24",
+                    "2026-08-30",
+                    "PREMIUM",
+                    98.5,
+                    5.0,
+                    22,
+                    "ACTIVE",
+                ),
+                (
+                    "RAKE-FRT-901",
+                    "BOXN-901",
+                    "BPC-CC-2026-104",
+                    "2026-08-01",
+                    "2026-08-27",
+                    "CC_INTENSIVE",
+                    85.0,
+                    4.8,
+                    58,
+                    "OVERDUE",
+                ),
             ]
             for rk in sample_rakes:
                 cur.execute(
@@ -142,7 +177,10 @@ def list_rakes(
 # ----------------------------------------------------
 class StationAssetCreate(BaseModel):
     asset_tag: str = Field(..., description="e.g. SIG-NDLS-01 or TN-NDLS-22")
-    asset_type: str = Field("TURNOUT", description="TURNOUT, SIGNAL, OHE_SECTION, TRACK_CIRCUIT, POINT_MACHINE, CCTV, PA_SPEAKER")
+    asset_type: str = Field(
+        "TURNOUT",
+        description="TURNOUT, SIGNAL, OHE_SECTION, TRACK_CIRCUIT, POINT_MACHINE, CCTV, PA_SPEAKER",
+    )
     station_code: str = "NDLS"
     platform_or_track: str = "Platform 1"
     last_serviced_date: str
@@ -214,11 +252,51 @@ def list_station_assets(
         c = cur.fetchone()["count"]
         if c == 0:
             sample_assets = [
-                ("SIG-NDLS-01", "SIGNAL", "NDLS", "Main Line North", "OPERATIONAL", "2026-08-01", "2026-09-01"),
-                ("TN-NDLS-14A", "TURNOUT", "NDLS", "Cross-over 14A/B", "OPERATIONAL", "2026-07-15", "2026-08-30"),
-                ("OHE-NDLS-SEC2", "OHE_SECTION", "NDLS", "Yard Grid North", "OPERATIONAL", "2026-08-10", "2026-09-10"),
-                ("PM-NDLS-08", "POINT_MACHINE", "NDLS", "PF 1 Throat", "DEFECTIVE", "2026-06-01", "2026-08-15"),
-                ("TC-NDLS-102", "TRACK_CIRCUIT", "NDLS", "Block Section Inbound", "OPERATIONAL", "2026-08-20", "2026-09-20"),
+                (
+                    "SIG-NDLS-01",
+                    "SIGNAL",
+                    "NDLS",
+                    "Main Line North",
+                    "OPERATIONAL",
+                    "2026-08-01",
+                    "2026-09-01",
+                ),
+                (
+                    "TN-NDLS-14A",
+                    "TURNOUT",
+                    "NDLS",
+                    "Cross-over 14A/B",
+                    "OPERATIONAL",
+                    "2026-07-15",
+                    "2026-08-30",
+                ),
+                (
+                    "OHE-NDLS-SEC2",
+                    "OHE_SECTION",
+                    "NDLS",
+                    "Yard Grid North",
+                    "OPERATIONAL",
+                    "2026-08-10",
+                    "2026-09-10",
+                ),
+                (
+                    "PM-NDLS-08",
+                    "POINT_MACHINE",
+                    "NDLS",
+                    "PF 1 Throat",
+                    "DEFECTIVE",
+                    "2026-06-01",
+                    "2026-08-15",
+                ),
+                (
+                    "TC-NDLS-102",
+                    "TRACK_CIRCUIT",
+                    "NDLS",
+                    "Block Section Inbound",
+                    "OPERATIONAL",
+                    "2026-08-20",
+                    "2026-09-20",
+                ),
             ]
             for a in sample_assets:
                 cur.execute(
@@ -301,7 +379,11 @@ def create_work_order(
             action="WORK_ORDER_CREATED",
             table_name="work_orders",
             record_id=str(wo_id),
-            after_state={"asset": req.asset_tag, "priority": req.priority, "desc": req.issue_description},
+            after_state={
+                "asset": req.asset_tag,
+                "priority": req.priority,
+                "desc": req.issue_description,
+            },
         )
 
     # Notify engineering staff
@@ -315,7 +397,13 @@ def create_work_order(
         db=db,
     )
 
-    return {"id": wo_id, "asset_tag": req.asset_tag, "status": "OPEN", "priority": req.priority, "created_at": now_iso}
+    return {
+        "id": wo_id,
+        "asset_tag": req.asset_tag,
+        "status": "OPEN",
+        "priority": req.priority,
+        "created_at": now_iso,
+    }
 
 
 @router.get("/work-orders", response_model=List[Dict[str, Any]])
@@ -377,7 +465,7 @@ def resolve_work_order(
         # Restore asset to OPERATIONAL
         cur.execute(
             "UPDATE station_assets SET status = 'OPERATIONAL', last_serviced_date = ? WHERE asset_tag = ?;",
-            (now_iso.slice if hasattr(now_iso, 'slice') else now_iso[:10], row["asset_tag"]),
+            (now_iso.slice if hasattr(now_iso, "slice") else now_iso[:10], row["asset_tag"]),
         )
 
         record_audit(
@@ -399,7 +487,9 @@ def resolve_work_order(
 # ----------------------------------------------------
 class CleaningLogCreate(BaseModel):
     station_code: str = "NDLS"
-    area_type: str = Field("PLATFORM", description="PLATFORM, WAITING_HALL, TOILET, CONCOURSE, FOOT_OVER_BRIDGE")
+    area_type: str = Field(
+        "PLATFORM", description="PLATFORM, WAITING_HALL, TOILET, CONCOURSE, FOOT_OVER_BRIDGE"
+    )
     platform_number: Optional[int] = 1
     score_1_to_5: int = Field(5, ge=1, le=5)
     contractor_name: Optional[str] = "Swachh Rail Agency"
@@ -458,9 +548,36 @@ def list_cleaning_logs(
         if c == 0:
             now_iso = get_clock().now_iso()
             sample_logs = [
-                ("NDLS", "PLATFORM", 1, now_iso, "usr-sm-ndls-01", 5, "Swachh Rail Agency", "Thoroughly washed with scrubber machine"),
-                ("NDLS", "TOILET", 2, now_iso, "usr-sm-ndls-01", 4, "Swachh Rail Agency", "Disinfected and soap refilled"),
-                ("NDLS", "WAITING_HALL", 1, now_iso, "usr-sm-ndls-01", 5, "Swachh Rail Agency", "Floor buffed and dustbins emptied"),
+                (
+                    "NDLS",
+                    "PLATFORM",
+                    1,
+                    now_iso,
+                    "usr-sm-ndls-01",
+                    5,
+                    "Swachh Rail Agency",
+                    "Thoroughly washed with scrubber machine",
+                ),
+                (
+                    "NDLS",
+                    "TOILET",
+                    2,
+                    now_iso,
+                    "usr-sm-ndls-01",
+                    4,
+                    "Swachh Rail Agency",
+                    "Disinfected and soap refilled",
+                ),
+                (
+                    "NDLS",
+                    "WAITING_HALL",
+                    1,
+                    now_iso,
+                    "usr-sm-ndls-01",
+                    5,
+                    "Swachh Rail Agency",
+                    "Floor buffed and dustbins emptied",
+                ),
             ]
             for cl in sample_logs:
                 cur.execute(

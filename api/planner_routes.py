@@ -6,10 +6,7 @@ Safety Interlock verification, and versioned batch changeset application.
 
 from __future__ import annotations
 
-from engine.clocks import get_clock, now_iso
-
 import json
-from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -18,6 +15,7 @@ from pydantic import BaseModel, Field
 from api.auth import assert_station_scope, effective_station_scope, get_current_user, require_role
 from data.audit import record_audit
 from data.db import Database, get_db
+from engine.clocks import get_clock
 from engine.simulator import CascadeSimulator
 from notifications.dispatcher import notify
 from safety.interlock import SafetyInterlockEngine
@@ -76,12 +74,14 @@ def simulate_day_changeset(
             delta_m = -12.0
 
         knock_on_delay_change += delta_m
-        simulated_train_diffs.append({
-            "train_no": m.train_no,
-            "action": m.action,
-            "target_platform": m.target_platform,
-            "estimated_delay_delta_min": delta_m,
-        })
+        simulated_train_diffs.append(
+            {
+                "train_no": m.train_no,
+                "action": m.action,
+                "target_platform": m.target_platform,
+                "estimated_delay_delta_min": delta_m,
+            }
+        )
 
     proposed_delay = max(0.0, baseline_delay + knock_on_delay_change)
 
@@ -102,7 +102,9 @@ def simulate_day_changeset(
 @router.post("/apply", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
 def apply_day_changeset(
     req: PlanChangesetRequest,
-    current_user: Dict[str, Any] = Depends(require_role(["station_master", "section_controller", "admin"])),
+    current_user: Dict[str, Any] = Depends(
+        require_role(["station_master", "section_controller", "admin"])
+    ),
     db: Database = Depends(get_db),
 ):
     """Validates batch mutations against Safety Interlock and commits versioned changeset."""
@@ -115,7 +117,10 @@ def apply_day_changeset(
     for m in req.mutations:
         if m.target_platform is not None:
             if m.target_platform <= 0 or m.target_platform > 24:
-                raise HTTPException(status_code=400, detail=f"Invalid platform {m.target_platform} for #{m.train_no}")
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid platform {m.target_platform} for #{m.train_no}",
+                )
 
     # 2. Commit changeset & update platform assignments
     changeset_dict = [m.model_dump() for m in req.mutations]
@@ -129,7 +134,16 @@ def apply_day_changeset(
                         assigned_dep, is_locked, locked_by, status, created_at
                     ) VALUES (?, ?, ?, ?, ?, ?, 1, ?, 'SCHEDULED', ?);
                     """,
-                    (stn, m.train_no, req.plan_date, m.target_platform, m.new_arr, m.new_dep, current_user["id"], now_iso),
+                    (
+                        stn,
+                        m.train_no,
+                        req.plan_date,
+                        m.target_platform,
+                        m.new_arr,
+                        m.new_dep,
+                        current_user["id"],
+                        now_iso,
+                    ),
                 )
 
         cur.execute(
@@ -139,7 +153,14 @@ def apply_day_changeset(
                 interlock_passed, applied_by, created_at
             ) VALUES (?, ?, ?, ?, 1, ?, ?);
             """,
-            (stn, req.plan_date, json.dumps(changeset_dict), json.dumps({"status": "applied"}), current_user["id"], now_iso),
+            (
+                stn,
+                req.plan_date,
+                json.dumps(changeset_dict),
+                json.dumps({"status": "applied"}),
+                current_user["id"],
+                now_iso,
+            ),
         )
         cs_id = cur.lastrowid
 
@@ -150,7 +171,11 @@ def apply_day_changeset(
             action="PLANNER_CHANGESET_APPLIED",
             table_name="planner_changesets",
             record_id=cs_id,
-            after_state={"station_code": stn, "plan_date": req.plan_date, "mutations_count": len(req.mutations)},
+            after_state={
+                "station_code": stn,
+                "plan_date": req.plan_date,
+                "mutations_count": len(req.mutations),
+            },
         )
 
     # Emit notification

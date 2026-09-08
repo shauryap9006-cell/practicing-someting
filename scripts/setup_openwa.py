@@ -9,11 +9,11 @@ One-shot utility to:
 
 from __future__ import annotations
 
-import argparse
 import base64
 import sys
 import time
 from pathlib import Path
+
 import httpx
 
 if hasattr(sys.stdout, "reconfigure"):
@@ -69,11 +69,15 @@ def setup_openwa() -> bool:
         for s in sessions:
             if s.get("name") == session_name:
                 session_id = s.get("id")
-                print(f"  ✓ Found existing session '{session_name}' (ID: {session_id}, Status: {s.get('status')})")
+                print(
+                    f"  ✓ Found existing session '{session_name}' (ID: {session_id}, Status: {s.get('status')})"
+                )
                 break
 
         if not session_id:
-            create_resp = client.post(f"{api_base}/sessions", headers=headers, json={"name": session_name})
+            create_resp = client.post(
+                f"{api_base}/sessions", headers=headers, json={"name": session_name}
+            )
             if create_resp.status_code == 201:
                 session_obj = create_resp.json()
                 session_id = session_obj["id"]
@@ -105,7 +109,9 @@ def setup_openwa() -> bool:
                         print("📲 QR CODE READY TO SCAN!")
                         print(f"   • Saved image to: {qr_path}")
                         print(f"   • Or open web dashboard at: {base_url}")
-                        print("   • Steps: WhatsApp on phone ➔ Linked Devices ➔ Link a Device ➔ Scan QR")
+                        print(
+                            "   • Steps: WhatsApp on phone ➔ Linked Devices ➔ Link a Device ➔ Scan QR"
+                        )
                         print("═" * 70 + "\n")
                         qr_saved = True
                         break

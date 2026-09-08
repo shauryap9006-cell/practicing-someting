@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from api.auth import assert_station_scope, require_role
@@ -30,7 +30,11 @@ def post_brain_advise(
     if not train_no:
         raise HTTPException(
             status_code=400,
-            detail={"code": "MISSING_TRAIN_NO", "message": "train_no is required in request payload", "retryable": False},
+            detail={
+                "code": "MISSING_TRAIN_NO",
+                "message": "train_no is required in request payload",
+                "retryable": False,
+            },
         )
     if target_station:
         assert_station_scope(current_user, str(target_station))
@@ -56,7 +60,9 @@ def get_train_conflicts(train_no: str):
 def post_advisory_ack(
     adv_id: str,
     payload: DispatcherAckRequest,
-    current_user: dict = Depends(require_role(["station_master", "dy_sm", "section_controller", "admin"])),
+    current_user: dict = Depends(
+        require_role(["station_master", "dy_sm", "section_controller", "admin"])
+    ),
 ):
     """Records dispatcher acknowledgement (accept/reject) for an advisory.
 
@@ -100,10 +106,16 @@ async def whatsapp_inbound_webhook(request: Request):
     2. message.received: parses 'ACK <id>' and 'ESC <id>' to close advisory loops.
     """
     body = await request.body()
-    if not verify_hmac(body, request.headers, settings.OPENWA_WEBHOOK_SECRET, require_timestamp=True):
+    if not verify_hmac(
+        body, request.headers, settings.OPENWA_WEBHOOK_SECRET, require_timestamp=True
+    ):
         raise HTTPException(
             status_code=401,
-            detail={"code": "UNAUTHORIZED_WEBHOOK", "message": "Invalid HMAC signature", "retryable": False},
+            detail={
+                "code": "UNAUTHORIZED_WEBHOOK",
+                "message": "Invalid HMAC signature",
+                "retryable": False,
+            },
         )
 
     try:
@@ -111,12 +123,7 @@ async def whatsapp_inbound_webhook(request: Request):
     except Exception:
         payload = {}
 
-    event = (
-        payload.get("event")
-        or payload.get("type")
-        or payload.get("event_type")
-        or ""
-    )
+    event = payload.get("event") or payload.get("type") or payload.get("event_type") or ""
 
     health = get_health_tracker()
 
@@ -161,7 +168,11 @@ async def whatsapp_inbound_webhook(request: Request):
             adv_id=adv_id,
             sender=sender,
         )
-    elif upper_text.startswith("ESC ") or upper_text.startswith("REJ ") or upper_text.startswith("REJECT "):
+    elif (
+        upper_text.startswith("ESC ")
+        or upper_text.startswith("REJ ")
+        or upper_text.startswith("REJECT ")
+    ):
         adv_id = clean_text.split(" ", 1)[1].strip()
         record_advisory_ack(
             adv_id=adv_id,

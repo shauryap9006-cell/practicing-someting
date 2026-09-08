@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """GATE 0: closed-form verification of metric machinery.
 Validates metric property tests for CRPS, Winkler, PIT, Pinball, Coverage, and Monotonicity."""
 import sys

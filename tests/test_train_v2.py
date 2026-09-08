@@ -1,12 +1,10 @@
 """Unit and property tests for training v2 components (Task T5)."""
+
 from __future__ import annotations
 
-import datetime
-import numpy as np
-import pytest
 import torch
 
-from ml.model_v2 import ALPHAS_V2, RailTwinGRUv2
+from ml.model_v2 import RailTwinGRUv2
 from ml.train_v2 import GRUv2Ensemble, decay_sample_weights
 
 

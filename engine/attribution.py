@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Union
 
 from config import settings
 from data.db import Database, get_db
@@ -55,7 +55,7 @@ class EvidencePointer:
 @dataclass
 class AttributedCause:
     category: str
-    minutes: int
+    minutes: Union[int, float]
     cause: str
     station_code: Optional[str] = None
     evidence: Optional[EvidencePointer] = None
@@ -140,7 +140,9 @@ class DelayAttributionEngine:
         self.clock = get_clock()
         self.context_engine = context_engine
         self.min_delta = float(getattr(settings, "ATTRIBUTION_DELTA_MIN", 5.0))
-        self.unexplained_tolerance = float(getattr(settings, "ATTRIBUTION_UNEXPLAINED_TOLERANCE_MIN", 0.5))
+        self.unexplained_tolerance = float(
+            getattr(settings, "ATTRIBUTION_UNEXPLAINED_TOLERANCE_MIN", 0.5)
+        )
 
     def decompose_train_delay(self, train_no: str) -> AutopsyResult:
         """Computes rigorous physical delay decomposition for a train."""
@@ -203,8 +205,16 @@ class DelayAttributionEngine:
         # Without station events, return an explicitly unverified report rather than
         # presenting a zero-delay default as authoritative ground truth.
         if not events:
-            current_delay = int(live_pos["delay_minutes"]) if live_pos and live_pos["delay_minutes"] is not None else 0
-            curr_station = (live_pos["current_station_code"] if live_pos else (stops[0]["station_code"] if stops else "NDLS"))
+            current_delay = (
+                int(live_pos["delay_minutes"])
+                if live_pos and live_pos["delay_minutes"] is not None
+                else 0
+            )
+            curr_station = (
+                live_pos["current_station_code"]
+                if live_pos
+                else (stops[0]["station_code"] if stops else "NDLS")
+            )
             return self._build_nominal_or_zero_autopsy(
                 train_no, train_name, current_delay, curr_station, exact_accounting=False
             )
@@ -213,18 +223,28 @@ class DelayAttributionEngine:
         # Physical Decomposition Algorithm across Single Journey Run
         # -------------------------------------------------------------
         route_station_codes = {st["station_code"] for st in stops}
-        total_delay = int(events[-1]["delay_dep_min"] if events[-1]["delay_dep_min"] is not None else (events[-1]["delay_arr_min"] or 0))
+        total_delay = int(
+            events[-1]["delay_dep_min"]
+            if events[-1]["delay_dep_min"] is not None
+            else (events[-1]["delay_arr_min"] or 0)
+        )
 
         # Handle on-time case (T-A6)
         if abs(total_delay) <= 2:
-            return self._build_nominal_or_zero_autopsy(train_no, train_name, total_delay, events[-1]["station_code"])
+            return self._build_nominal_or_zero_autopsy(
+                train_no, train_name, total_delay, events[-1]["station_code"]
+            )
 
         causes: List[AttributedCause] = []
         explained_minutes = 0
 
         # Step A: INHERITED origin delay from origin event
         origin_ev = events[0]
-        origin_delay = int(origin_ev["delay_dep_min"] if origin_ev["delay_dep_min"] is not None else (origin_ev["delay_arr_min"] or 0))
+        origin_delay = int(
+            origin_ev["delay_dep_min"]
+            if origin_ev["delay_dep_min"] is not None
+            else (origin_ev["delay_arr_min"] or 0)
+        )
         if origin_delay > 0:
             inh_min = min(origin_delay, total_delay)
             causes.append(
@@ -238,7 +258,10 @@ class DelayAttributionEngine:
                         record_id=f"EV-ORIGIN-{origin_ev['rowid']}",
                         station_code=origin_ev["station_code"],
                         dwell_diff_min=origin_delay,
-                        details={"origin_station": origin_ev["station_code"], "origin_delay_dep": origin_delay},
+                        details={
+                            "origin_station": origin_ev["station_code"],
+                            "origin_delay_dep": origin_delay,
+                        },
                     ),
                     evidence_pointer=f"Rake Turnaround @ {origin_ev['station_code']} (Event #{origin_ev['rowid']})",
                 )
@@ -258,7 +281,9 @@ class DelayAttributionEngine:
                     actual_dwell = int((a_dep - a_arr).total_seconds() / 60)
                     dwell_overrun = actual_dwell - planned_dwell
 
-                    if dwell_overrun >= 3 and (explained_minutes + dwell_overrun <= total_delay + 5):
+                    if dwell_overrun >= 3 and (
+                        explained_minutes + dwell_overrun <= total_delay + 5
+                    ):
                         causes.append(
                             AttributedCause(
                                 category=CauseCategory.DWELL_OVERRUN,
@@ -270,7 +295,10 @@ class DelayAttributionEngine:
                                     record_id=f"EV-{ev['rowid']}",
                                     station_code=ev["station_code"],
                                     dwell_diff_min=dwell_overrun,
-                                    details={"planned_dwell_min": planned_dwell, "actual_dwell_min": actual_dwell},
+                                    details={
+                                        "planned_dwell_min": planned_dwell,
+                                        "actual_dwell_min": actual_dwell,
+                                    },
                                 ),
                                 evidence_pointer=f"Halt Overrun @ {ev['station_code']} (Event #{ev['rowid']})",
                             )
@@ -290,7 +318,9 @@ class DelayAttributionEngine:
                 line_speed = 110  # standard section speed
 
                 # Kinematic time delta (hours to min): (len/tsr_speed - len/line_speed) * 60
-                tsr_delta_min = max(1, int(round((tsr_len / tsr_speed - tsr_len / line_speed) * 60)))
+                tsr_delta_min = max(
+                    1, int(round((tsr_len / tsr_speed - tsr_len / line_speed) * 60))
+                )
 
                 causes.append(
                     AttributedCause(
@@ -342,7 +372,11 @@ class DelayAttributionEngine:
                             source_type="WEATHER",
                             record_id=f"WTH-{cur_station}",
                             station_code=cur_station,
-                            details={"fog_flag": fog_flag, "precip_mm": precip, "temp": w_row["temp"]},
+                            details={
+                                "fog_flag": fog_flag,
+                                "precip_mm": precip,
+                                "temp": w_row["temp"],
+                            },
                         ),
                         evidence_pointer=f"Weather Sensor @ {cur_station} (Fog Condition)",
                     )
@@ -382,15 +416,15 @@ class DelayAttributionEngine:
                     AttributedCause(
                         category=CauseCategory.RECOVERY,
                         minutes=rec_min,
-                        cause=f"High-speed section running recovery between {events[i]['station_code']}–{events[i+1]['station_code']}",
+                        cause=f"High-speed section running recovery between {events[i]['station_code']}–{events[i + 1]['station_code']}",
                         station_code=events[i]["station_code"],
                         evidence=EvidencePointer(
                             source_type="STATION_EVENT",
-                            record_id=f"REC-{events[i]['station_code']}-{events[i+1]['station_code']}",
+                            record_id=f"REC-{events[i]['station_code']}-{events[i + 1]['station_code']}",
                             station_code=events[i]["station_code"],
                             details={"runtime_reduction_min": abs(rec_min)},
                         ),
-                        evidence_pointer=f"Speed Run @ {events[i]['station_code']}–{events[i+1]['station_code']}",
+                        evidence_pointer=f"Speed Run @ {events[i]['station_code']}–{events[i + 1]['station_code']}",
                     )
                 )
                 explained_minutes += rec_min
@@ -402,7 +436,9 @@ class DelayAttributionEngine:
                 AttributedCause(
                     category=CauseCategory.RESIDUAL,
                     minutes=residual,
-                    cause=f"Operational runtime variance / track-circuit transition margin" if residual > 0 else "Unmodeled timetable buffer absorption",
+                    cause=f"Operational runtime variance / track-circuit transition margin"
+                    if residual > 0
+                    else "Unmodeled timetable buffer absorption",
                     station_code=events[-1]["station_code"] if events else "Corridor",
                     evidence=EvidencePointer(
                         source_type="STATION_EVENT",
@@ -426,7 +462,9 @@ class DelayAttributionEngine:
         evidence_pass = all(c.evidence is not None for c in causes)
         clock_pass = True
 
-        integrity_status = "VERIFIED" if (additivity_pass and evidence_pass and clock_pass) else "WARNING"
+        integrity_status = (
+            "VERIFIED" if (additivity_pass and evidence_pass and clock_pass) else "WARNING"
+        )
         integrity_checks = {
             "additivity_pass": additivity_pass,
             "evidence_resolvable": evidence_pass,
@@ -453,15 +491,25 @@ class DelayAttributionEngine:
         parts: List[str] = []
         for c in causes:
             if c.category == CauseCategory.INHERITED and c.minutes > 0:
-                parts.append(f"{c.minutes}m inherited from late origin turnaround at {c.station_code or 'terminal'}")
+                parts.append(
+                    f"{c.minutes}m inherited from late origin turnaround at {c.station_code or 'terminal'}"
+                )
             elif c.category == CauseCategory.TSR and c.minutes > 0:
-                km_info = f" at km {c.evidence.km_range}" if c.evidence and c.evidence.km_range else ""
-                speed_info = f" ({c.evidence.speed_limit_kmph} km/h)" if c.evidence and c.evidence.speed_limit_kmph else ""
+                km_info = (
+                    f" at km {c.evidence.km_range}" if c.evidence and c.evidence.km_range else ""
+                )
+                speed_info = (
+                    f" ({c.evidence.speed_limit_kmph} km/h)"
+                    if c.evidence and c.evidence.speed_limit_kmph
+                    else ""
+                )
                 parts.append(f"speed restriction{speed_info}{km_info} (+{c.minutes}m)")
             elif c.category == CauseCategory.DWELL_OVERRUN and c.minutes > 0:
                 parts.append(f"dwell overrun at {c.station_code or 'halt'} (+{c.minutes}m)")
             elif c.category == CauseCategory.SIGNAL_HOLD and c.minutes > 0:
-                parts.append(f"precedence crossing hold at {c.station_code or 'outer'} (+{c.minutes}m)")
+                parts.append(
+                    f"precedence crossing hold at {c.station_code or 'outer'} (+{c.minutes}m)"
+                )
             elif c.category == CauseCategory.RECOVERY and c.minutes < 0:
                 parts.append(f"crew runtime recovery ({c.minutes}m)")
             elif c.category == CauseCategory.RESIDUAL and abs(c.minutes) > 2:
@@ -496,34 +544,46 @@ class DelayAttributionEngine:
                     sub_causes = ev_data.get("causes", [])
                     for sc in sub_causes:
                         cc = sc.get("cause_code") or sc.get("event_type") or "UNEXPLAINED"
-                        cause_sums[cc] = cause_sums.get(cc, 0.0) + float(sc.get("attributed_min") or sc.get("minutes", 0.0))
+                        cause_sums[cc] = cause_sums.get(cc, 0.0) + float(
+                            sc.get("attributed_min") or sc.get("minutes", 0.0)
+                        )
                 except Exception:
                     p = r["primary_cause"]
                     cause_sums[p] = cause_sums.get(p, 0.0) + delta
 
-                detailed_events.append({
-                    "id": r["id"],
-                    "timestamp": r["timestamp"],
-                    "delay_change_min": r["delay_change_min"],
-                    "previous_delay_min": r["previous_delay_min"],
-                    "current_delay_min": r["current_delay_min"],
-                    "primary_cause": r["primary_cause"],
-                    "secondary_cause": r.get("secondary_cause"),
-                    "is_exact_accounting": bool(r.get("is_exact_accounting", 1)),
-                })
+                detailed_events.append(
+                    {
+                        "id": r["id"],
+                        "timestamp": r["timestamp"],
+                        "delay_change_min": r["delay_change_min"],
+                        "previous_delay_min": r["previous_delay_min"],
+                        "current_delay_min": r["current_delay_min"],
+                        "primary_cause": r["primary_cause"],
+                        "secondary_cause": r.get("secondary_cause"),
+                        "is_exact_accounting": bool(r.get("is_exact_accounting", 1)),
+                    }
+                )
 
             breakdown_chips = []
             for code, mins in cause_sums.items():
                 if mins > 0.0:
-                    breakdown_chips.append({
-                        "cause_code": code,
-                        "event_type": code,
-                        "attributed_min": round(mins, 1),
-                        "minutes": round(mins, 1),
-                        "percentage": round((mins / total_measured_delta) * 100.0, 1) if total_measured_delta > 0 else 0.0,
-                    })
-            breakdown_chips.sort(key=lambda x: x["attributed_min"], reverse=True)
-            top = breakdown_chips[0]["cause_code"] if breakdown_chips else "Nominal timetable clearance"
+                    breakdown_chips.append(
+                        {
+                            "cause_code": code,
+                            "event_type": code,
+                            "attributed_min": round(mins, 1),
+                            "minutes": round(mins, 1),
+                            "percentage": round((mins / total_measured_delta) * 100.0, 1)
+                            if total_measured_delta > 0
+                            else 0.0,
+                        }
+                    )
+            breakdown_chips.sort(key=lambda x: float(str(x["attributed_min"])), reverse=True)
+            top = (
+                breakdown_chips[0]["cause_code"]
+                if breakdown_chips
+                else "Nominal timetable clearance"
+            )
 
             return {
                 "train_no": train_no,
@@ -595,6 +655,7 @@ class DelayAttributionEngine:
             else:
                 try:
                     from engine.context import get_context_engine
+
                     ctx = get_context_engine(self.db).get_train_context(
                         train_no=train_no,
                         run_date=run_date,
@@ -605,13 +666,31 @@ class DelayAttributionEngine:
                 except Exception:
                     ctx = None
 
-        resolved_stn = station_code or (getattr(ctx, "current_station_code", None) if ctx else None) or "CNB"
+        resolved_stn = (
+            station_code or (getattr(ctx, "current_station_code", None) if ctx else None) or "CNB"
+        )
         remaining = delta
         attributed_causes: List[AttributedCause] = []
 
         # Rule 1: RAKE_INHERIT
-        if remaining > 0.0 and ctx and hasattr(ctx, "rake") and ctx.rake and (ctx.rake.has_rake_link and (getattr(ctx.rake, "turnaround_deficit_min", 0) > 0 or getattr(ctx.rake, "is_doomed", False))):
-            deficit = float(ctx.rake.turnaround_deficit_min if getattr(ctx.rake, "turnaround_deficit_min", 0) > 0 else 15.0)
+        if (
+            remaining > 0.0
+            and ctx
+            and hasattr(ctx, "rake")
+            and ctx.rake
+            and (
+                ctx.rake.has_rake_link
+                and (
+                    getattr(ctx.rake, "turnaround_deficit_min", 0) > 0
+                    or getattr(ctx.rake, "is_doomed", False)
+                )
+            )
+        ):
+            deficit = float(
+                ctx.rake.turnaround_deficit_min
+                if getattr(ctx.rake, "turnaround_deficit_min", 0) > 0
+                else 15.0
+            )
             rake_alloc = min(remaining, deficit)
             if rake_alloc > 0.0:
                 attributed_causes.append(
@@ -627,7 +706,9 @@ class DelayAttributionEngine:
 
         # Rule 2: TSR_ACTIVE
         if remaining > 0.0 and ctx and hasattr(ctx, "active_tsrs") and ctx.active_tsrs:
-            total_tsr = sum(float(getattr(tsr, "delay_penalty_min", 5.0)) for tsr in ctx.active_tsrs)
+            total_tsr = sum(
+                float(getattr(tsr, "delay_penalty_min", 5.0)) for tsr in ctx.active_tsrs
+            )
             tsr_alloc = min(remaining, total_tsr)
             if tsr_alloc > 0.0:
                 p_tsr = ctx.active_tsrs[0]
@@ -643,7 +724,16 @@ class DelayAttributionEngine:
                 remaining = max(0.0, remaining - tsr_alloc)
 
         # Rule 3: WEATHER_FOG
-        if remaining > 0.0 and ctx and hasattr(ctx, "weather") and ctx.weather and (getattr(ctx.weather, "fog_flag", 0) == 1 or getattr(ctx.weather, "visibility_km", 10.0) < 1.0):
+        if (
+            remaining > 0.0
+            and ctx
+            and hasattr(ctx, "weather")
+            and ctx.weather
+            and (
+                getattr(ctx.weather, "fog_flag", 0) == 1
+                or getattr(ctx.weather, "visibility_km", 10.0) < 1.0
+            )
+        ):
             fog_potential = 12.0
             fog_alloc = min(remaining, fog_potential)
             if fog_alloc > 0.0:
@@ -660,7 +750,13 @@ class DelayAttributionEngine:
 
         # Rule 4: WEATHER_RAIN
         heavy_rain_th = getattr(settings, "HEAVY_RAIN_THRESHOLD_MM", 20.0)
-        if remaining > 0.0 and ctx and hasattr(ctx, "weather") and ctx.weather and getattr(ctx.weather, "precip_mm", 0.0) >= heavy_rain_th:
+        if (
+            remaining > 0.0
+            and ctx
+            and hasattr(ctx, "weather")
+            and ctx.weather
+            and getattr(ctx.weather, "precip_mm", 0.0) >= heavy_rain_th
+        ):
             rain_potential = 8.0
             rain_alloc = min(remaining, rain_potential)
             if rain_alloc > 0.0:
@@ -676,8 +772,21 @@ class DelayAttributionEngine:
                 remaining = max(0.0, remaining - rain_alloc)
 
         # Rule 5: PLATFORM_WAIT
-        if remaining > 0.0 and ctx and hasattr(ctx, "platform") and ctx.platform and (getattr(ctx.platform, "is_conflicted", False) or getattr(ctx.platform, "conflict_duration_min", 0) > 0):
-            plat_dur = float(ctx.platform.conflict_duration_min if getattr(ctx.platform, "conflict_duration_min", 0) > 0 else 10.0)
+        if (
+            remaining > 0.0
+            and ctx
+            and hasattr(ctx, "platform")
+            and ctx.platform
+            and (
+                getattr(ctx.platform, "is_conflicted", False)
+                or getattr(ctx.platform, "conflict_duration_min", 0) > 0
+            )
+        ):
+            plat_dur = float(
+                ctx.platform.conflict_duration_min
+                if getattr(ctx.platform, "conflict_duration_min", 0) > 0
+                else 10.0
+            )
             plat_alloc = min(remaining, plat_dur)
             if plat_alloc > 0.0:
                 attributed_causes.append(
@@ -692,11 +801,17 @@ class DelayAttributionEngine:
                 remaining = max(0.0, remaining - plat_alloc)
 
         # Rule 6: CONGESTION
-        if remaining > 0.0 and ctx and hasattr(ctx, "spatial") and ctx.spatial and (
-            getattr(ctx.spatial, "is_congested", False)
-            or getattr(ctx.spatial, "section_occupancy_pct", 0.0) >= 60.0
-            or getattr(ctx.spatial, "trains_ahead_30k", 0) >= 1
-            or getattr(ctx.spatial, "sum_delay_trains_ahead_30k", 0.0) >= 10.0
+        if (
+            remaining > 0.0
+            and ctx
+            and hasattr(ctx, "spatial")
+            and ctx.spatial
+            and (
+                getattr(ctx.spatial, "is_congested", False)
+                or getattr(ctx.spatial, "section_occupancy_pct", 0.0) >= 60.0
+                or getattr(ctx.spatial, "trains_ahead_30k", 0) >= 1
+                or getattr(ctx.spatial, "sum_delay_trains_ahead_30k", 0.0) >= 10.0
+            )
         ):
             cong_potential = max(4.0, getattr(ctx.spatial, "sum_delay_trains_ahead_30k", 0.0) * 0.5)
             cong_alloc = min(remaining, float(cong_potential))
@@ -733,7 +848,9 @@ class DelayAttributionEngine:
             total_attributed = sum(c.attributed_min for c in attributed_causes)
 
         accounting_err = abs(total_attributed - delta)
-        assert accounting_err < 1e-4, f"Exact accounting invariant violated: sum={total_attributed} != delta={delta}"
+        assert accounting_err < 1e-4, (
+            f"Exact accounting invariant violated: sum={total_attributed} != delta={delta}"
+        )
 
         attributed_causes.sort(key=lambda x: x.attributed_min, reverse=True)
         primary = attributed_causes[0].cause_code if attributed_causes else "UNEXPLAINED"
@@ -784,21 +901,25 @@ class DelayAttributionEngine:
         exact_accounting: bool = True,
     ) -> AutopsyResult:
         """Constructs zero-delay nominal autopsy report."""
-        causes = [
-            AttributedCause(
-                category=CauseCategory.RECOVERY if delay < 0 else CauseCategory.RESIDUAL,
-                minutes=delay,
-                cause="Nominal timetable running — route clearance maintained",
-                station_code=station_code,
-                evidence=EvidencePointer(
-                    source_type="STATION_EVENT",
-                    record_id="NOMINAL_CLEARANCE",
+        causes = (
+            [
+                AttributedCause(
+                    category=CauseCategory.RECOVERY if delay < 0 else CauseCategory.RESIDUAL,
+                    minutes=delay,
+                    cause="Nominal timetable running — route clearance maintained",
                     station_code=station_code,
-                    details={"status": "ON_TIME"},
-                ),
-                evidence_pointer=f"Timetable Nominal Clearance @ {station_code}",
-            )
-        ] if delay != 0 else []
+                    evidence=EvidencePointer(
+                        source_type="STATION_EVENT",
+                        record_id="NOMINAL_CLEARANCE",
+                        station_code=station_code,
+                        details={"status": "ON_TIME"},
+                    ),
+                    evidence_pointer=f"Timetable Nominal Clearance @ {station_code}",
+                )
+            ]
+            if delay != 0
+            else []
+        )
 
         narrative = (
             "No station-event ground truth recorded; the displayed delay is not an authoritative accounting."

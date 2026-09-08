@@ -20,21 +20,21 @@ import logging
 import math
 import threading
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 from config import settings
 
 logger = logging.getLogger(__name__)
-from collector.adapters.base import LiveSource, StationEvent
+from collector.adapters.base import LiveSource
+from collector.adapters.mock_replay import MockReplaySource
 from collector.adapters.rapidapi import RapidAPISource
 from collector.adapters.scrape import ScrapeSource
-from collector.adapters.mock_replay import MockReplaySource
 from data.db import Database, get_db
-from engine.clocks import get_clock, IST_TIMEZONE
-from engine.context import ContextEngine, TrainContext, get_context_engine
-from engine.attribution import LiveAttributionEngine, AttributionResult, get_attribution_engine
-from engine.twin import TwinEngine, TwinTrainState, TwinStop
+from engine.attribution import LiveAttributionEngine, get_attribution_engine
+from engine.clocks import IST_TIMEZONE, get_clock
+from engine.context import ContextEngine, get_context_engine
+from engine.twin import TwinEngine, TwinTrainState
 
 
 @dataclass
@@ -83,7 +83,9 @@ class LiveTrainPosition:
             "delay_minutes": round(self.delay_minutes, 1),
             "confidence": round(self.confidence, 3),
             "progress_pct": round(self.progress_pct, 1),
-            "progress": round(self.progress_pct / 100.0, 3) if self.progress_pct > 1.0 else round(self.progress_pct, 3),
+            "progress": round(self.progress_pct / 100.0, 3)
+            if self.progress_pct > 1.0
+            else round(self.progress_pct, 3),
             "is_dead_reckoned": self.is_dead_reckoned,
             "basis": self.basis,
             "source": self.source,
@@ -160,11 +162,15 @@ class LivePositionTracker:
         self._start_lock = asyncio.Lock()
 
         # Ingest Adapters
-        self.adapters: List[LiveSource] = adapters if adapters is not None else [
-            RapidAPISource(),
-            ScrapeSource(),
-            MockReplaySource(self.db),
-        ]
+        self.adapters: List[LiveSource] = (
+            adapters
+            if adapters is not None
+            else [
+                RapidAPISource(),
+                ScrapeSource(),
+                MockReplaySource(self.db),
+            ]
+        )
 
         # Rate Limiting Token Bucket
         tpm_budget = int(settings.LIVE_POLL_TPM_BUDGET)
@@ -205,10 +211,7 @@ class LivePositionTracker:
     def snapshot(self) -> Dict[str, LiveTrainPosition]:
         """Returns a safe copy of the in-memory live train position cache."""
         with self._lock:
-            return {
-                k.split(":")[0]: pos
-                for k, (pos, ts) in self._position_cache.items()
-            }
+            return {k.split(":")[0]: pos for k, (pos, ts) in self._position_cache.items()}
 
     @property
     def positions(self) -> Dict[str, LiveTrainPosition]:
@@ -299,14 +302,18 @@ class LivePositionTracker:
 
         # Before departure
         if elapsed_m <= 0:
-            st = self.twin.create_train_state(train_no, route_stops, start_km=0.0, start_speed_kmh=0.0, start_phase="DWELL")
+            st = self.twin.create_train_state(
+                train_no, route_stops, start_km=0.0, start_speed_kmh=0.0, start_phase="DWELL"
+            )
             st.dwell_remaining_sec = max(10.0, abs(elapsed_m) * 60.0)
             return st
 
         # After arrival at terminus
         if elapsed_m >= tot_m:
             term_km = float(route_stops[-1]["distance_km"])
-            st = self.twin.create_train_state(train_no, route_stops, start_km=term_km, start_speed_kmh=0.0, start_phase="DWELL")
+            st = self.twin.create_train_state(
+                train_no, route_stops, start_km=term_km, start_speed_kmh=0.0, start_phase="DWELL"
+            )
             st.current_stop_idx = len(route_stops) - 1
             return st
 
@@ -324,11 +331,19 @@ class LivePositionTracker:
                 km_i = float(s_i["distance_km"])
                 km_next = float(s_next["distance_km"])
                 curr_km = km_i + frac * (km_next - km_i)
-                st = self.twin.create_train_state(train_no, route_stops, start_km=curr_km, start_speed_kmh=80.0, start_phase="CRUISE")
+                st = self.twin.create_train_state(
+                    train_no,
+                    route_stops,
+                    start_km=curr_km,
+                    start_speed_kmh=80.0,
+                    start_phase="CRUISE",
+                )
                 st.current_stop_idx = i + 1
                 return st
 
-        return self.twin.create_train_state(train_no, route_stops, start_km=0.0, start_speed_kmh=0.0, start_phase="DWELL")
+        return self.twin.create_train_state(
+            train_no, route_stops, start_km=0.0, start_speed_kmh=0.0, start_phase="DWELL"
+        )
 
     async def tick(
         self,
@@ -367,7 +382,9 @@ class LivePositionTracker:
         # 3. Pre-fetch Active TSRs from speed_restrictions table
         active_tsrs: Dict[Tuple[str, str], float] = {}
         with self.db.transaction() as cur:
-            cur.execute("SELECT from_code, to_code, speed_limit_kmph FROM speed_restrictions WHERE is_active = 1 AND status = 'ACTIVE'")
+            cur.execute(
+                "SELECT from_code, to_code, speed_limit_kmph FROM speed_restrictions WHERE is_active = 1 AND status = 'ACTIVE'"
+            )
             for r in cur.fetchall():
                 f_c = str(r["from_code"]).upper()
                 t_c = str(r["to_code"]).upper()
@@ -411,7 +428,11 @@ class LivePositionTracker:
                 next_stop = state.next_stop
 
                 # Build World Context for Train
-                sec_pair = (cur_stop.station_code, next_stop.station_code) if (cur_stop and next_stop) else ("", "")
+                sec_pair = (
+                    (cur_stop.station_code, next_stop.station_code)
+                    if (cur_stop and next_stop)
+                    else ("", "")
+                )
                 active_tsr = active_tsrs.get(sec_pair)
                 fog_active = (cur_stop.station_code in fog_stations) if cur_stop else False
 
@@ -421,7 +442,11 @@ class LivePositionTracker:
                 for other_no, other_st in self._twin_states.items():
                     if other_no == t_no:
                         continue
-                    if other_st.current_stop and cur_stop and other_st.current_stop.station_code == cur_stop.station_code:
+                    if (
+                        other_st.current_stop
+                        and cur_stop
+                        and other_st.current_stop.station_code == cur_stop.station_code
+                    ):
                         if other_st.km > state.km:
                             d = other_st.km - state.km
                             if d < dist_to_ahead:
@@ -439,7 +464,12 @@ class LivePositionTracker:
                 platform_occupied = False
                 if next_stop and state.phase == "APPROACH":
                     for other_no, other_st in self._twin_states.items():
-                        if other_no != t_no and other_st.current_stop and other_st.current_stop.station_code == next_stop.station_code and other_st.phase == "DWELL":
+                        if (
+                            other_no != t_no
+                            and other_st.current_stop
+                            and other_st.current_stop.station_code == next_stop.station_code
+                            and other_st.phase == "DWELL"
+                        ):
                             platform_occupied = True
                             break
 
@@ -504,6 +534,7 @@ class LivePositionTracker:
                         # Closed-Loop Prediction Ledger Grading on Touchdown (Step 3.4 / 3.5)
                         try:
                             from engine.prediction_ledger import PredictionLedger
+
                             ledger = PredictionLedger(self.db)
                             ledger.grade_actual_arrival(
                                 train_no=t_no,
@@ -513,7 +544,9 @@ class LivePositionTracker:
                             )
                         except Exception:
                             logger.exception(
-                                "Prediction ledger touchdown grading failed for train %s at %s", t_no, stn_code
+                                "Prediction ledger touchdown grading failed for train %s at %s",
+                                t_no,
+                                stn_code,
                             )
 
                     elif ev_type == "DEPARTURE":
@@ -567,7 +600,9 @@ class LivePositionTracker:
                         km=new_state.km,
                         current_station_code=dest["station_code"],
                         next_station_code=None,
-                        prev_station_code=route_stops[-2]["station_code"] if len(route_stops) > 1 else None,
+                        prev_station_code=route_stops[-2]["station_code"]
+                        if len(route_stops) > 1
+                        else None,
                         section_id=None,
                         speed_kmh=0.0,
                         heading=90.0,
@@ -589,15 +624,30 @@ class LivePositionTracker:
                     span = max(0.001, dist_nxt - dist_k)
                     frac = max(0.0, min(1.0, (new_state.km - dist_k) / span))
 
-                    lat = float(stop_k["lat"]) + frac * (float(stop_next["lat"]) - float(stop_k["lat"]))
-                    lng = float(stop_k["lon"]) + frac * (float(stop_next["lon"]) - float(stop_k["lon"]))
-                    heading = _calculate_heading(float(stop_k["lat"]), float(stop_k["lon"]), float(stop_next["lat"]), float(stop_next["lon"]))
+                    lat = float(stop_k["lat"]) + frac * (
+                        float(stop_next["lat"]) - float(stop_k["lat"])
+                    )
+                    lng = float(stop_k["lon"]) + frac * (
+                        float(stop_next["lon"]) - float(stop_k["lon"])
+                    )
+                    heading = _calculate_heading(
+                        float(stop_k["lat"]),
+                        float(stop_k["lon"]),
+                        float(stop_next["lat"]),
+                        float(stop_next["lon"]),
+                    )
                     section_id = f"{stop_k['station_code']}_{stop_next['station_code']}"
 
                     # Delay computation relative to timetable
-                    sched_min = _time_to_min(stop_next.get("sched_arr") or stop_next.get("sched_dep"))
+                    sched_min = _time_to_min(
+                        stop_next.get("sched_arr") or stop_next.get("sched_dep")
+                    )
                     now_min = t_now.hour * 60 + t_now.minute
-                    delay_min = max(0.0, float(now_min - sched_min)) if (now_min > sched_min and sched_min > 0) else 0.0
+                    delay_min = (
+                        max(0.0, float(now_min - sched_min))
+                        if (now_min > sched_min and sched_min > 0)
+                        else 0.0
+                    )
 
                     pos = LiveTrainPosition(
                         train_no=t_no,
@@ -605,7 +655,9 @@ class LivePositionTracker:
                         lat=lat,
                         lng=lng,
                         km=new_state.km,
-                        current_station_code=stop_k["station_code"] if frac < 0.5 else stop_next["station_code"],
+                        current_station_code=stop_k["station_code"]
+                        if frac < 0.5
+                        else stop_next["station_code"],
                         next_station_code=stop_next["station_code"],
                         prev_station_code=stop_k["station_code"],
                         section_id=section_id,
@@ -613,16 +665,22 @@ class LivePositionTracker:
                         heading=heading,
                         delay_minutes=delay_min,
                         confidence=0.95,
-                        progress_pct=max(0.0, min(100.0, (new_state.km / total_route_dist) * 100.0)),
+                        progress_pct=max(
+                            0.0, min(100.0, (new_state.km / total_route_dist) * 100.0)
+                        ),
                         is_dead_reckoned=True if new_state.speed_kmh > 0 else False,
-                        basis="dead_reckoning" if new_state.speed_kmh > 0 else "station_master_actual",
+                        basis="dead_reckoning"
+                        if new_state.speed_kmh > 0
+                        else "station_master_actual",
                         source="simulated" if clock.mode == "simulated" else "mock_replay",
                         status="RUNNING",
                         last_event_time=now_iso,
                         updated_at=now_iso,
                         signal_hold_active=(new_state.phase == "HELD"),
                         signal_hold_duration_min=12.0 if (new_state.phase == "HELD") else 0.0,
-                        inferred_signal_aspect=signal_aspect if (new_state.phase == "HELD") else "GREEN",
+                        inferred_signal_aspect=signal_aspect
+                        if (new_state.phase == "HELD")
+                        else "GREEN",
                     )
 
                 resolved_positions.append(pos)
@@ -644,13 +702,15 @@ class LivePositionTracker:
                         as_of_time=t_now,
                     )
                     if attr_res:
-                        await self._broadcast({
-                            "event": "delay_jump",
-                            "train_no": t_no,
-                            "delta_min": attr_res.measured_delta_min,
-                            "primary_cause": attr_res.primary_cause,
-                            "causes": [c.to_dict() for c in attr_res.causes],
-                        })
+                        await self._broadcast(
+                            {
+                                "event": "delay_jump",
+                                "train_no": t_no,
+                                "delta_min": attr_res.measured_delta_min,
+                                "primary_cause": attr_res.primary_cause,
+                                "causes": [c.to_dict() for c in attr_res.causes],
+                            }
+                        )
 
                 self._previous_delays[t_no] = curr_delay
 
@@ -662,24 +722,26 @@ class LivePositionTracker:
         if resolved_positions:
             records = []
             for p in resolved_positions:
-                records.append({
-                    "train_no": p.train_no,
-                    "run_date": p.run_date,
-                    "lat": p.lat,
-                    "lng": p.lng,
-                    "current_station_code": p.current_station_code,
-                    "next_station_code": p.next_station_code,
-                    "section_id": p.section_id,
-                    "speed_kmh": p.speed_kmh,
-                    "delay_minutes": p.delay_minutes,
-                    "confidence": p.confidence,
-                    "progress_pct": p.progress_pct,
-                    "is_dead_reckoned": 1 if p.is_dead_reckoned else 0,
-                    "source": p.source,
-                    "last_event_time": p.last_event_time,
-                    "last_gps_fix": p.last_event_time,
-                    "updated_at": p.updated_at,
-                })
+                records.append(
+                    {
+                        "train_no": p.train_no,
+                        "run_date": p.run_date,
+                        "lat": p.lat,
+                        "lng": p.lng,
+                        "current_station_code": p.current_station_code,
+                        "next_station_code": p.next_station_code,
+                        "section_id": p.section_id,
+                        "speed_kmh": p.speed_kmh,
+                        "delay_minutes": p.delay_minutes,
+                        "confidence": p.confidence,
+                        "progress_pct": p.progress_pct,
+                        "is_dead_reckoned": 1 if p.is_dead_reckoned else 0,
+                        "source": p.source,
+                        "last_event_time": p.last_event_time,
+                        "last_gps_fix": p.last_event_time,
+                        "updated_at": p.updated_at,
+                    }
+                )
             self.db.upsert_live_positions_bulk(records)
 
         return resolved_positions
@@ -706,7 +768,9 @@ class LivePositionTracker:
                 (run_date, *trunk_stations),
             )
 
-    def get_live_position(self, train_no: str, run_date: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    def get_live_position(
+        self, train_no: str, run_date: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
         """Retrieves real-time live position for a specific train."""
         clock = get_clock()
         target_date = run_date or clock.today_str()
@@ -723,7 +787,9 @@ class LivePositionTracker:
         route_stops = self._get_cached_route(train_no)
         if route_stops:
             t_now = clock.now()
-            state = self._twin_states.get(train_no) or self._init_twin_train_state(train_no, route_stops, t_now)
+            state = self._twin_states.get(train_no) or self._init_twin_train_state(
+                train_no, route_stops, t_now
+            )
             self._twin_states[train_no] = state
 
             total_route_dist = max(1.0, float(route_stops[-1]["distance_km"]))
@@ -743,7 +809,9 @@ class LivePositionTracker:
                     km=state.km,
                     current_station_code=dest["station_code"],
                     next_station_code=None,
-                    prev_station_code=route_stops[-2]["station_code"] if len(route_stops) > 1 else None,
+                    prev_station_code=route_stops[-2]["station_code"]
+                    if len(route_stops) > 1
+                    else None,
                     section_id=None,
                     speed_kmh=0.0,
                     heading=90.0,
@@ -767,12 +835,21 @@ class LivePositionTracker:
 
                 lat = float(stop_k["lat"]) + frac * (float(stop_next["lat"]) - float(stop_k["lat"]))
                 lng = float(stop_k["lon"]) + frac * (float(stop_next["lon"]) - float(stop_k["lon"]))
-                heading = _calculate_heading(float(stop_k["lat"]), float(stop_k["lon"]), float(stop_next["lat"]), float(stop_next["lon"]))
+                heading = _calculate_heading(
+                    float(stop_k["lat"]),
+                    float(stop_k["lon"]),
+                    float(stop_next["lat"]),
+                    float(stop_next["lon"]),
+                )
                 section_id = f"{stop_k['station_code']}_{stop_next['station_code']}"
 
                 sched_min = _time_to_min(stop_next.get("sched_arr") or stop_next.get("sched_dep"))
                 now_min = t_now.hour * 60 + t_now.minute
-                delay_min = max(0.0, float(now_min - sched_min)) if (now_min > sched_min and sched_min > 0) else 0.0
+                delay_min = (
+                    max(0.0, float(now_min - sched_min))
+                    if (now_min > sched_min and sched_min > 0)
+                    else 0.0
+                )
 
                 pos = LiveTrainPosition(
                     train_no=train_no,
@@ -780,7 +857,9 @@ class LivePositionTracker:
                     lat=lat,
                     lng=lng,
                     km=state.km,
-                    current_station_code=stop_k["station_code"] if frac < 0.5 else stop_next["station_code"],
+                    current_station_code=stop_k["station_code"]
+                    if frac < 0.5
+                    else stop_next["station_code"],
                     next_station_code=stop_next["station_code"],
                     prev_station_code=stop_k["station_code"],
                     section_id=section_id,
@@ -808,7 +887,9 @@ class LivePositionTracker:
         db_pos = self.db.get_live_position(train_no, target_date)
         if db_pos:
             if "status" not in db_pos:
-                db_pos["status"] = "TERMINATED" if float(db_pos.get("progress_pct", 0)) >= 99.0 else "RUNNING"
+                db_pos["status"] = (
+                    "TERMINATED" if float(db_pos.get("progress_pct", 0)) >= 99.0 else "RUNNING"
+                )
             return db_pos
 
         return None
@@ -829,7 +910,9 @@ class LivePositionTracker:
                     is_held = bool(r.get("is_dead_reckoned", 0) and spd < 5.0)
                     r["signal_hold_active"] = is_held
                     r["signal_hold_duration_min"] = 12.0 if is_held else 0.0
-                    r["inferred_signal_aspect"] = "RED" if is_held else "GREEN" if spd > 60 else "YELLOW"
+                    r["inferred_signal_aspect"] = (
+                        "RED" if is_held else "GREEN" if spd > 60 else "YELLOW"
+                    )
             return db_positions
 
         return []
@@ -881,4 +964,6 @@ if __name__ == "__main__":
     positions = asyncio.run(tracker.tick())
     print(f"Tracked {len(positions)} live trains on NDLS-DDU corridor.")
     for p in positions[:5]:
-        print(f"  Train #{p.train_no} [{p.status}] at {p.current_station_code} (Lat: {p.lat:.4f}, Lng: {p.lng:.4f}, Prog: {p.progress_pct:.1f}%, Conf: {p.confidence:.2f}, Delay: +{p.delay_minutes:.0f}m)")
+        print(
+            f"  Train #{p.train_no} [{p.status}] at {p.current_station_code} (Lat: {p.lat:.4f}, Lng: {p.lng:.4f}, Prog: {p.progress_pct:.1f}%, Conf: {p.confidence:.2f}, Delay: +{p.delay_minutes:.0f}m)"
+        )

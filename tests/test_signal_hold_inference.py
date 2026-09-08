@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 
 from api.main import app
 from data.db import get_db
-from engine.live_tracker import LivePositionTracker, LiveTrainPosition
+from engine.live_tracker import LivePositionTracker
 
 
 @pytest.fixture
@@ -17,13 +17,13 @@ def test_live_position_tracker_computes_signal_aspect():
     """LivePositionTracker must compute inferred signal aspects and signal hold duration."""
     db = get_db()
     tracker = LivePositionTracker(db)
-    
+
     # Query a live position for a known train
     with db.transaction() as cur:
         cur.execute("SELECT train_no FROM trains LIMIT 1;")
         row = cur.fetchone()
         sample_train = row["train_no"] if row else "12004"
-        
+
     pos = tracker.get_live_position(sample_train)
     if pos:
         assert "inferred_signal_aspect" in pos
@@ -41,7 +41,7 @@ def test_signal_hold_inference_in_live_api(client):
     data = response.json()
     assert data["status"] == "OK"
     assert "positions" in data
-    
+
     if data["positions"]:
         first = data["positions"][0]
         assert "inferred_signal_aspect" in first

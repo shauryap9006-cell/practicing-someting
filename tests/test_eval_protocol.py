@@ -11,12 +11,10 @@ Asserts:
 from __future__ import annotations
 
 import json
-from pathlib import Path
-import pytest
+
 import numpy as np
 
 from config import settings
-from data.db import Database, get_db
 from ml.evaluate import Evaluator
 
 
@@ -56,8 +54,12 @@ def test_winkler_score_properties():
     p90_miss = np.array([16.0, 26.0, 36.0])
     w_miss = Evaluator.compute_winkler_score(y, p10_miss, p90_miss, alpha=0.20)
 
-    assert w_tight < w_wide, f"Tight intervals should have lower Winkler score than overly wide ones ({w_tight} vs {w_wide})"
-    assert w_tight < w_miss, f"Accurate intervals should have lower Winkler score than miscovered ones ({w_tight} vs {w_miss})"
+    assert w_tight < w_wide, (
+        f"Tight intervals should have lower Winkler score than overly wide ones ({w_tight} vs {w_wide})"
+    )
+    assert w_tight < w_miss, (
+        f"Accurate intervals should have lower Winkler score than miscovered ones ({w_tight} vs {w_miss})"
+    )
 
 
 def test_crps_score_bounds():
@@ -129,9 +131,10 @@ def test_cv_fold_sample_guard_and_tail_exclusion():
         assert f["samples"] >= 1000
 
     # Verify custom min_test_samples threshold exclusion
-    high_threshold_folds = evaluator.run_rolling_origin_cv(num_folds=6, embargo_days=2, min_test_samples=9000)
+    high_threshold_folds = evaluator.run_rolling_origin_cv(
+        num_folds=6, embargo_days=2, min_test_samples=9000
+    )
     for f in high_threshold_folds:
         if (f.get("samples") or 0) < 9000:
             assert f["excluded"] is True
             assert f.get("excluded_low_samples") is True
-

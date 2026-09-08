@@ -3,11 +3,9 @@
 Verifies health diagnostics, telemetry feed freshness checking, and degraded state flags.
 """
 
-import pytest
 from fastapi.testclient import TestClient
 
 from api.main import app
-from data.db import get_db
 
 client = TestClient(app)
 

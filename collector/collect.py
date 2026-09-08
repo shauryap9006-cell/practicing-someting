@@ -12,13 +12,13 @@ from typing import List, Optional
 
 logger = logging.getLogger(__name__)
 
-from config import settings
 from collector.adapters.base import LiveSource, StationEvent
+from collector.adapters.mock_replay import MockReplaySource
 from collector.adapters.rapidapi import RapidAPISource
 from collector.adapters.scrape import ScrapeSource
-from collector.adapters.mock_replay import MockReplaySource
 from collector.quality import QualityGate
 from collector.weather import WeatherEngine
+from config import settings
 from data.db import Database, get_db
 from engine.clocks import get_clock
 
@@ -32,11 +32,15 @@ class DataCollector:
         self.weather_engine = WeatherEngine(self.db)
 
         # 3-Tier Adapter Chain
-        self.adapters: List[LiveSource] = adapters if adapters is not None else [
-            RapidAPISource(),
-            ScrapeSource(),
-            MockReplaySource(self.db),
-        ]
+        self.adapters: List[LiveSource] = (
+            adapters
+            if adapters is not None
+            else [
+                RapidAPISource(),
+                ScrapeSource(),
+                MockReplaySource(self.db),
+            ]
+        )
 
     def fetch_with_failover(
         self, train_no: str, run_date: datetime.date
@@ -69,7 +73,9 @@ class DataCollector:
         logger.info("Starting collection cycle for %s (Mode: %s)...", date_str, clock.mode)
 
         # 1. Sync corridor weather first
-        weather_synced = self.weather_engine.sync_corridor_weather(run_date, limit=train_limit or 10)
+        weather_synced = self.weather_engine.sync_corridor_weather(
+            run_date, limit=train_limit or 10
+        )
         logger.info("Synced weather for %s stations.", weather_synced)
 
         # 2. Get trains to poll
@@ -111,7 +117,11 @@ class DataCollector:
             )
             total_upserted = len(all_valid_events)
 
-        logger.info("Collection cycle complete: %d events upserted, %d quarantined.", total_upserted, total_quarantined)
+        logger.info(
+            "Collection cycle complete: %d events upserted, %d quarantined.",
+            total_upserted,
+            total_quarantined,
+        )
         return {
             "date": date_str,
             "trains_polled": len(train_nos),

@@ -9,14 +9,14 @@ against the v1 Champion across:
 
 Computes paired sample-level Wilcoxon signed-rank test and Diebold-Mariano HAC test.
 """
+
 from __future__ import annotations
 
 import datetime as dt
 import json
-import sqlite3
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 import scipy.stats as stats
@@ -26,10 +26,8 @@ from torch.utils.data import DataLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from config import settings
 from data.db import Database, get_db
 from ml.evaluate_v2 import crps_grid, to_common_grid
-from ml.features_v3 import ALPHAS, FEATURE_NAMES_V3, V3FeatureBuilder
 from ml.model_seq import NonCrossingGRUQuantileModel
 from ml.model_v3 import ALPHAS_V3, GRUv3Ensemble, RailTwinGRUv3
 from ml.train_v3 import build_dataset_from_snapshots
@@ -38,7 +36,9 @@ from ml.vocab import StationVocab
 COMMON_GRID = np.round(np.linspace(0.02, 0.98, 49), 4)
 
 
-def diebold_mariano_hac(e_champ: np.ndarray, e_v3: np.ndarray, max_lag: int = 14) -> Tuple[float, float]:
+def diebold_mariano_hac(
+    e_champ: np.ndarray, e_v3: np.ndarray, max_lag: int = 14
+) -> Tuple[float, float]:
     """Diebold-Mariano test with Newey-West HAC variance estimator for serial correlation."""
     d = e_champ - e_v3  # positive d means v3 has lower error
     T = len(d)
@@ -214,14 +214,22 @@ def run_honest_champion_gate(db: Optional[Database] = None) -> Dict[str, Any]:
     splits_to_evaluate = [
         ("Row 1: OVERALL BENCH_v3 (Fog Core)", "run_date BETWEEN '2025-11-30' AND '2026-01-01'"),
         ("Row 2: BENCH_NORMAL (2026 Normal Days)", "run_date >= '2026-02-01'"),
-        ("Row 3: CLASS: Mail (>=60k events)", "train_no IN (SELECT train_no FROM trains WHERE class = 'mail') AND run_date >= '2025-11-30'"),
-        ("Row 4: CLASS: Passenger (>=60k events)", "train_no IN (SELECT train_no FROM trains WHERE class = 'passenger') AND run_date >= '2025-11-30'"),
+        (
+            "Row 3: CLASS: Mail (>=60k events)",
+            "train_no IN (SELECT train_no FROM trains WHERE class = 'mail') AND run_date >= '2025-11-30'",
+        ),
+        (
+            "Row 4: CLASS: Passenger (>=60k events)",
+            "train_no IN (SELECT train_no FROM trains WHERE class = 'passenger') AND run_date >= '2025-11-30'",
+        ),
     ]
 
     print("\n" + "=" * 88)
     print("RAILTWIN-X v3 OFFICIAL GATE SHOOTOUT — UNSEALED BENCHMARKS")
     print("=" * 88)
-    print(f"{'Evaluation Row':<38} {'N':<7} {'Champ MAE':<10} {'v3 MAE':<8} {'Delta':<8} {'p-val':<8} {'DM Stat':<8} {'Win?'}")
+    print(
+        f"{'Evaluation Row':<38} {'N':<7} {'Champ MAE':<10} {'v3 MAE':<8} {'Delta':<8} {'p-val':<8} {'DM Stat':<8} {'Win?'}"
+    )
     print("-" * 88)
 
     results = {}

@@ -3,6 +3,7 @@
 Fixes: (a) PYTHONHASHSEED salting => silent per-process embedding corruption;
 (b) pigeonhole collisions (>=23 guaranteed, ~600 expected pairs).
 """
+
 from __future__ import annotations
 
 import json
@@ -64,7 +65,9 @@ class StationVocab:
         """Constructs station vocabulary directly from distinct station codes in database."""
         con = sqlite3.connect(db_path)
         try:
-            rows = con.execute("SELECT DISTINCT code FROM stations WHERE code IS NOT NULL").fetchall()
+            rows = con.execute(
+                "SELECT DISTINCT code FROM stations WHERE code IS NOT NULL"
+            ).fetchall()
         finally:
             con.close()
         return cls([r[0] for r in rows], min_size=min_size)

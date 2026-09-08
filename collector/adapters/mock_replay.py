@@ -8,7 +8,6 @@ are unreachable.
 from __future__ import annotations
 
 import datetime
-import math
 import random
 from typing import Optional
 
@@ -27,9 +26,7 @@ class MockReplaySource(LiveSource):
     def source_name(self) -> str:
         return "MockReplay"
 
-    def fetch_running_status(
-        self, train_no: str, run_date: datetime.date
-    ) -> list[StationEvent]:
+    def fetch_running_status(self, train_no: str, run_date: datetime.date) -> list[StationEvent]:
         """Generates consistent StationEvents from timetable route and realistic delays."""
         clock = get_clock()
         collected_at = clock.now_iso()
@@ -69,13 +66,19 @@ class MockReplaySource(LiveSource):
             sched_dep = r["sched_dep"]
 
             # Small section delta
-            delta = rng.choice([-3, -1, 0, 0, 1, 4, 10]) if priority > 1 else rng.choice([-2, 0, 0, 1, 3])
+            delta = (
+                rng.choice([-3, -1, 0, 0, 1, 4, 10])
+                if priority > 1
+                else rng.choice([-2, 0, 0, 1, 3])
+            )
             curr_delay = max(0, curr_delay + delta)
 
             actual_arr = None
             if sched_arr:
                 sh, sm = [int(x) for x in sched_arr.split(":")]
-                act_arr_dt = datetime.datetime(run_date.year, run_date.month, run_date.day, sh, sm) + datetime.timedelta(minutes=curr_delay)
+                act_arr_dt = datetime.datetime(
+                    run_date.year, run_date.month, run_date.day, sh, sm
+                ) + datetime.timedelta(minutes=curr_delay)
                 actual_arr = act_arr_dt.strftime("%H:%M")
 
             delay_arr = curr_delay
@@ -87,7 +90,9 @@ class MockReplaySource(LiveSource):
             actual_dep = None
             if sched_dep:
                 sh, sm = [int(x) for x in sched_dep.split(":")]
-                act_dep_dt = datetime.datetime(run_date.year, run_date.month, run_date.day, sh, sm) + datetime.timedelta(minutes=curr_delay)
+                act_dep_dt = datetime.datetime(
+                    run_date.year, run_date.month, run_date.day, sh, sm
+                ) + datetime.timedelta(minutes=curr_delay)
                 actual_dep = act_dep_dt.strftime("%H:%M")
 
             delay_dep = curr_delay
@@ -119,6 +124,6 @@ if __name__ == "__main__":
         tr_row = cur.fetchone()
     t_sample = tr_row["train_no"] if tr_row else "10001"
     events = src.fetch_running_status(t_sample, datetime.date.today())
-    print(f"Generated {len(events)} events for train {t_sample}. First stop delay: {events[0].delay_arr_min if events else 0}m")
-
-
+    print(
+        f"Generated {len(events)} events for train {t_sample}. First stop delay: {events[0].delay_arr_min if events else 0}m"
+    )

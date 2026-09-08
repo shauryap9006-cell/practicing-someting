@@ -4,10 +4,12 @@ Supports:
 - FEATURE_VERSION = 1: 25-feature legacy schema (LightGBM champion compatibility)
 - FEATURE_VERSION = 2: 34-feature causal schema (Task T2: wiring rakes, TSRs, festivals, position belief, recency)
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
 import numpy as np
 import pandas as pd
 
@@ -191,7 +193,9 @@ class TrainFeatureVector:
         )
 
 
-def validate_feature_dataframe(df: pd.DataFrame, is_training: bool = True, version: int = 1) -> None:
+def validate_feature_dataframe(
+    df: pd.DataFrame, is_training: bool = True, version: int = 1
+) -> None:
     """Validates schema types and bounds on extracted feature dataframes."""
     cols = FEATURE_NAMES_V2 if version == 2 else FEATURE_NAMES_V1
     missing_cols = [c for c in cols if c not in df.columns]

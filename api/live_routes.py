@@ -11,9 +11,8 @@ Exposes high-performance REST and SSE endpoints for:
 from __future__ import annotations
 
 import asyncio
-import datetime
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
@@ -21,9 +20,9 @@ from fastapi.responses import StreamingResponse
 from api.sse_limits import acquire_sse_slot, guarded_stream, release_sse_slot
 from config import settings
 from data.db import Database, get_db
+from engine.attribution import LiveAttributionEngine, get_attribution_engine
 from engine.clocks import get_clock
 from engine.context import ContextEngine, get_context_engine
-from engine.attribution import LiveAttributionEngine, get_attribution_engine
 from engine.live_tracker import LivePositionTracker, get_live_tracker
 
 router = APIRouter(tags=["Live Tracking & Attribution (Pipeline 07)"])
@@ -39,7 +38,9 @@ def _prune_position_cache(now_ts: float) -> None:
     for k in expired:
         _POSITION_CACHE.pop(k, None)
     if len(_POSITION_CACHE) > _POSITION_CACHE_MAX_ENTRIES:
-        for k, _ in sorted(_POSITION_CACHE.items(), key=lambda kv: kv[1]["timestamp"])[: len(_POSITION_CACHE) - _POSITION_CACHE_MAX_ENTRIES]:
+        for k, _ in sorted(_POSITION_CACHE.items(), key=lambda kv: kv[1]["timestamp"])[
+            : len(_POSITION_CACHE) - _POSITION_CACHE_MAX_ENTRIES
+        ]:
             _POSITION_CACHE.pop(k, None)
 
 
@@ -90,27 +91,31 @@ def get_meta_config() -> Dict[str, Any]:
         "delay_colors": {
             "on_time_max_min": settings.DELAY_ON_TIME_MAX_MIN,
             "moderate_max_min": settings.DELAY_MODERATE_MAX_MIN,
-            "color_on_time": "#10B981",    # emerald-500
-            "color_moderate": "#F59E0B",   # amber-500
-            "color_severe": "#EF4444",     # red-500
+            "color_on_time": "#10B981",  # emerald-500
+            "color_moderate": "#F59E0B",  # amber-500
+            "color_severe": "#EF4444",  # red-500
         },
         "attribution_colors": {
-            "RAKE_INHERIT": "#A855F7",    # Purple
-            "TSR_ACTIVE": "#EF4444",      # Red
-            "WEATHER_FOG": "#94A3B8",     # Foggy Gray
-            "WEATHER_RAIN": "#38BDF8",    # Rain Blue
-            "PLATFORM_WAIT": "#F59E0B",   # Amber
-            "CONGESTION": "#F97316",      # Orange
-            "UNEXPLAINED": "#64748B",     # Slate Gray
+            "RAKE_INHERIT": "#A855F7",  # Purple
+            "TSR_ACTIVE": "#EF4444",  # Red
+            "WEATHER_FOG": "#94A3B8",  # Foggy Gray
+            "WEATHER_RAIN": "#38BDF8",  # Rain Blue
+            "PLATFORM_WAIT": "#F59E0B",  # Amber
+            "CONGESTION": "#F97316",  # Orange
+            "UNEXPLAINED": "#64748B",  # Slate Gray
         },
     }
 
 
 @router.get("/v1/trains/{train_no}/live", response_model=None, operation_id="get_train_live_v1")
-@router.get("/api/v1/trains/{train_no}/live", response_model=None, operation_id="get_train_live_api_v1")
+@router.get(
+    "/api/v1/trains/{train_no}/live", response_model=None, operation_id="get_train_live_api_v1"
+)
 def get_train_live(
     train_no: str,
-    run_date: Optional[str] = Query(None, description="Run date YYYY-MM-DD (defaults to clock today)"),
+    run_date: Optional[str] = Query(
+        None, description="Run date YYYY-MM-DD (defaults to clock today)"
+    ),
     db: Database = Depends(get_db),
     tracker: LivePositionTracker = Depends(_get_tracker_dep),
     context_engine: ContextEngine = Depends(_get_context_dep),
@@ -124,9 +129,13 @@ def get_train_live(
         cur.execute("SELECT train_no, name, class FROM trains WHERE train_no = ?", (clean_no,))
         train_row = cur.fetchone()
         if not train_row:
-            raise HTTPException(status_code=404, detail=f"Train '{clean_no}' not found in timetable registry.")
+            raise HTTPException(
+                status_code=404, detail=f"Train '{clean_no}' not found in timetable registry."
+            )
 
-        cur.execute("SELECT MAX(distance_km) as max_km FROM route_stations WHERE train_no = ?", (clean_no,))
+        cur.execute(
+            "SELECT MAX(distance_km) as max_km FROM route_stations WHERE train_no = ?", (clean_no,)
+        )
         max_dist_row = cur.fetchone()
         total_route_dist = float(max_dist_row["max_km"] or 0.0) if max_dist_row else 0.0
 
@@ -157,7 +166,11 @@ def get_train_live(
         if not first_stn:
             raise HTTPException(
                 status_code=404,
-                detail={"code": "ROUTE_NOT_FOUND", "message": f"No route found for train {clean_no}", "retryable": False},
+                detail={
+                    "code": "ROUTE_NOT_FOUND",
+                    "message": f"No route found for train {clean_no}",
+                    "retryable": False,
+                },
             )
 
         pos = {
@@ -216,11 +229,19 @@ def get_train_live(
     return response_payload
 
 
-@router.get("/v1/trains/{train_no}/why-late", response_model=None, operation_id="get_train_why_late_v1")
-@router.get("/api/v1/trains/{train_no}/why-late", response_model=None, operation_id="get_train_why_late_api_v1")
+@router.get(
+    "/v1/trains/{train_no}/why-late", response_model=None, operation_id="get_train_why_late_v1"
+)
+@router.get(
+    "/api/v1/trains/{train_no}/why-late",
+    response_model=None,
+    operation_id="get_train_why_late_api_v1",
+)
 def get_train_why_late(
     train_no: str,
-    run_date: Optional[str] = Query(None, description="Run date YYYY-MM-DD (defaults to clock today)"),
+    run_date: Optional[str] = Query(
+        None, description="Run date YYYY-MM-DD (defaults to clock today)"
+    ),
     db: Database = Depends(get_db),
     attribution_engine: LiveAttributionEngine = Depends(_get_attribution_dep),
 ) -> Dict[str, Any]:
@@ -260,7 +281,9 @@ def get_train_why_late(
         cur.execute("SELECT train_no, name, class FROM trains WHERE train_no = ?", (clean_no,))
         train_row = cur.fetchone()
         if not train_row:
-            raise HTTPException(status_code=404, detail=f"Train '{clean_no}' not found in timetable registry.")
+            raise HTTPException(
+                status_code=404, detail=f"Train '{clean_no}' not found in timetable registry."
+            )
 
     clock = get_clock()
     target_date = run_date or clock.today_str()
@@ -274,7 +297,9 @@ def get_train_why_late(
 @router.get("/v1/live/positions", response_model=None, operation_id="get_live_positions_v1")
 @router.get("/api/v1/live/positions", response_model=None, operation_id="get_live_positions_api_v1")
 def get_live_positions(
-    run_date: Optional[str] = Query(None, description="Run date YYYY-MM-DD (defaults to clock today)"),
+    run_date: Optional[str] = Query(
+        None, description="Run date YYYY-MM-DD (defaults to clock today)"
+    ),
     tracker: LivePositionTracker = Depends(_get_tracker_dep),
 ) -> Dict[str, Any]:
     """Returns real-time kinematic positions for all active corridor trains."""
@@ -305,7 +330,11 @@ async def stream_live_positions(
     if not acquire_sse_slot():
         raise HTTPException(
             status_code=503,
-            detail={"code": "SSE_CAPACITY", "message": "Too many live streams; retry shortly.", "retryable": True},
+            detail={
+                "code": "SSE_CAPACITY",
+                "message": "Too many live streams; retry shortly.",
+                "retryable": True,
+            },
             headers={"Retry-After": str(settings.LIVE_SSE_PULSE_SECONDS)},
         )
 

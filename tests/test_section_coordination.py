@@ -66,7 +66,9 @@ def test_cross_station_handoff_lifecycle(auth_headers):
 def test_dynamic_precedence_advisories(auth_headers):
     """Verifies dynamic precedence calculation and execution."""
     # 1. Generate Advisories
-    gen_resp = client.get("/api/section/advisories/generate?section_id=SEC-NDLS-GZB", headers=auth_headers)
+    gen_resp = client.get(
+        "/api/section/advisories/generate?section_id=SEC-NDLS-GZB", headers=auth_headers
+    )
     assert gen_resp.status_code == 200
     advisories = gen_resp.json()
     assert len(advisories) > 0

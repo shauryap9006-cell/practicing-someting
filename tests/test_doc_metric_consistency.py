@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -31,8 +32,12 @@ def test_judge_onepager_matches_metrics_json(metrics_data):
 
     # Canonical overall numbers
     overall_mae = metrics_data["canonical_mae"]
-    assert f"{overall_mae} min" in content, f"Overall MAE {overall_mae} missing from judge_onepager.md"
-    assert "80.64%" in content or "80.6%" in content, "Overall coverage missing from judge_onepager.md"
+    assert f"{overall_mae} min" in content, (
+        f"Overall MAE {overall_mae} missing from judge_onepager.md"
+    )
+    assert "80.64%" in content or "80.6%" in content, (
+        "Overall coverage missing from judge_onepager.md"
+    )
     assert "57.94" in content, "Overall Winkler score 57.94 missing from judge_onepager.md"
 
     # Per-horizon numbers

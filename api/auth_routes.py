@@ -5,10 +5,8 @@ Provides login, token refresh, and profile inspection endpoints.
 
 from __future__ import annotations
 
-from engine.clocks import get_clock, now_iso, ist_now, IST_TIMEZONE
-
 import hashlib
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Security, status
@@ -34,6 +32,7 @@ from api.auth_limiter import (
 )
 from data.audit import record_audit
 from data.db import Database, get_db
+from engine.clocks import IST_TIMEZONE, get_clock, ist_now, now_iso
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication & RBAC"])
 
@@ -57,7 +56,9 @@ class UserProfile(BaseModel):
 
 class ChangePasswordRequest(BaseModel):
     old_password: str = Field(..., description="Current password")
-    new_password: str = Field(..., min_length=10, description="New password (minimum 10 characters)")
+    new_password: str = Field(
+        ..., min_length=10, description="New password (minimum 10 characters)"
+    )
 
 
 class ChangePasswordResponse(BaseModel):
@@ -126,7 +127,9 @@ def login(request: LoginRequest, http_request: Request, db: Database = Depends(g
                 (hash_password(request.password), row["id"]),
             )
 
-    must_change = bool(row["must_change_password"]) if "must_change_password" in row.keys() else False
+    must_change = (
+        bool(row["must_change_password"]) if "must_change_password" in row.keys() else False
+    )
     token_data = {
         "sub": row["username"],
         "user_id": row["id"],
@@ -312,7 +315,9 @@ def refresh_token(
 ):
     """Rotates a server-tracked refresh token and issues a new access token."""
     if not auth or not auth.credentials:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token required.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token required."
+        )
 
     payload = decode_refresh_token(auth.credentials)
     token_hash = hashlib.sha256(auth.credentials.encode("utf-8")).hexdigest()
@@ -334,9 +339,14 @@ def refresh_token(
         )
         row = cur.fetchone()
         if not row:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token is revoked or invalid.")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Refresh token is revoked or invalid.",
+            )
 
-        must_change = bool(row["must_change_password"]) if "must_change_password" in row.keys() else False
+        must_change = (
+            bool(row["must_change_password"]) if "must_change_password" in row.keys() else False
+        )
         token_data = {
             "sub": row["username"],
             "user_id": row["id"],
@@ -377,7 +387,9 @@ def refresh_token(
         permissions_json=row["permissions_json"],
         must_change_password=must_change,
     )
-    return LoginResponse(access_token=new_access_token, refresh_token=new_refresh_token, user=user_profile)
+    return LoginResponse(
+        access_token=new_access_token, refresh_token=new_refresh_token, user=user_profile
+    )
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)

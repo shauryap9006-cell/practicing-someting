@@ -65,7 +65,11 @@ def demo_mutation_guard(
     if not settings.DEMO_ALLOW_CLOCK_CONTROL:
         raise HTTPException(
             status_code=403,
-            detail={"code": "DEMO_CONTROLS_DISABLED", "message": "Demo controls are disabled", "retryable": False},
+            detail={
+                "code": "DEMO_CONTROLS_DISABLED",
+                "message": "Demo controls are disabled",
+                "retryable": False,
+            },
         )
     if _is_development() and not (auth and auth.credentials):
         return None
@@ -73,16 +77,26 @@ def demo_mutation_guard(
     if user.get("role_id") not in DEMO_MUTATION_ROLES:
         raise HTTPException(
             status_code=403,
-            detail={"code": "DEMO_ROLE_DENIED", "message": "Role not permitted to inject demo events", "retryable": False},
+            detail={
+                "code": "DEMO_ROLE_DENIED",
+                "message": "Role not permitted to inject demo events",
+                "retryable": False,
+            },
         )
     return user
 
 
 class InjectEventRequest(BaseModel):
-    event_type: str = Field(..., description="Shock type: SIGNAL_HOLD, TSR_ACTIVE, RAKE_DELAY, WEATHER_FOG")
-    station: Optional[str] = Field(None, description="Station or section code affected (defaults to configured junction)")
+    event_type: str = Field(
+        ..., description="Shock type: SIGNAL_HOLD, TSR_ACTIVE, RAKE_DELAY, WEATHER_FOG"
+    )
+    station: Optional[str] = Field(
+        None, description="Station or section code affected (defaults to configured junction)"
+    )
     severity_min: float = Field(20.0, ge=1.0, le=180.0, description="Delay magnitude in minutes")
-    description: Optional[str] = Field(None, max_length=500, description="Human description of the operational shock")
+    description: Optional[str] = Field(
+        None, max_length=500, description="Human description of the operational shock"
+    )
 
     @field_validator("event_type")
     @classmethod
@@ -98,14 +112,20 @@ class InjectEventRequest(BaseModel):
         if value is None:
             return None
         cleaned = value.strip().upper()
-        if cleaned and (len(cleaned) > 8 or not cleaned.replace("_", "").replace("-", "").isalnum()):
+        if cleaned and (
+            len(cleaned) > 8 or not cleaned.replace("_", "").replace("-", "").isalnum()
+        ):
             raise ValueError("station must be a short alphanumeric station code")
         return cleaned or None
 
 
 class DemoTimeRequest(BaseModel):
-    accel: Optional[float] = Field(None, ge=0.1, le=60.0, description="Simulation acceleration factor")
-    jump_to: Optional[str] = Field(None, min_length=4, max_length=40, description="HH:MM or ISO-8601 timestamp")
+    accel: Optional[float] = Field(
+        None, ge=0.1, le=60.0, description="Simulation acceleration factor"
+    )
+    jump_to: Optional[str] = Field(
+        None, min_length=4, max_length=40, description="HH:MM or ISO-8601 timestamp"
+    )
 
 
 def _snapshot_shocks() -> List[Dict[str, Any]]:
@@ -153,7 +173,10 @@ def _apply_shock_to_physics(shock: Dict[str, Any], db: Database) -> None:
                 raise ValueError(f"No block sections adjacent to {station}")
             for r in pairs:
                 line_speed = float(r["max_speed_kmph"] or 0.0)
-                reduced_speed = max(float(settings.TSR_MIN_SPEED_KMPH), line_speed - float(shock["severity_min"]) * 2.0)
+                reduced_speed = max(
+                    float(settings.TSR_MIN_SPEED_KMPH),
+                    line_speed - float(shock["severity_min"]) * 2.0,
+                )
                 cur.execute(
                     """
                     INSERT INTO speed_restrictions
@@ -183,7 +206,11 @@ def _apply_shock_to_physics(shock: Dict[str, Any], db: Database) -> None:
                 (today, station),
             )
             prior = cur.fetchone()
-            shock["_fog_prior"] = {"date": today, "station": station, "fog_flag": int(prior["fog_flag"]) if prior else None}
+            shock["_fog_prior"] = {
+                "date": today,
+                "station": station,
+                "fog_flag": int(prior["fog_flag"]) if prior else None,
+            }
             cur.execute(
                 """
                 INSERT INTO weather (date, station_code, fog_flag)
@@ -237,7 +264,8 @@ def inject_shock_event(
         "event_type": payload.event_type,
         "station": station,
         "severity_min": float(payload.severity_min),
-        "description": payload.description or f"{payload.event_type} shock of +{payload.severity_min:g}m at {station}",
+        "description": payload.description
+        or f"{payload.event_type} shock of +{payload.severity_min:g}m at {station}",
         "injected_at": clock.now_iso(),
     }
 
@@ -317,7 +345,11 @@ def post_demo_time(
         except (ValueError, TypeError):
             raise HTTPException(
                 status_code=422,
-                detail={"code": "INVALID_JUMP_TARGET", "message": "jump_to must be HH:MM or an ISO-8601 timestamp", "retryable": False},
+                detail={
+                    "code": "INVALID_JUMP_TARGET",
+                    "message": "jump_to must be HH:MM or an ISO-8601 timestamp",
+                    "retryable": False,
+                },
             )
     return {"status": "success", "clock": clock.get_status()}
 
@@ -348,9 +380,13 @@ def _latest_run_date(cur, train_no: str) -> Optional[str]:
 @router.get("/v1/demo/comparator", response_model=None)
 @router.get("/api/v1/demo/comparator", response_model=None)
 def get_demo_comparator(
-    train_no: Optional[str] = Query(None, description="Corridor train number (defaults to configured demo train)"),
+    train_no: Optional[str] = Query(
+        None, description="Corridor train number (defaults to configured demo train)"
+    ),
     run_date: Optional[str] = Query(None, description="Date YYYY-MM-DD"),
-    current_seq: Optional[int] = Query(None, description="Active simulated station sequence (default: mid-route)"),
+    current_seq: Optional[int] = Query(
+        None, description="Active simulated station sequence (default: mid-route)"
+    ),
     db: Database = Depends(get_db),
 ) -> Dict[str, Any]:
     """Signature live comparison: B1 (frozen line), B2 (official run-rate), and RailTwin-X calibrated cone."""
@@ -390,13 +426,23 @@ def get_demo_comparator(
             (clean_no, target_date),
         )
         events_by_stn = {
-            r["station_code"]: float(r["delay_arr_min"] if r["delay_arr_min"] is not None else (r["delay_dep_min"] or 0.0))
+            r["station_code"]: float(
+                r["delay_arr_min"]
+                if r["delay_arr_min"] is not None
+                else (r["delay_dep_min"] or 0.0)
+            )
             for r in cur.fetchall()
         }
 
         # Historical averages for stations lacking ground truth on this run.
-        cur.execute("SELECT station_code, avg_delay FROM hist_baselines WHERE train_no = ?", (clean_no,))
-        hist_by_stn = {r["station_code"]: float(r["avg_delay"]) for r in cur.fetchall() if r["avg_delay"] is not None}
+        cur.execute(
+            "SELECT station_code, avg_delay FROM hist_baselines WHERE train_no = ?", (clean_no,)
+        )
+        hist_by_stn = {
+            r["station_code"]: float(r["avg_delay"])
+            for r in cur.fetchall()
+            if r["avg_delay"] is not None
+        }
 
     total_stops = len(route)
     if current_seq is not None:
@@ -446,9 +492,16 @@ def get_demo_comparator(
                     current_seq=active_seq,
                     current_delay=effective_delay,
                 )
-                p10_val = round(float(pred.get("pred_delay_p10", pred.get("p10_min", effective_delay))), 1)
-                p50_val = round(float(pred.get("pred_delay_p50", pred.get("p50_min", effective_delay))), 1)
-                p90_val = round(float(pred.get("pred_delay_p90", pred.get("p90_min", effective_delay + 10.0))), 1)
+                p10_val = round(
+                    float(pred.get("pred_delay_p10", pred.get("p10_min", effective_delay))), 1
+                )
+                p50_val = round(
+                    float(pred.get("pred_delay_p50", pred.get("p50_min", effective_delay))), 1
+                )
+                p90_val = round(
+                    float(pred.get("pred_delay_p90", pred.get("p90_min", effective_delay + 10.0))),
+                    1,
+                )
             except Exception:
                 p50_val = round(max(0.0, effective_delay), 1)
                 spread = max(6.0, d_km * 0.06)
@@ -473,25 +526,27 @@ def get_demo_comparator(
             cum_rt_err += abs(p50_val - actual_delay)
             eval_count += 1
 
-        stations_data.append({
-            "seq": seq,
-            "station_code": stn,
-            "station_name": r["station_name"],
-            "distance_km": km,
-            "delta_km_from_now": round(d_km, 1),
-            "sched_arr": r["sched_arr"],
-            "sched_dep": r["sched_dep"],
-            "is_passed": is_passed,
-            "is_current": (seq == active_seq),
-            "horizon_tag": horizon_tag,
-            "actual_delay_min": round(actual_delay, 1) if actual_delay is not None else None,
-            "b1_frozen_delay_min": b1_val,
-            "b2_official_delay_min": b2_val,
-            "p10_delay_min": p10_val,
-            "p50_delay_min": p50_val,
-            "p90_delay_min": p90_val,
-            "cone_spread_min": round(p90_val - p10_val, 1),
-        })
+        stations_data.append(
+            {
+                "seq": seq,
+                "station_code": stn,
+                "station_name": r["station_name"],
+                "distance_km": km,
+                "delta_km_from_now": round(d_km, 1),
+                "sched_arr": r["sched_arr"],
+                "sched_dep": r["sched_dep"],
+                "is_passed": is_passed,
+                "is_current": (seq == active_seq),
+                "horizon_tag": horizon_tag,
+                "actual_delay_min": round(actual_delay, 1) if actual_delay is not None else None,
+                "b1_frozen_delay_min": b1_val,
+                "b2_official_delay_min": b2_val,
+                "p10_delay_min": p10_val,
+                "p50_delay_min": p50_val,
+                "p90_delay_min": p90_val,
+                "cone_spread_min": round(p90_val - p10_val, 1),
+            }
+        )
 
     n = max(1, eval_count)
     cumulative_errors = {
@@ -499,7 +554,9 @@ def get_demo_comparator(
         "b1_frozen_mae": round(cum_b1_err / n, 2),
         "b2_official_mae": round(cum_b2_err / n, 2),
         "railtwin_p50_mae": round(cum_rt_err / n, 2),
-        "railtwin_vs_official_gain_pct": round(max(0.0, (cum_b2_err - cum_rt_err) / max(0.1, cum_b2_err) * 100.0), 1),
+        "railtwin_vs_official_gain_pct": round(
+            max(0.0, (cum_b2_err - cum_rt_err) / max(0.1, cum_b2_err) * 100.0), 1
+        ),
     }
 
     why_late = attribution_engine.get_why_late_summary(clean_no, target_date)
@@ -541,7 +598,9 @@ def get_demo_comparator(
 @router.get("/v1/cascade/ripple", response_model=None)
 @router.get("/api/v1/cascade/ripple", response_model=None)
 def get_cascade_ripple(
-    station_code: Optional[str] = Query(None, description="Interchange junction station (defaults to configured junction)"),
+    station_code: Optional[str] = Query(
+        None, description="Interchange junction station (defaults to configured junction)"
+    ),
     run_date: Optional[str] = Query(None, description="Date YYYY-MM-DD"),
     db: Database = Depends(get_db),
 ) -> Dict[str, Any]:
@@ -603,20 +662,22 @@ def get_cascade_ripple(
         else:
             status = "HEALTHY"
 
-        rake_link_impacts.append({
-            "incoming_train": inc_no,
-            "incoming_name": r["incoming_name"] or f"Train #{inc_no}",
-            "outgoing_train": out_no,
-            "outgoing_name": r["outgoing_name"] or f"Train #{out_no}",
-            "turnaround_station": r["station_code"],
-            "scheduled_turnaround_min": scheduled_turnaround,
-            "incoming_delay_min": round(inc_delay, 1),
-            "incoming_delay_known": delay_known,
-            "remaining_buffer_min": round(remaining_buffer, 1),
-            "buffer_deficit_min": round(buffer_deficit, 1),
-            "projected_outgoing_delay_min": round(buffer_deficit, 1),
-            "status": status,
-        })
+        rake_link_impacts.append(
+            {
+                "incoming_train": inc_no,
+                "incoming_name": r["incoming_name"] or f"Train #{inc_no}",
+                "outgoing_train": out_no,
+                "outgoing_name": r["outgoing_name"] or f"Train #{out_no}",
+                "turnaround_station": r["station_code"],
+                "scheduled_turnaround_min": scheduled_turnaround,
+                "incoming_delay_min": round(inc_delay, 1),
+                "incoming_delay_known": delay_known,
+                "remaining_buffer_min": round(remaining_buffer, 1),
+                "buffer_deficit_min": round(buffer_deficit, 1),
+                "projected_outgoing_delay_min": round(buffer_deficit, 1),
+                "status": status,
+            }
+        )
 
     custody_engine = ConnectionCustodyEngine(db)
     raw_conns = custody_engine.evaluate_station_connections(
@@ -632,7 +693,9 @@ def get_cascade_ripple(
             hold_advisories.append(c.to_dict())
             total_net_pax_hours += float(c.hold_advisory.get("net_passenger_hours_saved", 0.0))
 
-    hold_advisories.sort(key=lambda x: x["hold_advisory"]["net_passenger_hours_saved"], reverse=True)
+    hold_advisories.sort(
+        key=lambda x: x["hold_advisory"]["net_passenger_hours_saved"], reverse=True
+    )
 
     return {
         "status": "OK",
@@ -670,8 +733,12 @@ def _hhmm_to_minutes(value: Optional[str]) -> Optional[int]:
 @router.get("/v1/demo/time-machine", response_model=None)
 @router.get("/api/v1/demo/time-machine", response_model=None)
 def get_demo_time_machine(
-    train_no: Optional[str] = Query(None, description="Corridor train number (defaults to configured demo train)"),
-    target_station: Optional[str] = Query(None, description="Target destination station (defaults to configured destination)"),
+    train_no: Optional[str] = Query(
+        None, description="Corridor train number (defaults to configured demo train)"
+    ),
+    target_station: Optional[str] = Query(
+        None, description="Target destination station (defaults to configured destination)"
+    ),
     run_date: Optional[str] = Query(None, description="Date YYYY-MM-DD"),
     db: Database = Depends(get_db),
 ) -> Dict[str, Any]:
@@ -697,7 +764,12 @@ def get_demo_time_machine(
         if not route:
             raise HTTPException(status_code=404, detail=f"Train {clean_no} route not found.")
 
-        target_date = run_date or settings.DEMO_DEFAULT_RUN_DATE.strip() or _latest_run_date(cur, clean_no) or clock.today_str()
+        target_date = (
+            run_date
+            or settings.DEMO_DEFAULT_RUN_DATE.strip()
+            or _latest_run_date(cur, clean_no)
+            or clock.today_str()
+        )
 
         cur.execute(
             """
@@ -729,14 +801,21 @@ def get_demo_time_machine(
     def _calc_stage(seq_cp: int, label: str, stage_id: str):
         stn_info = route[seq_cp - 1]
         ev = events_by_seq.get(seq_cp, {})
-        recorded = ev.get("delay_arr_min") if ev.get("delay_arr_min") is not None else ev.get("delay_dep_min")
+        recorded = (
+            ev.get("delay_arr_min")
+            if ev.get("delay_arr_min") is not None
+            else ev.get("delay_dep_min")
+        )
         d_cp = float(recorded) if recorded is not None else 0.0
         rem_km = max(0.0, total_km - float(stn_info["distance_km"] or 0.0))
         b2_delay = _official_runrate(d_cp, rem_km)
 
         try:
             pred = predictor.predict_train_eta(
-                train_no=clean_no, target_station_code=dest_stn, current_seq=seq_cp, current_delay=d_cp
+                train_no=clean_no,
+                target_station_code=dest_stn,
+                current_seq=seq_cp,
+                current_delay=d_cp,
             )
             p10 = round(float(pred.get("pred_delay_p10", pred.get("p10_min", d_cp))), 1)
             p50 = round(float(pred.get("pred_delay_p50", pred.get("p50_min", d_cp))), 1)
@@ -766,7 +845,9 @@ def get_demo_time_machine(
             },
             "ntes_prediction": f"{_fmt(b2_delay)} (+{int(round(b2_delay))}m)",
             "ntes_delay_min": b2_delay,
-            "ntes_status": "Optimistic Timetable Slack" if b2_delay <= 5 else "Gradual Slide Under-forecasted",
+            "ntes_status": "Optimistic Timetable Slack"
+            if b2_delay <= 5
+            else "Gradual Slide Under-forecasted",
             "railtwin_p50": f"{_fmt(p50)} (+{int(round(p50))}m)",
             "railtwin_p50_delay_min": p50,
             "railtwin_range": f"{_fmt(p10)} - {_fmt(p90)} (p10-p90)",
@@ -810,7 +891,9 @@ def get_demo_time_machine(
         "ntes_prediction": f"{s_t1['ntes_prediction']} (Off by {b2_final_error}m)",
         "ntes_status": f"B2 Error: {b2_final_error}m",
         "railtwin_p50": f"{actual_arr} (Actual: {actual_arr})",
-        "railtwin_range": "Inside Calibrated Band (Graded IN_BAND)" if rt_final_error <= b2_final_error else "Outside Band",
+        "railtwin_range": "Inside Calibrated Band (Graded IN_BAND)"
+        if rt_final_error <= b2_final_error
+        else "Outside Band",
         "cone_width": f"Error: {rt_final_error} min",
         "receipt_hash": f"Tip {tip_hash[:10]}...{tip_hash[-4:]} (Graded & Verified)",
         "full_receipt_hash": tip_hash,
@@ -836,7 +919,9 @@ def get_demo_time_machine(
 # ----------------------------------------------------
 # 4. 6-Hour Corridor Congestion Radar (D1 - Network DSS)
 # ----------------------------------------------------
-def _load_corridor_sections(db: Database, reference_train: str) -> tuple[list[dict], dict[str, float], float]:
+def _load_corridor_sections(
+    db: Database, reference_train: str
+) -> tuple[list[dict], dict[str, float], float]:
     """Derives block sections and absolute km markers from the reference train's route.
 
     Uses ``route_stations.distance_km`` for absolute chainage and ``sections`` for
@@ -863,17 +948,33 @@ def _load_corridor_sections(db: Database, reference_train: str) -> tuple[list[di
         from_km = float(prev["distance_km"] or 0.0)
         to_km = float(nxt["distance_km"] or 0.0)
         length = max(0.0, to_km - from_km)
-        meta = section_meta.get((prev["station_code"], nxt["station_code"])) or section_meta.get((nxt["station_code"], prev["station_code"])) or {}
-        capacity = max(1, int(round((float(meta.get("distance_km") or length) / settings.SECTION_CAPACITY_HEADWAY_KM))))
-        sections.append({
-            "id": f"{prev['station_code']}-{nxt['station_code']}",
-            "name": f"{prev['name']} - {nxt['name']}",
-            "from_km": from_km,
-            "to_km": to_km,
-            "capacity": capacity,
-            "chokepoint": nxt["station_code"],
-            "max_speed_kmph": meta.get("max_speed_kmph"),
-        })
+        meta = (
+            section_meta.get((prev["station_code"], nxt["station_code"]))
+            or section_meta.get((nxt["station_code"], prev["station_code"]))
+            or {}
+        )
+        capacity = max(
+            1,
+            int(
+                round(
+                    (
+                        float(meta.get("distance_km") or length)
+                        / settings.SECTION_CAPACITY_HEADWAY_KM
+                    )
+                )
+            ),
+        )
+        sections.append(
+            {
+                "id": f"{prev['station_code']}-{nxt['station_code']}",
+                "name": f"{prev['name']} - {nxt['name']}",
+                "from_km": from_km,
+                "to_km": to_km,
+                "capacity": capacity,
+                "chokepoint": nxt["station_code"],
+                "max_speed_kmph": meta.get("max_speed_kmph"),
+            }
+        )
     corridor_length = float(stops[-1]["distance_km"] or 0.0) if stops else 0.0
     return sections, station_km, corridor_length
 
@@ -881,7 +982,10 @@ def _load_corridor_sections(db: Database, reference_train: str) -> tuple[list[di
 @router.get("/v1/corridor/congestion-radar", response_model=None)
 @router.get("/api/v1/corridor/congestion-radar", response_model=None)
 def get_corridor_congestion_radar(
-    reference_train: Optional[str] = Query(None, description="Train whose route defines the corridor (defaults to configured demo train)"),
+    reference_train: Optional[str] = Query(
+        None,
+        description="Train whose route defines the corridor (defaults to configured demo train)",
+    ),
     db: Database = Depends(get_db),
 ) -> Dict[str, Any]:
     """Projects section occupancy and congestion friction across corridor sections for the next 6 hours."""
@@ -892,10 +996,14 @@ def get_corridor_congestion_radar(
 
     sections, station_km_map, corridor_length = _load_corridor_sections(db, ref_train)
     if not sections:
-        raise HTTPException(status_code=404, detail=f"No route found for reference train {ref_train}.")
+        raise HTTPException(
+            status_code=404, detail=f"No route found for reference train {ref_train}."
+        )
 
     with db.transaction() as cur:
-        cur.execute("SELECT train_no, current_station_code, speed_kmh, delay_minutes FROM live_positions")
+        cur.execute(
+            "SELECT train_no, current_station_code, speed_kmh, delay_minutes FROM live_positions"
+        )
         live_rows = [dict(r) for r in cur.fetchall()]
 
     live_trains: List[Dict[str, Any]] = []
@@ -905,18 +1013,27 @@ def get_corridor_congestion_radar(
         if train_no in seen or station not in station_km_map:
             return  # Trains outside this corridor are not projected onto it.
         seen.add(train_no)
-        live_trains.append({
-            "train_no": train_no,
-            "km": station_km_map[station],
-            "speed": float(speed or 0.0),
-            "delay": float(delay or 0.0),
-        })
+        live_trains.append(
+            {
+                "train_no": train_no,
+                "km": station_km_map[station],
+                "speed": float(speed or 0.0),
+                "delay": float(delay or 0.0),
+            }
+        )
 
     if tracker:
         for t_no, pos in tracker.snapshot().items():
-            _add(t_no, getattr(pos, "current_station_code", None), getattr(pos, "speed_kmh", 0.0), getattr(pos, "delay_minutes", 0.0))
+            _add(
+                t_no,
+                getattr(pos, "current_station_code", None),
+                getattr(pos, "speed_kmh", 0.0),
+                getattr(pos, "delay_minutes", 0.0),
+            )
     for r in live_rows:
-        _add(r["train_no"], r.get("current_station_code"), r.get("speed_kmh"), r.get("delay_minutes"))
+        _add(
+            r["train_no"], r.get("current_station_code"), r.get("speed_kmh"), r.get("delay_minutes")
+        )
 
     horizons = [
         {"id": "h0", "label": "T+0h (Now)", "minutes": 0},
@@ -936,7 +1053,9 @@ def get_corridor_congestion_radar(
             count = 0
             tot_delay = 0.0
             for t in live_trains:
-                proj_km = t["km"] + (t["speed"] * (h["minutes"] / 60.0))
+                proj_km = float(str(t["km"])) + (
+                    float(str(t["speed"])) * (float(str(h["minutes"])) / 60.0)
+                )
                 if corridor_length > 0 and proj_km > corridor_length:
                     proj_km = proj_km % corridor_length
                 if s["from_km"] <= proj_km <= s["to_km"]:
@@ -945,7 +1064,15 @@ def get_corridor_congestion_radar(
 
             occ = round(min(100.0, (count / s["capacity"]) * 100.0), 1)
             max_occ = max(max_occ, occ)
-            level = "CRITICAL" if occ >= 85 else "HIGH" if occ >= 70 else "MODERATE" if occ >= 45 else "LOW"
+            level = (
+                "CRITICAL"
+                if occ >= 85
+                else "HIGH"
+                if occ >= 70
+                else "MODERATE"
+                if occ >= 45
+                else "LOW"
+            )
             sec_h[h["id"]] = {
                 "horizon": h["label"],
                 "active_trains": count,
@@ -955,24 +1082,28 @@ def get_corridor_congestion_radar(
                 "total_delay_min": round(tot_delay, 1),
             }
 
-        radar_data.append({
-            "section_id": s["id"],
-            "section_name": s["name"],
-            "from_km": s["from_km"],
-            "to_km": s["to_km"],
-            "length_km": round(s["to_km"] - s["from_km"], 1),
-            "chokepoint_station": s["chokepoint"],
-            "max_speed_kmph": s["max_speed_kmph"],
-            "peak_occupancy_pct": max_occ,
-            "horizons": sec_h,
-        })
+        radar_data.append(
+            {
+                "section_id": s["id"],
+                "section_name": s["name"],
+                "from_km": s["from_km"],
+                "to_km": s["to_km"],
+                "length_km": round(s["to_km"] - s["from_km"], 1),
+                "chokepoint_station": s["chokepoint"],
+                "max_speed_kmph": s["max_speed_kmph"],
+                "peak_occupancy_pct": max_occ,
+                "horizons": sec_h,
+            }
+        )
         if max_occ >= 70.0:
-            highest_chokepoints.append({
-                "section": s["name"],
-                "chokepoint": s["chokepoint"],
-                "peak_occupancy": max_occ,
-                "recommended_action": f"Precedence regulation at {s['chokepoint']} loop lines advised.",
-            })
+            highest_chokepoints.append(
+                {
+                    "section": s["name"],
+                    "chokepoint": s["chokepoint"],
+                    "peak_occupancy": max_occ,
+                    "recommended_action": f"Precedence regulation at {s['chokepoint']} loop lines advised.",
+                }
+            )
 
     highest_chokepoints.sort(key=lambda x: x["peak_occupancy"], reverse=True)
 

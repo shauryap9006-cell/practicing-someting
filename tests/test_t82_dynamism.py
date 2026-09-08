@@ -1,8 +1,12 @@
 from __future__ import annotations
-import datetime, json, os, pytest
+
+import json
+import os
+
 from api.predictor import get_predictor_service
-from engine.clocks import ReplayClock, set_global_clock, RealClock
 from data.db import get_db
+from engine.clocks import RealClock, ReplayClock, set_global_clock
+
 
 def test_t82_differential_dynamism_full_cycle():
     db = get_db()
@@ -17,7 +21,9 @@ def test_t82_differential_dynamism_full_cycle():
         with db.transaction() as cur:
             cur.execute("SELECT id FROM speed_restrictions WHERE is_active = 1;")
             orig_active_ids = [r[0] for r in cur.fetchall()]
-            cur.execute("UPDATE speed_restrictions SET is_active = 0 WHERE from_code = 'GZB' AND to_code = 'NDLS';")
+            cur.execute(
+                "UPDATE speed_restrictions SET is_active = 0 WHERE from_code = 'GZB' AND to_code = 'NDLS';"
+            )
 
         # (a) Baseline A
         t0 = clock.now_iso()
@@ -67,9 +73,19 @@ def test_t82_differential_dynamism_full_cycle():
             "target_station": target_stn,
             "step_a_baseline": {"clock": t0, "delay_min": eta_a},
             "step_b_clock_advance_no_events": {"clock": t1, "delay_min": eta_b, "equals_a": True},
-            "step_c_tsr_injected": {"clock": t1, "delay_min": eta_c, "greater_than_b_plus_5": True, "delta_min": eta_c - eta_b},
+            "step_c_tsr_injected": {
+                "clock": t1,
+                "delay_min": eta_c,
+                "greater_than_b_plus_5": True,
+                "delta_min": eta_c - eta_b,
+            },
             "step_d_clock_advance_tsr_active": {"clock": t2, "delay_min": eta_d, "equals_c": True},
-            "step_e_tsr_cleared": {"clock": t2, "delay_min": eta_e, "dropped_below_c": True, "returned_to_baseline": eta_e == eta_a},
+            "step_e_tsr_cleared": {
+                "clock": t2,
+                "delay_min": eta_e,
+                "dropped_below_c": True,
+                "returned_to_baseline": eta_e == eta_a,
+            },
             "verdict": "PASS",
         }
         with open("audit/T82_dynamism_proof.json", "w", encoding="utf-8") as pf:
@@ -79,4 +95,7 @@ def test_t82_differential_dynamism_full_cycle():
         set_global_clock(RealClock())
         if orig_active_ids:
             with db.transaction() as cur:
-                cur.execute(f"UPDATE speed_restrictions SET is_active = 1 WHERE id IN ({','.join('?' for _ in orig_active_ids)});", orig_active_ids)
+                cur.execute(
+                    f"UPDATE speed_restrictions SET is_active = 1 WHERE id IN ({','.join('?' for _ in orig_active_ids)});",
+                    orig_active_ids,
+                )

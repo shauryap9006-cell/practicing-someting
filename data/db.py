@@ -8,23 +8,21 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+
 _REPO_ROOT = str(Path(__file__).resolve().parent.parent)
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
-from engine.clocks import get_clock, now_iso
-
 import logging
-import os
 import re
 import sqlite3
 import time
 from contextlib import contextmanager
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Generator, List, Optional
 
 from config import settings
+from engine.clocks import get_clock
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +44,10 @@ class Database:
             if gz_path.exists():
                 import gzip
                 import shutil
-                logger.info("Extracting compressed dataset %s -> %s...", gz_path.name, self.db_path.name)
+
+                logger.info(
+                    "Extracting compressed dataset %s -> %s...", gz_path.name, self.db_path.name
+                )
                 with gzip.open(gz_path, "rb") as f_in:
                     with open(self.db_path, "wb") as f_out:
                         shutil.copyfileobj(f_in, f_out)
@@ -79,11 +80,15 @@ class Database:
             conn.commit()
             duration = time.monotonic() - t0
             if duration > 1.0:
-                logger.warning("SQLite transaction completed with significant lock wait: %.2fs", duration)
+                logger.warning(
+                    "SQLite transaction completed with significant lock wait: %.2fs", duration
+                )
         except sqlite3.OperationalError as op_err:
             duration = time.monotonic() - t0
             if "locked" in str(op_err).lower() or "busy" in str(op_err).lower():
-                logger.warning("SQLite lock wait/contention encountered after %.2fs: %s", duration, op_err)
+                logger.warning(
+                    "SQLite lock wait/contention encountered after %.2fs: %s", duration, op_err
+                )
             conn.rollback()
             raise
         except Exception:
@@ -133,7 +138,6 @@ class Database:
             cur.execute("SELECT COUNT(*) FROM hist_baselines;")
             return int(cur.fetchone()[0])
 
-
     def apply_migrations(
         self,
         migrations_dir: Optional[Path | str] = None,
@@ -162,7 +166,9 @@ class Database:
             cursor.execute("SELECT version FROM schema_migrations ORDER BY version ASC;")
             applied_versions = {row[0] for row in cursor.fetchall()}
 
-            migration_files = sorted([f for f in mdir.glob("*.sql") if not f.name.endswith(".down.sql")])
+            migration_files = sorted(
+                [f for f in mdir.glob("*.sql") if not f.name.endswith(".down.sql")]
+            )
             for mfile in migration_files:
                 match = re.match(r"^(\d+)_", mfile.name)
                 if not match:
@@ -223,7 +229,7 @@ class Database:
                 return downgraded
 
             # Build map of version -> down file
-            down_files: Dict[int, Path] = {}
+            down_files: dict[int, Path] = {}
             for f in mdir.glob("*.down.sql"):
                 match = re.match(r"^(\d+)_", f.name)
                 if match:
@@ -248,7 +254,11 @@ class Database:
                     cursor.executescript(sql_content)
                 except sqlite3.OperationalError as e:
                     err_msg = str(e).lower()
-                    if "no such column" in err_msg or "no such index" in err_msg or "no such table" in err_msg:
+                    if (
+                        "no such column" in err_msg
+                        or "no such index" in err_msg
+                        or "no such table" in err_msg
+                    ):
                         pass
                     else:
                         raise
@@ -268,9 +278,13 @@ class Database:
         conn = self.get_connection()
         try:
             cursor = conn.cursor()
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='schema_migrations';")
+            cursor.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='schema_migrations';"
+            )
             if cursor.fetchone():
-                cursor.execute("SELECT version, name, applied_at FROM schema_migrations ORDER BY version ASC;")
+                cursor.execute(
+                    "SELECT version, name, applied_at FROM schema_migrations ORDER BY version ASC;"
+                )
                 applied = [dict(r) for r in cursor.fetchall()]
         finally:
             conn.close()
@@ -391,9 +405,22 @@ class Database:
                     updated_at = excluded.updated_at;
                 """,
                 (
-                    train_no, run_date, lat, lng, current_station_code, next_station_code,
-                    section_id, speed_kmh, delay_minutes, confidence, progress_pct,
-                    is_dead_reckoned, source, last_event_time, last_gps_fix, updated_at
+                    train_no,
+                    run_date,
+                    lat,
+                    lng,
+                    current_station_code,
+                    next_station_code,
+                    section_id,
+                    speed_kmh,
+                    delay_minutes,
+                    confidence,
+                    progress_pct,
+                    is_dead_reckoned,
+                    source,
+                    last_event_time,
+                    last_gps_fix,
+                    updated_at,
                 ),
             )
 
@@ -493,9 +520,18 @@ class Database:
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
                 """,
                 (
-                    train_no, run_date, timestamp, delay_change_min, previous_delay_min,
-                    current_delay_min, primary_cause, secondary_cause, confidence,
-                    evidence_json, is_exact_accounting, created_at
+                    train_no,
+                    run_date,
+                    timestamp,
+                    delay_change_min,
+                    previous_delay_min,
+                    current_delay_min,
+                    primary_cause,
+                    secondary_cause,
+                    confidence,
+                    evidence_json,
+                    is_exact_accounting,
+                    created_at,
                 ),
             )
             return cur.lastrowid
@@ -543,12 +579,25 @@ def get_db(db_path: Optional[Path | str] = None) -> Database:
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser(description="RailTwin-X Database & Migration CLI")
-    parser.add_argument("--init", action="store_true", help="Initialize schema and apply all migrations")
+    parser.add_argument(
+        "--init", action="store_true", help="Initialize schema and apply all migrations"
+    )
     parser.add_argument("--migrate", action="store_true", help="Apply pending forward migrations")
-    parser.add_argument("--target", type=int, default=None, help="Target migration version to apply")
-    parser.add_argument("--downgrade", type=int, default=None, metavar="N", help="Rollback N migrations")
-    parser.add_argument("--downgrade-to", type=int, default=None, metavar="VERSION", help="Rollback to specified version")
+    parser.add_argument(
+        "--target", type=int, default=None, help="Target migration version to apply"
+    )
+    parser.add_argument(
+        "--downgrade", type=int, default=None, metavar="N", help="Rollback N migrations"
+    )
+    parser.add_argument(
+        "--downgrade-to",
+        type=int,
+        default=None,
+        metavar="VERSION",
+        help="Rollback to specified version",
+    )
     parser.add_argument("--status", action="store_true", help="Show migration status")
 
     args = parser.parse_args()

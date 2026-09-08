@@ -9,16 +9,16 @@ Verifies:
 
 import asyncio
 import json
-import pytest
+
 from fastapi.testclient import TestClient
 
 from api.main import app
-from engine.twin import TwinEngine, TwinTrainState
-from engine.live_tracker import get_live_tracker, LivePositionTracker
-from engine.prediction_ledger import PredictionLedger
-from engine.clocks import get_clock, set_global_clock
-from engine.sim_clock import get_sim_clock
 from data.db import get_db
+from engine.clocks import set_global_clock
+from engine.live_tracker import LivePositionTracker, get_live_tracker
+from engine.prediction_ledger import PredictionLedger
+from engine.sim_clock import get_sim_clock
+from engine.twin import TwinEngine
 
 client = TestClient(app)
 
@@ -28,10 +28,26 @@ def test_twin_pure_math_simulation():
     engine = TwinEngine(default_max_speed_kmh=130.0)
     stops = [
         {"station_code": "NDLS", "seq": 1, "distance_km": 0.0, "halt_min": 2, "sched_dep": "10:00"},
-        {"station_code": "GZB", "seq": 2, "distance_km": 25.0, "halt_min": 2, "sched_arr": "10:20", "sched_dep": "10:22"},
-        {"station_code": "ALJN", "seq": 3, "distance_km": 130.0, "halt_min": 2, "sched_arr": "11:30", "sched_dep": "11:32"},
+        {
+            "station_code": "GZB",
+            "seq": 2,
+            "distance_km": 25.0,
+            "halt_min": 2,
+            "sched_arr": "10:20",
+            "sched_dep": "10:22",
+        },
+        {
+            "station_code": "ALJN",
+            "seq": 3,
+            "distance_km": 130.0,
+            "halt_min": 2,
+            "sched_arr": "11:30",
+            "sched_dep": "11:32",
+        },
     ]
-    state = engine.create_train_state("12301", stops, start_km=0.0, start_speed_kmh=0.0, start_phase="DWELL")
+    state = engine.create_train_state(
+        "12301", stops, start_km=0.0, start_speed_kmh=0.0, start_phase="DWELL"
+    )
     state.dwell_remaining_sec = 60.0
 
     prev_km = -1.0
@@ -57,25 +73,41 @@ def test_twin_pure_math_simulation():
 
     # Dwell observed for at least 50% of scheduled halt (at least 1 minute = 1 tick)
     assert dwell_ticks >= 1, "DWELL phase with speed==0.0 not observed during simulation"
-    assert len(all_events) >= 2, f"Expected at least 2 events (DEPARTURE, ARRIVAL), got {len(all_events)}"
+    assert len(all_events) >= 2, (
+        f"Expected at least 2 events (DEPARTURE, ARRIVAL), got {len(all_events)}"
+    )
 
     # 4. TSR_ZONE caps speed
-    state_tsr = engine.create_train_state("12301", stops, start_km=10.0, start_speed_kmh=40.0, start_phase="CRUISE")
+    state_tsr = engine.create_train_state(
+        "12301", stops, start_km=10.0, start_speed_kmh=40.0, start_phase="CRUISE"
+    )
     state_tsr, _ = engine.advance(state_tsr, dt_seconds=10.0, context={"active_tsr_kmh": 45.0})
-    assert state_tsr.speed_kmh <= 45.0 + 1e-5, f"TSR not capping speed: {state_tsr.speed_kmh} > 45.0"
+    assert state_tsr.speed_kmh <= 45.0 + 1e-5, (
+        f"TSR not capping speed: {state_tsr.speed_kmh} > 45.0"
+    )
     assert state_tsr.phase == "TSR_ZONE"
 
     # 5. HELD stops before occupied block
-    state_held = engine.create_train_state("12301", stops, start_km=15.0, start_speed_kmh=80.0, start_phase="CRUISE")
+    state_held = engine.create_train_state(
+        "12301", stops, start_km=15.0, start_speed_kmh=80.0, start_phase="CRUISE"
+    )
     for _ in range(60):
-        state_held, _ = engine.advance(state_held, dt_seconds=1.0, context={"block_occupied": True, "signal_aspect": "RED"})
-    assert state_held.speed_kmh == 0.0, f"Train did not stop when block occupied: speed={state_held.speed_kmh}"
+        state_held, _ = engine.advance(
+            state_held, dt_seconds=1.0, context={"block_occupied": True, "signal_aspect": "RED"}
+        )
+    assert state_held.speed_kmh == 0.0, (
+        f"Train did not stop when block occupied: speed={state_held.speed_kmh}"
+    )
     assert state_held.phase == "HELD"
 
     # 6. APPROACH decelerates towards station
-    state_app = engine.create_train_state("12301", stops, start_km=24.5, start_speed_kmh=100.0, start_phase="CRUISE")
+    state_app = engine.create_train_state(
+        "12301", stops, start_km=24.5, start_speed_kmh=100.0, start_phase="CRUISE"
+    )
     state_app, _ = engine.advance(state_app, dt_seconds=1.0)
-    assert state_app.phase in ("APPROACH", "DWELL"), f"Expected APPROACH phase, got {state_app.phase}"
+    assert state_app.phase in ("APPROACH", "DWELL"), (
+        f"Expected APPROACH phase, got {state_app.phase}"
+    )
     assert state_app.speed_kmh < 100.0, "Speed did not decelerate in approach zone"
 
 
@@ -126,6 +158,7 @@ def test_heartbeat_integration_and_events():
         return positions
 
     import datetime
+
     positions = asyncio.run(run_ticks())
     assert len(positions) > 0, "Tracker produced no live positions"
 
@@ -179,7 +212,9 @@ def test_meta_clock_and_health_consistency():
     resp_health = client.get("/v1/health")
     assert resp_health.status_code in (200, 503)
     data_health = resp_health.json()
-    assert data_health["clock_mode"] == "simulated", f"Expected 'simulated', got {data_health['clock_mode']}"
+    assert data_health["clock_mode"] == "simulated", (
+        f"Expected 'simulated', got {data_health['clock_mode']}"
+    )
 
 
 def test_sse_live_stream_smoke():

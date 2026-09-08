@@ -5,13 +5,14 @@ contracts, accurate status codes, and non-empty payloads.
 """
 
 from fastapi.testclient import TestClient
-import pytest
 
-from api.main import app
 from api.auth import create_access_token
+from api.main import app
 
 client = TestClient(app)
-AUTH_HEADERS = {"Authorization": f"Bearer {create_access_token({'sub': 'admin', 'role_id': 'admin'})}"}
+AUTH_HEADERS = {
+    "Authorization": f"Bearer {create_access_token({'sub': 'admin', 'role_id': 'admin'})}"
+}
 
 
 def test_api_health():

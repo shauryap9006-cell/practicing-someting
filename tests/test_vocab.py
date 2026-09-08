@@ -1,13 +1,14 @@
 """Unit and property tests for StationVocab (Task T1)."""
+
 from __future__ import annotations
 
-import json
 import tempfile
 from pathlib import Path
-import pytest
-from hypothesis import given, strategies as st
 
-from ml.vocab import StationVocab, PAD, UNK
+from hypothesis import given
+from hypothesis import strategies as st
+
+from ml.vocab import PAD, UNK, StationVocab
 
 
 def test_station_vocab_from_db_determinism():
@@ -56,7 +57,15 @@ def test_station_vocab_special_tokens():
     assert report["collisions"] == 0
 
 
-@given(st.lists(st.text(alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd")), min_size=1, max_size=8), min_size=1, max_size=150))
+@given(
+    st.lists(
+        st.text(
+            alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd")), min_size=1, max_size=8
+        ),
+        min_size=1,
+        max_size=150,
+    )
+)
 def test_station_vocab_zero_collisions_hypothesis(codes):
     """Hypothesis property: any input code list has zero index collisions among distinct codes."""
     vocab = StationVocab(codes, min_size=max(256, len(codes) + 10))

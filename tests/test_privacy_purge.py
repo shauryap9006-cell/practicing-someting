@@ -2,12 +2,12 @@
 
 import datetime
 from pathlib import Path
-import pytest
 from zoneinfo import ZoneInfo
+
+import pytest
 
 from config import Settings, settings
 from data.db import Database
-from engine.clocks import ist_now
 from scripts.purge_expired_pii import hash_pnr, purge_expired_pii
 
 KOLKATA = ZoneInfo("Asia/Kolkata")
@@ -166,7 +166,9 @@ def test_dry_run_identifies_expired_rows_without_modifications(test_db_with_back
         cur = conn.cursor()
 
         # Check delay certificates still hold original PII
-        cur.execute("SELECT cert_no, issued_to_name, pnr_no FROM delay_certificates ORDER BY cert_no;")
+        cur.execute(
+            "SELECT cert_no, issued_to_name, pnr_no FROM delay_certificates ORDER BY cert_no;"
+        )
         certs = cur.fetchall()
         assert len(certs) == 3
         assert certs[0]["issued_to_name"] == "Rohan Sharma"
@@ -181,7 +183,9 @@ def test_dry_run_identifies_expired_rows_without_modifications(test_db_with_back
         assert cur.fetchone()[0] == 3
 
         # Check lost and found still has original claimant PII
-        cur.execute("SELECT claimant_name, claimant_id_proof FROM lost_and_found WHERE status='CLAIMED' ORDER BY id;")
+        cur.execute(
+            "SELECT claimant_name, claimant_id_proof FROM lost_and_found WHERE status='CLAIMED' ORDER BY id;"
+        )
         claims = cur.fetchall()
         assert claims[0]["claimant_name"] == "Amit Patel"
         assert claims[1]["claimant_name"] == "Suresh Raina"
@@ -208,7 +212,9 @@ def test_apply_redacts_expired_and_preserves_fresh(test_db_with_backdated_pii):
         cur = conn.cursor()
 
         # 1. Delay Certificates verification
-        cur.execute("SELECT cert_no, issued_to_name, pnr_no FROM delay_certificates ORDER BY cert_no;")
+        cur.execute(
+            "SELECT cert_no, issued_to_name, pnr_no FROM delay_certificates ORDER BY cert_no;"
+        )
         certs = cur.fetchall()
         # CERT-EXP-001 (expired) -> REDACTED and hashed PNR
         assert certs[0]["cert_no"] == "CERT-EXP-001"
@@ -234,7 +240,9 @@ def test_apply_redacts_expired_and_preserves_fresh(test_db_with_backdated_pii):
         assert remaining_logs[0]["staff_id"] == "STF_003"  # fresh row remains
 
         # 3. Lost & Found verification
-        cur.execute("SELECT claimant_name, claimant_id_proof, claimant_phone FROM lost_and_found ORDER BY id;")
+        cur.execute(
+            "SELECT claimant_name, claimant_id_proof, claimant_phone FROM lost_and_found ORDER BY id;"
+        )
         claims = cur.fetchall()
         # First row (expired)
         assert claims[0]["claimant_name"] == "REDACTED"
@@ -272,18 +280,26 @@ def test_purge_idempotency(test_db_with_backdated_pii):
 def test_cli_execution(test_db_with_backdated_pii, monkeypatch, capsys):
     """Verifies that the CLI executes cleanly in dry-run and apply modes."""
     import sys
+
     from scripts.purge_expired_pii import main
+
     db, _ = test_db_with_backdated_pii
 
     # Run CLI in dry-run mode
-    monkeypatch.setattr(sys, "argv", ["purge_expired_pii.py", "--db-path", str(db.db_path), "--days", "90"])
+    monkeypatch.setattr(
+        sys, "argv", ["purge_expired_pii.py", "--db-path", str(db.db_path), "--days", "90"]
+    )
     ret = main()
     assert ret == 0
     captured = capsys.readouterr().out
     assert "DRY-RUN (no changes made)" in captured
 
     # Run CLI in apply mode
-    monkeypatch.setattr(sys, "argv", ["purge_expired_pii.py", "--db-path", str(db.db_path), "--days", "90", "--apply"])
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["purge_expired_pii.py", "--db-path", str(db.db_path), "--days", "90", "--apply"],
+    )
     ret = main()
     assert ret == 0
     captured = capsys.readouterr().out

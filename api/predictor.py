@@ -10,14 +10,14 @@ Implements zero-fail fallback hierarchy:
 
 from __future__ import annotations
 
-from engine.clocks import now_iso
-
 import datetime
 import hashlib
 import json
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Any, Dict, List, Optional, Tuple
+
+from engine.clocks import now_iso
 
 logger = logging.getLogger(__name__)
 import lightgbm as lgb
@@ -28,8 +28,7 @@ import torch
 from config import settings
 from data.db import Database, get_db
 from engine.clocks import get_clock
-from engine.position_resolver import PositionResolver, PositionRecord
-from ml.features import FEATURE_NAMES
+from engine.position_resolver import PositionRecord, PositionResolver
 from ml.artifact_integrity import verify_artifacts
 from ml.model_seq import NonCrossingGRUQuantileModel
 from ml.snapshots import SnapshotGenerator
@@ -43,9 +42,15 @@ def enforce_quantile_order(
 ) -> Tuple[float, float, float]:
     """Pure invariant function guaranteeing 0 <= p10 <= p50 <= p90 <= cap always."""
     # Sanitize NaNs and Infs
-    p10 = 0.0 if (np.isnan(p10) or np.isneginf(p10)) else (720.0 if np.isposinf(p10) else float(p10))
-    p50 = 0.0 if (np.isnan(p50) or np.isneginf(p50)) else (720.0 if np.isposinf(p50) else float(p50))
-    p90 = 0.0 if (np.isnan(p90) or np.isneginf(p90)) else (720.0 if np.isposinf(p90) else float(p90))
+    p10 = (
+        0.0 if (np.isnan(p10) or np.isneginf(p10)) else (720.0 if np.isposinf(p10) else float(p10))
+    )
+    p50 = (
+        0.0 if (np.isnan(p50) or np.isneginf(p50)) else (720.0 if np.isposinf(p50) else float(p50))
+    )
+    p90 = (
+        0.0 if (np.isnan(p90) or np.isneginf(p90)) else (720.0 if np.isposinf(p90) else float(p90))
+    )
 
     # Lower bound at 0.0
     safe_p10 = max(0.0, p10)
@@ -77,13 +82,16 @@ class PredictorService:
         self.loaded_at: str = now_iso()
 
         self._gru_sequence_ready: bool = False
-        logger.warning("[NOTICE] GRU challenger not served: sequence inputs not wired to real history (see docs/HEARTBEAT.md roadmap).")
+        logger.warning(
+            "[NOTICE] GRU challenger not served: sequence inputs not wired to real history (see docs/HEARTBEAT.md roadmap)."
+        )
 
         self._direct_models: Optional[dict] = None
         self._delta_models: Optional[dict] = None
         self._gru_model: Optional[NonCrossingGRUQuantileModel] = None
         self._q_hat: float = 2.0
         self._q_hat_gru: float = 2.0
+        self._ensemble: Optional[Any] = None
 
         self._ensure_shadow_log_table()
         self._try_load_models()
@@ -141,14 +149,16 @@ class PredictorService:
                         self.champion_name = champ.get("model_name", "LightGBM_Quantile_Direct")
                     elif isinstance(champ, str):
                         self.champion_name = champ
-                    self._q_hat_gru = float(reg.get("cqr_calibration", {}).get("conformal_q_hat_gru", 2.0))
+                    self._q_hat_gru = float(
+                        reg.get("cqr_calibration", {}).get("conformal_q_hat_gru", 2.0)
+                    )
 
             # 2. Load LightGBM Models
             direct = {}
             delta = {}
             for q in settings.QUANTILE_ALPHAS:
-                p_dir = self.artifacts_dir / f"model_direct_q{int(q*100)}.txt"
-                p_del = self.artifacts_dir / f"model_delta_q{int(q*100)}.txt"
+                p_dir = self.artifacts_dir / f"model_direct_q{int(q * 100)}.txt"
+                p_del = self.artifacts_dir / f"model_delta_q{int(q * 100)}.txt"
                 if p_dir.exists():
                     direct[q] = lgb.Booster(model_file=str(p_dir))
                 if p_del.exists():
@@ -161,8 +171,12 @@ class PredictorService:
             gru_path = self.artifacts_dir / "model_gru_challenger.pt"
             if gru_path.exists():
                 try:
-                    gru = NonCrossingGRUQuantileModel(input_dim=8, hidden_dim=128, num_layers=2, dropout=0.2).to(self.device)
-                    gru.load_state_dict(torch.load(gru_path, map_location=self.device, weights_only=True))
+                    gru = NonCrossingGRUQuantileModel(
+                        input_dim=8, hidden_dim=128, num_layers=2, dropout=0.2
+                    ).to(self.device)
+                    gru.load_state_dict(
+                        torch.load(gru_path, map_location=self.device, weights_only=True)
+                    )
                     gru.eval()
                     self._gru_model = gru
                 except Exception as e:
@@ -177,6 +191,7 @@ class PredictorService:
             # 4. Load 5-Model Convex NNLS Ensemble Stacking (Wiring Plan 3)
             try:
                 from ml.ensemble import EnsemblePredictor
+
                 self._ensemble = EnsemblePredictor(db=self.db, artifacts_dir=self.artifacts_dir)
             except Exception as e_err:
                 logger.warning("Could not initialize EnsemblePredictor: %s", e_err)
@@ -185,13 +200,21 @@ class PredictorService:
             # Determine Champion SHA
             if self._ensemble is not None:
                 ens_w = self.artifacts_dir / "ensemble_weights.json"
-                self.champion_sha = self._calculate_file_sha256(ens_w) if ens_w.exists() else (
-                    self._calculate_file_sha256(self.artifacts_dir / "model_direct_q50.txt")
+                self.champion_sha = (
+                    self._calculate_file_sha256(ens_w)
+                    if ens_w.exists()
+                    else (self._calculate_file_sha256(self.artifacts_dir / "model_direct_q50.txt"))
                 )
-            elif self.champion_name == "PyTorch_GRU_Quantile" and gru_path.exists() and self._gru_sequence_ready:
+            elif (
+                self.champion_name == "PyTorch_GRU_Quantile"
+                and gru_path.exists()
+                and self._gru_sequence_ready
+            ):
                 self.champion_sha = self._calculate_file_sha256(gru_path)
             elif self._direct_models:
-                self.champion_sha = self._calculate_file_sha256(self.artifacts_dir / "model_direct_q50.txt")
+                self.champion_sha = self._calculate_file_sha256(
+                    self.artifacts_dir / "model_direct_q50.txt"
+                )
 
             return True
         except Exception as err:
@@ -202,7 +225,11 @@ class PredictorService:
         """Returns governance information for served model (F15)."""
         served = self.champion_name
         if not self._gru_sequence_ready and served == "PyTorch_GRU_Quantile":
-            served = "Tier2_Convex_Ensemble_NNLS" if hasattr(self, "_ensemble") and self._ensemble is not None else "LightGBM_Quantile_Direct"
+            served = (
+                "Tier2_Convex_Ensemble_NNLS"
+                if hasattr(self, "_ensemble") and self._ensemble is not None
+                else "LightGBM_Quantile_Direct"
+            )
         return {
             "served_model": served,
             "served_champion": "LightGBM Quantile + NNLS convex ensemble, Mondrian conformal calibration",
@@ -217,41 +244,6 @@ class PredictorService:
                 "historical_db": True,
             },
         }
-
-    def predict_train_eta(
-        self,
-        train_no: str,
-        target_station_code: str,
-        current_seq: Optional[int] = None,
-        current_delay: Optional[float] = None,
-    ) -> dict:
-        """Calculates calibrated ETA and confidence band using Probabilistic Position Resolver (F19, F20)."""
-        clock = get_clock()
-        run_date = clock.today_str()
-        query_iso = clock.now_iso()
-
-        with self.db.transaction() as cur:
-            # Train info
-            cur.execute("SELECT name, class, priority FROM trains WHERE train_no = ?", (train_no,))
-            train_row = cur.fetchone()
-            if not train_row:
-                raise ValueError(f"Train {train_no} not found.")
-
-            # Route stops
-            cur.execute(
-                """
-                SELECT seq, station_code, sched_arr, sched_dep, halt_min, distance_km
-                FROM route_stations
-                WHERE train_no = ?
-                ORDER BY seq
-                """,
-                (train_no,),
-            )
-            route = [dict(r) for r in cur.fetchall()]
-
-        target_stop = next((r for r in route if r["station_code"] == target_station_code), None)
-        if not target_stop:
-            raise ValueError(f"Station {target_station_code} is not on the route for train {train_no}.")
 
     def _predict_single_position(
         self,
@@ -301,7 +293,13 @@ class PredictorService:
                         predicted = False
 
                 # 2. PyTorch GRU Challenger (Only if enabled and sequence ready)
-                if not predicted and self.champion_name == "PyTorch_GRU_Quantile" and self._gru_sequence_ready and self._gru_model is not None and hops <= settings.DIRECT_MODEL_MAX_HOPS:
+                if (
+                    not predicted
+                    and self.champion_name == "PyTorch_GRU_Quantile"
+                    and self._gru_sequence_ready
+                    and self._gru_model is not None
+                    and hops <= settings.DIRECT_MODEL_MAX_HOPS
+                ):
                     try:
                         seq_mat = np.zeros((1, 8, 8), dtype=np.float32)
                         seq_mat[0, -1, 0] = float(c_delay)
@@ -309,7 +307,7 @@ class PredictorService:
                         seq_mat[0, -1, 2] = float(target_stop.get("halt_min", 2.0))
                         seq_mat[0, -1, 3] = float(target_stop.get("distance_km", 50.0))
                         seq_mat[0, -1, 5] = 2.0  # priority
-                        seq_mat[0, -1, 6] = 10.0 # sched_hour
+                        seq_mat[0, -1, 6] = 10.0  # sched_hour
                         t_in = torch.tensor(seq_mat, dtype=torch.float32, device=self.device)
 
                         with torch.no_grad():
@@ -392,20 +390,28 @@ class PredictorService:
             )
             ev_rows = cur.fetchall()
             events_by_seq = {
-                int(r["seq"]): (float(r["delay_arr_min"]) if r["delay_arr_min"] is not None else float(r["delay_dep_min"] or 0.0))
+                int(r["seq"]): (
+                    float(r["delay_arr_min"])
+                    if r["delay_arr_min"] is not None
+                    else float(r["delay_dep_min"] or 0.0)
+                )
                 for r in ev_rows
             }
 
         target_stop = next((r for r in route if r["station_code"] == target_station_code), None)
         if not target_stop:
-            raise ValueError(f"Station {target_station_code} is not on the route for train {train_no}.")
+            raise ValueError(
+                f"Station {target_station_code} is not on the route for train {train_no}."
+            )
 
         target_seq = int(target_stop["seq"])
 
         # F19 / F20: Resolve Soft Train Position probabilistically instead of falsy default
         pos_record: PositionRecord
         if current_seq is not None:
-            curr_stn = next((r["station_code"] for r in route if int(r["seq"]) == current_seq), "LOC")
+            curr_stn = next(
+                (r["station_code"] for r in route if int(r["seq"]) == current_seq), "LOC"
+            )
             pos_record = PositionRecord(
                 mode_seq=current_seq,
                 station_code=curr_stn,
@@ -416,7 +422,9 @@ class PredictorService:
                 posterior_probs={current_seq: 1.0},
             )
         else:
-            pos_record = self.position_resolver.resolve_train_position(train_no, route, as_of_time=clock.now())
+            pos_record = self.position_resolver.resolve_train_position(
+                train_no, route, as_of_time=clock.now()
+            )
 
         # Marginalization over top-K candidate positions (F19)
         top = pos_record.top_k(3)  # [(seq_k, p_k), ...]
@@ -521,41 +529,95 @@ class PredictorService:
         fog = float(row.get("fog_flag_target", 0.0))
         rain = float(row.get("rain_mm_target", 0.0))
         if fog > 0.5:
-            drivers.append({"feature": "severe_fog_visibility", "contribution_min": 14.5, "direction": "increases_delay"})
+            drivers.append(
+                {
+                    "feature": "severe_fog_visibility",
+                    "contribution_min": 14.5,
+                    "direction": "increases_delay",
+                }
+            )
         elif rain > 15.0:
-            drivers.append({"feature": "monsoon_heavy_rain", "contribution_min": 8.0, "direction": "increases_delay"})
+            drivers.append(
+                {
+                    "feature": "monsoon_heavy_rain",
+                    "contribution_min": 8.0,
+                    "direction": "increases_delay",
+                }
+            )
 
         # 2. Downstream Spatial Congestion
         trains_ahead = float(row.get("trains_ahead_30k", 0.0))
         sum_ahead_delay = float(row.get("sum_delay_trains_ahead_30k", 0.0))
         if trains_ahead >= 2 or sum_ahead_delay >= 30.0:
             contrib = min(25.0, max(4.0, sum_ahead_delay * 0.35 + trains_ahead * 3.0))
-            drivers.append({"feature": "downstream_section_congestion", "contribution_min": round(contrib, 1), "direction": "increases_delay"})
+            drivers.append(
+                {
+                    "feature": "downstream_section_congestion",
+                    "contribution_min": round(contrib, 1),
+                    "direction": "increases_delay",
+                }
+            )
 
         # 3. Current Incurred Delay & Velocity
         c_delay = float(row.get("current_delay", 0.0))
         vel = float(row.get("delay_velocity", 0.0))
         if c_delay > 5.0:
-            drivers.append({"feature": "incurred_upstream_delay", "contribution_min": round(c_delay * 0.85, 1), "direction": "increases_delay"})
+            drivers.append(
+                {
+                    "feature": "incurred_upstream_delay",
+                    "contribution_min": round(c_delay * 0.85, 1),
+                    "direction": "increases_delay",
+                }
+            )
         if vel > 3.0:
-            drivers.append({"feature": "accelerating_delay_velocity", "contribution_min": round(vel * 2.0, 1), "direction": "increases_delay"})
+            drivers.append(
+                {
+                    "feature": "accelerating_delay_velocity",
+                    "contribution_min": round(vel * 2.0, 1),
+                    "direction": "increases_delay",
+                }
+            )
         elif vel < -2.0:
-            drivers.append({"feature": "running_time_recovery", "contribution_min": round(vel * 1.5, 1), "direction": "decreases_delay"})
+            drivers.append(
+                {
+                    "feature": "running_time_recovery",
+                    "contribution_min": round(vel * 1.5, 1),
+                    "direction": "decreases_delay",
+                }
+            )
 
         # 4. Junction & Terminal Headway
         is_junc = float(row.get("target_is_junction", 0.0))
         if is_junc > 0.5:
-            drivers.append({"feature": "junction_signal_interlocking", "contribution_min": 3.5, "direction": "increases_delay"})
+            drivers.append(
+                {
+                    "feature": "junction_signal_interlocking",
+                    "contribution_min": 3.5,
+                    "direction": "increases_delay",
+                }
+            )
 
         # 5. Historical train profile
         hist_avg = float(row.get("hist_avg_delay_train_target", 0.0))
         if hist_avg > 15.0:
-            drivers.append({"feature": "chronic_section_delay_history", "contribution_min": round(hist_avg * 0.25, 1), "direction": "increases_delay"})
+            drivers.append(
+                {
+                    "feature": "chronic_section_delay_history",
+                    "contribution_min": round(hist_avg * 0.25, 1),
+                    "direction": "increases_delay",
+                }
+            )
 
         # Sort by absolute contribution and take top 3
-        drivers.sort(key=lambda d: abs(d["contribution_min"]), reverse=True)
+        drivers.sort(key=lambda d: abs(float(str(d["contribution_min"]))), reverse=True)
         if not drivers:
-            drivers = [{"feature": "nominal_schedule_adherence", "contribution_min": 0.0, "direction": "neutral"}]
+            drivers = [
+                {
+                    "feature": "nominal_schedule_adherence",
+                    "contribution_min": 0.0,
+                    "direction": "neutral",
+                }
+            ]
 
         return drivers[:3]
 
@@ -600,7 +662,9 @@ class PredictorService:
                 dt = base_time + datetime.timedelta(minutes=mins)
                 return dt.strftime("%H:%M")
             sh, sm = [int(x) for x in s_time.split(":")[:2]]
-            dt = datetime.datetime(base_time.year, base_time.month, base_time.day, sh, sm) + datetime.timedelta(minutes=mins)
+            dt = datetime.datetime(
+                base_time.year, base_time.month, base_time.day, sh, sm
+            ) + datetime.timedelta(minutes=mins)
             return dt.strftime("%H:%M")
 
         best_arr = add_min_to_sched(sched_arr, safe_p10)
@@ -609,7 +673,11 @@ class PredictorService:
 
         served_model_name = self.champion_name
         if not self._gru_sequence_ready and served_model_name == "PyTorch_GRU_Quantile":
-            served_model_name = "Tier2_Convex_Ensemble_NNLS" if hasattr(self, "_ensemble") and self._ensemble is not None else "LightGBM_Quantile_Direct"
+            served_model_name = (
+                "Tier2_Convex_Ensemble_NNLS"
+                if hasattr(self, "_ensemble") and self._ensemble is not None
+                else "LightGBM_Quantile_Direct"
+            )
         pos_dict = position_record.to_dict()
         model_dict = {
             "name": served_model_name,
@@ -622,16 +690,17 @@ class PredictorService:
         # TASK-6c: Confidence-driven advisory
         band_width_min = round(safe_p90 - safe_p10, 1)
         if band_width_min < 15.0:
-            uncertainty_level = "high"    # tight band -> green in frontend
+            uncertainty_level = "high"  # tight band -> green in frontend
         elif band_width_min < 40.0:
             uncertainty_level = "medium"  # moderate -> amber
         else:
-            uncertainty_level = "low"     # wide band -> red
+            uncertainty_level = "low"  # wide band -> red
 
         # Record cryptographically sealed prediction receipt into ledger (Proposal 2)
         receipt_hash = "unsealed"
         try:
             from engine.prediction_ledger import PredictionLedger
+
             ledger = PredictionLedger(self.db)
             receipt_hash = ledger.record_prediction_receipt(
                 train_no=train_no,

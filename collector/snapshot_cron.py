@@ -10,7 +10,6 @@ from __future__ import annotations
 import datetime
 import json
 import logging
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
@@ -40,13 +39,19 @@ class SnapshotCollector:
 
     def __init__(self, db: Optional[Database] = None, adapters: Optional[List[LiveSource]] = None):
         self.db = db or get_db()
-        self.adapters: List[LiveSource] = adapters if adapters is not None else [
-            RapidAPISource(),
-            ScrapeSource(),
-            MockReplaySource(self.db),
-        ]
+        self.adapters: List[LiveSource] = (
+            adapters
+            if adapters is not None
+            else [
+                RapidAPISource(),
+                ScrapeSource(),
+                MockReplaySource(self.db),
+            ]
+        )
 
-    def fetch_train_status(self, train_no: str, run_date: datetime.date) -> tuple[List[StationEvent], str]:
+    def fetch_train_status(
+        self, train_no: str, run_date: datetime.date
+    ) -> tuple[List[StationEvent], str]:
         """Fetches train status through failover adapter chain with provenance tag."""
         for adapter in self.adapters:
             try:

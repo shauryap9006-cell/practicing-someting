@@ -10,11 +10,11 @@ Empirical verification for:
    - Dispatcher ACK invalid strings and schemas
 """
 
-import json
 import pytest
 from fastapi.testclient import TestClient
-from api.main import app
+
 from api.auth import create_access_token
+from api.main import app
 from data.db import get_db
 from data.seed_users import seed_roles_and_users
 
@@ -81,7 +81,9 @@ def test_platform_reoptimize_default_and_ndls():
     assert data_empty["station_code"] == "CNB"
 
     # NDLS station
-    resp_ndls = client.post("/api/platform/reoptimize", headers=headers, json={"station_code": "NDLS"})
+    resp_ndls = client.post(
+        "/api/platform/reoptimize", headers=headers, json={"station_code": "NDLS"}
+    )
     assert resp_ndls.status_code == 200
     data_ndls = resp_ndls.json()
     assert data_ndls["station_code"] == "NDLS"
@@ -192,7 +194,9 @@ def test_openapi_schema_no_double_prefixes():
 
     for path in paths.keys():
         for pattern in invalid_patterns:
-            assert pattern not in path, f"Detected malformed / double-prefix path in OpenAPI: '{path}' (matched '{pattern}')"
+            assert pattern not in path, (
+                f"Detected malformed / double-prefix path in OpenAPI: '{path}' (matched '{pattern}')"
+            )
 
 
 # ============================================================================
@@ -203,7 +207,9 @@ def test_platform_reoptimize_adversarial_station_inputs():
     headers = get_admin_headers()
 
     # Case A: Non-existent station code -> Should return 200 with 0 blocks / 0 conflicts
-    resp_invalid = client.post("/api/platform/reoptimize", headers=headers, json={"station_code": "INVALID_STN_999"})
+    resp_invalid = client.post(
+        "/api/platform/reoptimize", headers=headers, json={"station_code": "INVALID_STN_999"}
+    )
     assert resp_invalid.status_code == 200
     data_invalid = resp_invalid.json()
     assert data_invalid["station_code"] == "INVALID_STN_999"
@@ -214,13 +220,17 @@ def test_platform_reoptimize_adversarial_station_inputs():
     assert data_invalid["blocks"] == []
 
     # Case B: Empty string station code -> Defaults gracefully to CNB
-    resp_empty_stn = client.post("/api/platform/reoptimize", headers=headers, json={"station_code": ""})
+    resp_empty_stn = client.post(
+        "/api/platform/reoptimize", headers=headers, json={"station_code": ""}
+    )
     assert resp_empty_stn.status_code == 200
     data_empty_stn = resp_empty_stn.json()
     assert data_empty_stn["station_code"] == "CNB"
 
     # Case C: Null station code -> Defaults gracefully to CNB
-    resp_null_stn = client.post("/api/platform/reoptimize", headers=headers, json={"station_code": None})
+    resp_null_stn = client.post(
+        "/api/platform/reoptimize", headers=headers, json={"station_code": None}
+    )
     assert resp_null_stn.status_code == 200
     data_null_stn = resp_null_stn.json()
     assert data_null_stn["station_code"] == "CNB"
@@ -264,23 +274,45 @@ def test_dispatcher_ack_validation_and_rejection():
     headers = get_admin_headers()
 
     # Case A: Valid 'accepted'
-    resp_acc = client.post("/v1/advise/adv-test-101/ack", headers=headers, json={"decision": "accepted", "dispatcher_id": "D1"})
+    resp_acc = client.post(
+        "/v1/advise/adv-test-101/ack",
+        headers=headers,
+        json={"decision": "accepted", "dispatcher_id": "D1"},
+    )
     assert resp_acc.status_code == 200
     assert resp_acc.json()["decision"] == "accepted"
 
     # Case B: Valid 'rejected'
-    resp_rej = client.post("/v1/advise/adv-test-102/ack", headers=headers, json={"decision": "rejected", "comment": "Conflict manual override"})
+    resp_rej = client.post(
+        "/v1/advise/adv-test-102/ack",
+        headers=headers,
+        json={"decision": "rejected", "comment": "Conflict manual override"},
+    )
     assert resp_rej.status_code == 200
     assert resp_rej.json()["decision"] == "rejected"
 
     # Case C: Invalid decision string value -> 400 rejection (or 422)
-    resp_inv = client.post("/v1/advise/adv-test-103/ack", headers=headers, json={"decision": "maybe_later"})
-    assert resp_inv.status_code in (400, 422), f"Expected 400 or 422, got {resp_inv.status_code}: {resp_inv.text}"
+    resp_inv = client.post(
+        "/v1/advise/adv-test-103/ack", headers=headers, json={"decision": "maybe_later"}
+    )
+    assert resp_inv.status_code in (400, 422), (
+        f"Expected 400 or 422, got {resp_inv.status_code}: {resp_inv.text}"
+    )
 
     # Case D: Missing required decision field -> 422 Unprocessable Entity
-    resp_missing = client.post("/v1/advise/adv-test-104/ack", headers=headers, json={"comment": "No decision provided"})
-    assert resp_missing.status_code == 422, f"Expected 422 for missing required field, got {resp_missing.status_code}"
+    resp_missing = client.post(
+        "/v1/advise/adv-test-104/ack", headers=headers, json={"comment": "No decision provided"}
+    )
+    assert resp_missing.status_code == 422, (
+        f"Expected 422 for missing required field, got {resp_missing.status_code}"
+    )
 
     # Case E: Extra fields forbidden -> 422 Unprocessable Entity
-    resp_extra = client.post("/v1/advise/adv-test-105/ack", headers=headers, json={"decision": "accepted", "unsupported_field": 123})
-    assert resp_extra.status_code == 422, f"Expected 422 for extra forbidden field, got {resp_extra.status_code}"
+    resp_extra = client.post(
+        "/v1/advise/adv-test-105/ack",
+        headers=headers,
+        json={"decision": "accepted", "unsupported_field": 123},
+    )
+    assert resp_extra.status_code == 422, (
+        f"Expected 422 for extra forbidden field, got {resp_extra.status_code}"
+    )

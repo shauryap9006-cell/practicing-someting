@@ -1,12 +1,11 @@
 """Tests for Bayesian Position Resolver and Point-in-Time Filtering (F19, F20)."""
 
 import datetime
-import pytest
 
-from data.db import get_db
-from engine.clocks import ReplayClock, set_global_clock, IST_TIMEZONE
-from engine.position_resolver import PositionResolver
 from api.predictor import PredictorService
+from data.db import get_db
+from engine.clocks import IST_TIMEZONE, ReplayClock, set_global_clock
+from engine.position_resolver import PositionResolver
 
 
 def test_point_in_time_future_event_rejected():
@@ -14,16 +13,16 @@ def test_point_in_time_future_event_rejected():
     db = get_db()
     clock = ReplayClock(datetime.datetime(2026, 8, 29, 10, 0, 0, tzinfo=IST_TIMEZONE))
     set_global_clock(clock)
-    
+
     resolver = PositionResolver(db=db)
-    
+
     route = [
         {"seq": 1, "station_code": "NDLS", "sched_dep": "08:00"},
         {"seq": 2, "station_code": "GZB", "sched_arr": "08:45", "sched_dep": "08:50"},
         {"seq": 3, "station_code": "ALJN", "sched_arr": "10:15", "sched_dep": "10:20"},
         {"seq": 4, "station_code": "CNB", "sched_arr": "13:00", "sched_dep": "13:10"},
     ]
-    
+
     # Position resolver should return a valid PositionRecord
     pos = resolver.resolve_train_position("12301", route, as_of_time=clock.now())
     assert pos is not None
@@ -38,7 +37,7 @@ def test_position_marginalization_cascaded_delay():
     db = get_db()
     clock = ReplayClock(datetime.datetime(2026, 8, 29, 10, 30, 0, tzinfo=IST_TIMEZONE))
     set_global_clock(clock)
-    
+
     predictor = PredictorService(db=db)
     # Using 12301 which exists in DB
     res = predictor.predict_train_eta("12301", "LKO")

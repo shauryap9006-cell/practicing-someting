@@ -30,37 +30,44 @@ class EdgeEKF:
         chi2_threshold: float = 5.991,  # chi2, 2 DoF, 95% confidence
     ):
         # State vector: [x, y, v, heading, gyro_bias, odo_bias]
-        self.x = np.array([
-            float(init_x),
-            float(init_y),
-            float(init_v),
-            float(init_heading),
-            0.0,
-            0.0,
-        ], dtype=float)
+        self.x = np.array(
+            [
+                float(init_x),
+                float(init_y),
+                float(init_v),
+                float(init_heading),
+                0.0,
+                0.0,
+            ],
+            dtype=float,
+        )
 
         # State covariance P
-        self.P = np.diag([
-            sigma_gnss ** 2,         # x variance
-            sigma_gnss ** 2,         # y variance
-            2.0,                     # v variance
-            np.deg2rad(5.0) ** 2,    # heading: ±5 deg
-            1e-4,                    # gyro bias
-            1e-4,                    # odo bias
-        ]).astype(float)
+        self.P = np.diag(
+            [
+                sigma_gnss**2,  # x variance
+                sigma_gnss**2,  # y variance
+                2.0,  # v variance
+                np.deg2rad(5.0) ** 2,  # heading: ±5 deg
+                1e-4,  # gyro bias
+                1e-4,  # odo bias
+            ]
+        ).astype(float)
 
         # Process noise covariance Q (continuous spectral density scaled by dt)
-        self.Q = np.diag([
-            0.5,                     # x noise
-            0.5,                     # y noise
-            0.2,                     # v accel noise
-            np.deg2rad(1.0) ** 2,    # heading yaw noise
-            1e-5,                    # gyro bias drift
-            1e-5,                    # odo bias drift
-        ]).astype(float)
+        self.Q = np.diag(
+            [
+                0.5,  # x noise
+                0.5,  # y noise
+                0.2,  # v accel noise
+                np.deg2rad(1.0) ** 2,  # heading yaw noise
+                1e-5,  # gyro bias drift
+                1e-5,  # odo bias drift
+            ]
+        ).astype(float)
 
-        self.R_gnss = np.diag([sigma_gnss ** 2, sigma_gnss ** 2]).astype(float)
-        self.R_odo = np.array([[sigma_odo ** 2]], dtype=float)
+        self.R_gnss = np.diag([sigma_gnss**2, sigma_gnss**2]).astype(float)
+        self.R_odo = np.array([[sigma_odo**2]], dtype=float)
         self.chi2_threshold = chi2_threshold
         self.last_gnss_innov_d: float = 0.0
         self.last_gnss_valid: bool = True

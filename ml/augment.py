@@ -6,18 +6,16 @@ via the SimPy mechanistic twin, while strictly enforcing:
 2. Maximum mixing ratio in augmented training datasets is <= 7% (0.07).
 3. Invariant I4: 0% synthetic rows allowed into held-out evaluation or backtesting sets.
 """
+
 from __future__ import annotations
 
-import copy
-import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
 
-from data.db import Database, get_db
-from ml.features import FEATURE_NAMES_V2, TrainFeatureVector
-
+from data.db import Database
+from ml.features import FEATURE_NAMES_V2
 
 MAX_SYNTHETIC_MIXING_RATIO = 0.07  # 7% hard ceiling
 
@@ -73,7 +71,9 @@ def generate_synthetic_simpy_samples(
             "current_delay": float(synth_curr_delay),
             "hops_remaining": float(rng.randint(1, 8)),
             "km_remaining": float(rng.uniform(30.0, 350.0)),
-            "hour_of_day": float(int(r["sched_hour"]) if r["sched_hour"] and str(r["sched_hour"]).isdigit() else 12),
+            "hour_of_day": float(
+                int(r["sched_hour"]) if r["sched_hour"] and str(r["sched_hour"]).isdigit() else 12
+            ),
             "day_type": float(rng.choice([0.0, 1.0])),
             "train_priority": float(r["priority"]),
             "target_is_junction": float(r["is_junction"]),
@@ -143,4 +143,6 @@ def enforce_eval_holdout_isolation(eval_df: pd.DataFrame) -> None:
     """Invariant I4: Asserts 0% synthetic rows exist in evaluation / backtest sets."""
     if "source" in eval_df.columns:
         n_synth = int((eval_df["source"] == "synthetic_simpy").sum())
-        assert n_synth == 0, f"Invariant I4 Violation: {n_synth} synthetic rows detected in evaluation set!"
+        assert n_synth == 0, (
+            f"Invariant I4 Violation: {n_synth} synthetic rows detected in evaluation set!"
+        )

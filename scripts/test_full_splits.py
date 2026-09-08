@@ -1,10 +1,12 @@
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pandas as pd
+
 from data.db import get_db
-from ml.evaluate_v2 import corridor_fog_days, blocked_fog_holdout
+from ml.evaluate_v2 import blocked_fog_holdout, corridor_fog_days
 from ml.vocab import StationVocab
 
 db = get_db()
@@ -31,7 +33,9 @@ val_dates = non_fog_dates[-n_val_dates:]
 print(f"\n3-way Split:")
 print(f"  Train:     {len(train_dates)} days ({train_dates[0]} to {train_dates[-1]})")
 print(f"  Val:       {len(val_dates)} days ({val_dates[0]} to {val_dates[-1]})")
-print(f"  Fog Bench: {len(fog_holdout_dates)} days ({fog_holdout_dates[0]} to {fog_holdout_dates[-1]})")
+print(
+    f"  Fog Bench: {len(fog_holdout_dates)} days ({fog_holdout_dates[0]} to {fog_holdout_dates[-1]})"
+)
 
 # Verify non-overlap
 train_set = set(train_dates)

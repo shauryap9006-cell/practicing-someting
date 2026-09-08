@@ -7,18 +7,16 @@ backed by dual digital signature validation and audit tracking.
 
 from __future__ import annotations
 
-from engine.clocks import get_clock, now_iso, ist_now
-
 import json
-from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from api.auth import assert_station_scope, effective_station_scope, get_current_user, require_role
+from api.auth import assert_station_scope, effective_station_scope, require_role
 from data.audit import record_audit
 from data.db import Database, get_db
+from engine.clocks import get_clock, ist_now
 
 router = APIRouter(prefix="/api/handover", tags=["Digital Shift Handover (I2)"])
 
@@ -27,7 +25,9 @@ class DraftHandoverRequest(BaseModel):
     station_code: str = Field("NDLS", description="Station code")
     shift_date: str = Field(..., description="Date of shift (YYYY-MM-DD)")
     shift_type: str = Field("morning", description="Shift type: morning, afternoon, night")
-    operational_notes: Optional[str] = Field(None, description="Free-text operational remarks from outgoing SM")
+    operational_notes: Optional[str] = Field(
+        None, description="Free-text operational remarks from outgoing SM"
+    )
 
 
 class SignOutRequest(BaseModel):
@@ -62,7 +62,7 @@ def auto_aggregate_station_state(station_code: str, db: Database) -> Dict[str, A
     active_srs = []
     open_incidents = []
     crew_exceptions = []
-    active_possessions = []
+    active_possessions: List[Dict[str, Any]] = []
 
     with db.transaction() as cur:
         # 1. Fetch active speed restrictions
@@ -76,13 +76,15 @@ def auto_aggregate_station_state(station_code: str, db: Database) -> Dict[str, A
                 (station_code, station_code),
             )
             for r in cur.fetchall():
-                active_srs.append({
-                    "id": r["id"],
-                    "from_code": r["from_code"],
-                    "to_code": r["to_code"],
-                    "speed_limit_kmph": r["speed_limit_kmph"],
-                    "cause": r["cause"],
-                })
+                active_srs.append(
+                    {
+                        "id": r["id"],
+                        "from_code": r["from_code"],
+                        "to_code": r["to_code"],
+                        "speed_limit_kmph": r["speed_limit_kmph"],
+                        "cause": r["cause"],
+                    }
+                )
         except Exception:
             pass
 
@@ -97,14 +99,16 @@ def auto_aggregate_station_state(station_code: str, db: Database) -> Dict[str, A
                 """
             )
             for r in cur.fetchall():
-                open_incidents.append({
-                    "id": r["id"],
-                    "event_type": r["event_type"],
-                    "severity": r["severity"],
-                    "title": r["title"],
-                    "message": r["message"],
-                    "created_at": r["created_at"],
-                })
+                open_incidents.append(
+                    {
+                        "id": r["id"],
+                        "event_type": r["event_type"],
+                        "severity": r["severity"],
+                        "title": r["title"],
+                        "message": r["message"],
+                        "created_at": r["created_at"],
+                    }
+                )
         except Exception:
             pass
 
@@ -120,12 +124,14 @@ def auto_aggregate_station_state(station_code: str, db: Database) -> Dict[str, A
                 (station_code,),
             )
             for r in cur.fetchall():
-                crew_exceptions.append({
-                    "staff_id": r["staff_id"],
-                    "name": r["name"],
-                    "role": r["role"],
-                    "status": "OFF_DUTY_EXCEPTION",
-                })
+                crew_exceptions.append(
+                    {
+                        "staff_id": r["staff_id"],
+                        "name": r["name"],
+                        "role": r["role"],
+                        "status": "OFF_DUTY_EXCEPTION",
+                    }
+                )
         except Exception:
             pass
 
@@ -237,7 +243,11 @@ def create_or_update_draft(
             action="HANDOVER_DRAFT_SAVED",
             table_name="handover_log",
             record_id=handover_id,
-            after_state={"station_code": req.station_code, "shift_date": req.shift_date, "shift_type": req.shift_type},
+            after_state={
+                "station_code": req.station_code,
+                "shift_date": req.shift_date,
+                "shift_type": req.shift_type,
+            },
         )
 
     return HandoverResponse(
@@ -269,7 +279,9 @@ def sign_out_shift(
         cur.execute("SELECT * FROM handover_log WHERE id = ?;", (handover_id,))
         row = cur.fetchone()
         if not row:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Handover log not found.")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Handover log not found."
+            )
         assert_station_scope(current_user, row["station_code"])
 
         notes = req.operational_notes or row["operational_notes"]
@@ -322,7 +334,9 @@ def acknowledge_incoming_shift(
         cur.execute("SELECT * FROM handover_log WHERE id = ?;", (handover_id,))
         row = cur.fetchone()
         if not row:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Handover log not found.")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Handover log not found."
+            )
         assert_station_scope(current_user, row["station_code"])
 
         if row["status"] != "signed":
@@ -373,13 +387,17 @@ def acknowledge_incoming_shift(
 def list_handover_history(
     station_code: str = Query("NDLS"),
     limit: int = Query(20, ge=1, le=100),
-    current_user: Dict[str, Any] = Depends(require_role(["station_master", "dy_sm", "admin", "viewer"])),
+    current_user: Dict[str, Any] = Depends(
+        require_role(["station_master", "dy_sm", "admin", "viewer"])
+    ),
     db: Database = Depends(get_db),
 ):
     """Fetches past shift handover records for the station."""
-    station_code = effective_station_scope(current_user, station_code)
-    if station_code is None:
-        raise HTTPException(status_code=403, detail="A station filter is required for handover history.")
+    eff_stn = effective_station_scope(current_user, station_code)
+    if eff_stn is None:
+        raise HTTPException(
+            status_code=403, detail="A station filter is required for handover history."
+        )
     with db.transaction() as cur:
         cur.execute(
             """

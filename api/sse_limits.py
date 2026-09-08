@@ -19,7 +19,11 @@ def acquire_sse_slot() -> bool:
     global _ACTIVE_CONNECTIONS
     with _LOCK:
         if _ACTIVE_CONNECTIONS >= settings.MAX_SSE_CONNECTIONS:
-            logger.warning("SSE connection rejected: capacity reached (%d/%d)", _ACTIVE_CONNECTIONS, settings.MAX_SSE_CONNECTIONS)
+            logger.warning(
+                "SSE connection rejected: capacity reached (%d/%d)",
+                _ACTIVE_CONNECTIONS,
+                settings.MAX_SSE_CONNECTIONS,
+            )
             return False
         _ACTIVE_CONNECTIONS += 1
         logger.info("SSE client connected. Active SSE connections: %d", _ACTIVE_CONNECTIONS)

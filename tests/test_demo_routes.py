@@ -154,4 +154,3 @@ def test_time_machine_endpoint(client):
     assert "actual_arrival" in truth
     assert truth["actual_delay_min"] >= 0
     assert "GRADED_VERIFIED" in truth["ledger_state"]
-

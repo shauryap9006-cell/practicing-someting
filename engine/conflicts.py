@@ -21,8 +21,8 @@ Produces structured advisory recommendations:
 from __future__ import annotations
 
 import datetime
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
 from data.db import Database, get_db
 from engine.track_graph import TrackGraph
@@ -31,13 +31,14 @@ from engine.track_graph import TrackGraph
 @dataclass(frozen=True)
 class ConflictRecord:
     """Individual conflict detected by deterministic safety rules."""
+
     conflict_id: str
     target_train: str
     with_train: str
     station_code: str
     conflict_type: str  # STATION_HEADWAY, SINGLE_LINE_OPPOSING, SECTION_CATCHUP
     predicted_gap_min: float
-    severity: str       # HIGH, MEDIUM, LOW
+    severity: str  # HIGH, MEDIUM, LOW
     suggested_action: str  # hold_at_loop, proceed, controller_review, stop_train_advisory
     reason: str
     human_ack_required: bool = True
@@ -59,10 +60,10 @@ class ConflictRecord:
 
 # Freight headway lookup (DFC Phase 4)
 _FREIGHT_HEADWAY: Dict[str, float] = {
-    "coal_rake":    14.0,  # heavy haul – long braking distance
-    "container":     8.0,
-    "auto_rake":     8.0,
-    "steel_rake":    8.0,
+    "coal_rake": 14.0,  # heavy haul – long braking distance
+    "container": 8.0,
+    "auto_rake": 8.0,
+    "steel_rake": 8.0,
     "empty_freight": 8.0,
 }
 _PASSENGER_HEADWAY = 5.0
@@ -127,8 +128,12 @@ class ConflictScanner:
             )
             my_ev = cur.fetchone()
 
-        my_date = target_date_str or (my_ev["run_date"] if my_ev else datetime.date.today().isoformat())
-        my_delay = float(my_ev["delay_arr_min"] if my_ev and my_ev["delay_arr_min"] is not None else 0.0)
+        my_date = target_date_str or (
+            my_ev["run_date"] if my_ev else datetime.date.today().isoformat()
+        )
+        my_delay = float(
+            my_ev["delay_arr_min"] if my_ev and my_ev["delay_arr_min"] is not None else 0.0
+        )
 
         # Get all other active trains on this date
         with self.db.transaction() as cur:
@@ -184,14 +189,16 @@ class ConflictScanner:
                 # Check if same section is single line
                 is_single = False
                 for i in range(len(route) - 1):
-                    if route[i]["station_code"] == stn or route[i+1]["station_code"] == stn:
-                        sec_info = self.track_graph.get_section_info(route[i]["station_code"], route[i+1]["station_code"])
+                    if route[i]["station_code"] == stn or route[i + 1]["station_code"] == stn:
+                        sec_info = self.track_graph.get_section_info(
+                            route[i]["station_code"], route[i + 1]["station_code"]
+                        )
                         if sec_info.get("single_line"):
                             is_single = True
                             break
 
                 # 1. Opposing Single-Line Conflict
-                same_dir = (route[-1]["station_code"] == o_route[-1]["station_code"])
+                same_dir = route[-1]["station_code"] == o_route[-1]["station_code"]
                 if is_single and not same_dir and gap < self.min_single_line_clearance:
                     conflicts.append(
                         ConflictRecord(
@@ -202,7 +209,9 @@ class ConflictScanner:
                             conflict_type="SINGLE_LINE_OPPOSING",
                             predicted_gap_min=gap,
                             severity="HIGH",
-                            suggested_action="hold_at_loop" if int(route[0]["priority"]) <= int(o_route[0]["priority"]) else "proceed",
+                            suggested_action="hold_at_loop"
+                            if int(route[0]["priority"]) <= int(o_route[0]["priority"])
+                            else "proceed",
                             reason=f"Opposing movement on single-line block at {stn} with only {gap:.1f}m clearance (<{self.min_single_line_clearance}m limit).",
                         )
                     )
@@ -231,6 +240,7 @@ class ConflictScanner:
     def dispatch_conflict_alerts(self, conflicts: List[ConflictRecord]) -> List[dict]:
         """Dispatches AlertEvents for HIGH severity conflicts via the notification dispatcher."""
         from notifications import AlertEvent, get_dispatcher
+
         dispatcher = get_dispatcher(self.db)
         dispatch_results = []
 
@@ -251,5 +261,3 @@ class ConflictScanner:
                 dispatch_results.append(res)
 
         return dispatch_results
-
-

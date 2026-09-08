@@ -13,16 +13,14 @@ for the operator to securely distribute and force a reset on first login.
 
 from __future__ import annotations
 
-from engine.clocks import get_clock, now_iso
-
 import json
 import secrets
-from datetime import datetime, timezone
 from typing import Optional
 
-from config import settings
 from api.auth import STANDARD_ROLES, hash_password
+from config import settings
 from data.db import Database, get_db
+from engine.clocks import get_clock
 
 DEFAULT_USERS = [
     {
@@ -204,7 +202,7 @@ def seed_roles_and_users(db: Optional[Database] = None) -> dict[str, int]:
                     must_change,
                 ),
             )
-            
+
             # Map user_roles
             cur.execute(
                 """
@@ -227,8 +225,12 @@ def seed_roles_and_users(db: Optional[Database] = None) -> dict[str, int]:
 if __name__ == "__main__":
     print("=== Seeding RailTwin-X Roles & Standard Users ===")
     res = seed_roles_and_users()
-    print(f"Success: Seeded {res['roles_seeded']} roles and {res['users_seeded']} operational accounts.")
+    print(
+        f"Success: Seeded {res['roles_seeded']} roles and {res['users_seeded']} operational accounts."
+    )
     if "generated_credentials" in res:
-        print("[PRODUCTION] Generated one-time credentials (distribute securely, then force reset):")
+        print(
+            "[PRODUCTION] Generated one-time credentials (distribute securely, then force reset):"
+        )
         for uname, pwd in res["generated_credentials"].items():
             print(f"  {uname}: {pwd}")
