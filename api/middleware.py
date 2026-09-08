@@ -1,8 +1,10 @@
 """RailTwin-X API Middleware — Phase 5 (API Hardening).
 
 Provides:
-1. ResponseCacheMiddleware  — 5-second in-memory TTL cache for GET /v1/advise
-2. TokenBucketRateLimiter  — 60 req/min per IP (configurable) using token-bucket algorithm
+1. ResponseCacheMiddleware  - 5-second in-memory TTL cache for GET /v1/advise
+2. TokenBucketRateLimiter  - configurable req/min per IP via settings.RATE_LIMIT_RPM
+   (default 1200 req/min, 300 burst; override with RAILTWIN_RATE_LIMIT_RPM /
+   RAILTWIN_RATE_LIMIT_BURST) using a token-bucket algorithm.
 """
 
 from __future__ import annotations
@@ -16,6 +18,8 @@ from typing import Dict, Optional, Tuple
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
+
+from config import settings
 
 
 # ---------------------------------------------------------------------------
@@ -103,10 +107,6 @@ class ResponseCacheMiddleware(BaseHTTPMiddleware):
 # 2. Token-Bucket Rate Limiter
 # ---------------------------------------------------------------------------
 
-_RATE_LIMIT_RPM = 1200        # requests per minute per IP (high capacity for operational dashboard)
-_RATE_LIMIT_BURST = 300       # max burst above steady rate
-_BUCKET_REFILL_RATE = _RATE_LIMIT_RPM / 60.0  # tokens/sec
-
 _BUCKETS: Dict[str, Tuple[float, float]] = {}   # ip -> (tokens, last_refill_ts)
 _BUCKET_LOCK = asyncio.Lock()
 
@@ -121,6 +121,9 @@ def _get_client_ip(request: Request) -> str:
 
 class TokenBucketRateLimiter(BaseHTTPMiddleware):
     """Token-bucket rate limiter. Returns 429 on exhaustion.
+
+    Rate/burst are sourced from settings.RATE_LIMIT_RPM / settings.RATE_LIMIT_BURST
+    (env-overridable via RAILTWIN_RATE_LIMIT_RPM / RAILTWIN_RATE_LIMIT_BURST).
 
     Bypassed when:
     - client IP is 'unknown', 'testclient', or loopback (127.0.0.1, localhost, ::1)
@@ -142,23 +145,27 @@ class TokenBucketRateLimiter(BaseHTTPMiddleware):
         ):
             return await call_next(request)
 
+        rate_limit_rpm = settings.RATE_LIMIT_RPM
+        rate_limit_burst = settings.RATE_LIMIT_BURST
+        bucket_refill_rate = rate_limit_rpm / 60.0
+
         now = time.monotonic()
 
         async with _BUCKET_LOCK:
-            tokens, last_refill = _BUCKETS.get(ip, (float(_RATE_LIMIT_BURST), now))
+            tokens, last_refill = _BUCKETS.get(ip, (float(rate_limit_burst), now))
             # Refill tokens based on elapsed time
             elapsed = now - last_refill
-            tokens = min(float(_RATE_LIMIT_BURST), tokens + elapsed * _BUCKET_REFILL_RATE)
+            tokens = min(float(rate_limit_burst), tokens + elapsed * bucket_refill_rate)
 
             if tokens < 1.0:
                 _BUCKETS[ip] = (tokens, now)
-                retry_after = int((1.0 - tokens) / _BUCKET_REFILL_RATE) + 1
+                retry_after = int((1.0 - tokens) / bucket_refill_rate) + 1
                 return JSONResponse(
                     status_code=429,
                     content={
                         "error": {
                             "code": "RATE_LIMIT_EXCEEDED",
-                            "message": f"Rate limit exceeded: {_RATE_LIMIT_RPM} req/min per IP.",
+                            "message": f"Rate limit exceeded: {rate_limit_rpm} req/min per IP.",
                             "retryable": True,
                         }
                     },

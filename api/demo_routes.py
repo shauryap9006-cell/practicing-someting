@@ -51,10 +51,55 @@ def get_active_shocks() -> Dict[str, Any]:
     }
 
 
+def _apply_shock_to_physics(shock: Dict[str, Any], db: Database) -> None:
+    """Writes TSR_ACTIVE / WEATHER_FOG shocks into the real tables the twin reads.
+
+    engine/live_tracker.py reads active rows from `speed_restrictions` and
+    `fog_flag` from `weather` on every tick, so writing here makes injected
+    shocks actually change train speeds, not just the comparator UI.
+    """
+    clock = get_clock()
+    station = shock["station"]
+    event_type = shock["event_type"]
+
+    if event_type == "TSR_ACTIVE":
+        reduced_speed = max(20.0, 130.0 - float(shock["severity_min"]) * 2.0)
+        with db.transaction() as cur:
+            cur.execute(
+                "SELECT from_code, to_code FROM sections WHERE from_code = ? OR to_code = ?",
+                (station, station),
+            )
+            pairs = cur.fetchall()
+            for r in pairs:
+                cur.execute(
+                    """
+                    INSERT INTO speed_restrictions
+                        (from_code, to_code, speed_limit_kmph, cause, permanent_or_temp,
+                         status, issued_by, created_at, is_active)
+                    VALUES (?, ?, ?, ?, 'TEMPORARY', 'ACTIVE', 'demo_shock', ?, 1)
+                    """,
+                    (r["from_code"], r["to_code"], reduced_speed, f"DEMO_SHOCK:{shock['id']}", clock.now_iso()),
+                )
+                shock.setdefault("_tsr_ids", []).append(cur.lastrowid)
+
+    elif event_type == "WEATHER_FOG":
+        today = clock.today_str()
+        with db.transaction() as cur:
+            cur.execute(
+                """
+                INSERT INTO weather (date, station_code, fog_flag)
+                VALUES (?, ?, 1)
+                ON CONFLICT(date, station_code) DO UPDATE SET fog_flag = 1;
+                """,
+                (today, station),
+            )
+
+
 @router.post("/v1/demo/inject-event", response_model=None)
 @router.post("/api/v1/demo/inject-event", response_model=None)
-def inject_shock_event(payload: InjectEventRequest) -> Dict[str, Any]:
-    """Injects an operational shock to demonstrate real-time uncertainty cone reaction."""
+def inject_shock_event(payload: InjectEventRequest, db: Database = Depends(get_db)) -> Dict[str, Any]:
+    """Injects an operational shock that both reacts in the comparator UI AND
+    physically affects the kinematic twin via speed_restrictions / weather."""
     clock = get_clock()
     shock = {
         "id": len(_ACTIVE_SHOCKS) + 1,
@@ -65,20 +110,34 @@ def inject_shock_event(payload: InjectEventRequest) -> Dict[str, Any]:
         "injected_at": clock.now_iso(),
     }
     _ACTIVE_SHOCKS.append(shock)
+
+    try:
+        _apply_shock_to_physics(shock, db)
+        physics_applied = shock["event_type"] in ("TSR_ACTIVE", "WEATHER_FOG")
+    except Exception:
+        physics_applied = False
+
     return {
         "status": "OK",
         "message": f"Operational shock '{shock['event_type']}' injected successfully.",
         "shock": shock,
         "total_active_shocks": len(_ACTIVE_SHOCKS),
+        "physics_applied": physics_applied,
     }
 
 
 @router.post("/v1/demo/reset-events", response_model=None)
 @router.post("/api/v1/demo/reset-events", response_model=None)
-def reset_shock_events() -> Dict[str, Any]:
-    """Clears all active demo shock injections, restoring pristine model state."""
+def reset_shock_events(db: Database = Depends(get_db)) -> Dict[str, Any]:
+    """Clears all active demo shock injections and their physical DB rows."""
     count = len(_ACTIVE_SHOCKS)
     _ACTIVE_SHOCKS.clear()
+    try:
+        with db.transaction() as cur:
+            cur.execute("UPDATE speed_restrictions SET is_active = 0, status = 'CLEARED' WHERE issued_by = 'demo_shock'")
+            cur.execute("UPDATE weather SET fog_flag = 0 WHERE fog_flag = 1")
+    except Exception:
+        pass
     return {
         "status": "OK",
         "message": f"Cleared {count} operational shocks.",

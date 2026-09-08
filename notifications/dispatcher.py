@@ -20,6 +20,11 @@ from notifications.channels.openwa import OpenWAChannel
 from notifications.channels.sms import SMSChannel
 from notifications.types import AlertEvent, StaffRecipient
 
+# Demo/sandbox-only phone whitelist. When RAILTWIN_NOTIFY_DEMO_MODE is enabled
+# (non-production demo environments only), outbound alerts are redirected to
+# these two test numbers instead of real staff phones, so hackathon demos
+# never spam real people. In all other cases, real on-duty staff numbers
+# resolved from the `staff` table are used unmodified.
 ALLOWED_TEST_NUMBERS = {"9580873724", "9569890921"}
 MAIN_CONTROLLER_PHONE = "9580873724"
 FIELD_STAFF_PHONE = "9569890921"
@@ -46,7 +51,14 @@ class NotificationDispatcher:
         station_code: str,
         roles: List[str],
     ) -> List[StaffRecipient]:
-        """Queries on-duty staff at station matching target roles, enforcing test whitelist."""
+        """Queries on-duty staff at station matching target roles.
+
+        In demo mode (RAILTWIN_NOTIFY_DEMO_MODE=true), phone numbers are
+        redirected to a fixed whitelist of two sandbox test numbers so
+        hackathon/demo runs never message real phones. Outside demo mode,
+        real on-duty staff phone numbers from the `staff` table are used
+        unmodified so alerts actually reach real personnel.
+        """
         stn = station_code.upper() if station_code else "CNB"
         roles_lower = [r.lower() for r in roles]
 
@@ -103,6 +115,12 @@ class NotificationDispatcher:
                     on_duty=True,
                 ),
             ]
+
+        # Demo mode: redirect every resolved recipient's phone to a sandbox
+        # test number, deduplicating so we never double-send to the same
+        # number. Outside demo mode, real staff numbers pass through as-is.
+        if not settings.NOTIFY_DEMO_MODE:
+            return raw_recipients
 
         filtered_recipients: List[StaffRecipient] = []
         seen_phones = set()
