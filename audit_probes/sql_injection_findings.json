@@ -1,7 +1,0 @@
-[
-  "data\\db.py:220 -> cur.execute(f\"SELECT COUNT(*) FROM {t}\")",
-  "scripts\\gate_v3_features.py:45 -> rows = con.execute(f\"SELECT {f} FROM feature_snapshots_v3 WHERE {SPLIT_CLAUSES[split]}\").fetchall()",
-  "scripts\\gate_v3_features.py:104 -> cur = con.execute(f\"SELECT {', '.join(cols)} FROM feature_snapshots_v3\")",
-  "scripts\\gate_v3_features.py:208 -> for r in con.execute(\"SELECT * FROM feature_snapshots_v3 ORDER BY train_no, run_date, target_station, as_of\"):",
-  "scripts\\inspect_weather_and_db.py:16 -> cur.execute(f\"SELECT count(*) as cnt FROM {t}\")"
-]
