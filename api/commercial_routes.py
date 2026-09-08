@@ -19,6 +19,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from api.auth import assert_station_scope, effective_station_scope, get_current_user, require_role
+from config import settings
 from data.audit import record_audit
 from data.db import Database, get_db
 
@@ -125,7 +126,7 @@ def issue_delay_certificate(
         "issued_by": current_user["id"],
         "issued_at": now_iso,
         "qr_token": qr_token,
-        "verification_url": f"http://localhost:8000/api/commercial/delay-certificate/verify/{qr_token}",
+        "verification_url": f"{settings.PUBLIC_URL.rstrip('/')}/api/commercial/delay-certificate/verify/{qr_token}",
     }
 
 

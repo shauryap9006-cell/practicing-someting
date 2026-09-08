@@ -10,6 +10,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from typing import List
+from urllib.parse import urlparse
 from pydantic import AliasChoices, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -284,6 +285,12 @@ class Settings(BaseSettings):
                 raise ValueError("RAILTWIN_DEFAULT_CLOCK_MODE must be 'live' in production")
             if not self.CORS_ORIGINS or any("localhost" in origin or "127.0.0.1" in origin for origin in self.CORS_ORIGINS):
                 raise ValueError("Production CORS_ORIGINS must contain only explicitly configured public origins")
+            public_url = self.PUBLIC_URL.strip()
+            parsed_public_url = urlparse(public_url)
+            if parsed_public_url.scheme not in {"http", "https"} or not parsed_public_url.netloc:
+                raise ValueError("RAILTWIN_PUBLIC_URL must be a valid http(s) URL in production")
+            if "localhost" in public_url.lower() or "127.0.0.1" in public_url:
+                raise ValueError("RAILTWIN_PUBLIC_URL must not contain localhost or 127.0.0.1 in production")
             if self.WHATSAPP_PROVIDER == "openwa" and not self.OPENWA_WEBHOOK_SECRET.strip():
                 raise ValueError("RAILTWIN_OPENWA_WEBHOOK_SECRET is required when the OpenWA webhook is enabled")
             if self.NOTIFY_DEMO_MODE:
