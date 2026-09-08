@@ -1,10 +1,11 @@
 """RailTwin-X API Middleware — Phase 5 (API Hardening).
 
 Provides:
-1. ResponseCacheMiddleware  - 5-second in-memory TTL cache for GET /v1/advise
+1. ResponseCacheMiddleware  - short in-memory TTL cache for GET /v1/advise
 2. TokenBucketRateLimiter  - configurable req/min per IP via settings.RATE_LIMIT_RPM
-   (default 1200 req/min, 300 burst; override with RAILTWIN_RATE_LIMIT_RPM /
-   RAILTWIN_RATE_LIMIT_BURST) using a token-bucket algorithm.
+3. IdempotencyMiddleware   - replay-safe mutations keyed by Idempotency-Key
+
+All tunables come from ``config.settings`` (env-overridable with the RAILTWIN_ prefix).
 """
 
 from __future__ import annotations
@@ -38,10 +39,10 @@ class _CacheEntry:
 
 _CACHE: Dict[str, _CacheEntry] = {}
 _CACHE_LOCK = asyncio.Lock()
+_CACHE_MAX_ENTRIES = 2048
 
 # Endpoints to cache (prefix match on path)
 _CACHE_PREFIXES = ("/v1/advise", "/api/advise")
-_CACHE_TTL_SEC = 5.0
 
 
 def _cache_key(request: Request) -> str:
@@ -49,7 +50,7 @@ def _cache_key(request: Request) -> str:
     auth = request.headers.get("Authorization", "")
     principal = hashlib.sha256(auth.encode("utf-8")).hexdigest() if auth else "anonymous"
     raw = f"{principal}:{request.method}:{request.url.path}?{request.url.query}"
-    return hashlib.md5(raw.encode()).hexdigest()
+    return hashlib.sha256(raw.encode()).hexdigest()
 
 
 def _should_cache(request: Request) -> bool:
@@ -58,19 +59,30 @@ def _should_cache(request: Request) -> bool:
     )
 
 
+def _prune_cache(now: float) -> None:
+    """Drops expired entries; must be called with _CACHE_LOCK held."""
+    expired = [key for key, entry in _CACHE.items() if entry.expires_at <= now]
+    for key in expired:
+        _CACHE.pop(key, None)
+    if len(_CACHE) > _CACHE_MAX_ENTRIES:
+        # Evict oldest-expiring entries first to keep memory bounded.
+        for key, _ in sorted(_CACHE.items(), key=lambda kv: kv[1].expires_at)[: len(_CACHE) - _CACHE_MAX_ENTRIES]:
+            _CACHE.pop(key, None)
+
+
 class ResponseCacheMiddleware(BaseHTTPMiddleware):
-    """5-second TTL in-memory cache for GET /v1/advise endpoints."""
+    """Short TTL in-memory cache for GET /v1/advise endpoints."""
 
     async def dispatch(self, request: Request, call_next):
-        if not _should_cache(request):
+        if settings.RESPONSE_CACHE_TTL_SECONDS <= 0 or not _should_cache(request):
             return await call_next(request)
 
         key = _cache_key(request)
 
         async with _CACHE_LOCK:
+            now = time.monotonic()
             entry = _CACHE.get(key)
-            if entry and time.monotonic() < entry.expires_at:
-                # Cache hit
+            if entry and now < entry.expires_at:
                 return Response(
                     content=entry.body,
                     status_code=entry.status_code,
@@ -78,20 +90,19 @@ class ResponseCacheMiddleware(BaseHTTPMiddleware):
                     media_type="application/json",
                 )
 
-        # Cache miss — call the real handler
         response = await call_next(request)
 
-        # Only cache 200 OK responses
         if response.status_code == 200:
             body = b""
             async for chunk in response.body_iterator:
                 body += chunk
             async with _CACHE_LOCK:
+                _prune_cache(time.monotonic())
                 _CACHE[key] = _CacheEntry(
                     body=body,
                     status_code=response.status_code,
                     headers=dict(response.headers),
-                    ttl_sec=_CACHE_TTL_SEC,
+                    ttl_sec=settings.RESPONSE_CACHE_TTL_SECONDS,
                 )
             return Response(
                 content=body,
@@ -109,57 +120,69 @@ class ResponseCacheMiddleware(BaseHTTPMiddleware):
 
 _BUCKETS: Dict[str, Tuple[float, float]] = {}   # ip -> (tokens, last_refill_ts)
 _BUCKET_LOCK = asyncio.Lock()
+_BUCKET_PRUNE_INTERVAL_SEC = 60.0
+_BUCKET_LAST_PRUNE = 0.0
+_LOOPBACK_HOSTS = frozenset({"unknown", "testclient", "127.0.0.1", "localhost", "::1"})
+_UNLIMITED_PATHS = frozenset({"/v1/health", "/healthz", "/readyz", "/docs", "/redoc", "/openapi.json", "/"})
 
 
 def _get_client_ip(request: Request) -> str:
-    """Extracts real client IP, respecting X-Forwarded-For header for reverse proxies."""
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
+    """Extracts the client IP.
+
+    ``X-Forwarded-For`` is attacker-controlled unless a trusted reverse proxy
+    overwrites it, so it is only honoured when ``TRUST_PROXY_HEADERS`` is set.
+    """
+    if settings.TRUST_PROXY_HEADERS:
+        forwarded = request.headers.get("X-Forwarded-For")
+        if forwarded:
+            candidate = forwarded.split(",")[0].strip()
+            if candidate:
+                return candidate
     return request.client.host if request.client else "unknown"
+
+
+def _prune_buckets(now: float, burst: float, refill_rate: float) -> None:
+    """Drops buckets that have fully refilled; must be called with _BUCKET_LOCK held."""
+    global _BUCKET_LAST_PRUNE
+    if now - _BUCKET_LAST_PRUNE < _BUCKET_PRUNE_INTERVAL_SEC:
+        return
+    _BUCKET_LAST_PRUNE = now
+    full_after = burst / refill_rate if refill_rate > 0 else 0.0
+    stale = [ip for ip, (_, last) in _BUCKETS.items() if now - last > full_after]
+    for ip in stale:
+        _BUCKETS.pop(ip, None)
 
 
 class TokenBucketRateLimiter(BaseHTTPMiddleware):
     """Token-bucket rate limiter. Returns 429 on exhaustion.
 
-    Rate/burst are sourced from settings.RATE_LIMIT_RPM / settings.RATE_LIMIT_BURST
-    (env-overridable via RAILTWIN_RATE_LIMIT_RPM / RAILTWIN_RATE_LIMIT_BURST).
-
-    Bypassed when:
-    - client IP is 'unknown', 'testclient', or loopback (127.0.0.1, localhost, ::1)
-    - RAILTWIN_TESTING=1 or ENVIRONMENT=development
+    Bypassed for loopback/test clients and when RAILTWIN_TESTING=1.
     """
 
     async def dispatch(self, request: Request, call_next):
-        import os
-        # Skip rate limiting for health checks, docs, and test environments
-        if request.url.path in ("/v1/health", "/docs", "/redoc", "/openapi.json", "/"):
+        if request.url.path in _UNLIMITED_PATHS:
             return await call_next(request)
 
         ip = _get_client_ip(request)
 
-        # Bypass for loopback/localhost dev proxy, test clients, and testing environments
-        if (
-            ip in ("unknown", "testclient", "127.0.0.1", "localhost", "::1")
-            or os.environ.get("RAILTWIN_TESTING", "0") == "1"
-        ):
+        if ip in _LOOPBACK_HOSTS or os.environ.get("RAILTWIN_TESTING", "0") == "1":
             return await call_next(request)
 
         rate_limit_rpm = settings.RATE_LIMIT_RPM
-        rate_limit_burst = settings.RATE_LIMIT_BURST
+        rate_limit_burst = float(settings.RATE_LIMIT_BURST)
         bucket_refill_rate = rate_limit_rpm / 60.0
 
         now = time.monotonic()
 
         async with _BUCKET_LOCK:
-            tokens, last_refill = _BUCKETS.get(ip, (float(rate_limit_burst), now))
-            # Refill tokens based on elapsed time
+            _prune_buckets(now, rate_limit_burst, bucket_refill_rate)
+            tokens, last_refill = _BUCKETS.get(ip, (rate_limit_burst, now))
             elapsed = now - last_refill
-            tokens = min(float(rate_limit_burst), tokens + elapsed * bucket_refill_rate)
+            tokens = min(rate_limit_burst, tokens + elapsed * bucket_refill_rate)
 
             if tokens < 1.0:
                 _BUCKETS[ip] = (tokens, now)
-                retry_after = int((1.0 - tokens) / bucket_refill_rate) + 1
+                retry_after = int((1.0 - tokens) / bucket_refill_rate) + 1 if bucket_refill_rate > 0 else 60
                 return JSONResponse(
                     status_code=429,
                     content={
@@ -172,7 +195,6 @@ class TokenBucketRateLimiter(BaseHTTPMiddleware):
                     headers={"Retry-After": str(retry_after)},
                 )
 
-            # Consume one token
             tokens -= 1.0
             _BUCKETS[ip] = (tokens, now)
 
@@ -186,7 +208,7 @@ class TokenBucketRateLimiter(BaseHTTPMiddleware):
 _IDEMPOTENCY_CACHE: Dict[str, Tuple[int, bytes, dict, float]] = {}  # key -> (status, body, headers, expires_at)
 _IDEMPOTENCY_INFLIGHT: Dict[str, asyncio.Event] = {}
 _IDEMPOTENCY_LOCK = asyncio.Lock()
-_IDEMPOTENCY_TTL_SEC = 24 * 60 * 60
+_IDEMPOTENCY_MAX_KEY_LENGTH = 256
 
 
 def _idempotency_key(request: Request, supplied_key: str) -> str:
@@ -198,7 +220,7 @@ def _idempotency_key(request: Request, supplied_key: str) -> str:
 
 
 class IdempotencyMiddleware(BaseHTTPMiddleware):
-    """Guarantees mutation idempotency on POST/PUT/DELETE when Idempotency-Key header is supplied."""
+    """Guarantees mutation idempotency on POST/PUT/PATCH/DELETE when Idempotency-Key header is supplied."""
 
     async def dispatch(self, request: Request, call_next):
         if request.method not in ("POST", "PUT", "PATCH", "DELETE"):
@@ -207,13 +229,13 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
         idempotency_key = request.headers.get("Idempotency-Key")
         if not idempotency_key:
             return await call_next(request)
-        if len(idempotency_key) > 256:
+        if len(idempotency_key) > _IDEMPOTENCY_MAX_KEY_LENGTH:
             return JSONResponse(
                 status_code=400,
                 content={
                     "error": {
                         "code": "INVALID_IDEMPOTENCY_KEY",
-                        "message": "Idempotency-Key must be 256 characters or fewer.",
+                        "message": f"Idempotency-Key must be {_IDEMPOTENCY_MAX_KEY_LENGTH} characters or fewer.",
                         "retryable": False,
                     }
                 },
@@ -264,7 +286,7 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
                         response.status_code,
                         body,
                         dict(response.headers),
-                        time.time() + _IDEMPOTENCY_TTL_SEC,
+                        time.time() + settings.IDEMPOTENCY_TTL_SECONDS,
                     )
 
                 return Response(
