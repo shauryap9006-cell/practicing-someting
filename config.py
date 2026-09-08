@@ -197,6 +197,18 @@ class Settings(BaseSettings):
     MAX_SSE_CONNECTIONS: int = Field(default=250, ge=1, le=10000)
     SSE_MAX_DURATION_SECONDS: int = Field(default=1800, ge=30, le=86400)
 
+    # 12. API Rate Limiting (Token Bucket)
+    RATE_LIMIT_RPM: int = Field(
+        default=1200,
+        validation_alias=AliasChoices("RAILTWIN_RATE_LIMIT_RPM", "RATE_LIMIT_RPM"),
+        description="Requests per minute per IP for the token-bucket rate limiter",
+    )
+    RATE_LIMIT_BURST: int = Field(
+        default=300,
+        validation_alias=AliasChoices("RAILTWIN_RATE_LIMIT_BURST", "RATE_LIMIT_BURST"),
+        description="Max burst tokens above the steady RATE_LIMIT_RPM rate",
+    )
+
     @model_validator(mode="after")
     def validate_runtime_safety(self) -> "Settings":
         """Reject deployment configurations that would silently weaken security."""
