@@ -1,4 +1,5 @@
 argon2-cffi==25.1.0
+cryptography==50.0.0
 fastapi==0.139.2
 httpx==0.28.1
 joblib==1.6.0
@@ -6,6 +7,7 @@ lightgbm==4.7.0
 networkx==3.6.1
 numpy==2.5.1
 pandas==3.0.5
+pypdf==6.16.1
 prometheus-fastapi-instrumentator==8.1.0
 pydantic==2.13.4
 pydantic-settings==2.14.2
