@@ -15,20 +15,32 @@ import datetime
 import json
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 
+from api.sse_limits import acquire_sse_slot, guarded_stream, release_sse_slot
 from config import settings
 from data.db import Database, get_db
-from engine.clocks import get_clock, IST_TIMEZONE
+from engine.clocks import get_clock
 from engine.context import ContextEngine, get_context_engine
 from engine.attribution import LiveAttributionEngine, get_attribution_engine
 from engine.live_tracker import LivePositionTracker, get_live_tracker
 
 router = APIRouter(tags=["Live Tracking & Attribution (Pipeline 07)"])
 
-# In-memory response cache for live positions
+# Bounded in-memory response cache for live positions (key -> {timestamp, data}).
 _POSITION_CACHE: Dict[str, Dict[str, Any]] = {}
+_POSITION_CACHE_MAX_ENTRIES = 1024
+
+
+def _prune_position_cache(now_ts: float) -> None:
+    ttl = float(settings.POSITION_CACHE_TTL_SECONDS)
+    expired = [k for k, v in _POSITION_CACHE.items() if now_ts - v["timestamp"] >= ttl]
+    for k in expired:
+        _POSITION_CACHE.pop(k, None)
+    if len(_POSITION_CACHE) > _POSITION_CACHE_MAX_ENTRIES:
+        for k, _ in sorted(_POSITION_CACHE.items(), key=lambda kv: kv[1]["timestamp"])[: len(_POSITION_CACHE) - _POSITION_CACHE_MAX_ENTRIES]:
+            _POSITION_CACHE.pop(k, None)
 
 
 def _get_tracker_dep() -> LivePositionTracker:
@@ -51,8 +63,9 @@ def get_meta_config() -> Dict[str, Any]:
         "status": "OK",
         "app_name": settings.APP_NAME,
         "env": settings.ENV,
-        "demo_mode": getattr(settings, "DEMO_MODE", False),
-        "demo_scenario_date": getattr(settings, "DEMO_SCENARIO_DATE", "2026-01-15"),
+        "demo_mode": settings.DEMO_ALLOW_CLOCK_CONTROL,
+        "demo_scenario_date": settings.DEMO_DEFAULT_RUN_DATE or None,
+        "default_station_code": settings.DEFAULT_STATION_CODE,
         "intervals": {
             "live_tracker_interval_seconds": settings.LIVE_TRACKER_INTERVAL_SECONDS,
             "live_station_poll_seconds": settings.LIVE_STATION_POLL_SECONDS,
@@ -75,8 +88,8 @@ def get_meta_config() -> Dict[str, Any]:
             "live_poll_tpm_budget": settings.LIVE_POLL_TPM_BUDGET,
         },
         "delay_colors": {
-            "on_time_max_min": 15,
-            "moderate_max_min": 60,
+            "on_time_max_min": settings.DELAY_ON_TIME_MAX_MIN,
+            "moderate_max_min": settings.DELAY_MODERATE_MAX_MIN,
             "color_on_time": "#10B981",    # emerald-500
             "color_moderate": "#F59E0B",   # amber-500
             "color_severe": "#EF4444",     # red-500
@@ -115,14 +128,13 @@ def get_train_live(
 
         cur.execute("SELECT MAX(distance_km) as max_km FROM route_stations WHERE train_no = ?", (clean_no,))
         max_dist_row = cur.fetchone()
-        total_route_dist = float(max_dist_row["max_km"] or 785.0) if max_dist_row else 785.0
+        total_route_dist = float(max_dist_row["max_km"] or 0.0) if max_dist_row else 0.0
 
     clock = get_clock()
     target_date = run_date or clock.today_str()
     cache_key = f"{clean_no}:{target_date}"
     now_ts = clock.now().timestamp()
 
-    # Check cache
     cached = _POSITION_CACHE.get(cache_key)
     if cached and (now_ts - cached["timestamp"]) < settings.POSITION_CACHE_TTL_SECONDS:
         return cached["data"]
@@ -130,7 +142,7 @@ def get_train_live(
     # 2. Get Live Position
     pos = tracker.get_live_position(clean_no, target_date)
     if not pos:
-        # Construct graceful fallback position
+        # Graceful schedule-only fallback anchored at the train's origin station.
         with db.transaction() as cur:
             cur.execute(
                 """
@@ -142,14 +154,19 @@ def get_train_live(
                 (clean_no,),
             )
             first_stn = cur.fetchone()
+        if not first_stn:
+            raise HTTPException(
+                status_code=404,
+                detail={"code": "ROUTE_NOT_FOUND", "message": f"No route found for train {clean_no}", "retryable": False},
+            )
 
         pos = {
             "train_no": clean_no,
             "run_date": target_date,
-            "lat": float(first_stn["lat"]) if first_stn else 28.6143,
-            "lng": float(first_stn["lon"]) if first_stn else 77.2188,
-            "lon": float(first_stn["lon"]) if first_stn else 77.2188,
-            "current_station_code": first_stn["station_code"] if first_stn else "NDLS",
+            "lat": float(first_stn["lat"]),
+            "lng": float(first_stn["lon"]),
+            "lon": float(first_stn["lon"]),
+            "current_station_code": first_stn["station_code"],
             "next_station_code": None,
             "prev_station_code": None,
             "section_id": None,
@@ -190,6 +207,7 @@ def get_train_live(
         "as_of": clock.now().isoformat(),
     }
 
+    _prune_position_cache(now_ts)
     _POSITION_CACHE[cache_key] = {
         "timestamp": now_ts,
         "data": response_payload,
@@ -279,9 +297,27 @@ async def stream_live_positions(
     max_frames: Optional[int] = Query(None, description="Optional limit on number of SSE frames"),
     tracker: LivePositionTracker = Depends(_get_tracker_dep),
 ):
-    """Server-Sent Events (SSE) stream broadcasting real-time train positions and delay chips."""
+    """Server-Sent Events (SSE) stream broadcasting real-time train positions and delay chips.
+
+    Connection count and maximum stream lifetime are capped via settings so a
+    misbehaving client pool cannot pin the process indefinitely.
+    """
+    if not acquire_sse_slot():
+        raise HTTPException(
+            status_code=503,
+            detail={"code": "SSE_CAPACITY", "message": "Too many live streams; retry shortly.", "retryable": True},
+            headers={"Retry-After": str(settings.LIVE_SSE_PULSE_SECONDS)},
+        )
+
     queue: asyncio.Queue = asyncio.Queue(maxsize=50)
-    tracker.subscribe(queue)
+    try:
+        tracker.subscribe(queue)
+    except Exception:
+        release_sse_slot()
+        raise
+
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + float(settings.SSE_MAX_DURATION_SECONDS)
 
     async def event_generator():
         frames_sent = 0
@@ -300,8 +336,7 @@ async def stream_live_positions(
                 return
 
             while True:
-                # Check for client disconnect
-                if await request.is_disconnected():
+                if await request.is_disconnected() or loop.time() >= deadline:
                     break
 
                 try:
@@ -331,7 +366,7 @@ async def stream_live_positions(
             tracker.unsubscribe(queue)
 
     return StreamingResponse(
-        event_generator(),
+        guarded_stream(event_generator()),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache, no-transform",

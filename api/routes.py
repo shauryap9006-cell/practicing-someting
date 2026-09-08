@@ -6,7 +6,8 @@ Implements all 10 standard /v1/ endpoints adhering strictly to the frozen scope 
 from __future__ import annotations
 
 import json
-from typing import Optional
+import logging
+from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from config import settings
@@ -40,6 +41,26 @@ from api.schemas import (
 )
 
 router = APIRouter(prefix="/v1")
+logger = logging.getLogger(__name__)
+
+
+def _delay_color(delay_min: float) -> str:
+    """Maps a delay to the dashboard traffic-light colour using configured thresholds."""
+    if delay_min <= settings.DELAY_ON_TIME_MAX_MIN:
+        return "green"
+    if delay_min <= settings.DELAY_MODERATE_MAX_MIN:
+        return "amber"
+    return "red"
+
+
+def _metric(source: Dict[str, Any], key: str, digits: int = 2) -> Optional[float]:
+    value = source.get(key)
+    if value is None:
+        return None
+    try:
+        return round(float(value), digits)
+    except (TypeError, ValueError):
+        return None
 
 
 @router.get("/evaluation/summary")
@@ -74,69 +95,63 @@ def get_model_performance():
         metrics = json.load(f)
 
     h_metrics = metrics.get("metrics_by_horizon", {})
-    m_1h = h_metrics.get("1 h (<=90km)", {})
-    m_3h = h_metrics.get("3 h (90-250km)", {})
-    m_6h = h_metrics.get("6 h (>250km)", {})
-
-    horizon_cards = [
-        {
-            "horizon": "1h",
-            "horizon_label": "1h (<=90km)",
-            "mae": round(m_1h.get("mae_railtwin", 5.88), 2),
-            "baseline_b1_mae": round(m_1h.get("mae_b1", 5.84), 2),
-            "baseline_b2_mae": round(m_1h.get("mae_b2", 6.93), 2),
-            "baseline_b3_mae": round(m_1h.get("mae_b3", 10.92), 2),
-            "improvement_vs_official_pct": round(m_1h.get("improvement_vs_b2_percent", 15.1), 1),
-            "coverage_80_pct": round(m_1h.get("coverage_80_percent", 70.3), 1),
-            "winkler_score": round(m_1h.get("winkler_score", 27.83), 2),
-            "verdict": "±0 vs frozen delay (physics tie)",
-            "status_badge": "HONEST TIE",
-            "narrative": "Within 90 km, train physics dominates — we publish ties honestly while others hide them.",
-        },
-        {
-            "horizon": "3h",
-            "horizon_label": "3h (90-250km)",
-            "mae": round(m_3h.get("mae_railtwin", 10.48), 2),
-            "baseline_b1_mae": round(m_3h.get("mae_b1", 12.79), 2),
-            "baseline_b2_mae": round(m_3h.get("mae_b2", 16.45), 2),
-            "baseline_b3_mae": round(m_3h.get("mae_b3", 13.16), 2),
-            "improvement_vs_official_pct": round(m_3h.get("improvement_vs_b2_percent", 36.3), 1),
-            "coverage_80_pct": round(m_3h.get("coverage_80_percent", 73.3), 1),
-            "winkler_score": round(m_3h.get("winkler_score", 44.80), 2),
-            "verdict": "−36.3% vs official NTES",
-            "status_badge": "OUTPERFORMS",
-            "narrative": "Regional horizon captures turnaround buffers, rake deficit, and section headway before stations see it.",
-        },
-        {
-            "horizon": "6h",
-            "horizon_label": "6h (>250km)",
-            "mae": round(m_6h.get("mae_railtwin", 14.80), 2),
-            "baseline_b1_mae": round(m_6h.get("mae_b1", 23.52), 2),
-            "baseline_b2_mae": round(m_6h.get("mae_b2", 30.67), 2),
-            "baseline_b3_mae": round(m_6h.get("mae_b3", 15.65), 2),
-            "improvement_vs_official_pct": round(m_6h.get("improvement_vs_b2_percent", 51.7), 1),
-            "coverage_80_pct": round(m_6h.get("coverage_80_percent", 98.4), 1),
-            "winkler_score": round(m_6h.get("winkler_score", 98.87), 2),
-            "verdict": "−51.7% vs official NTES",
-            "status_badge": "50%+ ADVANTAGE",
-            "narrative": "Deep corridor foresight: static NTES run-rate degrades completely while RailTwin-X preserves calibrated cone.",
-        },
+    h1_km = settings.HORIZON_1H_MAX_KM
+    h3_km = settings.HORIZON_3H_MAX_KM
+    horizon_specs = [
+        ("1h", f"1h (<={h1_km:g}km)", f"1 h (<={h1_km:g}km)",
+         "Within the first horizon band train physics dominates; ties with the frozen-delay baseline are published honestly."),
+        ("3h", f"3h ({h1_km:g}-{h3_km:g}km)", f"3 h ({h1_km:g}-{h3_km:g}km)",
+         "Regional horizon captures turnaround buffers, rake deficit, and section headway before stations see it."),
+        ("6h", f"6h (>{h3_km:g}km)", f"6 h (>{h3_km:g}km)",
+         "Deep corridor foresight: static run-rate baselines degrade while the calibrated cone is preserved."),
     ]
+
+    horizon_cards = []
+    for horizon, label, metrics_key, narrative in horizon_specs:
+        m = h_metrics.get(metrics_key, {})
+        mae = _metric(m, "mae_railtwin")
+        b1 = _metric(m, "mae_b1")
+        improvement = _metric(m, "improvement_vs_b2_percent", 1)
+
+        # Badge/verdict derived from the measured numbers rather than asserted.
+        if mae is not None and b1 is not None and abs(mae - b1) < 0.5:
+            badge, verdict = "HONEST TIE", f"{mae - b1:+.2f} min vs frozen delay (physics tie)"
+        elif improvement is not None and improvement >= 50.0:
+            badge, verdict = "50%+ ADVANTAGE", f"-{improvement:.1f}% vs official run-rate"
+        elif improvement is not None and improvement > 0:
+            badge, verdict = "OUTPERFORMS", f"-{improvement:.1f}% vs official run-rate"
+        else:
+            badge, verdict = "UNVERIFIED", "No evaluation data for this horizon"
+
+        horizon_cards.append({
+            "horizon": horizon,
+            "horizon_label": label,
+            "mae": mae,
+            "baseline_b1_mae": b1,
+            "baseline_b2_mae": _metric(m, "mae_b2"),
+            "baseline_b3_mae": _metric(m, "mae_b3"),
+            "improvement_vs_official_pct": improvement,
+            "coverage_80_pct": _metric(m, "coverage_80_percent", 1),
+            "winkler_score": _metric(m, "winkler_score"),
+            "verdict": verdict,
+            "status_badge": badge,
+            "narrative": narrative,
+        })
 
     return {
         "status": "OK",
-        "schema_version": metrics.get("schema_version", "2.0"),
-        "canonical_mae": metrics.get("canonical_mae", 10.72),
-        "overall_mae": round(metrics.get("overall_mae", 10.72), 2),
-        "overall_coverage_80": round(metrics.get("overall_coverage_80", 80.64), 2),
-        "overall_winkler_score": round(metrics.get("overall_winkler_score", 57.94), 2),
-        "overall_crps": round(metrics.get("overall_crps", 7.44), 2),
-        "total_test_samples": metrics.get("total_test_samples", 25203),
+        "schema_version": metrics.get("schema_version"),
+        "canonical_mae": metrics.get("canonical_mae"),
+        "overall_mae": _metric(metrics, "overall_mae"),
+        "overall_coverage_80": _metric(metrics, "overall_coverage_80"),
+        "overall_winkler_score": _metric(metrics, "overall_winkler_score"),
+        "overall_crps": _metric(metrics, "overall_crps"),
+        "total_test_samples": metrics.get("total_test_samples"),
         "horizon_cards": horizon_cards,
         "proof_table": metrics.get("proof_table", []),
         "metrics_by_horizon": h_metrics,
         "rolling_origin_cv": metrics.get("rolling_origin_cv", {}),
-        "audit_note": "All numbers read dynamically from ml/artifacts/metrics.json — zero hardcoded strings.",
+        "audit_note": "All numbers read dynamically from ml/artifacts/metrics.json; badges are derived, not asserted.",
     }
 
 
@@ -162,8 +177,9 @@ def get_train_eta(
         return res
     except ValueError as err:
         raise HTTPException(status_code=404, detail={"code": "TRAIN_OR_STATION_NOT_FOUND", "message": str(err), "retryable": False})
-    except Exception as err:
-        raise HTTPException(status_code=500, detail={"code": "ETA_PREDICTION_ERROR", "message": str(err), "retryable": True})
+    except Exception:
+        logger.exception("ETA prediction failed for train=%s station=%s", train_no, target_code)
+        raise HTTPException(status_code=500, detail={"code": "ETA_PREDICTION_ERROR", "message": "ETA prediction failed", "retryable": True})
 
 
 # ----------------------------------------------------
@@ -228,24 +244,19 @@ def get_train_journey(train_no: str):
             band_info = pred["confidence_band"]
             d_min = pred["predicted_delay_min"]
         except Exception:
-            p_arr = st["sched_arr"]
+            p_arr = st["sched_arr"] or st["sched_dep"]
             d_min = int(current_delay)
+            fallback_arrival = p_arr or "--:--"
             band_info = {
                 "best_p10_min": max(0, d_min - 5),
                 "likely_p50_min": d_min,
                 "worst_p90_min": d_min + 15,
-                "best_arrival": p_arr or "08:00",
-                "likely_arrival": p_arr or "08:00",
-                "worst_arrival": p_arr or "08:00",
+                "best_arrival": fallback_arrival,
+                "likely_arrival": fallback_arrival,
+                "worst_arrival": fallback_arrival,
             }
 
-        # Status color
-        if d_min <= 15:
-            color = "green"
-        elif d_min <= 60:
-            color = "amber"
-        else:
-            color = "red"
+        color = _delay_color(d_min)
 
         timeline.append(
             JourneyStop(
@@ -311,8 +322,9 @@ def get_train_autopsy(train_no: str):
         )
     except ValueError as err:
         raise HTTPException(status_code=404, detail={"code": "TRAIN_NOT_FOUND", "message": str(err), "retryable": False})
-    except Exception as err:
-        raise HTTPException(status_code=500, detail={"code": "ATTRIBUTION_ERROR", "message": str(err), "retryable": True})
+    except Exception:
+        logger.exception("Delay attribution failed for train=%s", train_no)
+        raise HTTPException(status_code=500, detail={"code": "ATTRIBUTION_ERROR", "message": "Delay attribution failed", "retryable": True})
 
 
 # ----------------------------------------------------
@@ -334,46 +346,44 @@ def get_pnr_status(pnr_no: str):
     # Deterministic mapping based on PNR hash
     pnr_hash = sum(int(c) * (idx + 1) for idx, c in enumerate(clean_pnr))
 
-    candidate_trains = ["12003", "22436", "12301", "12424", "22439"]
-    selected_train_no = candidate_trains[pnr_hash % len(candidate_trains)]
-
     with db.transaction() as cur:
-        cur.execute("SELECT train_no, name, class FROM trains WHERE train_no = ?", (selected_train_no,))
-        train_row = cur.fetchone()
-        train_name = train_row["name"] if train_row else "Superfast Express"
-        train_class = train_row["class"] if train_row else "EXPRESS"
+        # Candidate pool is the highest-priority passenger services actually loaded in the DB.
+        cur.execute(
+            """
+            SELECT t.train_no, t.name, t.class
+            FROM trains t
+            WHERE t.is_freight = 0 AND EXISTS (SELECT 1 FROM route_stations rs WHERE rs.train_no = t.train_no)
+            ORDER BY t.priority ASC, t.train_no ASC
+            LIMIT 5
+            """
+        )
+        candidates = cur.fetchall()
+        if not candidates:
+            raise HTTPException(
+                status_code=503,
+                detail={"code": "NO_PASSENGER_SERVICES", "message": "No passenger services loaded.", "retryable": True},
+            )
+        train_row = candidates[pnr_hash % len(candidates)]
+        selected_train_no = train_row["train_no"]
+        train_name = train_row["name"]
+        train_class = train_row["class"]
 
         cur.execute(
             """
-            SELECT station_code, seq, sched_arr, sched_dep, distance_km
-            FROM route_stations
-            WHERE train_no = ?
-            ORDER BY seq ASC
+            SELECT rs.station_code, rs.seq, rs.sched_arr, rs.sched_dep, rs.distance_km, s.name AS station_name
+            FROM route_stations rs JOIN stations s ON s.code = rs.station_code
+            WHERE rs.train_no = ?
+            ORDER BY rs.seq ASC
             """,
             (selected_train_no,)
         )
         stops = cur.fetchall()
 
-    if not stops:
-        from_code, to_code = "NDLS", "CNB"
-        sched_dep, sched_arr = "16:50", "21:30"
-    else:
-        from_code = stops[0]["station_code"]
-        to_code = stops[-1]["station_code"] if len(stops) > 1 else "CNB"
-        sched_dep = stops[0]["sched_dep"] or "16:50"
-        sched_arr = stops[-1]["sched_arr"] or "21:30"
-
-    station_names = {
-        "NDLS": "New Delhi",
-        "GZB": "Ghaziabad Jn",
-        "ALJN": "Aligarh Jn",
-        "TDL": "Tundla Jn",
-        "ETW": "Etawah Jn",
-        "CNB": "Kanpur Central",
-        "PRYJ": "Prayagraj Jn",
-        "DDU": "Pt. Deen Dayal Upadhyaya",
-        "LKO": "Lucknow Charbagh",
-    }
+    from_code = stops[0]["station_code"]
+    to_code = stops[-1]["station_code"]
+    sched_dep = stops[0]["sched_dep"] or stops[0]["sched_arr"]
+    sched_arr = stops[-1]["sched_arr"] or stops[-1]["sched_dep"]
+    station_names = {s["station_code"]: s["station_name"] for s in stops}
 
     # Derive coach, berth, and passenger list
     is_chair_car = "shatabdi" in train_name.lower() or "vande" in train_name.lower()
@@ -543,15 +553,10 @@ def get_network_state():
             d_min = 0
             hops_rem = 0
 
-        if d_min > 15:
+        if d_min > settings.DELAY_ON_TIME_MAX_MIN:
             delayed_count += 1
 
-        if d_min <= 15:
-            color = "green"
-        elif d_min <= 60:
-            color = "amber"
-        else:
-            color = "red"
+        color = _delay_color(d_min)
 
         train_states.append(
             NetworkTrainState(
@@ -805,9 +810,13 @@ def get_crew_alerts():
 def get_station_connections(
     code: str,
     run_date: Optional[str] = Query(None, description="Date YYYY-MM-DD"),
-    min_transfer_min: int = Query(15, ge=5, le=60, description="Minimum connection transfer time in minutes"),
+    min_transfer_min: Optional[int] = Query(
+        None, ge=5, le=60, description="Minimum connection transfer time in minutes (defaults to configured value)"
+    ),
 ):
     """Evaluates junction interchange connection feasibility and hold-decision tradeoffs."""
+    if min_transfer_min is None:
+        min_transfer_min = settings.DEFAULT_MIN_CONNECTION_TIME_MIN
     db = get_db()
     clock = get_clock()
     engine = ConnectionCustodyEngine(db)
@@ -1187,9 +1196,10 @@ def get_health():
         counts = db.table_counts()
         db_status = f"connected ({counts.get('station_events', 0):,} events)"
         live_pos_count = counts.get("live_positions", 0)
-    except Exception as err:
+    except Exception:
+        logger.exception("health: database check failed")
         db_ready = False
-        db_status = f"error: {err}"
+        db_status = "error"
         live_pos_count = 0
 
     required_artifacts = [
@@ -1239,13 +1249,14 @@ def get_health():
     try:
         from api.predictor import get_predictor_service
         ps = get_predictor_service()
-        test_pred = ps.predict_train_eta("12301", "CNB")
+        test_pred = ps.predict_train_eta(settings.DEMO_DEFAULT_TRAIN_NO, settings.DEFAULT_JUNCTION_CODE)
         if test_pred and ("pred_delay_p50" in test_pred or "predicted_delay_min" in test_pred):
             smoke_test_ready = True
         else:
             smoke_test_error = "smoke test prediction missing expected delay fields"
     except Exception as exc:
-        smoke_test_error = str(exc)
+        logger.warning("health: inference smoke test failed: %s", exc)
+        smoke_test_error = type(exc).__name__
 
     models_ready = not missing_artifacts and integrity_ready and smoke_test_ready
     model_failures = missing_artifacts + integrity_failures + ([f"smoke_test: {smoke_test_error}"] if not smoke_test_ready else [])

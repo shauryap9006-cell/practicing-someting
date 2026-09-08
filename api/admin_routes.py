@@ -6,38 +6,111 @@ All administrative actions are gated by role 'admin' and strictly audited.
 
 from __future__ import annotations
 
-import json
+import re
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from api.auth import hash_password, require_role
+from config import settings
 from data.audit import record_audit
 from data.db import Database, get_db
 from scripts.backup_db import BACKUPS_DIR, create_database_backup, verify_backup_file
 
 router = APIRouter(prefix="/api/admin", tags=["Administration & Governance"])
 
+_USERNAME_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]{2,63}$")
+_STATION_PATTERN = re.compile(r"^[A-Z0-9_-]{2,8}$")
+_EMAIL_PATTERN = re.compile(r"^[^@\s]{1,64}@[^@\s]+\.[^@\s]+$")
+
+
+def _normalize_email(value: Optional[str]) -> Optional[str]:
+    if value is None:
+        return None
+    email = value.strip().lower()
+    if not email:
+        return None
+    if len(email) > 254 or not _EMAIL_PATTERN.fullmatch(email):
+        raise ValueError("email must be a valid address")
+    return email
+
+
+def _normalize_username(value: str) -> str:
+    username = value.strip().lower()
+    if not _USERNAME_PATTERN.fullmatch(username):
+        raise ValueError("username must be 3-64 chars of lowercase letters, digits, '.', '_' or '-'")
+    return username
+
+
+def _normalize_station(value: str) -> str:
+    station = value.strip().upper()
+    if not _STATION_PATTERN.fullmatch(station):
+        raise ValueError("station_code must be a 2-8 character alphanumeric code")
+    return station
+
+
+def _validate_password(value: str) -> str:
+    if len(value) < settings.MIN_PASSWORD_LENGTH:
+        raise ValueError(f"password must be at least {settings.MIN_PASSWORD_LENGTH} characters")
+    if value.strip() != value:
+        raise ValueError("password must not start or end with whitespace")
+    return value
+
 
 class CreateUserRequest(BaseModel):
     username: str = Field(..., description="Unique username")
-    email: Optional[str] = None
-    password: str = Field(..., min_length=6, description="Plaintext password")
+    email: Optional[str] = Field(None, description="Contact email")
+    password: str = Field(..., description="Plaintext password")
     role_id: str = Field(..., description="Role ID (e.g. station_master, dy_sm, engineer)")
-    station_code: str = Field("NDLS", description="Station code assignment")
-    full_name: str = Field(..., description="Full display name")
+    station_code: str = Field(default_factory=lambda: settings.DEFAULT_STATION_CODE, description="Station code assignment")
+    full_name: str = Field(..., min_length=2, max_length=120, description="Full display name")
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        return _normalize_username(v)
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: Optional[str]) -> Optional[str]:
+        return _normalize_email(v)
+
+    @field_validator("station_code")
+    @classmethod
+    def validate_station(cls, v: str) -> str:
+        return _normalize_station(v)
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        return _validate_password(v)
 
 
 class UpdateUserRequest(BaseModel):
     email: Optional[str] = None
     role_id: Optional[str] = None
     station_code: Optional[str] = None
-    full_name: Optional[str] = None
+    full_name: Optional[str] = Field(None, min_length=2, max_length=120)
     is_active: Optional[bool] = None
     new_password: Optional[str] = None
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: Optional[str]) -> Optional[str]:
+        return _normalize_email(v)
+
+    @field_validator("station_code")
+    @classmethod
+    def validate_station(cls, v: Optional[str]) -> Optional[str]:
+        return _normalize_station(v) if v is not None else None
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_password(cls, v: Optional[str]) -> Optional[str]:
+        return _validate_password(v) if v is not None else None
 
 
 class UserDetailResponse(BaseModel):
@@ -180,12 +253,12 @@ def create_user(
     db: Database = Depends(get_db),
 ):
     """Creates a new user account and writes an audited record."""
-    user_id = f"usr-{req.username.lower()}-{int(datetime.now().timestamp())}"
+    user_id = f"usr-{req.username}-{uuid4().hex[:8]}"
     now_iso = datetime.now(timezone.utc).isoformat()
     pwd_hash = hash_password(req.password)
+    email = req.email
 
     with db.transaction() as cur:
-        # Check role validity
         cur.execute("SELECT id, name FROM roles WHERE id = ?;", (req.role_id,))
         role_row = cur.fetchone()
         if not role_row:
@@ -195,13 +268,17 @@ def create_user(
             )
         role_name = role_row["name"]
 
-        # Check existing username
-        cur.execute("SELECT id FROM users WHERE username = ?;", (req.username,))
+        # Login is case-insensitive on username/email, so uniqueness must be too.
+        cur.execute("SELECT id FROM users WHERE lower(username) = ?;", (req.username,))
         if cur.fetchone():
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Username '{req.username}' already exists.",
             )
+        if email:
+            cur.execute("SELECT id FROM users WHERE lower(email) = ?;", (email,))
+            if cur.fetchone():
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email is already registered.")
 
         cur.execute(
             """
@@ -211,7 +288,7 @@ def create_user(
             (
                 user_id,
                 req.username,
-                req.email,
+                email,
                 pwd_hash,
                 req.role_id,
                 req.station_code,
@@ -241,7 +318,7 @@ def create_user(
     return UserDetailResponse(
         id=user_id,
         username=req.username,
-        email=req.email,
+        email=email,
         role_id=req.role_id,
         role_name=role_name,
         station_code=req.station_code,
@@ -287,6 +364,23 @@ def update_user(
         new_station = req.station_code if req.station_code is not None else existing["station_code"]
         new_name = req.full_name if req.full_name is not None else existing["full_name"]
         new_active = int(req.is_active) if req.is_active is not None else existing["is_active"]
+
+        if req.role_id is not None:
+            cur.execute("SELECT id FROM roles WHERE id = ?;", (req.role_id,))
+            if not cur.fetchone():
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid role_id '{req.role_id}'.")
+
+        if req.email is not None and new_email != existing["email"]:
+            cur.execute("SELECT id FROM users WHERE lower(email) = ? AND id != ?;", (new_email, user_id))
+            if cur.fetchone():
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email is already registered.")
+
+        # Guard against an administrator locking themselves (and possibly everyone) out.
+        if user_id == admin_user["id"]:
+            if not new_active:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot deactivate your own account.")
+            if new_role != "admin":
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot remove your own admin role.")
 
         if req.new_password:
             new_pwd_hash = hash_password(req.new_password)

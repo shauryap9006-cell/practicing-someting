@@ -12,10 +12,15 @@ import time
 import threading
 from typing import Mapping, Optional
 
+from config import settings
+
 
 _SEEN_SIGNATURES: dict[str, float] = {}
 _SEEN_LOCK = threading.Lock()
-_MAX_TIMESTAMP_AGE_SECONDS = 300
+
+
+def _max_timestamp_age_seconds() -> int:
+    return int(settings.WEBHOOK_MAX_TIMESTAMP_AGE_SECONDS)
 
 
 def verify_hmac(
@@ -59,7 +64,7 @@ def verify_hmac(
         except ValueError:
             return False
         current_time = time.time() if now is None else now
-        if abs(current_time - timestamp_value) > _MAX_TIMESTAMP_AGE_SECONDS:
+        if abs(current_time - timestamp_value) > _max_timestamp_age_seconds():
             return False
         signed_body = timestamp.encode("utf-8") + b"." + body
 
@@ -81,7 +86,7 @@ def verify_hmac(
                 _SEEN_SIGNATURES.pop(key, None)
             if replay_key in _SEEN_SIGNATURES:
                 return False
-            _SEEN_SIGNATURES[replay_key] = current_time + _MAX_TIMESTAMP_AGE_SECONDS
+            _SEEN_SIGNATURES[replay_key] = current_time + _max_timestamp_age_seconds()
 
     return True
 

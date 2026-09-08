@@ -14,14 +14,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Generator, List, Optional
 
-DEFAULT_DB_PATH = Path(__file__).parent / "railtwin.db"
-SCHEMA_SQL_PATH = Path(__file__).parent / "schema.sql"
+from config import settings
+
+# Resolved from Settings so RAILTWIN_DB_PATH / RAILTWIN_SCHEMA_PATH are honoured
+# (docker-compose sets RAILTWIN_DB_PATH; it was previously ignored).
+DEFAULT_DB_PATH = Path(settings.DB_PATH)
+SCHEMA_SQL_PATH = Path(settings.SCHEMA_PATH)
 MIGRATIONS_DIR = Path(__file__).parent.parent / "scripts" / "migrations"
-
-
-import threading
-
-_WRITE_LOCK = threading.Lock()
 
 
 class Database:

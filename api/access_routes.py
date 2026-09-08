@@ -34,7 +34,19 @@ def create_access_request(
 ):
     request_id = uuid4().hex
     requested_at = datetime.now(timezone.utc).isoformat()
+    email = payload.email.strip().lower()
     with db.transaction() as cur:
+        # Idempotent intake: a pending request for the same email is returned
+        # instead of creating another row (prevents unauthenticated table spam).
+        cur.execute(
+            "SELECT request_id, requested_at FROM access_requests WHERE email = ? AND status = 'pending' LIMIT 1",
+            (email,),
+        )
+        existing = cur.fetchone()
+        if existing:
+            return AccessRequestResponse(
+                request_id=existing["request_id"], status="pending", requested_at=existing["requested_at"]
+            )
         cur.execute(
             """
             INSERT INTO access_requests
@@ -45,7 +57,7 @@ def create_access_request(
                 request_id,
                 payload.station_code.upper(),
                 payload.full_name.strip(),
-                payload.email.strip().lower(),
+                email,
                 payload.organization.strip() if payload.organization else None,
                 requested_at,
             ),

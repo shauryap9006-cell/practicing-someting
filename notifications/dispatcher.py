@@ -20,14 +20,29 @@ from notifications.channels.openwa import OpenWAChannel
 from notifications.channels.sms import SMSChannel
 from notifications.types import AlertEvent, StaffRecipient
 
-# Demo/sandbox-only phone whitelist. When RAILTWIN_NOTIFY_DEMO_MODE is enabled
-# (non-production demo environments only), outbound alerts are redirected to
-# these two test numbers instead of real staff phones, so hackathon demos
-# never spam real people. In all other cases, real on-duty staff numbers
-# resolved from the `staff` table are used unmodified.
-ALLOWED_TEST_NUMBERS = {"9580873724", "9569890921"}
-MAIN_CONTROLLER_PHONE = "9580873724"
-FIELD_STAFF_PHONE = "9569890921"
+# Severity aliases accepted by notify(); anything else falls back to 'info'.
+_SEVERITY_ALIASES = {
+    "info": "info", "low": "info", "minor": "info",
+    "warning": "warning", "warn": "warning", "medium": "warning", "major": "warning",
+    "critical": "critical", "high": "critical", "error": "critical", "emergency": "critical",
+}
+
+
+def normalize_severity(severity: Optional[str]) -> str:
+    return _SEVERITY_ALIASES.get((severity or "").strip().lower(), "info")
+
+
+def _demo_phones() -> tuple[str, str]:
+    """Sandbox numbers for NOTIFY_DEMO_MODE, sourced from settings (never hardcoded)."""
+    return settings.NOTIFY_DEMO_CONTROLLER_PHONE.strip(), settings.NOTIFY_DEMO_FIELD_PHONE.strip()
+
+
+def _parse_iso(value: str) -> Optional[datetime]:
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
 
 
 class NotificationDispatcher:
@@ -59,7 +74,7 @@ class NotificationDispatcher:
         real on-duty staff phone numbers from the `staff` table are used
         unmodified so alerts actually reach real personnel.
         """
-        stn = station_code.upper() if station_code else "CNB"
+        stn = (station_code or settings.DEFAULT_STATION_CODE).upper()
         roles_lower = [r.lower() for r in roles]
 
         with self.db.transaction() as cur:
@@ -96,22 +111,26 @@ class NotificationDispatcher:
             for r in rows
         ]
 
+        controller_phone, field_phone = _demo_phones()
+
         if not raw_recipients and (settings.ALLOW_SYNTHETIC_FALLBACK or settings.DEFAULT_CLOCK_MODE.lower() == "replay"):
+            # Synthetic replay staff for the requested station; phones are only
+            # populated from the configured sandbox numbers.
             raw_recipients = [
                 StaffRecipient(
-                    staff_id="STF-CNB-01",
+                    staff_id=f"STF-{stn}-01",
                     name="Section Controller",
                     role="controller",
-                    phone=MAIN_CONTROLLER_PHONE,
-                    station_code="CNB",
+                    phone=controller_phone,
+                    station_code=stn,
                     on_duty=True,
                 ),
                 StaffRecipient(
-                    staff_id="STF-CNB-02",
+                    staff_id=f"STF-{stn}-02",
                     name="Station Controller",
                     role="controller",
-                    phone=FIELD_STAFF_PHONE,
-                    station_code="CNB",
+                    phone=field_phone,
+                    station_code=stn,
                     on_duty=True,
                 ),
             ]
@@ -122,15 +141,16 @@ class NotificationDispatcher:
         if not settings.NOTIFY_DEMO_MODE:
             return raw_recipients
 
+        allowed_test_numbers = {p for p in (controller_phone, field_phone) if p}
         filtered_recipients: List[StaffRecipient] = []
         seen_phones = set()
 
         for s in raw_recipients:
             target_phone = s.phone
-            if target_phone not in ALLOWED_TEST_NUMBERS:
-                target_phone = MAIN_CONTROLLER_PHONE if "controller" in s.role.lower() else FIELD_STAFF_PHONE
+            if target_phone not in allowed_test_numbers:
+                target_phone = controller_phone if "controller" in s.role.lower() else field_phone
 
-            if target_phone not in seen_phones and target_phone in ALLOWED_TEST_NUMBERS:
+            if target_phone not in seen_phones and target_phone in allowed_test_numbers:
                 seen_phones.add(target_phone)
                 filtered_recipients.append(
                     StaffRecipient(
@@ -256,18 +276,21 @@ def notify(
     title: str,
     message: str,
     payload: Optional[Dict[str, Any]] = None,
-    station_code: str = "NDLS",
+    station_code: Optional[str] = None,
     db: Optional[Database] = None,
 ) -> Dict[str, Any]:
-    """Universal event bus helper: records notification in SQLite and dispatches outbound alerts."""
+    """Universal event bus helper: records notification in SQLite and dispatches outbound alerts.
+
+    ``station_code`` should always be supplied by callers; the configured
+    DEFAULT_STATION_CODE is only a last-resort fallback.
+    """
     database = db or get_db()
     roles_list = [target_roles] if isinstance(target_roles, str) else list(target_roles)
     target_role_str = ",".join(roles_list)
-    payload_json = json.dumps(payload or {})
+    payload_json = json.dumps(payload or {}, default=str)
     now_iso = datetime.now(timezone.utc).isoformat()
-    sev_normalized = severity.lower()
-    if sev_normalized not in ("info", "warning", "critical"):
-        sev_normalized = "info"
+    sev_normalized = normalize_severity(severity)
+    station_code = (station_code or settings.DEFAULT_STATION_CODE).strip().upper()
 
     with database.transaction() as cur:
         cur.execute(
@@ -284,7 +307,7 @@ def notify(
                 title,
                 message,
                 payload_json,
-                station_code.upper() if station_code else None,
+                station_code,
                 now_iso,
             ),
         )
@@ -373,7 +396,7 @@ def escalate_unacked_notifications(
     with database.transaction() as cur:
         cur.execute(
             """
-            SELECT id, event_type, target_role, severity, title, message, payload_json, created_at
+            SELECT id, event_type, target_role, severity, title, message, payload_json, station_code, created_at
             FROM notifications
             WHERE state = 'sent' AND severity IN ('critical', 'warning') AND escalated_at IS NULL;
             """
@@ -381,7 +404,9 @@ def escalate_unacked_notifications(
         rows = cur.fetchall()
 
         for r in rows:
-            created_dt = datetime.fromisoformat(r["created_at"])
+            created_dt = _parse_iso(r["created_at"])
+            if created_dt is None:
+                continue
             age_min = (now - created_dt).total_seconds() / 60.0
             if age_min >= max_age_minutes:
                 cur.execute(
@@ -398,11 +423,12 @@ def escalate_unacked_notifications(
                     "severity": r["severity"],
                     "title": f"[ESCALATED] {r['title']}",
                     "message": f"Unacknowledged after {int(age_min)} minutes. Escalated to Station Master / Supervisor. Original alert: {r['message']}",
+                    "station_code": r["station_code"] or settings.DEFAULT_STATION_CODE,
                     "created_at": r["created_at"],
                     "escalated_at": now_iso,
                 })
 
-    # Outbound alert to Station Master and Admin
+    # Outbound alert to the originating station's Station Master and Admin
     dispatcher = get_dispatcher(database)
     for esc in escalated_items:
         esc_event = AlertEvent(
@@ -410,7 +436,7 @@ def escalate_unacked_notifications(
             event_type=f"ESCALATION_{esc['event_type']}",
             title=esc["title"],
             body=esc["message"],
-            station_code="NDLS",
+            station_code=esc["station_code"],
             roles=["station_master", "admin"],
             ack_id=f"ESC-{esc['id']}",
             metadata={"original_notif_id": esc["id"]},
