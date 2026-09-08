@@ -51,9 +51,9 @@
 | 3.3 | — | Async scraper | 🔵 P3 | 45m | ☑ |
 | 3.4 | — | Three.js bundle split | 🔵 P3 | 45m | ☑ |
 | 3.5 | — | .env.local / Next.js leftover | 🔵 P3 | 15m | ☑ |
-| 4.1 | — | NumPy 2.x warnings | ⚪ P4 | 15m | ☐ |
-| 4.2 | — | Stale comments | ⚪ P4 | 10m | ☐ |
-| 4.3 | — | wmi_test.txt | ⚪ P4 | 2m | ☐ |
+| 4.1 | — | NumPy 2.x warnings | ⚪ P4 | 15m | ☑ |
+| 4.2 | — | Stale comments | ⚪ P4 | 10m | ☑ |
+| 4.3 | — | wmi_test.txt | ⚪ P4 | 2m | ☑ |
 | 🏁 | — | Final verification + re-score | — | 30m | ☐ |
 
 ---
