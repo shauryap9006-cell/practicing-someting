@@ -130,6 +130,11 @@ class Settings(BaseSettings):
     SMS_API_KEY: str = Field(default="", validation_alias=AliasChoices("RAILTWIN_SMS_API_KEY", "SMS_API_KEY"), description="SMS Fallback API Key")
     SMS_SENDER_ID: str = Field(default="RLTWIN", validation_alias=AliasChoices("RAILTWIN_SMS_SENDER_ID", "SMS_SENDER_ID"), description="Sender Header ID for SMS")
     NOTIFICATION_RATE_LIMIT_MINUTES: float = Field(default=2.0, validation_alias=AliasChoices("RAILTWIN_NOTIFICATION_RATE_LIMIT_MINUTES", "NOTIFICATION_RATE_LIMIT_MINUTES"), description="Max 1 alert per N minutes per staff member")
+    NOTIFY_DEMO_MODE: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("RAILTWIN_NOTIFY_DEMO_MODE", "NOTIFY_DEMO_MODE"),
+        description="When true, redirects all outbound alert phone numbers to a fixed sandbox whitelist (demo/hackathon use only). Must be false so real staff receive alerts.",
+    )
 
     # 10. Pipeline 07: Live Position Tracking, Context & Real Delay Attribution
     LIVE_TRACKER_INTERVAL_SECONDS: int = Field(
@@ -208,6 +213,8 @@ class Settings(BaseSettings):
                 raise ValueError("Production CORS_ORIGINS must contain only explicitly configured public origins")
             if self.WHATSAPP_PROVIDER == "openwa" and not self.OPENWA_WEBHOOK_SECRET.strip():
                 raise ValueError("RAILTWIN_OPENWA_WEBHOOK_SECRET is required when the OpenWA webhook is enabled")
+            if self.NOTIFY_DEMO_MODE:
+                raise ValueError("RAILTWIN_NOTIFY_DEMO_MODE must be false in production so real staff receive alerts")
         return self
 
 
