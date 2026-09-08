@@ -45,7 +45,7 @@
 | 2.7 | MIG-001 | No rollback migrations | 🟡 P2 | 90m | ☑ |
 | 2.8 | PRIV-001 | No PII retention (DPDP) | 🟡 P2 | 60m | ☑ |
 | 2.9 | ARCH-001 | 1,337-line God router | 🟡 P2 | 180m | ☑ |
-| 2.10 | ARCH-002 | Duplicate frontends | 🟡 P2 | 120m | ☐ |
+| 2.10 | ARCH-002 | Duplicate frontends | 🟡 P2 | 120m | ☑ |
 | 3.1 | — | Pin deps + split dev deps | 🔵 P3 | 30m | ☐ |
 | 3.2 | — | CI: ruff + mypy | 🔵 P3 | 45m | ☐ |
 | 3.3 | — | Async scraper | 🔵 P3 | 45m | ☐ |
