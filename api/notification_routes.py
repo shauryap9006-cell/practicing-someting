@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from api.auth import assert_station_scope, get_current_user, require_role
+from config import settings
 from data.audit import record_audit
 from data.db import Database, get_db
 from notifications.dispatcher import (
@@ -31,7 +32,7 @@ class EmitNotificationRequest(BaseModel):
     title: str = Field(..., description="Brief alert title")
     message: str = Field(..., description="Detailed alert body")
     payload: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Structured event payload")
-    station_code: str = Field("NDLS", description="Station code")
+    station_code: str = Field(default_factory=lambda: settings.DEFAULT_STATION_CODE, description="Station code")
 
 
 class AckNotificationRequest(BaseModel):
@@ -74,8 +75,10 @@ def get_active_notifications(
     params: List[Any] = []
 
     if user_role != "admin":
-        query += " AND (target_role LIKE ? OR target_role = '*' OR target_role IS NULL)"
-        params.append(f"%{user_role}%")
+        # target_role is a comma-separated list; match whole tokens only so that
+        # e.g. 'sm' never matches 'dy_sm'.
+        query += " AND ((',' || REPLACE(target_role, ' ', '') || ',') LIKE ? OR target_role = '*' OR target_role IS NULL)"
+        params.append(f"%,{user_role},%")
         query += " AND station_code = ?"
         params.append(str(current_user.get("station_code") or "").upper())
 

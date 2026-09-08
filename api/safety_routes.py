@@ -15,11 +15,12 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from api.auth import assert_station_scope, effective_station_scope, get_current_user, require_role
 from data.audit import record_audit
 from data.db import Database, get_db
+from data.seed_safety import bootstrap_level_crossings_if_empty
 from notifications.dispatcher import notify
 
 router = APIRouter(prefix="/api/safety", tags=["Safety & Compliance (Phase 2)"])
@@ -39,6 +40,19 @@ class SpeedRestrictionCreate(BaseModel):
     effective_from: str = Field(..., description="ISO date or timestamp")
     effective_to: Optional[str] = None
 
+    @model_validator(mode="after")
+    def _validate_section(self) -> "SpeedRestrictionCreate":
+        self.from_code = self.from_code.strip().upper()
+        self.to_code = self.to_code.strip().upper()
+        if not self.from_code or not self.to_code or self.from_code == self.to_code:
+            raise ValueError("from_code and to_code must be two different station codes")
+        self.permanent_or_temp = self.permanent_or_temp.strip().upper()
+        if self.permanent_or_temp not in ("TEMPORARY", "PERMANENT"):
+            raise ValueError("permanent_or_temp must be TEMPORARY or PERMANENT")
+        if self.end_km and self.start_km and self.end_km < self.start_km:
+            raise ValueError("end_km must be >= start_km")
+        return self
+
 
 @router.post("/tsr", response_model=Dict[str, Any])
 def create_speed_restriction(
@@ -55,9 +69,9 @@ def create_speed_restriction(
             INSERT INTO speed_restrictions (
                 from_code, to_code, start_km, end_km, speed_limit_kmph,
                 cause, permanent_or_temp, effective_from, effective_to,
-                status, issued_by, created_at
+                status, issued_by, created_at, is_active
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?);
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, 1);
             """,
             (
                 req.from_code.upper(),
@@ -98,14 +112,15 @@ def create_speed_restriction(
             after_state={"speed_limit": req.speed_limit_kmph, "section": f"{req.from_code}-{req.to_code}", "cause": req.cause},
         )
 
-    # Notify section staff
+    # Notify section staff at the issuing station
     notify(
         event_type="TSR_ISSUED",
         target_roles=["station_master", "dy_sm", "section_controller", "loco_pilot", "guard"],
-        severity="warn",
+        severity="warning",
         title=f"Caution Order: {req.speed_limit_kmph} km/h on {req.from_code}-{req.to_code}",
         message=f"TSR #{tsr_id} active on {req.from_code}-{req.to_code} ({req.start_km}km-{req.end_km}km): {req.cause}.",
         payload={"tsr_id": tsr_id, "speed_limit": req.speed_limit_kmph},
+        station_code=req.from_code,
         db=db,
     )
 
@@ -153,8 +168,26 @@ def cancel_speed_restriction(
         if not row:
             raise HTTPException(status_code=404, detail="Caution order not found.")
         assert_station_scope(current_user, row["from_code"])
+        if row["status"] == "CANCELLED":
+            raise HTTPException(status_code=409, detail="Caution order is already cancelled.")
 
-        cur.execute("UPDATE speed_restrictions SET status = 'CANCELLED' WHERE id = ?;", (tsr_id,))
+        # is_active is what the live tracker and network state filter on; leaving it
+        # set kept cancelled caution orders slowing trains indefinitely.
+        cur.execute(
+            "UPDATE speed_restrictions SET status = 'CANCELLED', is_active = 0, effective_to = COALESCE(effective_to, ?) WHERE id = ?;",
+            (now_iso, tsr_id),
+        )
+
+        # Return the block to CLEAR when no other active TSR covers it.
+        cur.execute(
+            "SELECT COUNT(*) AS c FROM speed_restrictions WHERE from_code = ? AND to_code = ? AND is_active = 1;",
+            (row["from_code"], row["to_code"]),
+        )
+        if int(cur.fetchone()["c"]) == 0:
+            cur.execute(
+                "UPDATE block_status SET state = 'CLEAR', notes = ? WHERE block_id = ? AND state = 'CAUTION';",
+                (f"TSR #{tsr_id} cancelled", f"BLK-{row['from_code']}-{row['to_code']}"),
+            )
 
         record_audit(
             db_or_cursor=cur,
@@ -297,14 +330,15 @@ def grant_possession(
             after_state={"status": "ACTIVE", "granted_by": current_user["id"]},
         )
 
-    # Notify maintenance & traffic teams
+    # Notify maintenance & traffic teams at the affected station
     notify(
         event_type="POSSESSION_GRANTED",
         target_roles=["station_master", "dy_sm", "section_controller", "viewer"],
-        severity="warn",
+        severity="warning",
         title=f"Track Possession Active: {row['element_id']}",
         message=f"Possession #{possession_id} ({row['work_type']}) granted on {row['element_id']} by {current_user['full_name']}.",
         payload={"possession_id": possession_id, "element_id": row["element_id"]},
+        station_code=row["station_code"],
         db=db,
     )
 
@@ -459,14 +493,15 @@ def report_incident(
             after_state={"type": req.incident_type, "severity": req.severity, "summary": req.summary},
         )
 
-    # Trigger emergency notification
+    # Trigger emergency notification at the incident station
     notify(
         event_type="INCIDENT_REPORTED",
         target_roles=["station_master", "dy_sm", "section_controller", "admin"],
-        severity="critical" if req.severity.upper() == "CRITICAL" else "warn",
+        severity="critical" if req.severity.upper() == "CRITICAL" else "warning",
         title=f"🚨 SAFETY INCIDENT: {req.incident_type} ({req.severity}) at {req.station_code}",
         message=f"Incident #{inc_id} reported at {req.station_code}: {req.summary}. Train: {req.train_no or 'N/A'}.",
         payload={"incident_id": inc_id, "severity": req.severity, "type": req.incident_type},
+        station_code=req.station_code,
         db=db,
     )
 
@@ -589,14 +624,15 @@ def start_sop_run(
             after_state={"template": req.template_id, "title": template["title"]},
         )
 
-    # Multi-role emergency alert
+    # Multi-role emergency alert at the SOP station
     notify(
         event_type="SOP_TRIGGERED",
         target_roles=["station_master", "dy_sm", "section_controller", "loco_pilot", "guard", "admin"],
-        severity="critical" if template["severity"] == "CRITICAL" else "warn",
+        severity="critical" if template["severity"] == "CRITICAL" else "warning",
         title=f"⚡ EMERGENCY SOP RUNNING: {template['title']}",
         message=f"Emergency SOP #{run_id} initiated at {req.station_code} by {current_user['full_name']}. Follow checklist immediately.",
         payload={"run_id": run_id, "template_id": req.template_id},
+        station_code=req.station_code,
         db=db,
     )
 
@@ -611,7 +647,7 @@ def start_sop_run(
 
 
 class CompleteStepRequest(BaseModel):
-    step_index: int
+    step_index: int = Field(..., ge=0, description="Zero-based checklist step index")
 
 
 @router.post("/sop/{run_id}/step", response_model=Dict[str, Any])
@@ -628,18 +664,29 @@ def complete_sop_step(
         row = cur.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="SOP run not found.")
+        assert_station_scope(current_user, row["station_code"])
+        if row["status"] != "IN_PROGRESS":
+            raise HTTPException(status_code=409, detail=f"SOP run is {row['status']}; steps can no longer be recorded.")
 
-        completed_steps = json.loads(row["steps_completed_json"])
+        template = next((t for t in SOP_TEMPLATES if t["template_id"] == row["template_id"]), None)
+        if not template:
+            raise HTTPException(status_code=409, detail="SOP template for this run is no longer available.")
+        total_steps = len(template["steps"])
+        if req.step_index >= total_steps:
+            raise HTTPException(status_code=422, detail=f"step_index must be between 0 and {total_steps - 1}.")
+
+        completed_steps = json.loads(row["steps_completed_json"] or "[]")
+        if any(int(s.get("step_index", -1)) == req.step_index for s in completed_steps):
+            raise HTTPException(status_code=409, detail=f"Step {req.step_index} is already completed.")
         completed_steps.append({
             "step_index": req.step_index,
             "completed_by": current_user["id"],
             "completed_at": now_iso,
         })
 
-        # Check template total steps
-        template = next((t for t in SOP_TEMPLATES if t["template_id"] == row["template_id"]), None)
-        total_steps = len(template["steps"]) if template else 5
-        is_finished = len(completed_steps) >= total_steps
+        # Completion requires every distinct step, not merely N submissions.
+        completed_indices = {int(s["step_index"]) for s in completed_steps}
+        is_finished = all(i in completed_indices for i in range(total_steps))
 
         new_status = "COMPLETED" if is_finished else "IN_PROGRESS"
         comp_time = now_iso if is_finished else None
@@ -716,27 +763,8 @@ def list_level_crossings(
     """Lists Level Crossings and their real-time operational status."""
     station_code = effective_station_scope(current_user, station_code)
     with db.transaction() as cur:
-        # Seed default sample LCs if table is empty
-        cur.execute("SELECT COUNT(*) as count FROM level_crossings;")
-        c = cur.fetchone()["count"]
-        if c == 0:
-            sample_lcs = [
-                ("LC-102", "NDLS", 2.4, "MANNED_INTERLOCKED", "NORMAL", "2026-08-28T06:00:00Z", "Ram Swaroop", "+919876543210"),
-                ("LC-105", "NDLS", 5.8, "MANNED_INTERLOCKED", "NORMAL", "2026-08-28T06:00:00Z", "Kishan Lal", "+919876543211"),
-                ("LC-118", "GZB", 18.2, "SPECIAL_CLASS", "NORMAL", "2026-08-28T06:00:00Z", "Suraj Bhan", "+919876543212"),
-                ("LC-124", "ALJN", 45.1, "MANNED_NON_INTERLOCKED", "DEFECTIVE", "2026-08-28T06:00:00Z", "Mahesh Kumar", "+919876543213"),
-            ]
-            for lc in sample_lcs:
-                cur.execute(
-                    """
-                    INSERT INTO level_crossings (
-                        lc_number, station_code, km, gate_type, status,
-                        last_inspected, gateman_name, contact_phone
-                    )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?);
-                    """,
-                    lc,
-                )
+        # Development-only bootstrap so an empty local DB still renders the board.
+        bootstrap_level_crossings_if_empty(cur)
 
         query = "SELECT * FROM level_crossings WHERE 1=1"
         params: List[Any] = []
@@ -786,7 +814,7 @@ def update_lc_status(
             after_state={"status": req.status.upper(), "notes": req.notes},
         )
 
-    # Notify if defective
+    # Notify the gate's station if defective
     if req.status.upper() in ("DEFECTIVE", "BOOM_DAMAGED", "INTERLOCK_FAIL"):
         notify(
             event_type="LC_DEFECTIVE",
@@ -795,6 +823,7 @@ def update_lc_status(
             title=f"🚨 LC GATE DEFECTIVE: {row['lc_number']} (Km {row['km']})",
             message=f"Gate {row['lc_number']} at {row['station_code']} reported {req.status.upper()}. Issue Caution Order (TSR 20 km/h whistling).",
             payload={"lc_id": lc_id, "status": req.status.upper()},
+            station_code=row["station_code"],
             db=db,
         )
 

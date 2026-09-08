@@ -123,17 +123,24 @@ def record_audit(
             return _execute_audit(db_or_cursor)
 
     db = db_or_cursor if isinstance(db_or_cursor, Database) else get_db()
-    for attempt in range(3):
+    max_attempts = 5
+    last_error: Optional[Exception] = None
+    for attempt in range(max_attempts):
         try:
             with _AUDIT_LOCK:
                 with db.transaction() as cur:
                     cur.execute("BEGIN IMMEDIATE")
                     return _execute_audit(cur)
-        except sqlite3.IntegrityError:
-            if attempt < 2:
-                time.sleep(0.01 * (attempt + 1))
-                continue
-            raise
+        except sqlite3.IntegrityError as err:
+            last_error = err
+        except sqlite3.OperationalError as err:
+            # Contended writers under WAL surface as 'database is locked'; retry briefly.
+            if "locked" not in str(err).lower() and "busy" not in str(err).lower():
+                raise
+            last_error = err
+        time.sleep(0.01 * (2 ** attempt))
+    assert last_error is not None
+    raise last_error
 
 
 def append_audit_entry(*args, **kwargs) -> Dict[str, Any]:
