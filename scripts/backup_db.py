@@ -9,15 +9,14 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import shutil
 import sqlite3
 import tempfile
-from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from data.db import Database, get_db
+from engine.clocks import ist_now, now_iso
 
 BACKUPS_DIR = Path(__file__).parent.parent / "data" / "backups"
 
@@ -41,7 +40,7 @@ def create_database_backup(
     out_dir = Path(backup_dir) if backup_dir else BACKUPS_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    now = datetime.now(timezone.utc)
+    now = ist_now()
     timestamp_str = now.strftime("%Y%m%d_%H%M%S")
     backup_filename = f"railtwin_backup_{tag}_{timestamp_str}.db"
     backup_path = out_dir / backup_filename
@@ -99,17 +98,23 @@ def create_database_backup(
     }
 
 
-def enforce_retention_policy(backup_dir: Path, max_daily: int = 7, max_weekly: int = 4) -> List[str]:
+def enforce_retention_policy(
+    backup_dir: Path, max_daily: int = 7, max_weekly: int = 4
+) -> List[str]:
     """Prunes older backup files exceeding the retention window."""
     removed = []
-    daily_backups = sorted(backup_dir.glob("railtwin_backup_daily_*.db"), key=lambda p: p.stat().st_mtime)
+    daily_backups = sorted(
+        backup_dir.glob("railtwin_backup_daily_*.db"), key=lambda p: p.stat().st_mtime
+    )
     if len(daily_backups) > max_daily:
         to_remove = daily_backups[:-max_daily]
         for p in to_remove:
             p.unlink(missing_ok=True)
             removed.append(p.name)
 
-    weekly_backups = sorted(backup_dir.glob("railtwin_backup_weekly_*.db"), key=lambda p: p.stat().st_mtime)
+    weekly_backups = sorted(
+        backup_dir.glob("railtwin_backup_weekly_*.db"), key=lambda p: p.stat().st_mtime
+    )
     if len(weekly_backups) > max_weekly:
         to_remove = weekly_backups[:-max_weekly]
         for p in to_remove:
@@ -147,7 +152,7 @@ def verify_backup_file(backup_path: Path | str) -> Dict[str, Any]:
         "integrity_check": integrity_result,
         "checksum_sha256": checksum,
         "row_counts": row_counts,
-        "verified_at": datetime.now(timezone.utc).isoformat(),
+        "verified_at": now_iso(),
     }
 
 
@@ -156,7 +161,7 @@ if __name__ == "__main__":
     res = create_database_backup()
     print(f"Created Backup: {res['filename']} ({res['size_bytes']} bytes)")
     print(f"SHA-256: {res['checksum_sha256']}")
-    
+
     print("Verifying restore in scratch database...")
     v_res = verify_backup_file(res["path"])
     print(f"Integrity Check: {v_res['integrity_check']} (Valid: {v_res['is_valid']})")

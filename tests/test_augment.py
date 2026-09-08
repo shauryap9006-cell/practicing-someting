@@ -1,4 +1,5 @@
 """Unit tests for synthetic SimPy augmentation flywheel and Invariant I4 isolation (Task T9)."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -7,10 +8,9 @@ import pytest
 
 from data.db import get_db
 from ml.augment import (
+    enforce_eval_holdout_isolation,
     generate_synthetic_simpy_samples,
     mix_augmented_dataset,
-    enforce_eval_holdout_isolation,
-    MAX_SYNTHETIC_MIXING_RATIO,
 )
 
 
@@ -30,14 +30,18 @@ def test_mixing_ratio_hard_ceiling():
     n_obs = 1000
     n_synth = 500  # Try to over-inject
 
-    obs_df = pd.DataFrame({
-        "current_delay": np.zeros(n_obs),
-        "source": ["observed"] * n_obs,
-    })
-    synth_df = pd.DataFrame({
-        "current_delay": np.ones(n_synth),
-        "source": ["synthetic_simpy"] * n_synth,
-    })
+    obs_df = pd.DataFrame(
+        {
+            "current_delay": np.zeros(n_obs),
+            "source": ["observed"] * n_obs,
+        }
+    )
+    synth_df = pd.DataFrame(
+        {
+            "current_delay": np.ones(n_synth),
+            "source": ["synthetic_simpy"] * n_synth,
+        }
+    )
 
     mixed_df = mix_augmented_dataset(obs_df, synth_df, max_synthetic_ratio=0.07)
     synth_ratio = (mixed_df["source"] == "synthetic_simpy").mean()
@@ -49,16 +53,20 @@ def test_mixing_ratio_hard_ceiling():
 def test_invariant_i4_eval_isolation_guard():
     """Invariant I4: Rejects any synthetic row entering held-out evaluation sets."""
     # Clean evaluation dataset
-    clean_eval_df = pd.DataFrame({
-        "current_delay": [5.0, 10.0, 15.0],
-        "source": ["observed", "observed", "observed"],
-    })
+    clean_eval_df = pd.DataFrame(
+        {
+            "current_delay": [5.0, 10.0, 15.0],
+            "source": ["observed", "observed", "observed"],
+        }
+    )
     enforce_eval_holdout_isolation(clean_eval_df)  # Should pass without error
 
     # Contaminated evaluation dataset
-    contaminated_eval_df = pd.DataFrame({
-        "current_delay": [5.0, 10.0, 15.0],
-        "source": ["observed", "synthetic_simpy", "observed"],
-    })
+    contaminated_eval_df = pd.DataFrame(
+        {
+            "current_delay": [5.0, 10.0, 15.0],
+            "source": ["observed", "synthetic_simpy", "observed"],
+        }
+    )
     with pytest.raises(AssertionError, match="Invariant I4 Violation"):
         enforce_eval_holdout_isolation(contaminated_eval_df)

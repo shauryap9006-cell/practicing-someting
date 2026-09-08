@@ -10,10 +10,11 @@ from __future__ import annotations
 import datetime
 import itertools
 from typing import List, Optional
+
 import requests
 
-from config import settings
 from collector.adapters.base import LiveSource, StationEvent
+from config import settings
 from engine.clocks import get_clock
 
 
@@ -48,9 +49,7 @@ class RapidAPISource(LiveSource):
             raise ValueError("RapidAPI key not configured in settings/environment.")
         return next(self._key_cycle)
 
-    def fetch_running_status(
-        self, train_no: str, run_date: datetime.date
-    ) -> list[StationEvent]:
+    def fetch_running_status(self, train_no: str, run_date: datetime.date) -> list[StationEvent]:
         """Queries RapidAPI live train status endpoint with multi-key failover."""
         if not self.keys:
             raise ValueError("No RapidAPI keys configured in settings/environment.")
@@ -62,7 +61,11 @@ class RapidAPISource(LiveSource):
             try:
                 return self._query_with_key(current_key, train_no, run_date)
             except requests.HTTPError as http_err:
-                if http_err.response is not None and http_err.response.status_code in (429, 403, 401):
+                if http_err.response is not None and http_err.response.status_code in (
+                    429,
+                    403,
+                    401,
+                ):
                     # Rate limit or auth error on this key: rotate to next key
                     last_error = http_err
                     continue
@@ -73,7 +76,9 @@ class RapidAPISource(LiveSource):
 
         raise RuntimeError(f"RapidAPI failed across all {len(self.keys)} keys: {last_error}")
 
-    def _query_with_key(self, key: str, train_no: str, run_date: datetime.date) -> list[StationEvent]:
+    def _query_with_key(
+        self, key: str, train_no: str, run_date: datetime.date
+    ) -> list[StationEvent]:
         url = f"{self.base_url}/trains/{train_no}/live"
         headers = {
             "X-RapidAPI-Key": key,
@@ -119,4 +124,3 @@ if __name__ == "__main__":
     print("=== RapidAPI Adapter Demo ===")
     src = RapidAPISource()
     print(f"Source: {src.source_name}, Total Keys Loaded: {len(src.keys)}")
-

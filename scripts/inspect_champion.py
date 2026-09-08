@@ -1,5 +1,5 @@
-import sys
 from pathlib import Path
+
 import torch
 
 print("=== CHECKING CHAMPION MODEL IN ml/artifacts/ ===")
@@ -15,7 +15,7 @@ if champ_pt.exists():
         for k, v in sd.items():
             shape_str = str(v.shape) if hasattr(v, "shape") else type(v)
             print(f"  {k}: {shape_str}")
-        
+
         # Check if bidirectional
         # Bidirectional GRU in PyTorch has keys with `_reverse` (e.g. weight_ih_l0_reverse)
         bidi_keys = [k for k in sd.keys() if "reverse" in k]

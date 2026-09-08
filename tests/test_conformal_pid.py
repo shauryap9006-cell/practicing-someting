@@ -1,11 +1,11 @@
 """Unit and property tests for Conformal PID and Normalized CQR (Task T6)."""
+
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from data.db import Database
-from ml.conformal import ConformalPIDController, NormalizedCQR, AdaptiveConformalInference
+from ml.conformal import AdaptiveConformalInference, ConformalPIDController, NormalizedCQR
 
 
 def test_conformal_pid_faster_convergence_than_vanilla_aci():
@@ -119,5 +119,6 @@ def test_conformal_pid_state_anti_windup_recovery():
             break
 
     assert recovered_step is not None
-    assert recovered_step < 150, f"Recovery took {recovered_step} steps >= 150 steps due to integrator windup"
-
+    assert recovered_step < 150, (
+        f"Recovery took {recovered_step} steps >= 150 steps due to integrator windup"
+    )

@@ -21,16 +21,15 @@ import datetime
 import subprocess
 import sys
 import time
-from pathlib import Path
 
 
 def _run(cmd: list[str], label: str) -> bool:
     """Runs a subprocess command. Returns True on success."""
     start = time.perf_counter()
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"[STEP] {label}")
     print(f"  cmd: {' '.join(cmd)}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     result = subprocess.run(cmd, capture_output=False)
     elapsed = time.perf_counter() - start
@@ -47,17 +46,19 @@ def main():
     parser = argparse.ArgumentParser(description="RailTwin-X Nightly Pipeline")
     parser.add_argument("--network", choices=["passenger", "dfc", "mixed"], default="mixed")
     parser.add_argument("--skip-seed", action="store_true", help="Skip database reseed step")
-    parser.add_argument("--skip-gru", action="store_true", help="Skip PyTorch GRU training (faster)")
+    parser.add_argument(
+        "--skip-gru", action="store_true", help="Skip PyTorch GRU training (faster)"
+    )
     args = parser.parse_args()
 
     py = sys.executable
     wall_start = time.perf_counter()
     results: dict[str, bool] = {}
 
-    print(f"\n{'#'*60}")
+    print(f"\n{'#' * 60}")
     print(f"# RailTwin-X NIGHTLY PIPELINE — {datetime.datetime.now().isoformat()}")
     print(f"# Network: {args.network}")
-    print(f"{'#'*60}")
+    print(f"{'#' * 60}")
 
     # 1. Seed database
     if not args.skip_seed:
@@ -70,13 +71,18 @@ def main():
         print("\n[SKIP] Database seed (--skip-seed)")
 
     # 2. Build snapshot parquet cache
-    ok = _run([py, "-c",
-               "from ml.snapshots import SnapshotBuilder; "
-               "from data.db import get_db; "
-               "sb = SnapshotBuilder(get_db()); "
-               "df = sb.build_snapshot_dataset(); "
-               "print(f'Snapshots: {len(df):,} rows')"],
-              "Snapshot Cache Build")
+    ok = _run(
+        [
+            py,
+            "-c",
+            "from ml.snapshots import SnapshotBuilder; "
+            "from data.db import get_db; "
+            "sb = SnapshotBuilder(get_db()); "
+            "df = sb.build_snapshot_dataset(); "
+            "print(f'Snapshots: {len(df):,} rows')",
+        ],
+        "Snapshot Cache Build",
+    )
     results["snapshot"] = ok
 
     # 3. Retrain LightGBM ensemble + CQR
@@ -104,9 +110,9 @@ def main():
 
     # Summary
     wall_elapsed = time.perf_counter() - wall_start
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"NIGHTLY PIPELINE SUMMARY  (total: {wall_elapsed:.0f}s)")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     all_ok = True
     for step, passed in results.items():
         icon = "✅" if passed else "❌"

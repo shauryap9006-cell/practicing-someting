@@ -1,10 +1,11 @@
-﻿"""Test Suite for Phase 2: ML Integrity & Dispatch Restructure (D01, D02, D07, D08, D09, D13)."""
+"""Test Suite for Phase 2: ML Integrity & Dispatch Restructure (D01, D02, D07, D08, D09, D13)."""
+
 from __future__ import annotations
 
-import pytest
 import numpy as np
-from api.predictor import get_predictor_service, enforce_quantile_order
-from config import settings
+import pytest
+
+from api.predictor import enforce_quantile_order, get_predictor_service
 
 
 def test_enforce_quantile_order_monotonicity():
@@ -42,10 +43,12 @@ def test_ensemble_dispatch_primary_serving(monkeypatch):
     monkeypatch.setattr(predictor._ensemble, "predict", lambda *args, **kwargs: expected_output)
 
     orig_extract = predictor.snapshot_gen.extract_features_at_snapshot
+
     def mock_extract(*args, **kwargs):
         vec = orig_extract(*args, **kwargs)
         vec.tsr_active_ahead_count = 0
         return vec
+
     monkeypatch.setattr(predictor.snapshot_gen, "extract_features_at_snapshot", mock_extract)
 
     res = predictor.predict_train_eta("12004", "CNB")
@@ -63,10 +66,12 @@ def test_ensemble_dispatch_with_tsr_penalty(monkeypatch):
     monkeypatch.setattr(predictor._ensemble, "predict", lambda *args, **kwargs: expected_output)
 
     orig_extract = predictor.snapshot_gen.extract_features_at_snapshot
+
     def mock_extract(*args, **kwargs):
         vec = orig_extract(*args, **kwargs)
         vec.tsr_active_ahead_count = 2  # 2 active TSRs -> max(8.0, 16.0) = 16.0 penalty
         return vec
+
     monkeypatch.setattr(predictor.snapshot_gen, "extract_features_at_snapshot", mock_extract)
 
     res = predictor.predict_train_eta("12004", "CNB")

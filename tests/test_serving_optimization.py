@@ -1,13 +1,14 @@
 """Unit and benchmark tests for serving path optimizations (Task T10)."""
+
 from __future__ import annotations
 
 import time
+
 import numpy as np
-import pytest
 import torch
 
 from data.db import get_db
-from engine.spatial_context import SpatialIndexCache, spatial_index_cache
+from engine.spatial_context import SpatialIndexCache
 from ml.model_v2 import RailTwinGRUv2
 
 

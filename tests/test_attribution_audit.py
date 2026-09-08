@@ -6,8 +6,9 @@ data seams, and trust badge integrity.
 """
 
 import pytest
+
 from data.db import get_db
-from engine.attribution import DelayAttributionEngine, CauseCategory, get_attribution_engine
+from engine.attribution import CauseCategory, get_attribution_engine
 
 
 @pytest.fixture
@@ -30,7 +31,9 @@ def test_t_a1_additivity(attribution_engine):
         res = attribution_engine.decompose_train_delay(t_no)
         cause_sum = sum(c.minutes for c in res.causes)
         diff = abs(cause_sum - res.total_delay_min)
-        assert diff <= 0.5, f"Additivity failed for train {t_no}: sum({cause_sum}) != total({res.total_delay_min})"
+        assert diff <= 0.5, (
+            f"Additivity failed for train {t_no}: sum({cause_sum}) != total({res.total_delay_min})"
+        )
         assert res.is_exact_accounting is True
         assert res.integrity_checks["additivity_pass"] is True
 
@@ -80,10 +83,16 @@ def test_t_a3_differential_attribution(attribution_engine):
     try:
         new_res = attribution_engine.decompose_train_delay(test_train)
         new_tsr = sum(c.minutes for c in new_res.causes if c.category == CauseCategory.TSR)
-        assert new_tsr >= base_tsr + 5, f"TSR bucket did not increase by expected kinematic penalty: {base_tsr} -> {new_tsr}"
+        assert new_tsr >= base_tsr + 5, (
+            f"TSR bucket did not increase by expected kinematic penalty: {base_tsr} -> {new_tsr}"
+        )
 
         # Assert TSR cause has explicit evidence
-        tsr_cause = next(c for c in new_res.causes if f"TSR-{tsr_id}" == (c.evidence.record_id if c.evidence else ""))
+        tsr_cause = next(
+            c
+            for c in new_res.causes
+            if f"TSR-{tsr_id}" == (c.evidence.record_id if c.evidence else "")
+        )
         assert tsr_cause.evidence.speed_limit_kmph == 45
         assert tsr_cause.evidence.km_range == "10.0-18.0"
     finally:
@@ -101,7 +110,13 @@ def test_t_a4_evidence_traceability(attribution_engine):
 
     for c in res.causes:
         assert c.evidence is not None, f"Cause {c.cause} missing evidence object"
-        assert c.evidence.source_type in {"RAKE_LINK", "STATION_EVENT", "TSR", "LIVE_POSITION", "WEATHER"}
+        assert c.evidence.source_type in {
+            "RAKE_LINK",
+            "STATION_EVENT",
+            "TSR",
+            "LIVE_POSITION",
+            "WEATHER",
+        }
         assert c.evidence_pointer is not None and len(c.evidence_pointer) > 0
 
 
@@ -111,7 +126,9 @@ def test_t_a4_evidence_traceability(attribution_engine):
 def test_t_a5_residual_honesty(attribution_engine):
     res = attribution_engine.decompose_train_delay("12003")
     cause_cats = [c.category for c in res.causes]
-    assert CauseCategory.RESIDUAL in cause_cats or res.total_delay_min == sum(c.minutes for c in res.causes if c.category != CauseCategory.RESIDUAL)
+    assert CauseCategory.RESIDUAL in cause_cats or res.total_delay_min == sum(
+        c.minutes for c in res.causes if c.category != CauseCategory.RESIDUAL
+    )
 
 
 # =========================================================================

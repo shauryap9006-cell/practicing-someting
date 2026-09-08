@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Resolve: 564 vs 100 days / Aug-in-winter-fog / 2026 classification path /
 val day-count / buffer days / timezone. Produces the FOG INVENTORY."""
 import sqlite3, json, datetime, sys

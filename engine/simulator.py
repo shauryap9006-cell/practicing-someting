@@ -8,13 +8,12 @@ Logs every delay minute to sim_ledger with exact 100% accounting.
 from __future__ import annotations
 
 import datetime
-import random
 import uuid
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
+
 import simpy
 
-from config import settings
 from data.db import Database, get_db
 from engine.clocks import get_clock
 from engine.graph import CorridorGraph
@@ -56,8 +55,12 @@ class CascadeSimulator:
 
     def run_simulation(
         self,
-        injected_delays: Optional[Dict[str, Dict[str, int]]] = None, # {train_no: {station_code: delay_min}}
-        active_tsrs: Optional[Dict[Tuple[str, str], float]] = None,   # {(from, to): speed_factor (e.g. 0.6)}
+        injected_delays: Optional[
+            Dict[str, Dict[str, int]]
+        ] = None,  # {train_no: {station_code: delay_min}}
+        active_tsrs: Optional[
+            Dict[Tuple[str, str], float]
+        ] = None,  # {(from, to): speed_factor (e.g. 0.6)}
         simulation_hours: float = 12.0,
     ) -> Tuple[str, List[LedgerEvent], Dict[str, int]]:
         """Runs corridor discrete-event simulation and returns run_id, ledger events, and total delays."""
@@ -76,7 +79,9 @@ class CascadeSimulator:
         # 1. Load active fleet routes & section parameters
         with self.db.transaction() as cur:
             cur.execute("SELECT from_code, to_code, max_speed_kmph FROM sections")
-            sec_max_speeds = {(r["from_code"], r["to_code"]): float(r["max_speed_kmph"]) for r in cur.fetchall()}
+            sec_max_speeds = {
+                (r["from_code"], r["to_code"]): float(r["max_speed_kmph"]) for r in cur.fetchall()
+            }
 
             cur.execute("SELECT train_no, priority FROM trains ORDER BY priority ASC LIMIT 30")
             trains_meta = {r["train_no"]: r["priority"] for r in cur.fetchall()}
@@ -92,7 +97,7 @@ class CascadeSimulator:
             )
             route_rows = cur.fetchall()
 
-        routes_by_train = {}
+        routes_by_train: Dict[str, List[Dict[str, Any]]] = {}
         for r in route_rows:
             t = r["train_no"]
             if t not in routes_by_train:
@@ -226,10 +231,11 @@ class CascadeSimulator:
                 sec_req_start = env.now
 
                 # Request section with priority (Priority 1 Rajdhani holds priority over Priority 2/3)
-                if isinstance(sec_res, simpy.PriorityResource):
-                    req_context = sec_res.request(priority=priority)
-                else:
-                    req_context = sec_res.request()
+                req_context: Any = (
+                    sec_res.request(priority=priority)
+                    if isinstance(sec_res, simpy.PriorityResource)
+                    else sec_res.request()
+                )
 
                 with req_context as req:
                     yield req
@@ -321,12 +327,14 @@ class CascadeSimulator:
         for r in rows:
             mins = int(r["total_min"])
             total_attributed_min += mins
-            breakdown.append({
-                "event_type": r["event_type"],
-                "minutes": mins,
-                "cause": r["cause"],
-                "station_code": r["station_code"],
-            })
+            breakdown.append(
+                {
+                    "event_type": r["event_type"],
+                    "minutes": mins,
+                    "cause": r["cause"],
+                    "station_code": r["station_code"],
+                }
+            )
 
         return {
             "run_id": run_id,
@@ -344,7 +352,10 @@ if __name__ == "__main__":
         cur.execute("SELECT train_no FROM trains LIMIT 1")
         tr_row = cur.fetchone()
         t_sample = tr_row["train_no"] if tr_row else "10001"
-        cur.execute("SELECT station_code FROM route_stations WHERE train_no = ? AND seq > 1 LIMIT 1", (t_sample,))
+        cur.execute(
+            "SELECT station_code FROM route_stations WHERE train_no = ? AND seq > 1 LIMIT 1",
+            (t_sample,),
+        )
         st_row = cur.fetchone()
         stn_sample = st_row["station_code"] if st_row else "STN1"
 
@@ -353,6 +364,8 @@ if __name__ == "__main__":
     )
     print(f"Simulation completed (run_id: {run_id}). Generated {len(events)} ledger events.")
     autopsy = sim.get_train_autopsy(run_id, t_sample)
-    print(f"Autopsy for {t_sample}: Total Attributed Delay = {autopsy['total_attributed_minutes']} min")
+    print(
+        f"Autopsy for {t_sample}: Total Attributed Delay = {autopsy['total_attributed_minutes']} min"
+    )
     for c in autopsy["causes"]:
         print(f"  - {c['minutes']}m: {c['event_type']} @ {c['station_code']} ({c['cause']})")

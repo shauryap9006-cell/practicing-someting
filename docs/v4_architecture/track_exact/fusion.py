@@ -8,15 +8,15 @@ Combines:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import time
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Tuple
-import numpy as np
 
+import numpy as np
 from engine.track_exact.ekf import EdgeEKF
 from engine.track_exact.hmm_mapmatch import RailHMMMapMatcher, TrackSegment
 from engine.track_exact.imm import JunctionIMM
-from engine.track_exact.mht import MultiHypothesisTracker, TrackHypothesis
+from engine.track_exact.mht import MultiHypothesisTracker
 
 
 @dataclass
@@ -92,10 +92,30 @@ class TrackExactEngine:
         if segments is None:
             # Default parallel 3-track corridor with standard Indian Railways 4.72m spacing
             segments = [
-                TrackSegment(id="UP_MAIN", polyline=[(0.0, 0.0), (2000.0, 0.0)], track_type="main", name="Up Main Line"),
-                TrackSegment(id="DN_MAIN", polyline=[(0.0, 4.72), (2000.0, 4.72)], track_type="main", name="Down Main Line"),
-                TrackSegment(id="LOOP_1", polyline=[(0.0, -4.72), (500.0, -4.72), (1500.0, -4.72), (2000.0, 0.0)], track_type="loop", name="Common Loop 1"),
-                TrackSegment(id="PLATFORM_1", polyline=[(500.0, -9.44), (1500.0, -9.44)], track_type="platform", name="Platform 1"),
+                TrackSegment(
+                    id="UP_MAIN",
+                    polyline=[(0.0, 0.0), (2000.0, 0.0)],
+                    track_type="main",
+                    name="Up Main Line",
+                ),
+                TrackSegment(
+                    id="DN_MAIN",
+                    polyline=[(0.0, 4.72), (2000.0, 4.72)],
+                    track_type="main",
+                    name="Down Main Line",
+                ),
+                TrackSegment(
+                    id="LOOP_1",
+                    polyline=[(0.0, -4.72), (500.0, -4.72), (1500.0, -4.72), (2000.0, 0.0)],
+                    track_type="loop",
+                    name="Common Loop 1",
+                ),
+                TrackSegment(
+                    id="PLATFORM_1",
+                    polyline=[(500.0, -9.44), (1500.0, -9.44)],
+                    track_type="platform",
+                    name="Platform 1",
+                ),
             ]
             adjacency = {
                 "UP_MAIN": ["UP_MAIN", "LOOP_1"],

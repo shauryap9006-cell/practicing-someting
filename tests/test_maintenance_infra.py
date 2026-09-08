@@ -103,7 +103,9 @@ def test_cleanliness_inspection_logging(auth_headers):
     assert resp.status_code == 200
     assert resp.json()["score"] == 5
 
-    list_resp = client.get("/api/infrastructure/cleaning-logs?station_code=NDLS", headers=auth_headers)
+    list_resp = client.get(
+        "/api/infrastructure/cleaning-logs?station_code=NDLS", headers=auth_headers
+    )
     assert list_resp.status_code == 200
     logs = list_resp.json()
     assert len(logs) > 0

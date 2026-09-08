@@ -9,13 +9,13 @@ Verifies:
 6. SQLite WAL Mode Concurrency (F36): Thread-safe transactions and busy timeout.
 """
 
-import pytest
 import pydantic
+import pytest
 import torch
-from api.schemas import ReoptimizeRequest, WhatIfRequest, DispatcherAckRequest
+
+from api.schemas import DispatcherAckRequest, ReoptimizeRequest
 from data.db import get_db
-from ml.drift import PSIDriftMonitor, DriftReport, FeatureDriftResult
-from ml.evaluate import Evaluator
+from ml.drift import DriftReport, FeatureDriftResult, PSIDriftMonitor
 
 
 def test_torch_thread_capping():
@@ -32,7 +32,9 @@ def test_pydantic_extra_forbid():
 
     # Invalid: extra unrecognized field should raise ValidationError
     with pytest.raises(pydantic.ValidationError):
-        ReoptimizeRequest.model_validate({"target_date": "2026-08-20", "malicious_injection": "drop database"})
+        ReoptimizeRequest.model_validate(
+            {"target_date": "2026-08-20", "malicious_injection": "drop database"}
+        )
 
     with pytest.raises(pydantic.ValidationError):
         DispatcherAckRequest.model_validate({"decision": "accepted", "extra_bad_field": 123})
@@ -72,7 +74,9 @@ def test_drift_breach_alert_emission():
 
     db = get_db()
     with db.transaction() as cur:
-        cur.execute("SELECT message FROM notifications WHERE event_type = 'DRIFT_ALERT' ORDER BY id DESC LIMIT 1")
+        cur.execute(
+            "SELECT message FROM notifications WHERE event_type = 'DRIFT_ALERT' ORDER BY id DESC LIMIT 1"
+        )
         row = cur.fetchone()
         assert row is not None
         assert "CRITICAL DRIFT BREACH" in row["message"]

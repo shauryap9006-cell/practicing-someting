@@ -7,12 +7,11 @@ hard ground truth events (Kavach RFID balises, MSDAC axle counters, Electronic I
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import math
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Tuple
-import numpy as np
 
-from engine.track_exact.hmm_mapmatch import RailHMMMapMatcher, TrackSegment, point_polyline_distance
+from engine.track_exact.hmm_mapmatch import RailHMMMapMatcher, point_polyline_distance
 
 
 @dataclass
@@ -54,10 +53,7 @@ class MultiHypothesisTracker:
             return
         n = len(self.matcher.segs)
         w = 1.0 / n
-        self.hyps = [
-            TrackHypothesis(track_id=s_id, weight=w)
-            for s_id in self.matcher.segs.keys()
-        ]
+        self.hyps = [TrackHypothesis(track_id=s_id, weight=w) for s_id in self.matcher.segs.keys()]
 
     def set_candidates(self, track_ids: Sequence[str]) -> None:
         """Explicitly seeds candidate hypotheses."""
@@ -65,10 +61,7 @@ class MultiHypothesisTracker:
         if not valid_ids:
             return
         w = 1.0 / len(valid_ids)
-        self.hyps = [
-            TrackHypothesis(track_id=tid, weight=w)
-            for tid in valid_ids
-        ]
+        self.hyps = [TrackHypothesis(track_id=tid, weight=w) for tid in valid_ids]
 
     def update(
         self,
@@ -115,7 +108,7 @@ class MultiHypothesisTracker:
                     p_mode = imm_mode_probs[target_mode]
                     w_mode = 0.2 + 0.8 * p_mode
 
-            h.weight *= (w_spatial * w_mode)
+            h.weight *= w_spatial * w_mode
 
         # Normalize
         total_w = sum(h.weight for h in self.hyps)
@@ -129,7 +122,7 @@ class MultiHypothesisTracker:
 
         # Prune low probability hypotheses
         self.hyps = [h for h in self.hyps if h.weight >= self.prune_w]
-        
+
         # Renormalize after pruning
         total_w = sum(h.weight for h in self.hyps)
         if total_w > 0:

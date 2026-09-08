@@ -10,12 +10,13 @@ Verifies:
 
 import numpy as np
 import pytest
+
 from ml.conformal import (
-    MondrianCQR,
     AdaptiveConformalInference,
+    MondrianCQR,
+    crps_score,
     enforce_quantile_order,
     winkler_score,
-    crps_score,
 )
 from ml.ensemble import fit_stacking_weights
 
@@ -67,7 +68,9 @@ def test_winkler_score_properties():
     miss_score = winkler_score(miss_p10, miss_p90, y, alpha=0.20)
 
     assert tight_score < wide_score, "Tight valid interval must beat wide valid interval"
-    assert wide_score < miss_score, "Valid interval must beat completely missed interval due to penalty"
+    assert wide_score < miss_score, (
+        "Valid interval must beat completely missed interval due to penalty"
+    )
 
 
 def test_crps_score_properties():
@@ -96,9 +99,7 @@ def test_mondrian_cqr_ensemble_calibration():
 
     # Calibrate Mondrian CQR on first 500 samples
     cqr = MondrianCQR(target_coverage=0.80)
-    cqr.calibrate_ensemble(
-        raw_p10[:500], raw_p90[:500], y_true[:500], hops[:500], km[:500]
-    )
+    cqr.calibrate_ensemble(raw_p10[:500], raw_p90[:500], y_true[:500], hops[:500], km[:500])
 
     # Test on second 500 samples
     cal_p10, cal_p90, _ = cqr.adjust_interval(
@@ -106,7 +107,9 @@ def test_mondrian_cqr_ensemble_calibration():
     )
 
     emp_coverage = np.mean((y_true[500:] >= cal_p10) & (y_true[500:] <= cal_p90))
-    assert 0.75 <= emp_coverage <= 0.88, f"Empirical coverage {emp_coverage:.3f} outside [0.75, 0.88]"
+    assert 0.75 <= emp_coverage <= 0.88, (
+        f"Empirical coverage {emp_coverage:.3f} outside [0.75, 0.88]"
+    )
 
 
 def test_adaptive_conformal_inference_regime_shift():

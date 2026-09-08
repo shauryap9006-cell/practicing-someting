@@ -115,7 +115,9 @@ def test_staff_shift_scheduler(auth_headers):
     assert resp.status_code == 200
     assert resp.json()["shift_type"] == "afternoon"
 
-    list_resp = client.get("/api/workforce/shifts?station_code=NDLS&shift_date=2026-08-29", headers=auth_headers)
+    list_resp = client.get(
+        "/api/workforce/shifts?station_code=NDLS&shift_date=2026-08-29", headers=auth_headers
+    )
     assert list_resp.status_code == 200
     assert len(list_resp.json()) > 0
 

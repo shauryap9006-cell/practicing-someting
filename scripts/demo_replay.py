@@ -22,7 +22,7 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 # Ensure repo root is on sys.path
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -33,16 +33,14 @@ if str(REPO_ROOT) not in sys.path:
 os.environ["DEMO_MODE"] = "1"
 os.environ["DEFAULT_CLOCK_MODE"] = "replay"
 
-from config import settings
-from data.db import Database, get_db
-from engine.clocks import ReplayClock, set_global_clock, IST_TIMEZONE
-from engine.live_tracker import LivePositionTracker, get_live_tracker
-from engine.attribution import LiveAttributionEngine, get_attribution_engine
-from engine.context import ContextEngine, get_context_engine
+from api.brain import BrainOrchestrator
+from data.db import get_db
+from engine.attribution import LiveAttributionEngine
+from engine.clocks import IST_TIMEZONE, ReplayClock, set_global_clock
+from engine.context import ContextEngine
+from engine.live_tracker import LivePositionTracker
 from engine.ops import PlatformManager
 from engine.simulator import CascadeSimulator
-from api.brain import BrainOrchestrator
-
 
 SCENARIO_FILE = Path(__file__).resolve().parent.parent / "data" / "seeds" / "demo_scenario.json"
 
@@ -84,7 +82,9 @@ def run_replay(speed_multiplier: float = 0.0, verbose: bool = True) -> Dict[str,
         print("=" * 80)
         print("RAILTWIN-X DETERMINISTIC REPLAY DEMO ENGINE")
         print(f"Scenario: {scenario['scenario_metadata']['name']}")
-        print(f"Corridor: {scenario['scenario_metadata']['corridor']} · Date: {scenario['scenario_metadata']['base_date']}")
+        print(
+            f"Corridor: {scenario['scenario_metadata']['corridor']} · Date: {scenario['scenario_metadata']['base_date']}"
+        )
         print("=" * 80)
 
     events = scenario["events"]
@@ -222,7 +222,9 @@ def run_replay(speed_multiplier: float = 0.0, verbose: bool = True) -> Dict[str,
                 )
 
             event_result["advisory_id"] = adv.get("advisory_id", 1)
-            event_result["action_code"] = adv.get("advisory_recommendations", [{}])[0].get("action_code", "HOLD")
+            event_result["action_code"] = adv.get("advisory_recommendations", [{}])[0].get(
+                "action_code", "HOLD"
+            )
             event_result["latency_ms"] = adv.get("latency_ms", 12.5)
 
         elif event_type == "PLATFORM_CONFLICT_EMERGENCE":
@@ -266,7 +268,9 @@ def run_replay(speed_multiplier: float = 0.0, verbose: bool = True) -> Dict[str,
         print("\n" + "=" * 80)
         print("REPLAY DEMO EXECUTION COMPLETE (100% SUCCESS)")
         print(f"Total Events Executed: {len(results['executed_events'])}")
-        print(f"Attributed Delay: +{results['headline_numbers'].get('attributed_delta_min', 16.0)}m")
+        print(
+            f"Attributed Delay: +{results['headline_numbers'].get('attributed_delta_min', 16.0)}m"
+        )
         print(f"Primary Cause: {results['headline_numbers'].get('primary_cause', 'WEATHER_FOG')}")
         print(f"Re-Optimizer Latency: {results['headline_numbers'].get('reopt_solver_ms', 5.0)}ms")
         print("=" * 80)
@@ -276,8 +280,12 @@ def run_replay(speed_multiplier: float = 0.0, verbose: bool = True) -> Dict[str,
 
 def main():
     parser = argparse.ArgumentParser(description="RailTwin-X Deterministic Demo Replay Driver")
-    parser.add_argument("--fast", action="store_true", help="Execute scenario instantly without wall-clock sleeping")
-    parser.add_argument("--realtime", action="store_true", help="Execute in 3-minute real-time stage pace")
+    parser.add_argument(
+        "--fast", action="store_true", help="Execute scenario instantly without wall-clock sleeping"
+    )
+    parser.add_argument(
+        "--realtime", action="store_true", help="Execute in 3-minute real-time stage pace"
+    )
     parser.add_argument("--speed", type=float, default=0.0, help="Speed multiplier (0 = instant)")
     args = parser.parse_args()
 

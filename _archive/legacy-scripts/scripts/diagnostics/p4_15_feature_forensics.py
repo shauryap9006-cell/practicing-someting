@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Per-feature forensics on the TRAINED v2 ensemble. NO RETRAINING.
 Outputs control-room/23_DIAGNOSTICS/feature_forensics.csv + verdict table."""
 import sys, os, warnings

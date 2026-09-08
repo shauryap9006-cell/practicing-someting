@@ -13,16 +13,15 @@ import asyncio
 import hashlib
 import json
 import time
-from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
 from fastapi.responses import StreamingResponse
 
 from api.auth import get_current_user
-from config import settings
 from api.predictor import PredictorService, get_predictor_service
 from api.sse_limits import acquire_sse_slot, release_sse_slot
+from config import settings
 from data.db import Database, get_db
 from engine.clocks import get_clock
 
@@ -40,7 +39,7 @@ def _generate_etag(payload: Dict[str, Any]) -> str:
 
 @router.get("/live", response_model=None)
 def get_live_board(
-    response: Response,
+    response: Response = None,  # type: ignore[assignment]
     station_code: str = Query("NDLS", description="Station code e.g. NDLS, CNB"),
     date: Optional[str] = Query(None, description="YYYY-MM-DD (defaults to today)"),
     hours: int = Query(6, ge=1, le=24, description="Lookahead window in hours"),
@@ -51,7 +50,6 @@ def get_live_board(
     db: Database = Depends(get_db),
     predictor: PredictorService = Depends(get_predictor_service),
 ):
-
     """Returns live train arrival & departure board with vectorized prediction and ETag caching."""
     clock = get_clock()
     stn = (station_code if isinstance(station_code, str) else "NDLS").upper()
@@ -169,24 +167,26 @@ def get_live_board(
         if kind == "departures" and not sch_dep:
             continue
 
-        board_entries.append({
-            "train_no": t_no,
-            "train_name": t_name,
-            "train_type": r["train_type"],
-            "direction": r["direction"],
-            "sched_arr": sch_arr,
-            "sched_dep": sch_dep,
-            "exp_arr": exp_arr,
-            "exp_dep": exp_dep,
-            "delay_min": delay_min,
-            "platform": pf,
-            "status": status_tag,
-            "status_color": status_color,
-            "is_cancelled": False,
-            "has_setin": has_setin,
-            "has_setout": has_setout,
-            "cqr_interval": [p10, p90],
-        })
+        board_entries.append(
+            {
+                "train_no": t_no,
+                "train_name": t_name,
+                "train_type": r["train_type"],
+                "direction": r["direction"],
+                "sched_arr": sch_arr,
+                "sched_dep": sch_dep,
+                "exp_arr": exp_arr,
+                "exp_dep": exp_dep,
+                "delay_min": delay_min,
+                "platform": pf,
+                "status": status_tag,
+                "status_color": status_color,
+                "is_cancelled": False,
+                "has_setin": has_setin,
+                "has_setout": has_setout,
+                "cqr_interval": [p10, p90],
+            }
+        )
 
     payload = {
         "station_code": stn,
@@ -212,7 +212,7 @@ def get_live_board(
 
 @router.get("/kiosk", response_model=None)
 def get_kiosk_board(
-    response: Response,
+    response: Response = None,  # type: ignore[assignment]
     station_code: str = Query("NDLS", description="Station code"),
     db: Database = Depends(get_db),
     predictor: PredictorService = Depends(get_predictor_service),
@@ -227,24 +227,25 @@ def get_kiosk_board(
         predictor=predictor,
     )
 
-
     # Whitelist only passenger-safe fields (exclude internal ML weights, debug flags, and audit tokens)
     whitelisted_entries = []
     for entry in full_board.get("entries", []):
-        whitelisted_entries.append({
-            "train_no": entry["train_no"],
-            "train_name": entry["train_name"],
-            "train_type": entry["train_type"],
-            "direction": entry["direction"],
-            "sched_arr": entry["sched_arr"],
-            "sched_dep": entry["sched_dep"],
-            "exp_arr": entry["exp_arr"],
-            "exp_dep": entry["exp_dep"],
-            "delay_min": entry["delay_min"],
-            "platform": entry["platform"],
-            "status": entry["status"],
-            "status_color": entry["status_color"],
-        })
+        whitelisted_entries.append(
+            {
+                "train_no": entry["train_no"],
+                "train_name": entry["train_name"],
+                "train_type": entry["train_type"],
+                "direction": entry["direction"],
+                "sched_arr": entry["sched_arr"],
+                "sched_dep": entry["sched_dep"],
+                "exp_arr": entry["exp_arr"],
+                "exp_dep": entry["exp_dep"],
+                "delay_min": entry["delay_min"],
+                "platform": entry["platform"],
+                "status": entry["status"],
+                "status_color": entry["status_color"],
+            }
+        )
 
     if response:
         response.headers["Cache-Control"] = "public, max-age=5"
@@ -267,13 +268,24 @@ async def stream_live_board(
 ):
     """Server-Sent Events (SSE) real-time streaming endpoint for station live board (F18)."""
     if not acquire_sse_slot():
-        raise HTTPException(status_code=503, detail={"code": "SSE_CAPACITY_EXCEEDED", "message": "Live stream capacity is temporarily full.", "retryable": True})
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "SSE_CAPACITY_EXCEEDED",
+                "message": "Live stream capacity is temporarily full.",
+                "retryable": True,
+            },
+        )
 
     async def event_generator():
         started = asyncio.get_event_loop().time()
         try:
             while True:
-                if await request.is_disconnected() or asyncio.get_event_loop().time() - started >= settings.SSE_MAX_DURATION_SECONDS:
+                if (
+                    await request.is_disconnected()
+                    or asyncio.get_event_loop().time() - started
+                    >= settings.SSE_MAX_DURATION_SECONDS
+                ):
                     break
                 board_data = await asyncio.to_thread(
                     get_live_board,

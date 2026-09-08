@@ -4,9 +4,9 @@ Expands the initial 14 seed links to the full corridor fleet by analyzing schedu
 windows and historical turnaround delay correlations across corridor terminals.
 Guarantees 100% discovery/preservation of ground truth seed links.
 """
+
 from __future__ import annotations
 
-import datetime
 import itertools
 import json
 import sqlite3
@@ -18,7 +18,6 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from data.db import Database, get_db
 
 TERMINALS = ("NDLS", "DDU", "LKO", "CNB", "ALJN", "GZB")
 
@@ -33,7 +32,9 @@ def _parse_time_min(t_str: Optional[str]) -> Optional[int]:
         return None
 
 
-def scheduled_gap_hours(con: sqlite3.Connection, incoming: str, outgoing: str, terminal: str) -> Optional[float]:
+def scheduled_gap_hours(
+    con: sqlite3.Connection, incoming: str, outgoing: str, terminal: str
+) -> Optional[float]:
     """Calculates scheduled turnaround gap in hours between incoming arrival and outgoing departure."""
     r_in = con.execute(
         "SELECT sched_arr, sched_dep FROM route_stations WHERE train_no = ? AND station_code = ? ORDER BY seq DESC LIMIT 1",
@@ -85,16 +86,18 @@ def infer_links(
         stn = str(s.get("station_code") or s.get("terminal") or "NDLS")
         turnaround = float(s.get("turnaround_min", 240.0))
         gap_h = turnaround / 60.0
-        expanded_links.append({
-            "incoming": inc,
-            "outgoing": outg,
-            "terminal": stn,
-            "turnaround_min": turnaround,
-            "gap_h": round(gap_h, 2),
-            "corr": 0.85,
-            "n_days": 180,
-            "source": "seed",
-        })
+        expanded_links.append(
+            {
+                "incoming": inc,
+                "outgoing": outg,
+                "terminal": stn,
+                "turnaround_min": turnaround,
+                "gap_h": round(gap_h, 2),
+                "corr": 0.85,
+                "n_days": 180,
+                "source": "seed",
+            }
+        )
         seen_pairs.add((inc, outg))
 
     # 2. Infer expanded links across all turnaround terminals
@@ -163,16 +166,18 @@ def infer_links(
                         corr = float(r_val)
 
             # Pair matched by turnaround timetable schedule and corridor physics
-            expanded_links.append({
-                "incoming": i,
-                "outgoing": o,
-                "terminal": term,
-                "turnaround_min": round(gap_h * 60.0, 1),
-                "gap_h": round(gap_h, 2),
-                "corr": round(corr, 3),
-                "n_days": n_days,
-                "source": "inferred",
-            })
+            expanded_links.append(
+                {
+                    "incoming": i,
+                    "outgoing": o,
+                    "terminal": term,
+                    "turnaround_min": round(gap_h * 60.0, 1),
+                    "gap_h": round(gap_h, 2),
+                    "corr": round(corr, 3),
+                    "n_days": n_days,
+                    "source": "inferred",
+                }
+            )
             seen_pairs.add((i, o))
 
     # VALIDATION (hard gate):
@@ -188,7 +193,9 @@ def infer_links(
     with open(out_file, "w", encoding="utf-8") as f:
         json.dump(expanded_links, f, indent=2)
 
-    print(f"[SUCCESS] Expanded rake links from {len(seed_links)} seeds to {len(expanded_links)} total links.")
+    print(
+        f"[SUCCESS] Expanded rake links from {len(seed_links)} seeds to {len(expanded_links)} total links."
+    )
     return expanded_links
 
 

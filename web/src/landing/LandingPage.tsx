@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { Suspense, lazy, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ThreeCorridor } from './ThreeCorridor';
+
+const ThreeCorridor = lazy(() =>
+  import('./ThreeCorridor').then((m) => ({ default: m.ThreeCorridor }))
+);
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -18,7 +21,15 @@ export const LandingPage: React.FC = () => {
   return (
     <div className="relative min-h-screen bg-[#050505] text-[#F3EFE6] overflow-x-hidden select-none flex flex-col justify-between">
       {/* 3D Canvas Background: Preserved Mountain, Train & Procedural Grass Field */}
-      <ThreeCorridor />
+      <Suspense
+        fallback={
+          <div className="absolute inset-0 bg-[#050505] flex items-center justify-center pointer-events-none">
+            <div className="w-8 h-8 rounded-full border-2 border-[#38332A] border-t-[#E6A100] animate-spin" />
+          </div>
+        }
+      >
+        <ThreeCorridor />
+      </Suspense>
 
       {/* Top Navigation Bar Overlay */}
       <header className="relative z-20 px-6 py-5 flex items-center justify-between max-w-7xl mx-auto w-full">

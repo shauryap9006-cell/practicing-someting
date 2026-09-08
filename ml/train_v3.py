@@ -9,12 +9,13 @@ Executes the official v3 retrain under strict scientific invariants:
 6. Exponential decay sampling (half-life = 90 days).
 7. Gated RegimeMoEHead with auxiliary load-balancing loss.
 """
+
 from __future__ import annotations
 
 import datetime as dt
 import json
 import math
-import os
+import sqlite3
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -27,10 +28,9 @@ from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from config import settings
 from data.db import Database, get_db
 from ml.evaluate_v2 import crps_grid, to_common_grid
-from ml.features_v3 import ALPHAS, FEATURE_NAMES_V3, V3FeatureBuilder
+from ml.features_v3 import FEATURE_NAMES_V3
 from ml.model_v3 import ALPHAS_V3, PinballCRPSLoss, RailTwinGRUv3
 from ml.vocab import StationVocab
 
@@ -256,7 +256,10 @@ def train_single_seed_v3(
     torch.manual_seed(seed)
     np.random.seed(seed)
 
-    print(f"\n[SEED {seed}] Launching Training (N_train={len(train_ds):,}, N_val={len(val_ds):,})...", flush=True)
+    print(
+        f"\n[SEED {seed}] Launching Training (N_train={len(train_ds):,}, N_val={len(val_ds):,})...",
+        flush=True,
+    )
 
     weights = decay_sample_weights(train_ds.dates, cutoff_date="2025-10-31", half_life_days=90.0)
     sampler = WeightedRandomSampler(weights=weights, num_samples=len(train_ds), replacement=True)
@@ -279,7 +282,9 @@ def train_single_seed_v3(
 
     criterion = PinballCRPSLoss(alphas=ALPHAS_V3, aux_weight=0.01).to(dev)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max_epochs, eta_min=min_lr)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        optimizer, T_max=max_epochs, eta_min=min_lr
+    )
 
     best_val_crps = float("inf")
     best_weights = None
@@ -333,14 +338,20 @@ def train_single_seed_v3(
         else:
             patience_counter += 1
             if patience_counter >= patience:
-                print(f"  [SEED {seed}] Early stopping at epoch {epoch}. Best Val CRPS={best_val_crps:.4f}", flush=True)
+                print(
+                    f"  [SEED {seed}] Early stopping at epoch {epoch}. Best Val CRPS={best_val_crps:.4f}",
+                    flush=True,
+                )
                 break
 
     if best_weights is not None:
         model.load_state_dict(best_weights)
     model.eval()
 
-    print(f"[SEED {seed}] Checkpoint saved (RAW weights, no EMA). Best Val CRPS={best_val_crps:.4f}", flush=True)
+    print(
+        f"[SEED {seed}] Checkpoint saved (RAW weights, no EMA). Best Val CRPS={best_val_crps:.4f}",
+        flush=True,
+    )
     return model
 
 

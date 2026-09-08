@@ -24,23 +24,38 @@ jobs:
       - name: Install Python Dependencies
         run: |
           pip install -r requirements.txt
+          pip install -r requirements-dev.txt
 
       - name: Run Pytest Suite
         run: |
           pytest tests/ -v
+
+      - name: Run Ruff Linter
+        run: |
+          ruff check .
+
+      - name: Check Ruff Formatting
+        run: |
+          ruff format --check .
+
+      - name: Run Mypy Type Checker
+        run: |
+          mypy api engine safety
 
       - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: npm
-          cache-dependency-path: web/package-lock.json
+          cache-dependency-path: package-lock.json
 
-      - name: Install frontend dependencies
-        run: npm ci --prefix web
+      - name: Install dependencies
+        run: npm ci
 
       - name: Type-check frontend
-        run: npm run lint --prefix web
+        run: npm run lint --workspace web
 
-      - name: Build frontend
-        run: npm run build --prefix web
+      - name: Build frontends
+        run: |
+          npm run build --workspace web
+          npm run build --workspace livewall

@@ -6,22 +6,21 @@ evaluates all 4 (C0=restored, C1, C2, C3) on IDENTICAL test window
 
 Winner = argmin overall MAE (tie-break: 1h MAE).
 """
+
 from __future__ import annotations
 
 import datetime
 import json
-import os
 import sys
 import time
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Optional
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
-from scipy import stats
 
 from config import settings
 from data.db import Database, get_db
@@ -37,7 +36,7 @@ TRAIN_CUTOFF = "2026-08-22"
 def compute_winkler(y, p10, p90, alpha=0.20):
     width = p90 - p10
     under = (2.0 / alpha) * np.maximum(0.0, p10 - y)
-    over  = (2.0 / alpha) * np.maximum(0.0, y - p90)
+    over = (2.0 / alpha) * np.maximum(0.0, y - p90)
     return float(np.mean(width + under + over))
 
 
@@ -74,8 +73,7 @@ def evaluate_models_on_test(test_df: pd.DataFrame, models_dir: Path, label: str)
         cov = float(np.mean((y_h >= p10) & (y_h <= p90))) * 100.0
         wink = compute_winkler(y_h, p10, p90)
         mae_b1 = float(np.mean(np.abs(b1_h - y_h)))
-        return {"n": int(mask.sum()), "mae": mae, "cov": cov, "winkler": wink,
-                "mae_b1": mae_b1}
+        return {"n": int(mask.sum()), "mae": mae, "cov": cov, "winkler": wink, "mae_b1": mae_b1}
 
     km = test_df["km_remaining"].values
     h1 = horizon_metrics(km <= 90, "1h")
@@ -85,8 +83,16 @@ def evaluate_models_on_test(test_df: pd.DataFrame, models_dir: Path, label: str)
     # Overall
     p50_all = models["direct_q50"].predict(test_df[FEATURE_NAMES])
     overall_mae = float(np.mean(np.abs(p50_all - y_true)))
-    p10_all = models["direct_q10"].predict(test_df[FEATURE_NAMES]) if "direct_q10" in models else p50_all - 5
-    p90_all = models["direct_q90"].predict(test_df[FEATURE_NAMES]) if "direct_q90" in models else p50_all + 10
+    p10_all = (
+        models["direct_q10"].predict(test_df[FEATURE_NAMES])
+        if "direct_q10" in models
+        else p50_all - 5
+    )
+    p90_all = (
+        models["direct_q90"].predict(test_df[FEATURE_NAMES])
+        if "direct_q90" in models
+        else p50_all + 10
+    )
     overall_cov = float(np.mean((y_true >= p10_all) & (y_true <= p90_all))) * 100.0
     overall_wink = compute_winkler(y_true, p10_all, p90_all)
 
@@ -111,13 +117,15 @@ def train_candidate(
 ) -> dict:
     """Train 6 LightGBM models for a candidate config."""
     from ml.snapshots import SnapshotGenerator
+
     save_dir.mkdir(parents=True, exist_ok=True)
     sg = SnapshotGenerator(db)
 
     # Determine training window
     if window_days is not None:
-        start_date = (datetime.date.fromisoformat(TRAIN_CUTOFF)
-                      - datetime.timedelta(days=window_days - 1)).strftime("%Y-%m-%d")
+        start_date = (
+            datetime.date.fromisoformat(TRAIN_CUTOFF) - datetime.timedelta(days=window_days - 1)
+        ).strftime("%Y-%m-%d")
     else:
         with db.transaction() as cur:
             cur.execute("SELECT MIN(run_date) as mn FROM station_events")
@@ -134,7 +142,7 @@ def train_candidate(
         max_d = pd.to_datetime(train_df["run_date"]).max()
         days_diff = (max_d - pd.to_datetime(train_df["run_date"])).dt.days.values
         weights = np.exp(-lambda_decay * days_diff)
-        ess = float((weights.sum() ** 2) / (weights ** 2).sum())
+        ess = float((weights.sum() ** 2) / (weights**2).sum())
         print(f"[{label}] ESS (lambda={lambda_decay:.4f}): {ess:,.0f}")
     else:
         weights = None
@@ -157,20 +165,26 @@ def train_candidate(
     # Train 6 models
     for mtype, df_use, w_use, target in [
         ("direct", direct_df, direct_w, "target_direct_delay"),
-        ("delta",  train_df,  weights,  "target_section_delta"),
+        ("delta", train_df, weights, "target_section_delta"),
     ]:
         for q in [0.1, 0.5, 0.9]:
-            name = f"model_{mtype}_q{int(q*100)}"
+            name = f"model_{mtype}_q{int(q * 100)}"
             params = {**params_base, "objective": "quantile", "alpha": q}
             dtrain = lgb.Dataset(df_use[FEATURE_NAMES], label=df_use[target], weight=w_use)
             booster = lgb.train(params, dtrain, num_boost_round=settings.LGBM_N_ESTIMATORS)
             booster.save_model(str(save_dir / f"{name}.txt"))
-            print(f"  [{label}] {name}: iter={booster.best_iteration or settings.LGBM_N_ESTIMATORS}")
+            print(
+                f"  [{label}] {name}: iter={booster.best_iteration or settings.LGBM_N_ESTIMATORS}"
+            )
 
     wall_time = time.perf_counter() - t0
     print(f"[{label}] Train wall-time: {wall_time:.1f}s")
-    return {"label": label, "wall_time_s": wall_time, "train_rows": len(train_df),
-            "start_date": start_date}
+    return {
+        "label": label,
+        "wall_time_s": wall_time,
+        "train_rows": len(train_df),
+        "start_date": start_date,
+    }
 
 
 def run_shootout():
@@ -208,18 +222,30 @@ def run_shootout():
                 "overall_cov": c0m.get("overall_coverage_80", 86.8),
                 "overall_winkler": c0m.get("overall_winkler_score", 58.3),
                 "b1_overall_mae": None,
-                "1h": {"mae": c0m["metrics_by_horizon"]["1 h (<=90km)"]["mae_railtwin"],
-                       "cov": c0m["metrics_by_horizon"]["1 h (<=90km)"]["coverage_80_percent"],
-                       "winkler": c0m["metrics_by_horizon"]["1 h (<=90km)"]["winkler_score"],
-                       "n": c0m["metrics_by_horizon"]["1 h (<=90km)"]["n_samples"]} if "metrics_by_horizon" in c0m else None,
-                "3h": {"mae": c0m["metrics_by_horizon"]["3 h (90-250km)"]["mae_railtwin"],
-                       "cov": c0m["metrics_by_horizon"]["3 h (90-250km)"]["coverage_80_percent"],
-                       "winkler": c0m["metrics_by_horizon"]["3 h (90-250km)"]["winkler_score"],
-                       "n": c0m["metrics_by_horizon"]["3 h (90-250km)"]["n_samples"]} if "metrics_by_horizon" in c0m else None,
-                "6h": {"mae": c0m["metrics_by_horizon"]["6 h (>250km)"]["mae_railtwin"],
-                       "cov": c0m["metrics_by_horizon"]["6 h (>250km)"]["coverage_80_percent"],
-                       "winkler": c0m["metrics_by_horizon"]["6 h (>250km)"]["winkler_score"],
-                       "n": c0m["metrics_by_horizon"]["6 h (>250km)"]["n_samples"]} if "metrics_by_horizon" in c0m else None,
+                "1h": {
+                    "mae": c0m["metrics_by_horizon"]["1 h (<=90km)"]["mae_railtwin"],
+                    "cov": c0m["metrics_by_horizon"]["1 h (<=90km)"]["coverage_80_percent"],
+                    "winkler": c0m["metrics_by_horizon"]["1 h (<=90km)"]["winkler_score"],
+                    "n": c0m["metrics_by_horizon"]["1 h (<=90km)"]["n_samples"],
+                }
+                if "metrics_by_horizon" in c0m
+                else None,
+                "3h": {
+                    "mae": c0m["metrics_by_horizon"]["3 h (90-250km)"]["mae_railtwin"],
+                    "cov": c0m["metrics_by_horizon"]["3 h (90-250km)"]["coverage_80_percent"],
+                    "winkler": c0m["metrics_by_horizon"]["3 h (90-250km)"]["winkler_score"],
+                    "n": c0m["metrics_by_horizon"]["3 h (90-250km)"]["n_samples"],
+                }
+                if "metrics_by_horizon" in c0m
+                else None,
+                "6h": {
+                    "mae": c0m["metrics_by_horizon"]["6 h (>250km)"]["mae_railtwin"],
+                    "cov": c0m["metrics_by_horizon"]["6 h (>250km)"]["coverage_80_percent"],
+                    "winkler": c0m["metrics_by_horizon"]["6 h (>250km)"]["winkler_score"],
+                    "n": c0m["metrics_by_horizon"]["6 h (>250km)"]["n_samples"],
+                }
+                if "metrics_by_horizon" in c0m
+                else None,
                 "note": "DIFFERENT TEST WINDOW (29,400 rows vs 25,203 — pre-spatial-fix era)",
             }
         results.append(c0_res)
@@ -249,18 +275,28 @@ def run_shootout():
 
     # --- Print comparison table ---
     print("\n" + "=" * 90)
-    print("CANDIDATE COMPARISON TABLE (Test: {} -> {}, {} rows)".format(TEST_START, TEST_END, len(test_df)))
+    print(
+        "CANDIDATE COMPARISON TABLE (Test: {} -> {}, {} rows)".format(
+            TEST_START, TEST_END, len(test_df)
+        )
+    )
     print("=" * 90)
-    print(f"{'Candidate':<22} {'Overall':>8} {'1h MAE':>8} {'1h Cov':>7} {'3h MAE':>8} {'3h Cov':>7} {'6h MAE':>8} {'6h Cov':>7} {'WallT':>7}")
+    print(
+        f"{'Candidate':<22} {'Overall':>8} {'1h MAE':>8} {'1h Cov':>7} {'3h MAE':>8} {'3h Cov':>7} {'6h MAE':>8} {'6h Cov':>7} {'WallT':>7}"
+    )
     print("-" * 90)
     for r in results:
         h1 = r.get("1h") or {}
         h3 = r.get("3h") or {}
         h6 = r.get("6h") or {}
         note = " *" if r.get("note") else ""
-        print(f"{r['label']:<22}{note} {r['overall_mae']:>7.2f}  {h1.get('mae',0):>7.2f}  {h1.get('cov',0):>6.1f}%  {h3.get('mae',0):>7.2f}  {h3.get('cov',0):>6.1f}%  {h6.get('mae',0):>7.2f}  {h6.get('cov',0):>6.1f}%  {r.get('train_info',{}).get('wall_time_s',0):>6.0f}s")
+        print(
+            f"{r['label']:<22}{note} {r['overall_mae']:>7.2f}  {h1.get('mae', 0):>7.2f}  {h1.get('cov', 0):>6.1f}%  {h3.get('mae', 0):>7.2f}  {h3.get('cov', 0):>6.1f}%  {h6.get('mae', 0):>7.2f}  {h6.get('cov', 0):>6.1f}%  {r.get('train_info', {}).get('wall_time_s', 0):>6.0f}s"
+        )
     print("=" * 90)
-    print("* C0 evaluated on DIFFERENT test window (pre-spatial-fix era, 29k rows) — for reference only")
+    print(
+        "* C0 evaluated on DIFFERENT test window (pre-spatial-fix era, 29k rows) — for reference only"
+    )
 
     # Determine winner (exclude C0 since different test window)
     candidates_eval = [r for r in results if "note" not in r and "error" not in r]
@@ -269,7 +305,9 @@ def run_shootout():
         return results
 
     winner = min(candidates_eval, key=lambda r: (r["overall_mae"], r.get("1h", {}).get("mae", 999)))
-    print(f"\n[DECISION] WINNER = {winner['label']}  (overall MAE={winner['overall_mae']:.2f}, 1h MAE={winner.get('1h',{}).get('mae',999):.2f})")
+    print(
+        f"\n[DECISION] WINNER = {winner['label']}  (overall MAE={winner['overall_mae']:.2f}, 1h MAE={winner.get('1h', {}).get('mae', 999):.2f})"
+    )
     print(f"[DECISION] Copy winner models to {ARTIFACTS_DIR}...")
 
     # Save shootout results

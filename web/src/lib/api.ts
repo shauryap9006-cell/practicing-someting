@@ -93,11 +93,17 @@ export function useConnectionState(): ConnectionInfo {
 }
 
 // -----------------------------------------------------------------------
+// TODO (SEC-004): Web app should detect user.must_change_password from /api/auth/login or /api/auth/me
+// and redirect/prompt to the password change screen before allowing further dashboard actions.
+// -----------------------------------------------------------------------
 // CORE HONEST FETCH CLIENT - NO MOCKS, NO FALLBACKS
 // -----------------------------------------------------------------------
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+
 async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
+  const url = API_BASE && path.startsWith('/') ? `${API_BASE}${path}` : path;
   try {
-    const res = await fetch(path, {
+    const res = await fetch(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',

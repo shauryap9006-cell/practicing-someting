@@ -11,38 +11,29 @@ Evaluates 9 statistical & operational promotion gates on identical locked benchm
   G8: Deterministic Vocabulary (0 collisions, <UNK> fallback)
   G9: Cryptographic Audit Trail (SHA-256 chained in SQLite audit_log with human_ack_required=1)
 """
+
 from __future__ import annotations
 
 import datetime
-import hashlib
-import json
-import os
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import numpy as np
-import pandas as pd
-from scipy import stats
 import torch
-import torch.nn as nn
+from scipy import stats
 from torch.utils.data import DataLoader
 
 from config import settings
 from data.db import Database, get_db
 from ml.evaluate_v2 import (
-    blocked_fog_holdout,
-    corridor_fog_days,
     crps_grid,
     diebold_mariano,
-    empirical_crps,
     pit_histogram,
-    randomized_pit,
     to_common_grid,
-    winkler,
 )
 from ml.model_seq import NonCrossingGRUQuantileModel
 from ml.model_v2 import ALPHAS_V2, RailTwinGRUv2
@@ -136,7 +127,9 @@ def run_champion_promotion_gate(db: Optional[Database] = None) -> Dict[str, Any]
     # Load Champion Model for Paired Evaluation
     champion_model = load_champion_model(device)
     if champion_model is not None:
-        print("[VERIFICATION] Champion v1 as-trained signature verified: called as champion_model(seq_8) matching ml/model_seq.py:307 training protocol.")
+        print(
+            "[VERIFICATION] Champion v1 as-trained signature verified: called as champion_model(seq_8) matching ml/model_seq.py:307 training protocol."
+        )
 
     # -------------------------------------------------------------
     # G6: Latency Budget Benchmark
@@ -195,11 +188,13 @@ def run_champion_promotion_gate(db: Optional[Database] = None) -> Dict[str, Any]
             if champion_model is not None:
                 seq_8 = b["seq"][:, -8:, :]
                 q10_c, q50_c, q90_c = champion_model(seq_8)
-                champ_q = torch.stack([q10_c.squeeze(-1), q50_c.squeeze(-1), q90_c.squeeze(-1)], dim=-1)
+                champ_q = torch.stack(
+                    [q10_c.squeeze(-1), q50_c.squeeze(-1), q90_c.squeeze(-1)], dim=-1
+                )
                 all_champion_qs.append(champ_q.numpy())
 
     c_qs_arr = np.concatenate(all_challenger_qs, axis=0)  # [N, 7]
-    y_arr = np.concatenate(all_targets, axis=0)           # [N]
+    y_arr = np.concatenate(all_targets, axis=0)  # [N]
     spread_arr = np.concatenate(all_spreads, axis=0)
 
     # -------------------------------------------------------------
@@ -213,7 +208,9 @@ def run_champion_promotion_gate(db: Optional[Database] = None) -> Dict[str, Any]
     diffs = c_qs_arr[:, 1:] - c_qs_arr[:, :-1]
     n_violations = int((diffs < -1e-5).sum())
     assert n_violations == 0, f"G4 Failure: {n_violations} quantile crossing violations detected!"
-    print(f"  --> G4 PASS: 0 crossing violations in {len(c_qs_arr):,} evaluation inferences (100% monotone).")
+    print(
+        f"  --> G4 PASS: 0 crossing violations in {len(c_qs_arr):,} evaluation inferences (100% monotone)."
+    )
 
     # -------------------------------------------------------------
     # G3: Quantile Coverage & Common 49-point CRPS
@@ -240,7 +237,9 @@ def run_champion_promotion_gate(db: Optional[Database] = None) -> Dict[str, Any]
     # -------------------------------------------------------------
     print("\n[GATE G5] Testing Randomized PIT Calibration (Brockwell 2007)...")
     counts, edges, p_val = pit_histogram(y_arr, c_qs_arr, ALPHAS_V2, bins=20, randomize=True)
-    print(f"  --> G5 PASS: Randomized PIT dispersion verified across 20 bins (sum={counts.sum():,}).")
+    print(
+        f"  --> G5 PASS: Randomized PIT dispersion verified across 20 bins (sum={counts.sum():,})."
+    )
 
     # -------------------------------------------------------------
     # G2: Paired Wilcoxon & Diebold-Mariano Non-Inferiority vs Champion
@@ -270,8 +269,12 @@ def run_champion_promotion_gate(db: Optional[Database] = None) -> Dict[str, Any]
         mae_delta_pct = (champion_mae - challenger_mae) / champion_mae * 100.0
         crps_delta_pct = (champion_crps - challenger_crps) / champion_crps * 100.0
 
-        print(f"  Champion Frozen Baseline MAE:     {champion_mae:.4f} min (CRPS: {champion_crps:.4f})")
-        print(f"  Challenger Ensemble MAE:          {challenger_mae:.4f} min (CRPS: {challenger_crps:.4f})")
+        print(
+            f"  Champion Frozen Baseline MAE:     {champion_mae:.4f} min (CRPS: {champion_crps:.4f})"
+        )
+        print(
+            f"  Challenger Ensemble MAE:          {challenger_mae:.4f} min (CRPS: {challenger_crps:.4f})"
+        )
         print(f"  True MAE Error Reduction:         {mae_delta_pct:+.2f}%")
         print(f"  CRPS Precision Improvement:       {crps_delta_pct:+.2f}%")
         champ_mae_fog = champion_mae
@@ -284,7 +287,9 @@ def run_champion_promotion_gate(db: Optional[Database] = None) -> Dict[str, Any]
         # Rail 1 — harness-breakage detector on EASY regime (val control rows):
         val_dates = splits.get("val_dates", [])
         if val_dates:
-            val_control_ds = build_v2_dataset(db_inst, vocab, allowed_dates=val_dates[:15], max_samples=500)
+            val_control_ds = build_v2_dataset(
+                db_inst, vocab, allowed_dates=val_dates[:15], max_samples=500
+            )
             val_loader = DataLoader(val_control_ds, batch_size=256, shuffle=False)
             val_champ_errs = []
             with torch.no_grad():
@@ -300,13 +305,19 @@ def run_champion_promotion_gate(db: Optional[Database] = None) -> Dict[str, Any]
                     f"5.90 — the evaluation path is feeding the champion garbage."
                 )
 
-        assert challenger_mae <= champion_mae + 0.30, f"G2 Failure: Challenger MAE {challenger_mae:.4f} > {champion_mae + 0.30:.4f}"
-        print(f"  --> G2 PASS: Challenger is statistically non-inferior/superior to champion on identical benchmark rows.")
+        assert challenger_mae <= champion_mae + 0.30, (
+            f"G2 Failure: Challenger MAE {challenger_mae:.4f} > {champion_mae + 0.30:.4f}"
+        )
+        print(
+            f"  --> G2 PASS: Challenger is statistically non-inferior/superior to champion on identical benchmark rows."
+        )
     else:
         champion_mae = 5.9021
         champion_crps = 4.4120
         mae_delta_pct = (champion_mae - challenger_mae) / champion_mae * 100.0
-        print(f"  Challenger MAE: {challenger_mae:.4f} min vs Baseline: {champion_mae:.4f} min (Delta: {mae_delta_pct:+.2f}%)")
+        print(
+            f"  Challenger MAE: {challenger_mae:.4f} min vs Baseline: {champion_mae:.4f} min (Delta: {mae_delta_pct:+.2f}%)"
+        )
 
     # -------------------------------------------------------------
     # G7: Memory Footprint Gate
@@ -347,6 +358,7 @@ def run_champion_promotion_gate(db: Optional[Database] = None) -> Dict[str, Any]
     }
 
     from data.audit import record_audit
+
     audit_entry = record_audit(
         db_or_cursor=db_inst,
         actor_id="champion_gate_v43",
@@ -358,7 +370,9 @@ def run_champion_promotion_gate(db: Optional[Database] = None) -> Dict[str, Any]
         after_state=gate_summary,
     )
     digest = audit_entry["row_hash"]
-    print(f"  --> G9 PASS: Cryptographic Audit SHA-256: {digest[:16]}... logged to database with human_ack_required=1 (Invariant I7).")
+    print(
+        f"  --> G9 PASS: Cryptographic Audit SHA-256: {digest[:16]}... logged to database with human_ack_required=1 (Invariant I7)."
+    )
     print("\n" + "=" * 75)
     print("CHAMPION GATE RUNNER COMPLETE: ALL 9 GATES VERIFIED!")
     print("=" * 75)

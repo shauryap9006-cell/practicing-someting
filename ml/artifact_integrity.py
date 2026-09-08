@@ -7,7 +7,6 @@ import json
 from pathlib import Path
 from typing import Iterable
 
-
 MODEL_ARTIFACT_NAMES = (
     "model_direct_q10.txt",
     "model_direct_q50.txt",
@@ -29,7 +28,9 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def verify_artifacts(artifacts_dir: Path, required_names: Iterable[str] = MODEL_ARTIFACT_NAMES) -> tuple[bool, list[str]]:
+def verify_artifacts(
+    artifacts_dir: Path, required_names: Iterable[str] = MODEL_ARTIFACT_NAMES
+) -> tuple[bool, list[str]]:
     """Verify every serving artifact against the committed inventory.
 
     The inventory is packaged with the application image. A missing inventory,

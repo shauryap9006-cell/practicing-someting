@@ -12,8 +12,8 @@ Implements:
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Tuple, Union
+
 import numpy as np
-import pandas as pd
 
 
 def enforce_quantile_order(
@@ -209,7 +209,9 @@ class MondrianCQR:
         p10_arr = np.maximum(0.0, np.asarray(raw_p10, dtype=float) - q_hat)
         p90_arr = np.asarray(raw_p90, dtype=float) + q_hat
         if raw_p50 is not None:
-            p10_arr, _, p90_arr = enforce_quantile_order(p10_arr, np.asarray(raw_p50, dtype=float), p90_arr)
+            p10_arr, _, p90_arr = enforce_quantile_order(
+                p10_arr, np.asarray(raw_p50, dtype=float), p90_arr
+            )
         return p10_arr, p90_arr, q_hat
 
 
@@ -229,19 +231,21 @@ class AdaptiveConformalInference:
 
     def update(self, y_true: float, p10_pred: float, p90_pred: float) -> float:
         """Online update step upon receiving actual arrival."""
-        covered = (p10_pred <= y_true <= p90_pred)
+        covered = p10_pred <= y_true <= p90_pred
         err_t = 0.0 if covered else 1.0
 
         # Gibbs-Candes update rule
         self.current_alpha = self.current_alpha + self.gamma * (self.target_alpha - err_t)
         self.current_alpha = max(0.01, min(0.50, self.current_alpha))
 
-        self.history.append({
-            "target_alpha": self.target_alpha,
-            "current_alpha": self.current_alpha,
-            "err": err_t,
-            "covered": float(covered),
-        })
+        self.history.append(
+            {
+                "target_alpha": self.target_alpha,
+                "current_alpha": self.current_alpha,
+                "err": err_t,
+                "covered": float(covered),
+            }
+        )
         return self.current_alpha
 
     def get_current_coverage(self) -> float:
@@ -304,7 +308,9 @@ class NormalizedCQR:
         adj_lo = np.maximum(0.0, lo - self.s_hat * sigma)
         adj_hi = hi + self.s_hat * sigma
         if q_mid is not None:
-            adj_lo, _, adj_hi = enforce_quantile_order(adj_lo, np.asarray(q_mid, dtype=float), adj_hi)
+            adj_lo, _, adj_hi = enforce_quantile_order(
+                adj_lo, np.asarray(q_mid, dtype=float), adj_hi
+            )
         return adj_lo, adj_hi
 
 
@@ -369,8 +375,9 @@ class ConformalPIDController:
         """Persists state to SQLite database."""
         if self.db is None:
             return
-        import datetime
-        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        from engine.clocks import get_clock, now_iso
+
+        now_iso = get_clock().now_iso()
         try:
             with self.db.transaction() as cur:
                 cur.execute(
@@ -400,7 +407,7 @@ class ConformalPIDController:
 
     def update(self, y_true: float, p10_pred: float, p90_pred: float) -> float:
         """Streaming PID step: updates nominal alpha and persists state (Bug 7)."""
-        covered = (p10_pred <= y_true <= p90_pred)
+        covered = p10_pred <= y_true <= p90_pred
         err_t = 0.0 if covered else 1.0
         # Error signal: negative when miscovering (lowers alpha => widens confidence band)
         e_t = self.target_alpha - err_t
@@ -412,21 +419,25 @@ class ConformalPIDController:
         self.prev_error = e_t
 
         # Update alpha (lower alpha => wider interval)
-        self.current_alpha = float(np.clip(
-            self.current_alpha + self.kp * e_t + self.ki * self.integral + self.kd * deriv,
-            self.alpha_min,
-            self.alpha_max,
-        ))
+        self.current_alpha = float(
+            np.clip(
+                self.current_alpha + self.kp * e_t + self.ki * self.integral + self.kd * deriv,
+                self.alpha_min,
+                self.alpha_max,
+            )
+        )
         self.steps += 1
 
-        self.history.append({
-            "step": self.steps,
-            "target_alpha": self.target_alpha,
-            "current_alpha": self.current_alpha,
-            "err": err_t,
-            "integral": self.integral,
-            "covered": float(covered),
-        })
+        self.history.append(
+            {
+                "step": self.steps,
+                "target_alpha": self.target_alpha,
+                "current_alpha": self.current_alpha,
+                "err": err_t,
+                "integral": self.integral,
+                "covered": float(covered),
+            }
+        )
 
         self._save_state()
         return self.current_alpha
@@ -436,4 +447,3 @@ class ConformalPIDController:
         if not self.history:
             return 1.0 - self.target_alpha
         return float(np.mean([h["covered"] for h in self.history]))
-

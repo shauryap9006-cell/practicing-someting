@@ -6,7 +6,6 @@ dynamic platform assignments, assignment locking, and safety interlock conflict 
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -15,6 +14,7 @@ from pydantic import BaseModel, Field
 from api.auth import assert_station_scope, get_current_user, require_role
 from data.audit import record_audit
 from data.db import Database, get_db
+from engine.clocks import get_clock, now_iso
 from engine.ops import PlatformManager
 from notifications.dispatcher import notify
 
@@ -64,25 +64,29 @@ def get_platform_states(
     for pf in range(1, pf_count + 1):
         if pf in existing_states:
             s = existing_states[pf]
-            states.append({
-                "station_code": stn,
-                "platform": pf,
-                "state": s["state"],
-                "occupied_by_train": s["occupied_by_train"],
-                "since": s["since"],
-                "reason": s["reason"],
-                "updated_by": s["updated_by"],
-            })
+            states.append(
+                {
+                    "station_code": stn,
+                    "platform": pf,
+                    "state": s["state"],
+                    "occupied_by_train": s["occupied_by_train"],
+                    "since": s["since"],
+                    "reason": s["reason"],
+                    "updated_by": s["updated_by"],
+                }
+            )
         else:
-            states.append({
-                "station_code": stn,
-                "platform": pf,
-                "state": "FREE",
-                "occupied_by_train": None,
-                "since": datetime.now(timezone.utc).isoformat(),
-                "reason": None,
-                "updated_by": "system",
-            })
+            states.append(
+                {
+                    "station_code": stn,
+                    "platform": pf,
+                    "state": "FREE",
+                    "occupied_by_train": None,
+                    "since": now_iso(),
+                    "reason": None,
+                    "updated_by": "system",
+                }
+            )
 
     return states
 
@@ -90,13 +94,15 @@ def get_platform_states(
 @router.post("/block", response_model=Dict[str, Any])
 def set_platform_block(
     req: PlatformBlockRequest,
-    current_user: Dict[str, Any] = Depends(require_role(["station_master", "dy_sm", "engineer", "admin"])),
+    current_user: Dict[str, Any] = Depends(
+        require_role(["station_master", "dy_sm", "engineer", "admin"])
+    ),
     db: Database = Depends(get_db),
 ):
     """Sets a platform state to BLOCKED_MAINT or OUT_OF_SERVICE or releases back to FREE."""
     stn = req.station_code.upper()
     assert_station_scope(current_user, stn)
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
 
     with db.transaction() as cur:
         cur.execute(
@@ -148,13 +154,15 @@ def set_platform_block(
 @router.post("/assign", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
 def assign_platform(
     req: PlatformAssignRequest,
-    current_user: Dict[str, Any] = Depends(require_role(["station_master", "dy_sm", "section_controller", "admin"])),
+    current_user: Dict[str, Any] = Depends(
+        require_role(["station_master", "dy_sm", "section_controller", "admin"])
+    ),
     db: Database = Depends(get_db),
 ):
     """Manually assigns or reallocates a train to a platform with conflict interlock validation."""
     stn = req.station_code.upper()
     assert_station_scope(current_user, stn)
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
 
     # 1. Conflict Check: verify platform is not blocked
     with db.transaction() as cur:
@@ -227,7 +235,11 @@ def assign_platform(
             action="PLATFORM_ASSIGNED",
             table_name="platform_assignments",
             record_id=assign_id,
-            after_state={"train_no": req.train_no, "platform": req.platform, "is_locked": req.is_locked},
+            after_state={
+                "train_no": req.train_no,
+                "platform": req.platform,
+                "is_locked": req.is_locked,
+            },
         )
 
     return {
@@ -274,7 +286,11 @@ def toggle_assignment_lock(
             after_state={"is_locked": req.is_locked},
         )
 
-    return {"id": assign_id, "is_locked": req.is_locked, "locked_by": current_user["id"] if req.is_locked else None}
+    return {
+        "id": assign_id,
+        "is_locked": req.is_locked,
+        "locked_by": current_user["id"] if req.is_locked else None,
+    }
 
 
 class ReoptimizeRequest(BaseModel):
@@ -295,7 +311,11 @@ def reoptimize_station_platforms(
     pm = PlatformManager(db)
     blocks, _ = pm.get_station_gantt(stn, target_date=target_date)
     reopt_blocks, diff = pm.reoptimize_platforms(stn, blocks)
-    swaps_count = len(diff.swaps_performed) if isinstance(diff.swaps_performed, list) else int(diff.swaps_performed)
+    swaps_count = (
+        len(diff.swaps_performed)
+        if isinstance(diff.swaps_performed, list)
+        else int(diff.swaps_performed)
+    )
     return {
         "status": "success",
         "station_code": stn,

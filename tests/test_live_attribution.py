@@ -1,12 +1,20 @@
 """Unit and Integration Tests for RailTwin-X LiveAttributionEngine (Pipeline 07, Phase A5)."""
 
 import datetime
+
 import pytest
 
 from config import settings
-from data.db import Database, get_db
-from engine.context import ContextEngine, TrainContext, WeatherContext, TSRContextItem, RakeContext, PlatformContext, SpatialCongestionContext
-from engine.attribution import LiveAttributionEngine, AttributionResult, get_attribution_engine
+from data.db import get_db
+from engine.attribution import LiveAttributionEngine, get_attribution_engine
+from engine.context import (
+    PlatformContext,
+    RakeContext,
+    SpatialCongestionContext,
+    TrainContext,
+    TSRContextItem,
+    WeatherContext,
+)
 
 
 @pytest.fixture
@@ -76,7 +84,7 @@ def test_all_7_causal_rules_evaluation(attribution_engine):
         temp_celsius=11.0,
         humidity_pct=95.0,
         precip_mm=30.0,  # Heavy rain trigger
-        fog_flag=1,      # Fog trigger
+        fog_flag=1,  # Fog trigger
         visibility_km=0.4,
         is_caution=True,
         summary="Dense Fog & Rain",

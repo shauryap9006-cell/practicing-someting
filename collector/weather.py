@@ -8,7 +8,8 @@ for corridor stations.
 from __future__ import annotations
 
 import datetime
-from typing import Dict, List, Optional
+from typing import Optional
+
 import requests
 
 from config import settings
@@ -25,9 +26,7 @@ class WeatherEngine:
         self.archive_url = settings.OPENMETEO_ARCHIVE_URL
         self.timeout = settings.REQUEST_TIMEOUT_SECONDS
 
-    def fetch_station_weather(
-        self, lat: float, lon: float, date: datetime.date
-    ) -> dict:
+    def fetch_station_weather(self, lat: float, lon: float, date: datetime.date) -> dict:
         """Fetches weather metrics for a coordinate on a given date.
 
         Returns an explicit unavailable result when the live provider cannot
@@ -60,10 +59,14 @@ class WeatherEngine:
                     avg_humid = round(sum(humids) / len(humids), 1)
                     total_precip = round(sum(precips) if precips else 0.0, 1)
 
-                    fog_flag = 1 if (
-                        min(temps) < settings.FOG_MAX_TEMP_CELSIUS
-                        and max(humids) > settings.FOG_MIN_HUMIDITY_PERCENT
-                    ) else 0
+                    fog_flag = (
+                        1
+                        if (
+                            min(temps) < settings.FOG_MAX_TEMP_CELSIUS
+                            and max(humids) > settings.FOG_MIN_HUMIDITY_PERCENT
+                        )
+                        else 0
+                    )
 
                     return {
                         "date": date_str,
@@ -77,7 +80,9 @@ class WeatherEngine:
         except Exception:
             pass
 
-        synthetic_allowed = settings.ALLOW_SYNTHETIC_FALLBACK or settings.DEFAULT_CLOCK_MODE.lower() == "replay"
+        synthetic_allowed = (
+            settings.ALLOW_SYNTHETIC_FALLBACK or settings.DEFAULT_CLOCK_MODE.lower() == "replay"
+        )
         if not synthetic_allowed:
             return {
                 "date": date_str,
@@ -138,4 +143,6 @@ if __name__ == "__main__":
     print("=== Weather Engine Demo ===")
     we = WeatherEngine()
     w = we.fetch_station_weather(28.6143, 77.2188, datetime.date.today())
-    print(f"Sample Station Weather: Temp = {w['temp']}°C, Humidity = {w['humidity']}%, Rain = {w['precip_mm']}mm, Fog = {w['fog_flag']}")
+    print(
+        f"Sample Station Weather: Temp = {w['temp']}°C, Humidity = {w['humidity']}%, Rain = {w['precip_mm']}mm, Fog = {w['fog_flag']}"
+    )

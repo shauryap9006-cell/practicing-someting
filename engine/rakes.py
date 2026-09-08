@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import datetime
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from data.db import Database, get_db
 from engine.clocks import get_clock
@@ -107,7 +107,9 @@ class RakeResolver:
             in_actual_arr = in_ev["actual_arr"] if in_ev and in_ev["actual_arr"] else "11:30"
             in_delay = int(in_ev["delay_arr_min"]) if in_ev else 90
 
-            out_sched_dep = out_route["sched_dep"] if out_route and out_route["sched_dep"] else "14:00"
+            out_sched_dep = (
+                out_route["sched_dep"] if out_route and out_route["sched_dep"] else "14:00"
+            )
 
             # Parse times to calculate projected departure
             y, m, d = [int(x) for x in target_date.split("-")]
@@ -122,7 +124,7 @@ class RakeResolver:
             dep_delay_min = max(0, int((earliest_dep_dt - sched_dep_dt).total_seconds() / 60))
             projected_dep_str = earliest_dep_dt.strftime("%H:%M")
 
-            is_doomed = (dep_delay_min >= 15)
+            is_doomed = dep_delay_min >= 15
             official_ntes = "ON TIME" if is_doomed else "ON TIME"  # NTES naive assumption
 
             results.append(
@@ -151,4 +153,6 @@ if __name__ == "__main__":
     doomed = rr.evaluate_all_rakes()
     print(f"Evaluated {len(doomed)} rake links.")
     for d in doomed[:3]:
-        print(f"  Incoming #{d.incoming_train} (+{d.incoming_delay_min}m) -> Outgoing #{d.outgoing_train}: Projected Dep {d.outgoing_projected_dep} (+{d.projected_dep_delay_min}m delay). Doomed: {d.is_doomed}")
+        print(
+            f"  Incoming #{d.incoming_train} (+{d.incoming_delay_min}m) -> Outgoing #{d.outgoing_train}: Projected Dep {d.outgoing_projected_dep} (+{d.projected_dep_delay_min}m delay). Doomed: {d.is_doomed}"
+        )

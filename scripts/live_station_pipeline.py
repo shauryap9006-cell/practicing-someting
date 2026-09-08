@@ -11,11 +11,10 @@ from __future__ import annotations
 
 import argparse
 import datetime
-import json
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 if hasattr(sys.stdout, "reconfigure"):
     try:
@@ -26,14 +25,13 @@ if hasattr(sys.stdout, "reconfigure"):
 # Add project root to sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from config import settings
+from api.brain import BrainOrchestrator
+from collector.collect import DataCollector
 from data.db import Database, get_db
 from engine.clocks import get_clock
 from engine.conflicts import ConflictScanner
 from engine.ops import CrewDutyEngine, PlatformManager
-from api.brain import BrainOrchestrator
 from notifications import AlertEvent, get_dispatcher
-from collector.collect import DataCollector
 
 
 class LiveStationPipeline:
@@ -72,7 +70,9 @@ class LiveStationPipeline:
 
         positions = {}
         for r in rows:
-            delay = int(r["delay_arr_min"] if r["delay_arr_min"] is not None else (r["delay_dep_min"] or 0))
+            delay = int(
+                r["delay_arr_min"] if r["delay_arr_min"] is not None else (r["delay_dep_min"] or 0)
+            )
             positions[r["train_no"]] = {
                 "train_no": r["train_no"],
                 "train_name": r["train_name"],
@@ -112,25 +112,35 @@ class LiveStationPipeline:
                 self._train_states[t_no] = pos
             elif prev["station_code"] != pos["station_code"] or prev["seq"] != pos["seq"]:
                 # STATION CHANGE DETECTED
-                station_changes.append({
-                    "train_no": t_no,
-                    "train_name": pos["train_name"],
-                    "from_station": prev["station_code"],
-                    "to_station": pos["station_code"],
-                    "delay_min": pos["delay_min"],
-                })
+                station_changes.append(
+                    {
+                        "train_no": t_no,
+                        "train_name": pos["train_name"],
+                        "from_station": prev["station_code"],
+                        "to_station": pos["station_code"],
+                        "delay_min": pos["delay_min"],
+                    }
+                )
                 self._train_states[t_no] = pos
 
-        print(f"[2/4] Active Trains Tracked: {len(current_positions)} | Station Transitions Detected: {len(station_changes)}")
+        print(
+            f"[2/4] Active Trains Tracked: {len(current_positions)} | Station Transitions Detected: {len(station_changes)}"
+        )
         for chg in station_changes[:5]:
-            print(f"  ⚡ Train #{chg['train_no']} ({chg['train_name']}): {chg['from_station']} ➔ {chg['to_station']} (Delay: +{chg['delay_min']}m)")
+            print(
+                f"  ⚡ Train #{chg['train_no']} ({chg['train_name']}): {chg['from_station']} ➔ {chg['to_station']} (Delay: +{chg['delay_min']}m)"
+            )
 
         # 3. Spatial Conflict & Brain Advisory Evaluation on Key Corridor Stations
         print("[3/4] Running Conflict Scans & Brain Advisory Evaluation...")
         all_dispatches = []
 
         # Target critical high-priority trains or trains that just transitioned
-        eval_trains = [c["train_no"] for c in station_changes] if station_changes else list(current_positions.keys())[:10]
+        eval_trains = (
+            [c["train_no"] for c in station_changes]
+            if station_changes
+            else list(current_positions.keys())[:10]
+        )
 
         for t_no in eval_trains:
             pos = current_positions.get(t_no, {})
@@ -143,7 +153,9 @@ class LiveStationPipeline:
             if high_confs:
                 print(f"  🚨 Detected {len(high_confs)} conflict(s) for #{t_no} at {stn}!")
                 for c in high_confs:
-                    print(f"     • [{c.severity}] {c.conflict_type} w/ #{c.with_train} at {c.station_code}: {c.reason}")
+                    print(
+                        f"     • [{c.severity}] {c.conflict_type} w/ #{c.with_train} at {c.station_code}: {c.reason}"
+                    )
                     # Dispatch to on-duty controllers & pointsmen (9580873724, 9569890921)
                     disp_res = self.dispatcher.dispatch(
                         AlertEvent(
@@ -155,7 +167,10 @@ class LiveStationPipeline:
                             train_no=t_no,
                             roles=["controller", "pointsman", "loco_pilot"],
                             ack_id=c.conflict_id,
-                            metadata={"with_train": c.with_train, "suggested_action": c.suggested_action},
+                            metadata={
+                                "with_train": c.with_train,
+                                "suggested_action": c.suggested_action,
+                            },
                         )
                     )
                     all_dispatches.append(disp_res)
@@ -181,7 +196,9 @@ class LiveStationPipeline:
     def start_loop(self, interval_seconds: int = 300, refresh_collector: bool = True):
         """Runs the continuous background monitoring loop every 5 minutes."""
         print("=" * 80)
-        print(f"🚆 RAILTWIN-X LIVE PIPELINE WORKER STARTED (Interval: {interval_seconds}s / {interval_seconds//60} min)")
+        print(
+            f"🚆 RAILTWIN-X LIVE PIPELINE WORKER STARTED (Interval: {interval_seconds}s / {interval_seconds // 60} min)"
+        )
         print("   Monitoring station changes & dispatching alerts to:")
         print("   • Controller: 9580873724")
         print("   • Staff / Crew / Pointsman: 9569890921")
@@ -191,7 +208,9 @@ class LiveStationPipeline:
         iteration = 1
         try:
             while True:
-                print(f"\n>>> Cycle #{iteration} starting at {datetime.datetime.now().strftime('%H:%M:%S IST')}")
+                print(
+                    f"\n>>> Cycle #{iteration} starting at {datetime.datetime.now().strftime('%H:%M:%S IST')}"
+                )
                 self.run_cycle(refresh_collector=(refresh_collector and iteration > 1))
                 print(f"⏳ Sleeping {interval_seconds}s until next refresh cycle...")
                 time.sleep(interval_seconds)
@@ -201,8 +220,15 @@ class LiveStationPipeline:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="RailTwin-X Live Station-Change & Accuracy Pipeline")
-    parser.add_argument("--interval", type=int, default=300, help="Refresh interval in seconds (default 300s / 5 min)")
+    parser = argparse.ArgumentParser(
+        description="RailTwin-X Live Station-Change & Accuracy Pipeline"
+    )
+    parser.add_argument(
+        "--interval",
+        type=int,
+        default=300,
+        help="Refresh interval in seconds (default 300s / 5 min)",
+    )
     parser.add_argument("--once", action="store_true", help="Run a single cycle and exit")
     parser.add_argument("--no-collect", action="store_true", help="Skip collector external poll")
     args = parser.parse_args()

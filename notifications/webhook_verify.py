@@ -8,12 +8,11 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-import time
 import threading
+import time
 from typing import Mapping, Optional
 
 from config import settings
-
 
 _SEEN_SIGNATURES: dict[str, float] = {}
 _SEEN_LOCK = threading.Lock()
@@ -54,7 +53,9 @@ def verify_hmac(
     else:
         expected_sig = signature_header.strip()
 
-    timestamp = normalized_headers.get("x-webhook-timestamp") or normalized_headers.get("x-openwa-timestamp")
+    timestamp = normalized_headers.get("x-webhook-timestamp") or normalized_headers.get(
+        "x-openwa-timestamp"
+    )
     signed_body = body
     if require_timestamp:
         if not timestamp:
@@ -81,7 +82,9 @@ def verify_hmac(
         replay_key = f"{timestamp}:{expected_sig}"
         current_time = time.time() if now is None else now
         with _SEEN_LOCK:
-            expired = [key for key, expires_at in _SEEN_SIGNATURES.items() if expires_at <= current_time]
+            expired = [
+                key for key, expires_at in _SEEN_SIGNATURES.items() if expires_at <= current_time
+            ]
             for key in expired:
                 _SEEN_SIGNATURES.pop(key, None)
             if replay_key in _SEEN_SIGNATURES:

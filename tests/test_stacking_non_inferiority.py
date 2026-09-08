@@ -1,8 +1,8 @@
 """Unit and statistical tests for NNLS Stacking & Non-Inferiority Gate (Task T7)."""
+
 from __future__ import annotations
 
 import numpy as np
-import pytest
 from scipy import stats
 
 from ml.ensemble import fit_stacking_weights
@@ -54,7 +54,9 @@ def test_nnls_stacking_non_inferiority():
     mae_gru = np.abs(y_true - gru_preds).mean()
     min_comp_mae = min(mae_gbm, mae_gru)
 
-    assert mae_stack <= min_comp_mae + 0.1, f"Stacking violated non-inferiority: {mae_stack} > {min_comp_mae}"
+    assert mae_stack <= min_comp_mae + 0.1, (
+        f"Stacking violated non-inferiority: {mae_stack} > {min_comp_mae}"
+    )
 
 
 def test_wilcoxon_non_inferiority_gate():

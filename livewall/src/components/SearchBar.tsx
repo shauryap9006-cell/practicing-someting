@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import type { LivePosition, NetworkState, StationMeta } from '../lib/types';
+import type { LivePosition, NetworkState, StationMeta } from '@railtwin/shared-types';
 import { NATIONAL_CORRIDORS } from '../lib/corridors';
 
 export interface CorridorDef {

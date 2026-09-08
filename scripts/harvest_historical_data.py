@@ -1,4 +1,4 @@
-﻿"""RailTwin-X Historical Multi-Year Corridor Data Harvester.
+"""RailTwin-X Historical Multi-Year Corridor Data Harvester.
 
 Scales historical training datasets from short sample spans to 365+ days (full multi-season year),
 capturing winter fog deceleration waves, monsoon speed restrictions, peak festival rush surges,
@@ -13,11 +13,10 @@ from __future__ import annotations
 import argparse
 import datetime
 import json
-import os
 import random
 import sys
 from pathlib import Path
-from typing import Optional, List, Dict, Tuple
+from typing import Dict, List, Optional
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 if str(BASE_DIR) not in sys.path:
@@ -69,7 +68,9 @@ def harvest_historical_events_and_weather(
     # 1. Harvest & Sync Weather across all stations for every day in span
     weather_rows = []
     if sync_weather:
-        print(f"[INFO] Generating synchronized multi-season weather for {len(stations)} stations across {num_days} days...")
+        print(
+            f"[INFO] Generating synchronized multi-season weather for {len(stations)} stations across {num_days} days..."
+        )
         curr_date = start_date
         while curr_date < end_date:
             date_str = curr_date.strftime("%Y-%m-%d")
@@ -80,17 +81,17 @@ def harvest_historical_events_and_weather(
                 base_humidity = 88.0
                 fog_prob = 0.55
                 rain_prob = 0.08
-            elif month in (11, 2): # Transition / Moderate Winter
+            elif month in (11, 2):  # Transition / Moderate Winter
                 base_temp_min, base_temp_max = 12.0, 24.0
                 base_humidity = 78.0
                 fog_prob = 0.25
                 rain_prob = 0.05
-            elif month in (7, 8, 9): # Monsoon
+            elif month in (7, 8, 9):  # Monsoon
                 base_temp_min, base_temp_max = 26.0, 34.0
                 base_humidity = 85.0
                 fog_prob = 0.0
                 rain_prob = 0.45
-            else: # Summer / Dry Pre-monsoon
+            else:  # Summer / Dry Pre-monsoon
                 base_temp_min, base_temp_max = 28.0, 42.0
                 base_humidity = 40.0
                 fog_prob = 0.0
@@ -101,16 +102,28 @@ def harvest_historical_events_and_weather(
                 humidity = round(min(99.0, max(20.0, random.gauss(base_humidity, 8.0))), 1)
                 precip = round(random.expovariate(0.12) if random.random() < rain_prob else 0.0, 1)
 
-                is_fog = 1 if (random.random() < fog_prob or (temp <= settings.FOG_MAX_TEMP_CELSIUS and humidity >= settings.FOG_MIN_HUMIDITY_PERCENT)) else 0
+                is_fog = (
+                    1
+                    if (
+                        random.random() < fog_prob
+                        or (
+                            temp <= settings.FOG_MAX_TEMP_CELSIUS
+                            and humidity >= settings.FOG_MIN_HUMIDITY_PERCENT
+                        )
+                    )
+                    else 0
+                )
 
-                weather_rows.append((
-                    date_str,
-                    stn["code"],
-                    temp,
-                    precip,
-                    humidity,
-                    is_fog,
-                ))
+                weather_rows.append(
+                    (
+                        date_str,
+                        stn["code"],
+                        temp,
+                        precip,
+                        humidity,
+                        is_fog,
+                    )
+                )
 
             curr_date += datetime.timedelta(days=1)
 
@@ -125,12 +138,16 @@ def harvest_historical_events_and_weather(
         print(f"[SUCCESS] Upserted {len(weather_rows):,} weather observations.")
 
     # 2. Harvest Historical Station Events
-    print(f"[INFO] Generating high-resolution station events for 150 corridor trains across {num_days} days...")
+    print(
+        f"[INFO] Generating high-resolution station events for 150 corridor trains across {num_days} days..."
+    )
     with target_db.transaction() as cur:
         cur.execute("SELECT train_no, priority, class FROM trains ORDER BY priority ASC")
         trains = cur.fetchall()
 
-        cur.execute("SELECT train_no, seq, station_code, sched_arr, sched_dep, halt_min, distance_km FROM route_stations ORDER BY train_no, seq")
+        cur.execute(
+            "SELECT train_no, seq, station_code, sched_arr, sched_dep, halt_min, distance_km FROM route_stations ORDER BY train_no, seq"
+        )
         all_routes = cur.fetchall()
 
     routes_by_train: Dict[str, List[dict]] = {}
@@ -146,11 +163,13 @@ def harvest_historical_events_and_weather(
     while curr_date < end_date:
         date_str = curr_date.strftime("%Y-%m-%d")
         month = curr_date.month
-        is_holiday = (date_str in holidays)
-        is_winter = (month in (12, 1, 2))
-        is_monsoon = (month in (7, 8))
+        is_holiday = date_str in holidays
+        is_winter = month in (12, 1, 2)
+        is_monsoon = month in (7, 8)
 
-        corridor_congestion_mult = 1.6 if is_holiday else (1.3 if is_winter else (1.2 if is_monsoon else 1.0))
+        corridor_congestion_mult = (
+            1.6 if is_holiday else (1.3 if is_winter else (1.2 if is_monsoon else 1.0))
+        )
 
         for t in trains:
             t_no = t["train_no"]
@@ -191,7 +210,9 @@ def harvest_historical_events_and_weather(
                 actual_arr = None
                 if sched_arr:
                     sh, sm = [int(x) for x in sched_arr.split(":")]
-                    act_dt = datetime.datetime(curr_date.year, curr_date.month, curr_date.day, sh, sm) + datetime.timedelta(minutes=current_delay)
+                    act_dt = datetime.datetime(
+                        curr_date.year, curr_date.month, curr_date.day, sh, sm
+                    ) + datetime.timedelta(minutes=current_delay)
                     actual_arr = act_dt.strftime("%H:%M")
 
                 delay_arr = current_delay
@@ -207,25 +228,29 @@ def harvest_historical_events_and_weather(
                 actual_dep = None
                 if sched_dep:
                     sh, sm = [int(x) for x in sched_dep.split(":")]
-                    act_dep_dt = datetime.datetime(curr_date.year, curr_date.month, curr_date.day, sh, sm) + datetime.timedelta(minutes=current_delay)
+                    act_dep_dt = datetime.datetime(
+                        curr_date.year, curr_date.month, curr_date.day, sh, sm
+                    ) + datetime.timedelta(minutes=current_delay)
                     actual_dep = act_dep_dt.strftime("%H:%M")
 
                 delay_dep = current_delay
                 collected_at = f"{date_str}T12:00:00+05:30"
 
-                event_rows.append((
-                    t_no,
-                    date_str,
-                    seq,
-                    stn,
-                    sched_arr,
-                    actual_arr,
-                    sched_dep,
-                    actual_dep,
-                    delay_arr,
-                    delay_dep,
-                    collected_at,
-                ))
+                event_rows.append(
+                    (
+                        t_no,
+                        date_str,
+                        seq,
+                        stn,
+                        sched_arr,
+                        actual_arr,
+                        sched_dep,
+                        actual_dep,
+                        delay_arr,
+                        delay_dep,
+                        collected_at,
+                    )
+                )
 
         curr_date += datetime.timedelta(days=1)
 
@@ -233,7 +258,7 @@ def harvest_historical_events_and_weather(
     chunk_size = 50000
     with target_db.transaction() as cur:
         for i in range(0, len(event_rows), chunk_size):
-            chunk = event_rows[i:i + chunk_size]
+            chunk = event_rows[i : i + chunk_size]
             cur.executemany(
                 """
                 INSERT OR REPLACE INTO station_events (
@@ -244,7 +269,9 @@ def harvest_historical_events_and_weather(
                 chunk,
             )
 
-    print(f"[SUCCESS] Successfully harvested {len(event_rows):,} station events across {num_days} days.")
+    print(
+        f"[SUCCESS] Successfully harvested {len(event_rows):,} station events across {num_days} days."
+    )
     return {
         "days_harvested": num_days,
         "start_date": str(start_date),
@@ -255,12 +282,18 @@ def harvest_historical_events_and_weather(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Harvest multi-year historical railway and weather dataset.")
-    parser.add_argument("--days", type=int, default=365, help="Number of historical days to harvest (default: 365)")
+    parser = argparse.ArgumentParser(
+        description="Harvest multi-year historical railway and weather dataset."
+    )
+    parser.add_argument(
+        "--days", type=int, default=365, help="Number of historical days to harvest (default: 365)"
+    )
     parser.add_argument("--no-weather", action="store_true", help="Skip weather synchronization")
     args = parser.parse_args()
 
-    summary = harvest_historical_events_and_weather(num_days=args.days, sync_weather=not args.no_weather)
+    summary = harvest_historical_events_and_weather(
+        num_days=args.days, sync_weather=not args.no_weather
+    )
     print("=== Historical Harvester Complete ===")
     for k, v in summary.items():
         print(f"  {k}: {v}")

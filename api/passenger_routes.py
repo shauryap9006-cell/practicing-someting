@@ -5,31 +5,30 @@ from __future__ import annotations
 
 import asyncio
 import json
-import math
-import re
 import time
-from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 
-from config import settings
-from data.db import Database, get_db
-from engine.clocks import get_clock
-from engine.attribution import LiveAttributionEngine, get_attribution_engine, CauseCategory
-from engine.live_tracker import LivePositionTracker, get_live_tracker
 from api.predictor import get_predictor_service
+from data.db import Database, get_db
+from engine.attribution import LiveAttributionEngine, get_attribution_engine
+from engine.clocks import get_clock
+from engine.live_tracker import LivePositionTracker, get_live_tracker
 
 router = APIRouter(prefix="/v1/passenger", tags=["Passenger Train Tracker"])
 
 _SNAPSHOT_CACHE: Dict[str, Tuple[Dict[str, Any], float]] = {}
 
+
 def _get_tracker_dep() -> LivePositionTracker:
     return get_live_tracker()
 
+
 def _get_attribution_dep() -> LiveAttributionEngine:
     return get_attribution_engine()
+
 
 # Comprehensive Hindi mappings for stations
 STATION_HINDI: Dict[str, str] = {
@@ -200,23 +199,39 @@ async def stream_passenger_train(
             return
 
         if route_stops and len(route_stops) >= 2:
-            curr_code = getattr(pos, "current_station_code", None) or (lp_row["current_station_code"] if lp_row else None)
-            next_code = getattr(pos, "next_station_code", None) or (lp_row["next_station_code"] if lp_row else None)
+            curr_code = getattr(pos, "current_station_code", None) or (
+                lp_row["current_station_code"] if lp_row else None
+            )
+            next_code = getattr(pos, "next_station_code", None) or (
+                lp_row["next_station_code"] if lp_row else None
+            )
 
-            curr_match = next((s for s in route_stops if s["station_code"] == curr_code), route_stops[0])
-            next_match = next((s for s in route_stops if s["station_code"] == next_code), (route_stops[1] if len(route_stops) > 1 else route_stops[0]))
+            curr_match = next(
+                (s for s in route_stops if s["station_code"] == curr_code), route_stops[0]
+            )
+            next_match = next(
+                (s for s in route_stops if s["station_code"] == next_code),
+                (route_stops[1] if len(route_stops) > 1 else route_stops[0]),
+            )
 
-            base_km = float(curr_match["distance_km"] or 0.0) + (10.0 if curr_match != next_match else 0.0)
-            base_speed = float(getattr(pos, "speed_kmh", 0) or (lp_row["speed_kmh"] if lp_row else 85.0)) or 85.0
+            base_km = float(curr_match["distance_km"] or 0.0) + (
+                10.0 if curr_match != next_match else 0.0
+            )
+            base_speed = (
+                float(getattr(pos, "speed_kmh", 0) or (lp_row["speed_kmh"] if lp_row else 85.0))
+                or 85.0
+            )
             next_halt_km = float(next_match["distance_km"] or (base_km + 45.0))
             next_halt_code = next_match["station_code"]
             next_halt_name = next_match["station_name"]
-            delay_val = float(getattr(pos, "delay_minutes", 0) or (lp_row["delay_minutes"] if lp_row else 0))
+            delay_val = float(
+                getattr(pos, "delay_minutes", 0) or (lp_row["delay_minutes"] if lp_row else 0)
+            )
         else:
             yield f"data: {json.dumps({'status': 'unavailable', 'reason': 'no live source', 'train_no': target_train_no})}\n\n"
             return
 
-        is_completed = (getattr(pos, "status", "") == "TERMINATED")
+        is_completed = getattr(pos, "status", "") == "TERMINATED"
 
         seq = 0
         loop = asyncio.get_event_loop()
@@ -291,7 +306,13 @@ def search_trains(
     if raw_query is None or not raw_query.strip():
         raise HTTPException(
             status_code=422,
-            detail=[{"loc": ["query", "q"], "msg": "Field required: specify 'q' or 'query'", "type": "value_error.missing"}],
+            detail=[
+                {
+                    "loc": ["query", "q"],
+                    "msg": "Field required: specify 'q' or 'query'",
+                    "type": "value_error.missing",
+                }
+            ],
         )
     clean_q = raw_query.strip()
     results: List[Dict[str, Any]] = []
@@ -300,19 +321,21 @@ def search_trains(
         pnr_status = resolve_pnr_status(clean_q, db)
         if pnr_status.get("status") in ("valid", "completed"):
             train_no = pnr_status["train_no"]
-            results.append({
-                "train_no": train_no,
-                "name": pnr_status["train_name"],
-                "name_hi": pnr_status.get("train_name_hi", pnr_status["train_name"]),
-                "type": "PNR Journey",
-                "runs_today": True,
-                "route_short": f"{pnr_status['boarding']['code']} → {pnr_status['destination']['code']}",
-                "next_departure": f"dep {pnr_status.get('boarding', {}).get('sched_dep', '16:50')} today",
-                "status_lamp": "amber",
-                "delay_min": 25,
-                "is_pnr": True,
-                "pnr_no": clean_q,
-            })
+            results.append(
+                {
+                    "train_no": train_no,
+                    "name": pnr_status["train_name"],
+                    "name_hi": pnr_status.get("train_name_hi", pnr_status["train_name"]),
+                    "type": "PNR Journey",
+                    "runs_today": True,
+                    "route_short": f"{pnr_status['boarding']['code']} → {pnr_status['destination']['code']}",
+                    "next_departure": f"dep {pnr_status.get('boarding', {}).get('sched_dep', '16:50')} today",
+                    "status_lamp": "amber",
+                    "delay_min": 25,
+                    "is_pnr": True,
+                    "pnr_no": clean_q,
+                }
+            )
             return results
 
     query_like = f"%{clean_q}%"
@@ -357,21 +380,25 @@ def search_trains(
                 (t_no,),
             )
             live_row = cur.fetchone()
-            delay_min = int(live_row["delay_minutes"]) if live_row else (25 if t_no == "12003" else 0)
+            delay_min = (
+                int(live_row["delay_minutes"]) if live_row else (25 if t_no == "12003" else 0)
+            )
             lamp = _lamp_from_delay(delay_min)
 
-            results.append({
-                "train_no": t_no,
-                "name": t_name,
-                "name_hi": _get_train_hi(t_no, t_name),
-                "type": (t_class or "Express").upper(),
-                "runs_today": True,
-                "route_short": f"{origin} → {dest}",
-                "next_departure": f"dep {first_dep} today",
-                "status_lamp": lamp,
-                "delay_min": delay_min,
-                "is_pnr": False,
-            })
+            results.append(
+                {
+                    "train_no": t_no,
+                    "name": t_name,
+                    "name_hi": _get_train_hi(t_no, t_name),
+                    "type": (t_class or "Express").upper(),
+                    "runs_today": True,
+                    "route_short": f"{origin} → {dest}",
+                    "next_departure": f"dep {first_dep} today",
+                    "status_lamp": lamp,
+                    "delay_min": delay_min,
+                    "is_pnr": False,
+                }
+            )
 
     return results
 
@@ -410,19 +437,23 @@ def get_popular_trains(
                 (t_no,),
             )
             live_row = cur.fetchone()
-            delay_min = int(live_row["delay_minutes"]) if live_row else (25 if t_no == "12003" else 0)
+            delay_min = (
+                int(live_row["delay_minutes"]) if live_row else (25 if t_no == "12003" else 0)
+            )
 
-            results.append({
-                "train_no": t_no,
-                "name": t_row["name"],
-                "name_hi": _get_train_hi(t_no, t_row["name"]),
-                "type": (t_row["class"] or "Superfast").upper(),
-                "route_short": f"{origin} → {dest}",
-                "next_departure": f"dep {first_dep} today",
-                "status_lamp": _lamp_from_delay(delay_min),
-                "runs_today": True,
-                "delay_min": delay_min,
-            })
+            results.append(
+                {
+                    "train_no": t_no,
+                    "name": t_row["name"],
+                    "name_hi": _get_train_hi(t_no, t_row["name"]),
+                    "type": (t_row["class"] or "Superfast").upper(),
+                    "route_short": f"{origin} → {dest}",
+                    "next_departure": f"dep {first_dep} today",
+                    "status_lamp": _lamp_from_delay(delay_min),
+                    "runs_today": True,
+                    "delay_min": delay_min,
+                }
+            )
 
     return results
 
@@ -444,7 +475,9 @@ def resolve_pnr_status(pnr: str, db: Database) -> Dict[str, Any]:
     is_completed = clean_pnr.endswith("99") or clean_pnr.startswith("98")
 
     with db.transaction() as cur:
-        cur.execute("SELECT train_no, name, class FROM trains WHERE train_no = ?", (selected_train_no,))
+        cur.execute(
+            "SELECT train_no, name, class FROM trains WHERE train_no = ?", (selected_train_no,)
+        )
         train_row = cur.fetchone()
         train_name = train_row["name"] if train_row else "Swarna Shatabdi"
 
@@ -505,11 +538,15 @@ def get_pnr(
     """Resolves passenger PNR status."""
     clean = pnr.strip().replace("-", "")
     if not clean.isdigit() or len(clean) != 10:
-        raise HTTPException(status_code=400, detail={"status": "invalid", "message": "PNR must be 10 digits"})
+        raise HTTPException(
+            status_code=400, detail={"status": "invalid", "message": "PNR must be 10 digits"}
+        )
 
     res = resolve_pnr_status(clean, db)
     if res.get("status") == "not_found":
-        raise HTTPException(status_code=404, detail={"status": "not_found", "message": "PNR not found"})
+        raise HTTPException(
+            status_code=404, detail={"status": "not_found", "message": "PNR not found"}
+        )
     return res
 
 
@@ -538,7 +575,13 @@ def get_passenger_snapshot(
                 target_stop_code = pnr_resolved["boarding"]["code"]
 
     if not target_train_no:
-        raise HTTPException(status_code=400, detail={"code": "MISSING_TRAIN", "message": "Either 'train' or 'pnr' query param is required."})
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "MISSING_TRAIN",
+                "message": "Either 'train' or 'pnr' query param is required.",
+            },
+        )
 
     target_train_no = target_train_no.strip()
 
@@ -550,10 +593,18 @@ def get_passenger_snapshot(
             return cached_resp
 
     with db.transaction() as cur:
-        cur.execute("SELECT train_no, name, class FROM trains WHERE train_no = ?", (target_train_no,))
+        cur.execute(
+            "SELECT train_no, name, class FROM trains WHERE train_no = ?", (target_train_no,)
+        )
         train_row = cur.fetchone()
         if not train_row:
-            raise HTTPException(status_code=404, detail={"code": "TRAIN_NOT_FOUND", "message": f"Train '{target_train_no}' not found in timetable registry."})
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "code": "TRAIN_NOT_FOUND",
+                    "message": f"Train '{target_train_no}' not found in timetable registry.",
+                },
+            )
 
         cur.execute(
             """
@@ -569,22 +620,35 @@ def get_passenger_snapshot(
         stops_rows = cur.fetchall()
 
     if not stops_rows:
-        raise HTTPException(status_code=404, detail={"code": "NO_ROUTE", "message": f"No route stops found for train {target_train_no}."})
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "code": "NO_ROUTE",
+                "message": f"No route stops found for train {target_train_no}.",
+            },
+        )
 
     train_name = train_row["name"]
     train_class = train_row["class"]
 
     is_not_running_today = target_train_no == "12040"
-    is_completed_journey = (pnr_resolved and pnr_resolved.get("run_status") == "COMPLETED") or target_train_no == "12004"
+    is_completed_journey = (
+        pnr_resolved and pnr_resolved.get("run_status") == "COMPLETED"
+    ) or target_train_no == "12004"
 
     pos = tracker.get_live_position(target_train_no, clock.today_str())
     if pos and "delay_minutes" in pos:
         raw_delay = int(pos["delay_minutes"])
     else:
         with db.transaction() as cur:
-            cur.execute("SELECT delay_minutes, speed_kmh FROM live_positions WHERE train_no = ? LIMIT 1", (target_train_no,))
+            cur.execute(
+                "SELECT delay_minutes, speed_kmh FROM live_positions WHERE train_no = ? LIMIT 1",
+                (target_train_no,),
+            )
             lp = cur.fetchone()
-            raw_delay = int(lp["delay_minutes"]) if lp else (25 if target_train_no == "12003" else 0)
+            raw_delay = (
+                int(lp["delay_minutes"]) if lp else (25 if target_train_no == "12003" else 0)
+            )
 
     autopsy = attribution_engine.get_why_late_summary(target_train_no, clock.today_str())
     autopsy_delay = int(autopsy.get("total_delay_minutes", raw_delay))
@@ -594,7 +658,11 @@ def get_passenger_snapshot(
     label_en, label_hi = _label_from_delay(delay_min)
 
     total_km = float(stops_rows[-1]["distance_km"]) if stops_rows else 440.0
-    default_stop_code = target_stop_code or ("CNB" if any(s["station_code"] == "CNB" for s in stops_rows) else stops_rows[len(stops_rows)//2]["station_code"])
+    default_stop_code = target_stop_code or (
+        "CNB"
+        if any(s["station_code"] == "CNB" for s in stops_rows)
+        else stops_rows[len(stops_rows) // 2]["station_code"]
+    )
 
     current_km = 187.0 if target_train_no == "12003" else (total_km * 0.45)
     speed_kmh = 112.0 if target_train_no == "12003" else (85.0 if not is_completed_journey else 0.0)
@@ -636,7 +704,9 @@ def get_passenger_snapshot(
 
         platform_num = platform_map.get(code)
 
-        stop_status = "passed" if is_passed else ("current" if abs(dist - current_km) <= 15 else "upcoming")
+        stop_status = (
+            "passed" if is_passed else ("current" if abs(dist - current_km) <= 15 else "upcoming")
+        )
         if is_completed_journey:
             stop_status = "passed"
 
@@ -713,17 +783,30 @@ def get_passenger_snapshot(
     p10_time_str = _add_minutes_to_time(sel_sched, p10_min)
     p90_time_str = _add_minutes_to_time(sel_sched, p90_min)
 
-    is_boarding_pnr = bool(pnr_resolved and pnr_resolved.get("boarding", {}).get("code") == selected_stop_obj["station_code"])
+    is_boarding_pnr = bool(
+        pnr_resolved
+        and pnr_resolved.get("boarding", {}).get("code") == selected_stop_obj["station_code"]
+    )
 
     next_code = next_stop_obj["station_code"] if next_stop_obj else None
     position_strip = {
         "total_km": total_km,
         "current_km": total_km if is_completed_journey else current_km,
-        "progress_pct": 100.0 if is_completed_journey else round((current_km / max(1.0, total_km)) * 100, 1),
-        "next_stop_summary": f"Next Stop: {next_stop_obj['station_name']} ({next_stop_obj['station_code']}) in ~{next_stop_obj['eta_minutes']}m · {next_stop_obj['km_away']} km away" if next_stop_obj else None,
-        "next_stop_summary_hi": f"अगला स्टेशन: {next_stop_obj['station_name_hi']} (~{next_stop_obj['eta_minutes']} मिनट में · {next_stop_obj['km_away']} किमी)" if next_stop_obj else None,
-        "prev_stop_name": prev_stop_obj["station_name"] if prev_stop_obj else stops_rows[0]["station_name"],
-        "prev_stop_name_hi": prev_stop_obj["station_name_hi"] if prev_stop_obj else _get_stn_hi(stops_rows[0]["station_code"], stops_rows[0]["station_name"]),
+        "progress_pct": 100.0
+        if is_completed_journey
+        else round((current_km / max(1.0, total_km)) * 100, 1),
+        "next_stop_summary": f"Next Stop: {next_stop_obj['station_name']} ({next_stop_obj['station_code']}) in ~{next_stop_obj['eta_minutes']}m · {next_stop_obj['km_away']} km away"
+        if next_stop_obj
+        else None,
+        "next_stop_summary_hi": f"अगला स्टेशन: {next_stop_obj['station_name_hi']} (~{next_stop_obj['eta_minutes']} मिनट में · {next_stop_obj['km_away']} किमी)"
+        if next_stop_obj
+        else None,
+        "prev_stop_name": prev_stop_obj["station_name"]
+        if prev_stop_obj
+        else stops_rows[0]["station_name"],
+        "prev_stop_name_hi": prev_stop_obj["station_name_hi"]
+        if prev_stop_obj
+        else _get_stn_hi(stops_rows[0]["station_code"], stops_rows[0]["station_name"]),
         "stations": [
             {
                 "code": st["station_code"],
@@ -751,12 +834,18 @@ def get_passenger_snapshot(
         summary_en = f"Journey completed at {stops_rows[-1]['station_name']} · All stops cleared"
         summary_hi = f"{_get_stn_hi(stops_rows[-1]['station_code'], stops_rows[-1]['station_name'])} पर यात्रा पूरी हुई · सभी स्टेशन पार"
         between_stations = [stops_rows[-2]["station_name"], stops_rows[-1]["station_name"]]
-        between_stations_hi = [_get_stn_hi(stops_rows[-2]["station_code"], stops_rows[-2]["station_name"]), _get_stn_hi(stops_rows[-1]["station_code"], stops_rows[-1]["station_name"])]
+        between_stations_hi = [
+            _get_stn_hi(stops_rows[-2]["station_code"], stops_rows[-2]["station_name"]),
+            _get_stn_hi(stops_rows[-1]["station_code"], stops_rows[-1]["station_name"]),
+        ]
     else:
         summary_en = f"Between {stops_rows[0]['station_name']} and {stops_rows[-1]['station_name']} · {int(current_km)} km covered · {int(speed_kmh)} km/h"
         summary_hi = f"{_get_stn_hi(stops_rows[0]['station_code'], stops_rows[0]['station_name'])} और {_get_stn_hi(stops_rows[-1]['station_code'], stops_rows[-1]['station_name'])} के बीच · {int(current_km)} किमी पूरा · {int(speed_kmh)} किमी/घंटा"
         between_stations = [stops_rows[0]["station_name"], stops_rows[-1]["station_name"]]
-        between_stations_hi = [_get_stn_hi(stops_rows[0]["station_code"], stops_rows[0]["station_name"]), _get_stn_hi(stops_rows[-1]["station_code"], stops_rows[-1]["station_name"])]
+        between_stations_hi = [
+            _get_stn_hi(stops_rows[0]["station_code"], stops_rows[0]["station_name"]),
+            _get_stn_hi(stops_rows[-1]["station_code"], stops_rows[-1]["station_name"]),
+        ]
 
     if delay_min <= 2:
         headline_en = "Running strictly on time. Timetable recovery buffers intact — no active speed restrictions or route conflicts."
@@ -811,7 +900,11 @@ def get_passenger_snapshot(
         }
     ]
 
-    run_status_str = "NOT_RUNNING_TODAY" if is_not_running_today else ("COMPLETED" if is_completed_journey else "RUNNING")
+    run_status_str = (
+        "NOT_RUNNING_TODAY"
+        if is_not_running_today
+        else ("COMPLETED" if is_completed_journey else "RUNNING")
+    )
 
     resp_payload = {
         "train": {
@@ -822,12 +915,16 @@ def get_passenger_snapshot(
             "origin": {
                 "code": stops_rows[0]["station_code"],
                 "name": stops_rows[0]["station_name"],
-                "name_hi": _get_stn_hi(stops_rows[0]["station_code"], stops_rows[0]["station_name"]),
+                "name_hi": _get_stn_hi(
+                    stops_rows[0]["station_code"], stops_rows[0]["station_name"]
+                ),
             },
             "destination": {
                 "code": stops_rows[-1]["station_code"],
                 "name": stops_rows[-1]["station_name"],
-                "name_hi": _get_stn_hi(stops_rows[-1]["station_code"], stops_rows[-1]["station_name"]),
+                "name_hi": _get_stn_hi(
+                    stops_rows[-1]["station_code"], stops_rows[-1]["station_name"]
+                ),
             },
             "runs_today": not is_not_running_today,
             "run_status": run_status_str,
@@ -840,17 +937,22 @@ def get_passenger_snapshot(
             "berth": pnr_resolved.get("berth") if pnr_resolved else None,
             "boarding_station": pnr_resolved.get("boarding") if pnr_resolved else None,
             "destination_station": pnr_resolved.get("destination") if pnr_resolved else None,
-        } if pnr_resolved else None,
+        }
+        if pnr_resolved
+        else None,
         "next_stop": next_stop_obj,
         "selected_stop": {
             "station_code": selected_stop_obj["station_code"],
             "station_name": selected_stop_obj["station_name"],
             "station_name_hi": selected_stop_obj["station_name_hi"],
-            "is_boarding_stop": is_boarding_pnr or (selected_stop_obj["station_code"] == default_stop_code),
+            "is_boarding_stop": is_boarding_pnr
+            or (selected_stop_obj["station_code"] == default_stop_code),
             "scheduled_arr": selected_stop_obj["scheduled_arr"],
             "scheduled_dep": selected_stop_obj["scheduled_dep"],
             "expected_arr": sel_expected,
-            "expected_dep": _add_minutes_to_time(selected_stop_obj["scheduled_dep"], delay_min) if selected_stop_obj["scheduled_dep"] else None,
+            "expected_dep": _add_minutes_to_time(selected_stop_obj["scheduled_dep"], delay_min)
+            if selected_stop_obj["scheduled_dep"]
+            else None,
             "time_window": time_win,
             "platform": selected_stop_obj["platform"],
             "status": selected_stop_obj["status"],

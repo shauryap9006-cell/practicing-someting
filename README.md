@@ -9,7 +9,10 @@
 
 **RailTwin-X** is an enterprise AI digital twin and neural operational dispatch copilot for Indian Railways (model corridor: New Delhi (NDLS) → Kanpur Central (CNB) → Lucknow Charbagh (LKO), 440 km, 8 stations).
 
-It replaces legacy static delay trackers with a probabilistic **PyTorch Non-Crossing GRU + LightGBM Quantile Ensemble** bounded by a strict kinematic safety interlock. Every served forecast is cryptographically sealed in an append-only **SHA-256 tamper-evident audit ledger**, ensuring zero retrospective score manipulation and verifiable trust for both passengers and section controllers.
+It replaces legacy static delay trackers with a probabilistic multi-tier ensemble bounded by a strict kinematic safety interlock. Every served forecast is cryptographically sealed in an append-only **SHA-256 tamper-evident audit ledger**, ensuring zero retrospective score manipulation and verifiable trust for both passengers and section controllers.
+
+- **Served champion**: LightGBM Quantile + NNLS convex ensemble, Mondrian conformal calibration.
+- **PyTorch Non-Crossing GRU**: experimental challenger — NOT served (sequence input wiring pending).
 
 ---
 
@@ -66,6 +69,10 @@ The 1-click script starts the FastAPI server on port 8000, launches the Vite fro
 ## 🧪 Verification & Automated Audits
 
 ```bash
+# 0. Install dependencies (install requirements-dev.txt for development/testing)
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
+
 # 1. Run full backend unit and regression test suite (268+ tests)
 pytest -q
 

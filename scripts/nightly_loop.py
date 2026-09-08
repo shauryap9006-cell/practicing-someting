@@ -11,14 +11,12 @@ Pipeline Steps:
 from __future__ import annotations
 
 import datetime
-import json
 import sys
 from pathlib import Path
 
 # Add project root to sys.path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from config import settings
 from data.db import get_db
 from ml.drift import PSIDriftMonitor
 from ml.evaluate import evaluate_test_set
@@ -42,7 +40,9 @@ def run_nightly_pipeline() -> dict:
     drift_mon = PSIDriftMonitor(db=db)
     drift_rep = drift_mon.run()
     drift_rep.save()
-    print(f"[STAGE 2/5] Drift Status: {drift_rep.overall_status} (Monitored {drift_rep.total_features} features)")
+    print(
+        f"[STAGE 2/5] Drift Status: {drift_rep.overall_status} (Monitored {drift_rep.total_features} features)"
+    )
 
     # 3. Retrain LightGBM Champion Models
     print("[STAGE 3/5] Training LightGBM Quantile Models...")

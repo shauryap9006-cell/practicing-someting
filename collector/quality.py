@@ -10,8 +10,8 @@ import datetime
 from dataclasses import dataclass
 from typing import List, Tuple
 
-from config import settings
 from collector.adapters.base import StationEvent
+from config import settings
 
 
 @dataclass
@@ -58,16 +58,31 @@ class QualityGate:
         for i, ev in enumerate(sorted_events):
             # 1. Sanity Gate: Outlier delay check
             if ev.delay_arr_min > self.max_delay_min or ev.delay_arr_min < self.min_delay_min:
-                quarantined.append((ev, f"Delay {ev.delay_arr_min}m outside sanity bounds [{self.min_delay_min}, {self.max_delay_min}]"))
+                quarantined.append(
+                    (
+                        ev,
+                        f"Delay {ev.delay_arr_min}m outside sanity bounds [{self.min_delay_min}, {self.max_delay_min}]",
+                    )
+                )
                 continue
 
             if ev.delay_dep_min > self.max_delay_min or ev.delay_dep_min < self.min_delay_min:
-                quarantined.append((ev, f"Dep delay {ev.delay_dep_min}m outside sanity bounds [{self.min_delay_min}, {self.max_delay_min}]"))
+                quarantined.append(
+                    (
+                        ev,
+                        f"Dep delay {ev.delay_dep_min}m outside sanity bounds [{self.min_delay_min}, {self.max_delay_min}]",
+                    )
+                )
                 continue
 
             # 2. Completeness Gate: Essential fields must exist
             if not ev.train_no or not ev.station_code or not ev.run_date:
-                quarantined.append((ev, "Missing required primary identity fields (train_no/station_code/run_date)"))
+                quarantined.append(
+                    (
+                        ev,
+                        "Missing required primary identity fields (train_no/station_code/run_date)",
+                    )
+                )
                 continue
 
             # 3. Monotonicity Gate: Actual time progression along journey
@@ -81,7 +96,12 @@ class QualityGate:
 
                     # Handle overnight journey wrap (if diff < -12h, crossed midnight)
                     if curr_minutes < prev_minutes and (prev_minutes - curr_minutes) < 720:
-                        quarantined.append((ev, f"Non-monotonic actual time: {ev.actual_arr} is earlier than previous {prev.actual_dep}"))
+                        quarantined.append(
+                            (
+                                ev,
+                                f"Non-monotonic actual time: {ev.actual_arr} is earlier than previous {prev.actual_dep}",
+                            )
+                        )
                         continue
 
             passed.append(ev)
@@ -95,15 +115,54 @@ class QualityGate:
 
 if __name__ == "__main__":
     import datetime
+
     print("=== Quality Gate Demo ===")
     gate = QualityGate()
     t_today = datetime.date.today().isoformat()
     test_events = [
-        StationEvent("TRAIN_01", t_today, 1, "STN_A", "06:00", "06:05", "06:05", "06:10", 5, 5, f"{t_today}T06:00:00+05:30"),
-        StationEvent("TRAIN_01", t_today, 2, "STN_B", "08:30", "08:35", "08:37", "08:40", 5, 3, f"{t_today}T08:30:00+05:30"),
-        StationEvent("TRAIN_01", t_today, 3, "STN_C", "10:30", "22:00", "10:30", "22:00", 690, 690, f"{t_today}T10:30:00+05:30"), # Should be quarantined
+        StationEvent(
+            "TRAIN_01",
+            t_today,
+            1,
+            "STN_A",
+            "06:00",
+            "06:05",
+            "06:05",
+            "06:10",
+            5,
+            5,
+            f"{t_today}T06:00:00+05:30",
+        ),
+        StationEvent(
+            "TRAIN_01",
+            t_today,
+            2,
+            "STN_B",
+            "08:30",
+            "08:35",
+            "08:37",
+            "08:40",
+            5,
+            3,
+            f"{t_today}T08:30:00+05:30",
+        ),
+        StationEvent(
+            "TRAIN_01",
+            t_today,
+            3,
+            "STN_C",
+            "10:30",
+            "22:00",
+            "10:30",
+            "22:00",
+            690,
+            690,
+            f"{t_today}T10:30:00+05:30",
+        ),  # Should be quarantined
     ]
     report = gate.validate_events(test_events)
-    print(f"Total: {report.total_events}, Passed: {report.passed_count}, Quarantined: {report.quarantined_count}")
+    print(
+        f"Total: {report.total_events}, Passed: {report.passed_count}, Quarantined: {report.quarantined_count}"
+    )
     for ev, reason in report.quarantined_events:
         print(f"  [QUARANTINED] Train {ev.train_no} @ {ev.station_code}: {reason}")

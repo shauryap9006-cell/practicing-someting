@@ -4,22 +4,25 @@ Backfills hourly weather from Open-Meteo Archive API (2025-01-01 to 2026-08-31) 
 CRITICAL: Open-Meteo returns UTC timestamps. Convert to IST (+05:30) AT INGEST
 and store ts_ist (preventing Round-4 timezone hazard).
 """
+
 from __future__ import annotations
 
 import datetime as dt
-import sqlite3
+import logging
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 import requests
 
+logger = logging.getLogger(__name__)
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from data.db import Database, get_db
 from config import settings
+from data.db import Database, get_db
 
 STATIONS = {  # code: (lat, lon)
     "NDLS": (28.6428, 77.2191),
@@ -60,8 +63,12 @@ def init_weather_tables(db: Database) -> None:
             );
             """
         )
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_weather_hourly_ts ON weather_hourly(station_code, ts_ist);")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_weather_hourly_date ON weather_hourly(station_code, date);")
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_weather_hourly_ts ON weather_hourly(station_code, ts_ist);"
+        )
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_weather_hourly_date ON weather_hourly(station_code, date);"
+        )
 
 
 def _generate_synthetic_physical_chunk(
@@ -75,8 +82,8 @@ def _generate_synthetic_physical_chunk(
 
     while cur_d <= end_d:
         d_str = cur_d.isoformat()
-        is_winter = (cur_d.month in (12, 1, 2))
-        is_monsoon = (cur_d.month in (7, 8, 9))
+        is_winter = cur_d.month in (12, 1, 2)
+        is_monsoon = cur_d.month in (7, 8, 9)
 
         for h in range(24):
             ts_ist = f"{d_str} {h:02d}:00"
@@ -106,18 +113,28 @@ def _generate_synthetic_physical_chunk(
 
             wind = float(rng.uniform(1.0, 5.0) if is_winter else rng.uniform(3.0, 12.0))
 
-            out.append((
-                code, ts_ist, d_str, h,
-                round(temp, 1), round(precip, 2),
-                round(vis, 1), round(wind, 1),
-                round(rh, 1), fog_flag
-            ))
+            out.append(
+                (
+                    code,
+                    ts_ist,
+                    d_str,
+                    h,
+                    round(temp, 1),
+                    round(precip, 2),
+                    round(vis, 1),
+                    round(wind, 1),
+                    round(rh, 1),
+                    fog_flag,
+                )
+            )
 
         cur_d += dt.timedelta(days=1)
     return out
 
 
-def fetch_station(code: str, lat: float, lon: float, start: str = "2025-01-01", end: str = "2026-08-31") -> List[Tuple]:
+def fetch_station(
+    code: str, lat: float, lon: float, start: str = "2025-01-01", end: str = "2026-08-31"
+) -> List[Tuple]:
     """Fetches hourly historical weather chunked by 90 days with IST timestamp conversion."""
     url = "https://archive-api.open-meteo.com/v1/archive"
     out: List[Tuple] = []
@@ -125,8 +142,7 @@ def fetch_station(code: str, lat: float, lon: float, start: str = "2025-01-01", 
 
     while cursor < end:
         chunk_end = min(
-            dt.date.fromisoformat(cursor) + dt.timedelta(days=90),
-            dt.date.fromisoformat(end)
+            dt.date.fromisoformat(cursor) + dt.timedelta(days=90), dt.date.fromisoformat(end)
         ).isoformat()
 
         fetched = False
@@ -155,33 +171,45 @@ def fetch_station(code: str, lat: float, lon: float, start: str = "2025-01-01", 
                         d_str = ist_dt.strftime("%Y-%m-%d")
                         h_ist = ist_dt.hour
 
-                        temp = d["temperature_2m"][i] if d["temperature_2m"][i] is not None else 20.0
+                        temp = (
+                            d["temperature_2m"][i] if d["temperature_2m"][i] is not None else 20.0
+                        )
                         precip = d["precipitation"][i] if d["precipitation"][i] is not None else 0.0
                         vis = d["visibility"][i] if d["visibility"][i] is not None else 10000.0
                         wind = d["wind_speed_10m"][i] if d["wind_speed_10m"][i] is not None else 2.0
-                        rh = d["relative_humidity_2m"][i] if d["relative_humidity_2m"][i] is not None else 60.0
+                        rh = (
+                            d["relative_humidity_2m"][i]
+                            if d["relative_humidity_2m"][i] is not None
+                            else 60.0
+                        )
 
                         # Fog flag: visibility < 1000m or (temp < 15 and rh > 85 and dawn)
-                        fog_flag = 1 if (vis < 1000.0 or (temp < 15.0 and rh > 85.0 and 5 <= h_ist <= 9)) else 0
+                        fog_flag = (
+                            1
+                            if (vis < 1000.0 or (temp < 15.0 and rh > 85.0 and 5 <= h_ist <= 9))
+                            else 0
+                        )
 
-                        out.append((
-                            code, ts_ist_str, d_str, h_ist,
-                            temp, precip, vis, wind, rh, fog_flag
-                        ))
+                        out.append(
+                            (code, ts_ist_str, d_str, h_ist, temp, precip, vis, wind, rh, fog_flag)
+                        )
                     fetched = True
         except Exception:
             pass
 
         if not fetched:
-            synthetic_allowed = settings.ALLOW_SYNTHETIC_FALLBACK or settings.DEFAULT_CLOCK_MODE.lower() == "replay"
+            synthetic_allowed = (
+                settings.ALLOW_SYNTHETIC_FALLBACK or settings.DEFAULT_CLOCK_MODE.lower() == "replay"
+            )
             if synthetic_allowed:
                 chunk_out = _generate_synthetic_physical_chunk(code, lat, lon, cursor, chunk_end)
                 out.extend(chunk_out)
             else:
-                print(
-                    f"[WARN] No authoritative weather for {code} {cursor}..{chunk_end}; "
-                    "leaving the interval absent instead of fabricating observations.",
-                    flush=True,
+                logger.warning(
+                    "No authoritative weather for %s %s..%s; leaving the interval absent instead of fabricating observations.",
+                    code,
+                    cursor,
+                    chunk_end,
                 )
 
         cursor = (dt.date.fromisoformat(chunk_end) + dt.timedelta(days=1)).isoformat()
@@ -190,16 +218,18 @@ def fetch_station(code: str, lat: float, lon: float, start: str = "2025-01-01", 
     return out
 
 
-def backfill_all_weather(db: Optional[Database] = None, start: str = "2025-01-01", end: str = "2026-08-31") -> None:
+def backfill_all_weather(
+    db: Optional[Database] = None, start: str = "2025-01-01", end: str = "2026-08-31"
+) -> None:
     """Executes full weather backfill across 12 corridor stations and verifies quality gates."""
     db_inst = db or get_db()
     init_weather_tables(db_inst)
 
-    print(f"[INFO] Starting weather backfill from {start} to {end} for 12 corridor stations...")
+    logger.info("Starting weather backfill from %s to %s for 12 corridor stations...", start, end)
     all_rows = []
 
     for code, (lat, lon) in STATIONS.items():
-        print(f"  Fetching {code} ({lat:.4f}, {lon:.4f})...", flush=True)
+        logger.info("  Fetching %s (%.4f, %.4f)...", code, lat, lon)
         station_rows = fetch_station(code, lat, lon, start=start, end=end)
         all_rows.extend(station_rows)
 
@@ -249,7 +279,13 @@ def backfill_all_weather(db: Optional[Database] = None, start: str = "2025-01-01
         expected_days = (dt.date.fromisoformat(end) - dt.date.fromisoformat(start)).days + 1
         coverage_pct = (n_days / expected_days) * 100.0
         assert coverage_pct >= 95.0, f"WEATHER COVERAGE GATE FAILED: {coverage_pct:.1f}% < 95%"
-        print(f"[GATE PASS] Weather coverage = {coverage_pct:.1f}% ({n_days}/{expected_days} days, {total_pts:,} hourly records).")
+        logger.info(
+            "[GATE PASS] Weather coverage = %.1f%% (%d/%d days, %s hourly records).",
+            coverage_pct,
+            n_days,
+            expected_days,
+            f"{total_pts:,}",
+        )
 
         # 2. Low-visibility hour histogram peaks at 05-09 IST (radiative fog signature)
         cur.execute(
@@ -264,8 +300,13 @@ def backfill_all_weather(db: Optional[Database] = None, start: str = "2025-01-01
         hour_counts = cur.fetchall()
         assert len(hour_counts) > 0, "No fog/low-vis hours recorded!"
         peak_hour = int(hour_counts[0][0])
-        print(f"[GATE PASS] Low-visibility peak hour: {peak_hour:02d}:00 IST (Signature check: peak in 05-09 IST window).")
-        assert 4 <= peak_hour <= 10, f"IST CONVERSION WRONG: Low-vis peak at {peak_hour:02d}:00 IST outside radiative fog dawn window!"
+        logger.info(
+            "[GATE PASS] Low-visibility peak hour: %02d:00 IST (Signature check: peak in 05-09 IST window).",
+            peak_hour,
+        )
+        assert 4 <= peak_hour <= 10, (
+            f"IST CONVERSION WRONG: Low-vis peak at {peak_hour:02d}:00 IST outside radiative fog dawn window!"
+        )
 
 
 if __name__ == "__main__":

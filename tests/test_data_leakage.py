@@ -8,12 +8,11 @@ Verifies that:
 
 from __future__ import annotations
 
-import datetime
 import pytest
 
 from data.db import Database
+from ml.features import FEATURE_NAMES_V2
 from ml.snapshots import SnapshotGenerator
-from ml.features import FEATURE_NAMES_V2, TrainFeatureVector
 
 
 @pytest.fixture
@@ -25,32 +24,62 @@ def pit_leakage_db(tmp_path):
 
     with db.transaction() as cur:
         # 1. Stations
-        cur.execute("INSERT INTO stations (code, name, lat, lon, platforms, is_junction) VALUES ('NDLS', 'New Delhi', 28.61, 77.20, 16, 1)")
-        cur.execute("INSERT INTO stations (code, name, lat, lon, platforms, is_junction) VALUES ('CNB', 'Kanpur Central', 26.45, 80.35, 10, 1)")
-        cur.execute("INSERT INTO stations (code, name, lat, lon, platforms, is_junction) VALUES ('PRYJ', 'Prayagraj', 25.43, 81.84, 10, 1)")
-        cur.execute("INSERT INTO stations (code, name, lat, lon, platforms, is_junction) VALUES ('DDU', 'Pt DD Upadhyaya', 25.28, 83.11, 8, 1)")
+        cur.execute(
+            "INSERT INTO stations (code, name, lat, lon, platforms, is_junction) VALUES ('NDLS', 'New Delhi', 28.61, 77.20, 16, 1)"
+        )
+        cur.execute(
+            "INSERT INTO stations (code, name, lat, lon, platforms, is_junction) VALUES ('CNB', 'Kanpur Central', 26.45, 80.35, 10, 1)"
+        )
+        cur.execute(
+            "INSERT INTO stations (code, name, lat, lon, platforms, is_junction) VALUES ('PRYJ', 'Prayagraj', 25.43, 81.84, 10, 1)"
+        )
+        cur.execute(
+            "INSERT INTO stations (code, name, lat, lon, platforms, is_junction) VALUES ('DDU', 'Pt DD Upadhyaya', 25.28, 83.11, 8, 1)"
+        )
 
         # 2. Sections
-        cur.execute("INSERT INTO sections (from_code, to_code, distance_km, single_line, max_speed_kmph) VALUES ('NDLS', 'CNB', 440.0, 0, 130)")
-        cur.execute("INSERT INTO sections (from_code, to_code, distance_km, single_line, max_speed_kmph) VALUES ('CNB', 'PRYJ', 200.0, 0, 130)")
-        cur.execute("INSERT INTO sections (from_code, to_code, distance_km, single_line, max_speed_kmph) VALUES ('PRYJ', 'DDU', 150.0, 0, 130)")
+        cur.execute(
+            "INSERT INTO sections (from_code, to_code, distance_km, single_line, max_speed_kmph) VALUES ('NDLS', 'CNB', 440.0, 0, 130)"
+        )
+        cur.execute(
+            "INSERT INTO sections (from_code, to_code, distance_km, single_line, max_speed_kmph) VALUES ('CNB', 'PRYJ', 200.0, 0, 130)"
+        )
+        cur.execute(
+            "INSERT INTO sections (from_code, to_code, distance_km, single_line, max_speed_kmph) VALUES ('PRYJ', 'DDU', 150.0, 0, 130)"
+        )
 
         # 3. Trains
-        cur.execute("INSERT INTO trains (train_no, name, class, priority) VALUES ('12301', 'Incoming Rajdhani', 'rajdhani', 1)")
-        cur.execute("INSERT INTO trains (train_no, name, class, priority) VALUES ('12302', 'Outgoing Rajdhani', 'rajdhani', 1)")
+        cur.execute(
+            "INSERT INTO trains (train_no, name, class, priority) VALUES ('12301', 'Incoming Rajdhani', 'rajdhani', 1)"
+        )
+        cur.execute(
+            "INSERT INTO trains (train_no, name, class, priority) VALUES ('12302', 'Outgoing Rajdhani', 'rajdhani', 1)"
+        )
 
         # 4. Routes
         # Train 12301 arrives at NDLS at 08:00
-        cur.execute("INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, halt_min, distance_km) VALUES ('12301', 1, 'CNB', '04:00', '04:05', 5, 0.0)")
-        cur.execute("INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, halt_min, distance_km) VALUES ('12301', 2, 'NDLS', '08:00', '08:00', 0, 440.0)")
+        cur.execute(
+            "INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, halt_min, distance_km) VALUES ('12301', 1, 'CNB', '04:00', '04:05', 5, 0.0)"
+        )
+        cur.execute(
+            "INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, halt_min, distance_km) VALUES ('12301', 2, 'NDLS', '08:00', '08:00', 0, 440.0)"
+        )
 
         # Train 12302 departs from NDLS at 10:00 (turnaround buffer = 120 min)
-        cur.execute("INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, halt_min, distance_km) VALUES ('12302', 1, 'NDLS', '10:00', '10:00', 0, 0.0)")
-        cur.execute("INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, halt_min, distance_km) VALUES ('12302', 2, 'CNB', '14:00', '14:05', 5, 440.0)")
-        cur.execute("INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, halt_min, distance_km) VALUES ('12302', 3, 'PRYJ', '16:30', '16:35', 5, 640.0)")
+        cur.execute(
+            "INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, halt_min, distance_km) VALUES ('12302', 1, 'NDLS', '10:00', '10:00', 0, 0.0)"
+        )
+        cur.execute(
+            "INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, halt_min, distance_km) VALUES ('12302', 2, 'CNB', '14:00', '14:05', 5, 440.0)"
+        )
+        cur.execute(
+            "INSERT INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, halt_min, distance_km) VALUES ('12302', 3, 'PRYJ', '16:30', '16:35', 5, 640.0)"
+        )
 
         # 5. Rake Link
-        cur.execute("INSERT INTO rake_links (incoming_train, outgoing_train, station_code, turnaround_min) VALUES ('12301', '12302', 'NDLS', 120)")
+        cur.execute(
+            "INSERT INTO rake_links (incoming_train, outgoing_train, station_code, turnaround_min) VALUES ('12301', '12302', 'NDLS', 120)"
+        )
 
         # 6. Past Events (<= 09:00:00)
         # 12301 arrived at NDLS at 08:45 (delay = +45 min)
@@ -129,4 +158,6 @@ def test_v2_features_point_in_time_leakage_isolation(pit_leakage_db):
     dict_perturbed = v_perturbed.to_dict(version=2)
 
     for feat in FEATURE_NAMES_V2:
-        assert dict_base[feat] == dict_perturbed[feat], f"Leakage detected on feature {feat}: {dict_base[feat]} != {dict_perturbed[feat]}"
+        assert dict_base[feat] == dict_perturbed[feat], (
+            f"Leakage detected on feature {feat}: {dict_base[feat]} != {dict_perturbed[feat]}"
+        )

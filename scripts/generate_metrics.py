@@ -6,10 +6,8 @@ ensuring zero human hand-copy drift across docs and benchmarks.
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
-from ml.evaluate import Evaluator
 from config import settings
+from ml.evaluate import Evaluator
 
 
 def generate_all_metrics() -> dict:

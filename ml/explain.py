@@ -8,7 +8,8 @@ Provides:
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional
+
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
@@ -45,7 +46,9 @@ class ModelExplainer:
             attributions[name] = float(np.round(val, 3))
 
         # Sort by absolute impact
-        sorted_attributions = dict(sorted(attributions.items(), key=lambda item: abs(item[1]), reverse=True))
+        sorted_attributions = dict(
+            sorted(attributions.items(), key=lambda item: abs(item[1]), reverse=True)
+        )
         return {
             "base_value": round(bias, 2),
             "feature_attributions": sorted_attributions,
@@ -77,7 +80,9 @@ class ModelExplainer:
         # Generate interpolated inputs
         alphas = torch.linspace(0.0, 1.0, steps, device=device)
         delta = x - baseline
-        interpolated = baseline + alphas[:, None, None, None] * delta.unsqueeze(0)  # [steps, B, seq, feat]
+        interpolated = baseline + alphas[:, None, None, None] * delta.unsqueeze(
+            0
+        )  # [steps, B, seq, feat]
 
         total_grads = torch.zeros_like(x)
 

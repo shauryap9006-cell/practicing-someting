@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from data.db import Database, get_db
-
+from engine.clocks import now_iso
 
 router = APIRouter(prefix="/api/access-requests", tags=["Access Requests"])
 
@@ -33,7 +32,7 @@ def create_access_request(
     db: Database = Depends(get_db),
 ):
     request_id = uuid4().hex
-    requested_at = datetime.now(timezone.utc).isoformat()
+    requested_at = now_iso()
     email = payload.email.strip().lower()
     with db.transaction() as cur:
         # Idempotent intake: a pending request for the same email is returned
@@ -45,7 +44,9 @@ def create_access_request(
         existing = cur.fetchone()
         if existing:
             return AccessRequestResponse(
-                request_id=existing["request_id"], status="pending", requested_at=existing["requested_at"]
+                request_id=existing["request_id"],
+                status="pending",
+                requested_at=existing["requested_at"],
             )
         cur.execute(
             """

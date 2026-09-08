@@ -1,10 +1,12 @@
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pandas as pd
+
 from data.db import get_db
-from ml.evaluate_v2 import corridor_fog_days, blocked_fog_holdout
+from ml.evaluate_v2 import blocked_fog_holdout, corridor_fog_days
 from ml.vocab import StationVocab
 
 db = get_db()

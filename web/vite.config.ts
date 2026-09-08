@@ -19,6 +19,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      'three': path.resolve(__dirname, '../node_modules/three/src/Three.js'),
     },
   },
   server: {
@@ -38,14 +39,44 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('three') || id.includes('@react-three')) {
-            return 'vendor-three';
-          }
-          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/react-router-dom/')) {
+          const cleanId = id.replace('\0', '').replace(/\\/g, '/');
+          if (cleanId.includes('preload') || cleanId.includes('vite/')) {
             return 'vendor-react';
           }
-          if (id.includes('@tanstack/react-query')) {
-            return 'vendor-tanstack';
+          if (!cleanId.includes('node_modules')) {
+            return;
+          }
+          if (
+            cleanId.includes('node_modules/react/') ||
+            cleanId.includes('node_modules/react-dom/') ||
+            cleanId.includes('node_modules/react-router') ||
+            cleanId.includes('node_modules/@tanstack/')
+          ) {
+            return 'vendor-react';
+          }
+          if (cleanId.includes('node_modules/lucide-react')) {
+            return 'vendor-lucide';
+          }
+          if (cleanId.includes('node_modules/echarts') || cleanId.includes('node_modules/zrender')) {
+            return 'vendor-echarts';
+          }
+          if (cleanId.includes('node_modules/@react-three/drei')) {
+            return 'vendor-three-drei';
+          }
+          if (cleanId.includes('node_modules/@react-three/fiber')) {
+            return 'vendor-three-fiber';
+          }
+          if (
+            cleanId.includes('node_modules/three/src/math') ||
+            cleanId.includes('node_modules/three/src/constants.js')
+          ) {
+            return 'vendor-three-math';
+          }
+          if (cleanId.includes('node_modules/three/src/renderers/shaders')) {
+            return 'vendor-three-shaders';
+          }
+          if (cleanId.includes('node_modules/three')) {
+            return 'vendor-three';
           }
         },
       },

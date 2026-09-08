@@ -11,12 +11,12 @@ Features & Forensic Remediation (Round 3):
 8. True epistemic uncertainty spread = std of per-member median q50 across seeds (Bug F).
 9. Protocol-tagged coverage logging (Bug G).
 """
+
 from __future__ import annotations
 
 import datetime
 import json
 import math
-import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
@@ -29,7 +29,6 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
 
-from config import settings
 from data.db import Database, get_db
 from ml.evaluate_v2 import (
     blocked_fog_holdout,
@@ -108,8 +107,7 @@ def evaluate_pure(
     q90 = qs_np[:, IDX_Q90]
     alpha = 0.20
     winkler_scores = (q90 - q10) + (
-        (2 / alpha) * np.maximum(0.0, q10 - y_np) +
-        (2 / alpha) * np.maximum(0.0, y_np - q90)
+        (2 / alpha) * np.maximum(0.0, q10 - y_np) + (2 / alpha) * np.maximum(0.0, y_np - q90)
     )
     winkler80 = float(winkler_scores.mean())
     mae_p50 = float(np.abs(y_np - qs_np[:, 3]).mean())
@@ -182,19 +180,28 @@ def build_v2_dataset(
 
         cur.execute("SELECT train_no, station_code, avg_delay, p90_delay FROM hist_baselines")
         base_rows = cur.fetchall()
-        avg_delay_map = {(r["train_no"], r["station_code"]): float(r["avg_delay"]) for r in base_rows}
-        p90_delay_map = {(r["train_no"], r["station_code"]): float(r["p90_delay"]) for r in base_rows}
+        avg_delay_map = {
+            (r["train_no"], r["station_code"]): float(r["avg_delay"]) for r in base_rows
+        }
+        p90_delay_map = {
+            (r["train_no"], r["station_code"]): float(r["p90_delay"]) for r in base_rows
+        }
 
         # Real weather join map (Finding 2)
         cur.execute("SELECT date, station_code, fog_flag, precip_mm FROM weather")
         weather_rows = cur.fetchall()
         weather_map = {
-            (r["date"], r["station_code"]): (float(r["fog_flag"] or 0), float(r["precip_mm"] or 0.0))
+            (r["date"], r["station_code"]): (
+                float(r["fog_flag"] or 0),
+                float(r["precip_mm"] or 0.0),
+            )
             for r in weather_rows
         }
 
         try:
-            cur.execute("SELECT incoming_train, outgoing_train, station_code, turnaround_min FROM rake_links")
+            cur.execute(
+                "SELECT incoming_train, outgoing_train, station_code, turnaround_min FROM rake_links"
+            )
             rake_links_map = {r["outgoing_train"]: dict(r) for r in cur.fetchall()}
         except Exception:
             rake_links_map = {}
@@ -252,23 +259,31 @@ def build_v2_dataset(
             float(r["distance_km"]),
             float(r["is_junction"]),
             float(r["priority"]),
-            float(int(r["sched_hour"]) if r["sched_hour"] and str(r["sched_hour"]).isdigit() else 8),
+            float(
+                int(r["sched_hour"]) if r["sched_hour"] and str(r["sched_hour"]).isdigit() else 8
+            ),
             float(r["delay_arr"] - r["delay_dep"]),
         ]
-        trajectories[key].append({
-            "seq": int(r["seq"]),
-            "station_code": r["station_code"],
-            "feat": step_feat,
-            "delay_arr": float(r["delay_arr"]),
-            "collected_at": r["collected_at"],
-            "run_date": r["run_date"],
-            "train_no": r["train_no"],
-            "distance_km": float(r["distance_km"]),
-            "halt_min": float(r["halt_min"] or 2.0),
-            "priority": float(r["priority"]),
-            "is_junction": float(r["is_junction"]),
-            "sched_hour": float(int(r["sched_hour"]) if r["sched_hour"] and str(r["sched_hour"]).isdigit() else 8),
-        })
+        trajectories[key].append(
+            {
+                "seq": int(r["seq"]),
+                "station_code": r["station_code"],
+                "feat": step_feat,
+                "delay_arr": float(r["delay_arr"]),
+                "collected_at": r["collected_at"],
+                "run_date": r["run_date"],
+                "train_no": r["train_no"],
+                "distance_km": float(r["distance_km"]),
+                "halt_min": float(r["halt_min"] or 2.0),
+                "priority": float(r["priority"]),
+                "is_junction": float(r["is_junction"]),
+                "sched_hour": float(
+                    int(r["sched_hour"])
+                    if r["sched_hour"] and str(r["sched_hour"]).isdigit()
+                    else 8
+                ),
+            }
+        )
 
     seqs, stn_ids, seq_masks, ctxs, nbrs, nbr_masks, targets, dates = [], [], [], [], [], [], [], []
     zero_pad = [0.0] * 8
@@ -333,18 +348,28 @@ def build_v2_dataset(
                 float(hist_p90),
                 float(target_step["halt_min"]),
                 5.0,
-                float(t_fog),       # 13. fog_flag_target (real weather)
-                float(t_rain),      # 14. rain_mm_target (real weather)
+                float(t_fog),  # 13. fog_flag_target (real weather)
+                float(t_rain),  # 14. rain_mm_target (real weather)
                 15.0,
                 float(curr_delay - prev_delay),
                 float(hist_avg),
-                0.0, 0.0, 0.0, 60.0, 0.0, 0.0,
+                0.0,
+                0.0,
+                0.0,
+                60.0,
+                0.0,
+                0.0,
                 float(upstream_rake_delay),
                 0.0,
                 float(upstream_rake_delay),
                 float(upstream_buf_rem),
                 float(rake_linked),
-                0.0, 0.0, 1.0, 0.0, 1.0, 5.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                1.0,
+                5.0,
             ]
 
             nbr_arr = np.zeros((8, 12), dtype=np.float32)
@@ -601,21 +626,36 @@ def run_v2_training_pipeline(
 
     splits = get_full_corpus_splits(db_inst)
     print("\n[DATA] 3-Way Full Corpus Temporal Split (Strict 0-Overlap):", flush=True)
-    print(f"  Train:     {len(splits['train_dates'])} non-fog days [{splits['train_start']} to {splits['train_end']}]", flush=True)
-    print(f"  Val:       {len(splits['val_dates'])} non-fog days [{splits['val_start']} to {splits['val_end']}]", flush=True)
-    print(f"  Fog Bench: {len(splits['bench_fog_dates'])} fog days [{splits['bench_start']} to {splits['bench_end']}] (LOCKED)", flush=True)
+    print(
+        f"  Train:     {len(splits['train_dates'])} non-fog days [{splits['train_start']} to {splits['train_end']}]",
+        flush=True,
+    )
+    print(
+        f"  Val:       {len(splits['val_dates'])} non-fog days [{splits['val_start']} to {splits['val_end']}]",
+        flush=True,
+    )
+    print(
+        f"  Fog Bench: {len(splits['bench_fog_dates'])} fog days [{splits['bench_start']} to {splits['bench_end']}] (LOCKED)",
+        flush=True,
+    )
 
-    print(f"\n[DATA] Building train dataset on {len(splits['train_dates'])} non-fog days...", flush=True)
+    print(
+        f"\n[DATA] Building train dataset on {len(splits['train_dates'])} non-fog days...",
+        flush=True,
+    )
     train_ds = build_v2_dataset(db_inst, vocab, allowed_dates=splits["train_dates"])
     print(f"[DATA] Building val dataset on {len(splits['val_dates'])} non-fog days...", flush=True)
     val_ds = build_v2_dataset(db_inst, vocab, allowed_dates=splits["val_dates"])
 
     ratio = len(train_ds) / max(1, len(val_ds))
-    print(f"\n[DATA] Train: {len(train_ds):,} seqs | Val: {len(val_ds):,} seqs | Ratio: {ratio:.1f}x", flush=True)
+    print(
+        f"\n[DATA] Train: {len(train_ds):,} seqs | Val: {len(val_ds):,} seqs | Ratio: {ratio:.1f}x",
+        flush=True,
+    )
 
     # Strict Bug C guard restored (>5x)
     assert len(train_ds) >= 5 * len(val_ds), (
-        f"BUG C: Training set too small vs val — train={len(train_ds):,} < 5*val={5*len(val_ds):,}"
+        f"BUG C: Training set too small vs val — train={len(train_ds):,} < 5*val={5 * len(val_ds):,}"
     )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -684,9 +724,9 @@ def run_v2_training_pipeline(
     mean_member_crps = float(np.mean(member_crps_list))
     ensemble_gain_pct = float((mean_member_crps - val_crps_pure) / mean_member_crps * 100.0)
 
-    print(f"\n{'='*70}", flush=True)
+    print(f"\n{'=' * 70}", flush=True)
     print("ENSEMBLE SUMMARY (Full Corpus, Pure Metrics, Common 49-pt CRPS Grid)", flush=True)
-    print(f"{'='*70}", flush=True)
+    print(f"{'=' * 70}", flush=True)
     print(f"  Val MAE_p50:                  {val_mae_p50:.4f} min", flush=True)
     print(f"  Val CRPS (pure, 49-pt grid):  {val_crps_pure:.4f}", flush=True)
     print(f"  Per-member mean CRPS:         {mean_member_crps:.4f}", flush=True)
@@ -695,7 +735,7 @@ def run_v2_training_pipeline(
     print(f"  Predictive width (mean):      {width_mean:.2f} min", flush=True)
     print(f"  Predictive width (median):    {width_median:.2f} min", flush=True)
     print(f"  True epistemic spread:        {true_epistemic_std:.4f} min", flush=True)
-    print(f"{'='*70}", flush=True)
+    print(f"{'=' * 70}", flush=True)
 
     config = {
         "model_type": "RailTwinGRUv2_Ensemble",

@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Static greps + runtime checks for train/serve skew & hygiene."""
 import re, sys
 from pathlib import Path

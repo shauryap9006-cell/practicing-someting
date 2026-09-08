@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Registry coverage audit: Which of the 9 new T2 features are dead-on-arrival?"""
 import json, sqlite3, gzip, shutil, sys
 from pathlib import Path

@@ -6,14 +6,12 @@ Ensures identical time-based temporal splitting as the LightGBM champion.
 
 from __future__ import annotations
 
-import datetime
-from typing import List, Optional, Tuple
-import numpy as np
-import pandas as pd
-import torch
-from torch.utils.data import Dataset, DataLoader
+from typing import Optional, Tuple
 
-from config import settings
+import numpy as np
+import torch
+from torch.utils.data import Dataset
+
 from data.db import Database, get_db
 
 
@@ -81,11 +79,13 @@ class SequenceDatasetBuilder:
                 float(int(r["sched_hour"]) if r["sched_hour"] and r["sched_hour"].isdigit() else 8),
                 float(r["delay_arr"] - r["delay_dep"]),  # Dwell delta
             ]
-            trajectories[key].append({
-                "seq": int(r["seq"]),
-                "feat": step_feat,
-                "delay_arr": float(r["delay_arr"]),
-            })
+            trajectories[key].append(
+                {
+                    "seq": int(r["seq"]),
+                    "feat": step_feat,
+                    "delay_arr": float(r["delay_arr"]),
+                }
+            )
 
         sequences = []
         targets = []

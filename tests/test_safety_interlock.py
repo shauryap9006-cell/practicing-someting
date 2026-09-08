@@ -11,23 +11,20 @@ Tests cover:
 - Master interlock pipeline and clamping reports
 """
 
-import math
-import pytest
 from safety.interlock import (
     CheckResult,
-    SafetyInterlockReport,
-    check_input_sanity,
-    check_recovery_feasibility,
-    check_quantile_order,
     check_delay_bounds,
+    check_input_sanity,
     check_monotonic_horizon,
+    check_quantile_order,
+    check_recovery_feasibility,
     validate_prediction_through_interlock,
 )
-
 
 # ==============================================================================
 # 1. INPUT SANITY TESTS (5 cases)
 # ==============================================================================
+
 
 def test_input_sanity_healthy():
     feats = {"current_delay": 15.0, "km_remaining": 80.0, "hops_remaining": 2, "speed": 100.0}
@@ -75,6 +72,7 @@ def test_input_sanity_negative_distance():
 # 2. RECOVERY FEASIBILITY TESTS (4 cases)
 # ==============================================================================
 
+
 def test_recovery_feasibility_no_recovery():
     # Train is delayed by 20m, predicted delay is 25m (getting worse, feasible)
     res = check_recovery_feasibility(current_delay=20.0, predicted_delay=25.0, distance_km=50.0)
@@ -91,7 +89,9 @@ def test_recovery_feasibility_normal_plausible_recovery():
 
 def test_recovery_feasibility_impossible_recovery():
     # Train is delayed by 90m, model predicts 0m delay over 10km (impossible 800 km/h recovery)
-    res = check_recovery_feasibility(current_delay=90.0, predicted_delay=0.0, distance_km=10.0, max_speed_kmph=110.0)
+    res = check_recovery_feasibility(
+        current_delay=90.0, predicted_delay=0.0, distance_km=10.0, max_speed_kmph=110.0
+    )
     assert res.passed is False
     assert res.code == "ERR_UNFEASIBLE_SPEED_RECOVERY"
     assert res.clamped_value is not None
@@ -106,6 +106,7 @@ def test_recovery_feasibility_zero_current_delay():
 # ==============================================================================
 # 3. QUANTILE ORDER TESTS (4 cases)
 # ==============================================================================
+
 
 def test_quantile_order_clean_monotonic():
     res, (q10, q50, q90) = check_quantile_order(p10=10.0, p50=15.0, p90=25.0)
@@ -142,6 +143,7 @@ def test_quantile_order_excessive_width():
 # 4. DELAY BOUNDS TESTS (3 cases)
 # ==============================================================================
 
+
 def test_delay_bounds_nominal():
     res, (q10, q50, q90) = check_delay_bounds(p10=0.0, p50=20.0, p90=45.0)
     assert res.passed is True
@@ -166,6 +168,7 @@ def test_delay_bounds_upper_overflow():
 # 5. MONOTONIC HORIZON TESTS (2 cases)
 # ==============================================================================
 
+
 def test_monotonic_horizon_valid_drift():
     res = check_monotonic_horizon(current_delay=30.0, predicted_delay=90.0)
     assert res.passed is True
@@ -183,6 +186,7 @@ def test_monotonic_horizon_extreme_drift():
 # ==============================================================================
 # 6. MASTER VALIDATOR INTEGRATION TESTS (5 cases)
 # ==============================================================================
+
 
 def test_master_interlock_clean_pass():
     feats = {"current_delay": 12.0, "km_remaining": 120.0, "hops_remaining": 3}
@@ -241,7 +245,9 @@ def test_master_interlock_adversarial_crossing_quantiles():
 
 def test_master_interlock_adversarial_out_of_bounds():
     feats = {"current_delay": 10.0, "km_remaining": 50.0, "hops_remaining": 2}
-    report = validate_prediction_through_interlock(feats, raw_p10=800.0, raw_p50=850.0, raw_p90=900.0)
+    report = validate_prediction_through_interlock(
+        feats, raw_p10=800.0, raw_p50=850.0, raw_p90=900.0
+    )
     assert report.all_passed is False
     assert report.clamp_applied is True
     assert report.clamped_p90 <= 720.0
@@ -249,14 +255,18 @@ def test_master_interlock_adversarial_out_of_bounds():
 
 def test_master_interlock_adversarial_horizon_drift():
     feats = {"current_delay": -5.0, "km_remaining": 200.0, "hops_remaining": 4}
-    report = validate_prediction_through_interlock(feats, raw_p10=700.0, raw_p50=720.0, raw_p90=720.0)
+    report = validate_prediction_through_interlock(
+        feats, raw_p10=700.0, raw_p50=720.0, raw_p90=720.0
+    )
     assert report.all_passed is False
     assert report.clamp_applied is True
     assert report.clamped_p50 <= 720.0
 
 
 def test_check_result_to_dict():
-    res = CheckResult(name="test_check", passed=False, code="ERR_CODE", reason="test reason", clamped_value=12.5)
+    res = CheckResult(
+        name="test_check", passed=False, code="ERR_CODE", reason="test reason", clamped_value=12.5
+    )
     d = res.to_dict()
     assert d["name"] == "test_check"
     assert d["passed"] is False
@@ -279,6 +289,7 @@ def test_master_interlock_report_to_dict():
 def test_check_quantile_order_full_catches_mid_quantile_crossing():
     """check_quantile_order_full catches crossed intermediate quantiles (e.g. q25 > q50) (Bug 10)."""
     from safety.interlock import check_quantile_order_full
+
     # q10 <= q50 <= q90 is satisfied (5 <= 10 <= 20), but q25 = 12 > q50 = 10
     q_crossed = [2.0, 5.0, 12.0, 10.0, 15.0, 20.0, 25.0]
     res = check_quantile_order_full(q_crossed)
@@ -290,4 +301,3 @@ def test_check_quantile_order_full_catches_mid_quantile_crossing():
     res_valid = check_quantile_order_full(q_valid)
     assert res_valid.passed is True
     assert res_valid.code == "OK_QUANTILE_ORDER_FULL"
-

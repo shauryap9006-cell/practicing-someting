@@ -15,7 +15,7 @@ from data.audit import (
     record_audit,
     verify_audit_chain_integrity,
 )
-from data.db import Database, get_db
+from data.db import get_db
 from data.seed_users import seed_roles_and_users
 
 client = TestClient(app)

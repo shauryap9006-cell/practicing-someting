@@ -9,11 +9,12 @@ as dominant evidence.
 from __future__ import annotations
 
 import datetime
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
 
 from data.db import Database, get_db
-from engine.clocks import get_clock, IST_TIMEZONE
+from engine.clocks import IST_TIMEZONE, get_clock
 
 
 class PositionRecord:
@@ -72,7 +73,7 @@ class PositionResolver:
         t_now = as_of_time or clock.now()
         if hasattr(t_now, "tzinfo") and t_now.tzinfo is None:
             t_now = t_now.replace(tzinfo=IST_TIMEZONE)
-        
+
         now_iso = t_now.isoformat()
 
         n_stops = len(route_stops)
@@ -116,7 +117,9 @@ class PositionResolver:
             if ad_stop:
                 ad_seq = int(ad_stop["seq"])
                 try:
-                    act_dt = datetime.datetime.fromisoformat(ad_row["actual_ts"].replace("Z", "+00:00"))
+                    act_dt = datetime.datetime.fromisoformat(
+                        ad_row["actual_ts"].replace("Z", "+00:00")
+                    )
                     if act_dt.tzinfo is None:
                         act_dt = act_dt.replace(tzinfo=IST_TIMEZONE)
                     ad_age_s = max(0.0, (t_now - act_dt).total_seconds())
@@ -140,6 +143,19 @@ class PositionResolver:
             raw_ev = cur.fetchone()
             ev_dict = dict(raw_ev) if raw_ev else {}
 
+        # If the latest recorded telemetry is older than 24 hours, it belongs to a historical journey, not the current run
+        if ev_dict.get("event_time"):
+            try:
+                ev_dt = datetime.datetime.fromisoformat(
+                    ev_dict["event_time"].replace("Z", "+00:00")
+                )
+                if ev_dt.tzinfo is None:
+                    ev_dt = ev_dt.replace(tzinfo=IST_TIMEZONE)
+                if (t_now - ev_dt).total_seconds() > 86400.0:
+                    ev_dict = {}
+            except Exception:
+                pass
+
         # Explicit assertion: any candidate event with event_time > now must be IMPOSSIBLE by construction
         if ev_dict.get("event_time"):
             assert ev_dict["event_time"] <= now_iso, (
@@ -154,7 +170,9 @@ class PositionResolver:
         age_seconds = 60.0
         if ev_dict.get("event_time"):
             try:
-                ev_dt = datetime.datetime.fromisoformat(ev_dict["event_time"].replace("Z", "+00:00"))
+                ev_dt = datetime.datetime.fromisoformat(
+                    ev_dict["event_time"].replace("Z", "+00:00")
+                )
                 if ev_dt.tzinfo is None:
                     ev_dt = ev_dt.replace(tzinfo=IST_TIMEZONE)
                 age_seconds = max(0.0, (t_now - ev_dt).total_seconds())
@@ -165,7 +183,9 @@ class PositionResolver:
             sched_time_str = st.get("sched_arr") or st.get("sched_dep") or "12:00"
             if ":" in sched_time_str:
                 sh, sm = [int(x) for x in sched_time_str.split(":")[:2]]
-                event_est_dt = datetime.datetime(t_now.year, t_now.month, t_now.day, sh, sm, tzinfo=IST_TIMEZONE) + datetime.timedelta(minutes=curr_delay)
+                event_est_dt = datetime.datetime(
+                    t_now.year, t_now.month, t_now.day, sh, sm, tzinfo=IST_TIMEZONE
+                ) + datetime.timedelta(minutes=curr_delay)
                 age_seconds = max(10.0, abs((t_now - event_est_dt).total_seconds()))
 
         # 3. Soft Position Posterior Distribution: P(seq=k) ∝ exp(-Δt_since_k / τ_k) · SchedPrior(k | now)
@@ -184,10 +204,12 @@ class PositionResolver:
                 sched_arr_str = stop.get("sched_arr") or stop.get("sched_dep") or "12:00"
                 if ":" in sched_arr_str:
                     sh, sm = [int(x) for x in sched_arr_str.split(":")[:2]]
-                    exp_arr_dt = datetime.datetime(t_now.year, t_now.month, t_now.day, sh, sm, tzinfo=IST_TIMEZONE) + datetime.timedelta(minutes=curr_delay)
+                    exp_arr_dt = datetime.datetime(
+                        t_now.year, t_now.month, t_now.day, sh, sm, tzinfo=IST_TIMEZONE
+                    ) + datetime.timedelta(minutes=curr_delay)
                     time_diff_min = (exp_arr_dt - t_now).total_seconds() / 60.0
                     # Gaussian prior around expected transit window
-                    prior = float(np.exp(- (time_diff_min ** 2) / (2 * (30.0 ** 2))))
+                    prior = float(np.exp(-(time_diff_min**2) / (2 * (30.0**2))))
                     probs[seq_k] = max(0.01, prior)
                 else:
                     probs[seq_k] = 0.02
@@ -211,7 +233,7 @@ class PositionResolver:
         else:
             probs = {k: 1.0 / n_stops for k in seq_to_stop}
 
-        mode_seq = max(probs, key=probs.get)
+        mode_seq = max(probs, key=probs.__getitem__)
         max_prob = probs[mode_seq]
 
         if ad_fresh and ad_seq == mode_seq:

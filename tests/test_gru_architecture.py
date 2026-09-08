@@ -8,14 +8,12 @@ Verifies:
 5. End-to-end gradient flow through all neural components.
 """
 
-import numpy as np
-import pytest
 import torch
+
 from ml.model_seq import (
     NonCrossingGRUQuantileModel,
-    FiLMLayer,
-    station_code_to_idx,
     PinballQuantileLoss,
+    station_code_to_idx,
 )
 
 
@@ -43,10 +41,13 @@ def test_masked_temporal_attention_zero_mass():
     # Sample 0: first 4 steps are padding, last 2 steps are valid
     # Sample 1: first 2 steps are padding, last 4 steps are valid
     x = torch.randn(2, 6, 8)
-    mask = torch.tensor([
-        [False, False, False, False, True, True],
-        [False, False, True, True, True, True],
-    ], dtype=torch.bool)
+    mask = torch.tensor(
+        [
+            [False, False, False, False, True, True],
+            [False, False, True, True, True, True],
+        ],
+        dtype=torch.bool,
+    )
 
     with torch.no_grad():
         q10, q50, q90 = model(x, mask=mask)
@@ -54,8 +55,12 @@ def test_masked_temporal_attention_zero_mass():
     attn_weights = model.last_attn_weights.squeeze(-1)  # [2, 6]
 
     # Check that masked positions have 0.0 attention mass
-    assert torch.all(attn_weights[0, :4] < 1e-6), f"Sample 0 padded positions have nonzero attention: {attn_weights[0, :4]}"
-    assert torch.all(attn_weights[1, :2] < 1e-6), f"Sample 1 padded positions have nonzero attention: {attn_weights[1, :2]}"
+    assert torch.all(attn_weights[0, :4] < 1e-6), (
+        f"Sample 0 padded positions have nonzero attention: {attn_weights[0, :4]}"
+    )
+    assert torch.all(attn_weights[1, :2] < 1e-6), (
+        f"Sample 1 padded positions have nonzero attention: {attn_weights[1, :2]}"
+    )
 
     # Check that sum of attention weights across time equals 1.0
     attn_sums = attn_weights.sum(dim=1)
@@ -81,7 +86,9 @@ def test_film_context_modulation():
         q10_fog, q50_fog, q90_fog = model(x, context=ctx_fog)
 
     # Modulated outputs should differ
-    assert not torch.allclose(q50_clear, q50_fog, atol=1e-4), "Context should modulate predictions via FiLM"
+    assert not torch.allclose(q50_clear, q50_fog, atol=1e-4), (
+        "Context should modulate predictions via FiLM"
+    )
 
 
 def test_non_crossing_monotonicity():

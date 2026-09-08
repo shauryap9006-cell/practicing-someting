@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Route-join root cause: which hypothesis explains the 17.5-month gap?"""
 import sqlite3, gzip, shutil, re
 from pathlib import Path

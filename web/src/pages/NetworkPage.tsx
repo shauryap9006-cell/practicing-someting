@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
-import type { LivePosition, CongestionRadarData } from '../lib/types';
+import type { LivePosition, CongestionRadarData } from '@railtwin/shared-types';
 import { SectionShell, StatCard, DataTable, LoadingState, ErrorState, type TableColumn } from '../primitives';
 
 export const NetworkPage: React.FC = () => {

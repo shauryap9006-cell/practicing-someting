@@ -8,9 +8,10 @@ from __future__ import annotations
 
 import datetime
 import json
-from pathlib import Path
-from typing import Dict, Tuple, Optional
 import random
+from pathlib import Path
+from typing import Dict, Optional, Tuple
+
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
@@ -37,7 +38,6 @@ class ModelTrainer:
         self.artifacts_dir.mkdir(parents=True, exist_ok=True)
         self.snapshot_gen = SnapshotGenerator(self.db)
 
-
     def prepare_datasets(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Loads and splits snapshot data into TRAIN (full archive) and TEST sets.
 
@@ -46,7 +46,9 @@ class ModelTrainer:
         ESS printed for transparency.
         """
         with self.db.transaction() as cur:
-            cur.execute("SELECT MIN(run_date) as min_date, MAX(run_date) as max_date FROM station_events")
+            cur.execute(
+                "SELECT MIN(run_date) as min_date, MAX(run_date) as max_date FROM station_events"
+            )
             row = cur.fetchone()
 
         if row and row["max_date"] and row["min_date"]:
@@ -57,7 +59,7 @@ class ModelTrainer:
             # F25 FIX: train uses FULL archive from first event to cutoff
             test_start_d = max_d - datetime.timedelta(days=test_len - 1)
             train_cutoff_d = test_start_d - datetime.timedelta(days=1)
-            start_date_d = min_db_d   # <-- was: train_cutoff - 21 days; now: full archive
+            start_date_d = min_db_d  # <-- was: train_cutoff - 21 days; now: full archive
 
             start_date = start_date_d.strftime("%Y-%m-%d")
             train_cutoff = train_cutoff_d.strftime("%Y-%m-%d")
@@ -66,15 +68,25 @@ class ModelTrainer:
 
             span_days = (train_cutoff_d - start_date_d).days + 1
             span_months = round(span_days / 30.44, 1)
-            print(f"[F25] Training span: {start_date} -> {train_cutoff} = {span_days} days ({span_months} months)")
+            print(
+                f"[F25] Training span: {start_date} -> {train_cutoff} = {span_days} days ({span_months} months)"
+            )
         else:
             today = datetime.date.today()
-            start_date = (today - datetime.timedelta(days=settings.ML_TRAIN_DAYS + settings.ML_TEST_DAYS)).strftime("%Y-%m-%d")
-            train_cutoff = (today - datetime.timedelta(days=settings.ML_TEST_DAYS + 1)).strftime("%Y-%m-%d")
-            test_start = (today - datetime.timedelta(days=settings.ML_TEST_DAYS)).strftime("%Y-%m-%d")
+            start_date = (
+                today - datetime.timedelta(days=settings.ML_TRAIN_DAYS + settings.ML_TEST_DAYS)
+            ).strftime("%Y-%m-%d")
+            train_cutoff = (today - datetime.timedelta(days=settings.ML_TEST_DAYS + 1)).strftime(
+                "%Y-%m-%d"
+            )
+            test_start = (today - datetime.timedelta(days=settings.ML_TEST_DAYS)).strftime(
+                "%Y-%m-%d"
+            )
             test_end = today.strftime("%Y-%m-%d")
 
-        print(f"[INFO] Dynamic time-based split: TRAIN [{start_date} to {train_cutoff}], TEST [{test_start} to {test_end}]")
+        print(
+            f"[INFO] Dynamic time-based split: TRAIN [{start_date} to {train_cutoff}], TEST [{test_start} to {test_end}]"
+        )
 
         self.split_info = {
             "start_date": start_date,
@@ -89,14 +101,20 @@ class ModelTrainer:
         # F25: Compute and print Effective Sample Size (λ=0.0077, half-life=90d)
         if "sample_weight" in train_df.columns:
             w = train_df["sample_weight"].values
-            ess = float((w.sum() ** 2) / (w ** 2).sum())
-            print(f"[F25] ESS (half-life=90d, span={span_days if 'span_days' in dir() else '?'}d): {ess:,.0f}")
+            ess = float((w.sum() ** 2) / (w**2).sum())
+            print(
+                f"[F25] ESS (half-life=90d, span={span_days if 'span_days' in dir() else '?'}d): {ess:,.0f}"
+            )
         else:
             print("[F25] sample_weight column missing - ESS not computed")
 
         print(f"[F25] Training rows: {len(train_df):,}  (expect >>88,200 with full archive)")
-        span_actual = (datetime.date.fromisoformat(train_cutoff) - datetime.date.fromisoformat(start_date)).days
-        print(f"[F25] Span check: {span_actual} days >= 90? {'PASS' if span_actual >= 90 else 'FAIL'}")
+        span_actual = (
+            datetime.date.fromisoformat(train_cutoff) - datetime.date.fromisoformat(start_date)
+        ).days
+        print(
+            f"[F25] Span check: {span_actual} days >= 90? {'PASS' if span_actual >= 90 else 'FAIL'}"
+        )
 
         return train_df, test_df
 
@@ -116,7 +134,9 @@ class ModelTrainer:
         TASK-6a: Delta models use stronger regularization (lambda_l2=1.0, min_data_in_leaf=80)
         to handle noisy section-level increments at long horizons.
         """
-        print(f"[INFO] Training LightGBM Booster: {model_name} (alpha={alpha}, is_delta={is_delta})...")
+        print(
+            f"[INFO] Training LightGBM Booster: {model_name} (alpha={alpha}, is_delta={is_delta})..."
+        )
 
         train_data = lgb.Dataset(
             X_train[FEATURE_NAMES],
@@ -180,13 +200,23 @@ class ModelTrainer:
         """
         from ml.conformal import MondrianCQR
 
-        print(f"[INFO] Computing Mondrian Conformal CQR calibration for {model_type} (target coverage: {(1-alpha_coverage)*100:.0f}%)...")
+        print(
+            f"[INFO] Computing Mondrian Conformal CQR calibration for {model_type} (target coverage: {(1 - alpha_coverage) * 100:.0f}%)..."
+        )
         q_lo_pred = models[0.1].predict(X_calib[FEATURE_NAMES])
         q_hi_pred = models[0.9].predict(X_calib[FEATURE_NAMES])
         y_actual = y_calib.values
 
-        hops_arr = X_calib["hops_remaining"].values if "hops_remaining" in X_calib.columns else np.ones(len(y_actual))
-        km_arr   = X_calib["km_remaining"].values   if "km_remaining"   in X_calib.columns else np.zeros(len(y_actual))
+        hops_arr = (
+            X_calib["hops_remaining"].values
+            if "hops_remaining" in X_calib.columns
+            else np.ones(len(y_actual))
+        )
+        km_arr = (
+            X_calib["km_remaining"].values
+            if "km_remaining" in X_calib.columns
+            else np.zeros(len(y_actual))
+        )
 
         mondrian = MondrianCQR(target_coverage=1.0 - alpha_coverage)
         bucket_q_hats = mondrian.calibrate(q_lo_pred, q_hi_pred, y_actual, hops_arr, km_arr)
@@ -211,13 +241,15 @@ class ModelTrainer:
             n_cell = int(np.sum(mask)) if mask is not None else 0
             print(f"  [MONDRIAN] {cell_key}: n={n_cell:,}  q_hat={q:.4f}")
 
-        print(f"[SUCCESS] Conformal adjustment factors for {model_type}: 1h={bucket_q_hats['1h']:.4f}  3h={bucket_q_hats['3h']:.4f}  6h={bucket_q_hats['6h']:.4f}")
+        print(
+            f"[SUCCESS] Conformal adjustment factors for {model_type}: 1h={bucket_q_hats['1h']:.4f}  3h={bucket_q_hats['3h']:.4f}  6h={bucket_q_hats['6h']:.4f}"
+        )
         return bucket_q_hats
-
 
     def train_all(self) -> dict:
         """Executes end-to-end training pipeline for all 6 models + calibration + baselines."""
         import joblib
+
         train_df, test_df = self.prepare_datasets()
 
         # Split train into training core (80%) and calibration/validation tail (20%)
@@ -237,7 +269,9 @@ class ModelTrainer:
         direct_mask = train_core["hops_remaining"] <= settings.DIRECT_MODEL_MAX_HOPS
         direct_train = train_core[direct_mask].copy()
         direct_train_weights = direct_weights[direct_mask] if direct_weights is not None else None
-        direct_calib = train_calib[train_calib["hops_remaining"] <= settings.DIRECT_MODEL_MAX_HOPS].copy()
+        direct_calib = train_calib[
+            train_calib["hops_remaining"] <= settings.DIRECT_MODEL_MAX_HOPS
+        ].copy()
 
         # Tail-Safety Oversampling for target_direct_delay > 120 (3x)
         extreme_mask = direct_train["target_direct_delay"] > 120
@@ -247,25 +281,34 @@ class ModelTrainer:
             if direct_train_weights is not None:
                 extreme_w = direct_train_weights[extreme_mask]
                 direct_train_weights = np.concatenate([direct_train_weights, extreme_w, extreme_w])
-            print(f"[INFO] Tail-Safety: Oversampled {len(extreme_rows)} rows with delay > 120m by 3x (total direct train: {len(direct_train):,} rows)")
-
+            print(
+                f"[INFO] Tail-Safety: Oversampled {len(extreme_rows)} rows with delay > 120m by 3x (total direct train: {len(direct_train):,} rows)"
+            )
 
         # 1. Train 3 DIRECT models (q=0.1, 0.5, 0.9) with early stopping
         direct_models = {}
         for q in settings.QUANTILE_ALPHAS:
-            name = f"model_direct_q{int(q*100)}"
+            name = f"model_direct_q{int(q * 100)}"
             direct_models[q] = self.train_quantile_model(
-                direct_train, direct_train["target_direct_delay"], q, name,
-                X_val=direct_calib, y_val=direct_calib["target_direct_delay"]
+                direct_train,
+                direct_train["target_direct_delay"],
+                q,
+                name,
+                X_val=direct_calib,
+                y_val=direct_calib["target_direct_delay"],
             )
 
         # 2. Train 3 DELTA models (q=0.1, 0.5, 0.9) with stronger regularization (TASK-6a)
         delta_models = {}
         for q in settings.QUANTILE_ALPHAS:
-            name = f"model_delta_q{int(q*100)}"
+            name = f"model_delta_q{int(q * 100)}"
             delta_models[q] = self.train_quantile_model(
-                train_core, train_core["target_section_delta"], q, name,
-                X_val=train_calib, y_val=train_calib["target_section_delta"],
+                train_core,
+                train_core["target_section_delta"],
+                q,
+                name,
+                X_val=train_calib,
+                y_val=train_calib["target_section_delta"],
                 is_delta=True,  # TASK-6a: use robust delta hyperparams
             )
 
@@ -273,25 +316,22 @@ class ModelTrainer:
         #    so all 3 Mondrian horizon cells get rows. direct_calib only has hops<=3
         #    which means km<90 only, leaving long_6h cell empty and q_hat=global fallback)
         calib_direct = self.compute_conformal_calibration(
-            direct_models, train_calib, train_calib["target_direct_delay"],
-            model_type="direct"
+            direct_models, train_calib, train_calib["target_direct_delay"], model_type="direct"
         )
         calib_delta = self.compute_conformal_calibration(
-            delta_models, train_calib, train_calib["target_section_delta"],
-            model_type="delta"
+            delta_models, train_calib, train_calib["target_section_delta"], model_type="delta"
         )
-
 
         # 4. Feature Importance Analysis (Gain and Split)
         importance_gain = direct_models[0.5].feature_importance(importance_type="gain")
         total_gain = max(1e-6, sum(importance_gain))
         feat_importance_dict = {
-            f: float(g / total_gain * 100.0)
-            for f, g in zip(FEATURE_NAMES, importance_gain)
+            f: float(g / total_gain * 100.0) for f, g in zip(FEATURE_NAMES, importance_gain)
         }
 
         # 5. Baseline B3: Scikit-learn Linear Regression on direct training set & Persist benchmark
         from sklearn.linear_model import LinearRegression
+
         lr_model = LinearRegression()
         lr_model.fit(train_core[FEATURE_NAMES], train_core["target_direct_delay"])
         lr_bench_path = self.artifacts_dir / "model_lr_benchmark.pkl"
@@ -299,7 +339,9 @@ class ModelTrainer:
         print(f"[SUCCESS] Persisted linear regression benchmark to {lr_bench_path}")
 
         lr_calib_pred = lr_model.predict(direct_calib[FEATURE_NAMES])
-        b3_calib_mae = float(np.mean(np.abs(direct_calib["target_direct_delay"].values - lr_calib_pred)))
+        b3_calib_mae = float(
+            np.mean(np.abs(direct_calib["target_direct_delay"].values - lr_calib_pred))
+        )
 
         manifest = {
             "trained_at": datetime.datetime.now().isoformat(),
@@ -336,4 +378,3 @@ if __name__ == "__main__":
     trainer = ModelTrainer()
     res = trainer.train_all()
     print("Training summary:", res)
-

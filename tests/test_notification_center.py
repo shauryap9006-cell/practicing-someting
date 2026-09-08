@@ -6,14 +6,12 @@ and the automated 5-minute escalation ladder for critical alerts.
 
 from datetime import datetime, timedelta, timezone
 
-import pytest
 from fastapi.testclient import TestClient
 
 from api.auth import create_access_token
 from api.main import app
-from data.db import Database, get_db
+from data.db import get_db
 from notifications.dispatcher import (
-    acknowledge_notification,
     escalate_unacked_notifications,
     notify,
 )

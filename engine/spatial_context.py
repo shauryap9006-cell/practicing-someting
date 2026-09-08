@@ -11,16 +11,17 @@ Schema adaptation notes (data/schema.sql):
 - JOIN key for position: station_events.train_no + station_events.seq (not station_code)
   because multiple trains share stations at different seqs.
 """
+
 from __future__ import annotations
 
 import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
 WINDOW_KM = 30.0
 MIN_HEADWAY_KM = 2.0
-SECTION_CAPACITY = int(WINDOW_KM / MIN_HEADWAY_KM)   # 15 trains per 30km window
+SECTION_CAPACITY = int(WINDOW_KM / MIN_HEADWAY_KM)  # 15 trains per 30km window
 ZERO: Dict[str, object] = dict(
     trains_ahead_30k=0,
     trains_behind_30k=0,
@@ -215,18 +216,23 @@ class SpatialIndexCache:
 
     def __init__(self, max_days: int = 7):
         import threading
+
         self.max_days = max_days
         self._cache: Dict[str, DaySpatialIndex] = {}
         self._versions: Dict[str, int] = {}  # date_str -> ingested event count
         self._access_order: List[str] = []
         self._lock = threading.Lock()
 
-    def get(self, db: Any, date_str: str, current_event_count: Optional[int] = None) -> DaySpatialIndex:
+    def get(
+        self, db: Any, date_str: str, current_event_count: Optional[int] = None
+    ) -> DaySpatialIndex:
         """Retrieves cached DaySpatialIndex, validating event version to prevent stale cache hits."""
         if current_event_count is None:
             try:
                 with db.transaction() as cur:
-                    cur.execute("SELECT COUNT(*) as c FROM station_events WHERE run_date = ?", (date_str,))
+                    cur.execute(
+                        "SELECT COUNT(*) as c FROM station_events WHERE run_date = ?", (date_str,)
+                    )
                     r = cur.fetchone()
                     current_event_count = int(r["c"]) if r else 0
             except Exception:
@@ -274,5 +280,3 @@ class SpatialIndexCache:
 
 # Global singleton instance for serving
 spatial_index_cache = SpatialIndexCache()
-
-

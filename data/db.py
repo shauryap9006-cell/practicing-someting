@@ -6,15 +6,25 @@ and table inspection against the single-file SQLite database.
 
 from __future__ import annotations
 
-import os
+import sys
+from pathlib import Path
+
+_REPO_ROOT = str(Path(__file__).resolve().parent.parent)
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
+import logging
 import re
 import sqlite3
+import time
 from contextlib import contextmanager
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Generator, List, Optional
 
 from config import settings
+from engine.clocks import get_clock
+
+logger = logging.getLogger(__name__)
 
 # Resolved from Settings so RAILTWIN_DB_PATH / RAILTWIN_SCHEMA_PATH are honoured
 # (docker-compose sets RAILTWIN_DB_PATH; it was previously ignored).
@@ -34,11 +44,14 @@ class Database:
             if gz_path.exists():
                 import gzip
                 import shutil
-                print(f"[DB] Extracting compressed dataset {gz_path.name} -> {self.db_path.name}...", flush=True)
+
+                logger.info(
+                    "Extracting compressed dataset %s -> %s...", gz_path.name, self.db_path.name
+                )
                 with gzip.open(gz_path, "rb") as f_in:
                     with open(self.db_path, "wb") as f_out:
                         shutil.copyfileobj(f_in, f_out)
-                print("[DB] Dataset extracted successfully.", flush=True)
+                logger.info("Dataset extracted successfully.")
 
     def get_connection(self) -> sqlite3.Connection:
         """Returns a new sqlite3 connection configured with foreign keys and row factory."""
@@ -61,9 +74,23 @@ class Database:
         """Context manager providing a transactional cursor with automatic commit/rollback and thread-safe write protection."""
         conn = self.get_connection()
         cursor = conn.cursor()
+        t0 = time.monotonic()
         try:
             yield cursor
             conn.commit()
+            duration = time.monotonic() - t0
+            if duration > 1.0:
+                logger.warning(
+                    "SQLite transaction completed with significant lock wait: %.2fs", duration
+                )
+        except sqlite3.OperationalError as op_err:
+            duration = time.monotonic() - t0
+            if "locked" in str(op_err).lower() or "busy" in str(op_err).lower():
+                logger.warning(
+                    "SQLite lock wait/contention encountered after %.2fs: %s", duration, op_err
+                )
+            conn.rollback()
+            raise
         except Exception:
             conn.rollback()
             raise
@@ -90,7 +117,7 @@ class Database:
 
     def materialize_historical_baselines(self) -> int:
         """Materializes historical delay averages into hist_baselines table for O(1) journey lookups (F31)."""
-        now_iso = datetime.now(timezone.utc).isoformat()
+        now_iso = get_clock().now_iso()
         with self.transaction() as cur:
             cur.execute(
                 """
@@ -111,8 +138,11 @@ class Database:
             cur.execute("SELECT COUNT(*) FROM hist_baselines;")
             return int(cur.fetchone()[0])
 
-
-    def apply_migrations(self, migrations_dir: Optional[Path | str] = None) -> List[str]:
+    def apply_migrations(
+        self,
+        migrations_dir: Optional[Path | str] = None,
+        target_version: Optional[int] = None,
+    ) -> List[str]:
         """Applies pending SQL migration files in ascending order and records them in schema_migrations."""
         mdir = Path(migrations_dir) if migrations_dir else MIGRATIONS_DIR
         applied: List[str] = []
@@ -136,12 +166,16 @@ class Database:
             cursor.execute("SELECT version FROM schema_migrations ORDER BY version ASC;")
             applied_versions = {row[0] for row in cursor.fetchall()}
 
-            migration_files = sorted(mdir.glob("*.sql"))
+            migration_files = sorted(
+                [f for f in mdir.glob("*.sql") if not f.name.endswith(".down.sql")]
+            )
             for mfile in migration_files:
                 match = re.match(r"^(\d+)_", mfile.name)
                 if not match:
                     continue
                 version = int(match.group(1))
+                if target_version is not None and version > target_version:
+                    continue
                 if version not in applied_versions:
                     sql_content = mfile.read_text(encoding="utf-8")
                     try:
@@ -151,7 +185,7 @@ class Database:
                             pass
                         else:
                             raise
-                    now_iso = datetime.now(timezone.utc).isoformat()
+                    now_iso = get_clock().now_iso()
                     cursor.execute(
                         "INSERT OR IGNORE INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?);",
                         (version, mfile.name, now_iso),
@@ -162,6 +196,108 @@ class Database:
             conn.close()
 
         return applied
+
+    def downgrade_migrations(
+        self,
+        steps: int = 1,
+        target_version: Optional[int] = None,
+        migrations_dir: Optional[Path | str] = None,
+    ) -> List[str]:
+        """Rolls back applied SQL migrations in descending order using paired .down.sql files."""
+        mdir = Path(migrations_dir) if migrations_dir else MIGRATIONS_DIR
+        downgraded: List[str] = []
+        if not mdir.exists():
+            return downgraded
+
+        conn = self.get_connection()
+        try:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS schema_migrations (
+                    version INTEGER PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    applied_at TEXT NOT NULL
+                );
+                """
+            )
+            conn.commit()
+
+            cursor = conn.cursor()
+            cursor.execute("SELECT version, name FROM schema_migrations ORDER BY version DESC;")
+            applied_rows = cursor.fetchall()
+            if not applied_rows:
+                return downgraded
+
+            # Build map of version -> down file
+            down_files: dict[int, Path] = {}
+            for f in mdir.glob("*.down.sql"):
+                match = re.match(r"^(\d+)_", f.name)
+                if match:
+                    down_files[int(match.group(1))] = f
+
+            for row in applied_rows:
+                version, name = row[0], row[1]
+                if target_version is not None:
+                    if version <= target_version:
+                        break
+                elif len(downgraded) >= steps:
+                    break
+
+                down_file = down_files.get(version)
+                if not down_file:
+                    raise FileNotFoundError(
+                        f"Missing paired downgrade script for migration {name} (version {version})"
+                    )
+
+                sql_content = down_file.read_text(encoding="utf-8")
+                try:
+                    cursor.executescript(sql_content)
+                except sqlite3.OperationalError as e:
+                    err_msg = str(e).lower()
+                    if (
+                        "no such column" in err_msg
+                        or "no such index" in err_msg
+                        or "no such table" in err_msg
+                    ):
+                        pass
+                    else:
+                        raise
+
+                cursor.execute("DELETE FROM schema_migrations WHERE version = ?;", (version,))
+                conn.commit()
+                downgraded.append(down_file.name)
+        finally:
+            conn.close()
+
+        return downgraded
+
+    def get_migration_status(self, migrations_dir: Optional[Path | str] = None) -> dict:
+        """Returns applied and pending migrations."""
+        mdir = Path(migrations_dir) if migrations_dir else MIGRATIONS_DIR
+        applied = []
+        conn = self.get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='schema_migrations';"
+            )
+            if cursor.fetchone():
+                cursor.execute(
+                    "SELECT version, name, applied_at FROM schema_migrations ORDER BY version ASC;"
+                )
+                applied = [dict(r) for r in cursor.fetchall()]
+        finally:
+            conn.close()
+
+        applied_versions = {r["version"] for r in applied}
+        all_up_files = sorted([f for f in mdir.glob("*.sql") if not f.name.endswith(".down.sql")])
+        pending = []
+        for f in all_up_files:
+            m = re.match(r"^(\d+)_", f.name)
+            if m and int(m.group(1)) not in applied_versions:
+                pending.append({"version": int(m.group(1)), "name": f.name})
+
+        return {"applied": applied, "pending": pending}
 
     def init_schema(self, schema_file: Optional[Path | str] = None) -> None:
         """Initializes tables, indexes, and constraints from schema.sql and applies migrations."""
@@ -243,7 +379,7 @@ class Database:
     ) -> None:
         """Upserts a single train's real-time live position."""
         if updated_at is None:
-            updated_at = datetime.now(timezone.utc).isoformat()
+            updated_at = get_clock().now_iso()
         with self.transaction() as cur:
             cur.execute(
                 """
@@ -269,9 +405,22 @@ class Database:
                     updated_at = excluded.updated_at;
                 """,
                 (
-                    train_no, run_date, lat, lng, current_station_code, next_station_code,
-                    section_id, speed_kmh, delay_minutes, confidence, progress_pct,
-                    is_dead_reckoned, source, last_event_time, last_gps_fix, updated_at
+                    train_no,
+                    run_date,
+                    lat,
+                    lng,
+                    current_station_code,
+                    next_station_code,
+                    section_id,
+                    speed_kmh,
+                    delay_minutes,
+                    confidence,
+                    progress_pct,
+                    is_dead_reckoned,
+                    source,
+                    last_event_time,
+                    last_gps_fix,
+                    updated_at,
                 ),
             )
 
@@ -279,7 +428,7 @@ class Database:
         """Upserts multiple live position records in a single transaction."""
         if not records:
             return 0
-        now_iso = datetime.now(timezone.utc).isoformat()
+        now_iso = get_clock().now_iso()
         with self.transaction() as cur:
             for r in records:
                 cur.execute(
@@ -360,7 +509,7 @@ class Database:
     ) -> int:
         """Appends an immutable causal delay attribution event to the live delay ledger."""
         if created_at is None:
-            created_at = datetime.now(timezone.utc).isoformat()
+            created_at = get_clock().now_iso()
         with self.transaction() as cur:
             cur.execute(
                 """
@@ -371,9 +520,18 @@ class Database:
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
                 """,
                 (
-                    train_no, run_date, timestamp, delay_change_min, previous_delay_min,
-                    current_delay_min, primary_cause, secondary_cause, confidence,
-                    evidence_json, is_exact_accounting, created_at
+                    train_no,
+                    run_date,
+                    timestamp,
+                    delay_change_min,
+                    previous_delay_min,
+                    current_delay_min,
+                    primary_cause,
+                    secondary_cause,
+                    confidence,
+                    evidence_json,
+                    is_exact_accounting,
+                    created_at,
                 ),
             )
             return cur.lastrowid
@@ -420,10 +578,55 @@ def get_db(db_path: Optional[Path | str] = None) -> Database:
 
 
 if __name__ == "__main__":
-    print("=== RailTwin-X Database Initialization Demo ===")
+    import argparse
+
+    parser = argparse.ArgumentParser(description="RailTwin-X Database & Migration CLI")
+    parser.add_argument(
+        "--init", action="store_true", help="Initialize schema and apply all migrations"
+    )
+    parser.add_argument("--migrate", action="store_true", help="Apply pending forward migrations")
+    parser.add_argument(
+        "--target", type=int, default=None, help="Target migration version to apply"
+    )
+    parser.add_argument(
+        "--downgrade", type=int, default=None, metavar="N", help="Rollback N migrations"
+    )
+    parser.add_argument(
+        "--downgrade-to",
+        type=int,
+        default=None,
+        metavar="VERSION",
+        help="Rollback to specified version",
+    )
+    parser.add_argument("--status", action="store_true", help="Show migration status")
+
+    args = parser.parse_args()
     db = get_db()
-    db.init_schema()
-    counts = db.table_counts()
-    print("Database schema successfully initialized. Table row counts:")
-    for tbl, cnt in counts.items():
-        print(f"  - {tbl}: {cnt} rows")
+
+    if args.downgrade is not None:
+        print(f"Rolling back {args.downgrade} migration(s)...")
+        rolled = db.downgrade_migrations(steps=args.downgrade)
+        print(f"Rolled back {len(rolled)} migration(s): {rolled}")
+    elif args.downgrade_to is not None:
+        print(f"Rolling back to version {args.downgrade_to}...")
+        rolled = db.downgrade_migrations(target_version=args.downgrade_to)
+        print(f"Rolled back {len(rolled)} migration(s): {rolled}")
+    elif args.migrate:
+        print("Applying pending forward migrations...")
+        applied = db.apply_migrations(target_version=args.target)
+        print(f"Applied {len(applied)} migration(s): {applied}")
+    elif args.status:
+        st = db.get_migration_status()
+        print(f"Applied migrations ({len(st['applied'])}):")
+        for m in st["applied"]:
+            print(f"  v{m['version']}: {m['name']} (applied {m['applied_at']})")
+        print(f"Pending migrations ({len(st['pending'])}):")
+        for m in st["pending"]:
+            print(f"  v{m['version']}: {m['name']}")
+    else:
+        print("=== RailTwin-X Database Initialization Demo ===")
+        db.init_schema()
+        counts = db.table_counts()
+        print("Database schema successfully initialized. Table row counts:")
+        for tbl, cnt in counts.items():
+            print(f"  - {tbl}: {cnt} rows")

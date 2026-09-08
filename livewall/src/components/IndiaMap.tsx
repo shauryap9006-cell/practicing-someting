@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
-import type { LivePosition, NetworkState, StationMeta } from '../lib/types';
+import type { LivePosition, NetworkState, StationMeta } from '@railtwin/shared-types';
 
 interface IndiaMapProps {
   positions: LivePosition[];

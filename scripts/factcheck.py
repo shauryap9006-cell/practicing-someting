@@ -29,11 +29,20 @@ def factcheck_system() -> bool:
     else:
         with open(metrics_path, "r", encoding="utf-8") as f:
             metrics = json.load(f)
-        required_keys = ["canonical_mae", "overall_mae", "overall_coverage_80", "overall_winkler_score", "overall_crps", "proof_table"]
+        required_keys = [
+            "canonical_mae",
+            "overall_mae",
+            "overall_coverage_80",
+            "overall_winkler_score",
+            "overall_crps",
+            "proof_table",
+        ]
         for k in required_keys:
             if k not in metrics:
                 errors.append(f"metrics.json missing required key: {k}")
-        print(f"[PASS] metrics.json validated with MAE={metrics.get('canonical_mae')}m, 80% Coverage={metrics.get('overall_coverage_80'):.1f}%, Winkler={metrics.get('overall_winkler_score'):.1f}")
+        print(
+            f"[PASS] metrics.json validated with MAE={metrics.get('canonical_mae')}m, 80% Coverage={metrics.get('overall_coverage_80'):.1f}%, Winkler={metrics.get('overall_winkler_score'):.1f}"
+        )
 
     # 2. Check model registry
     reg_path = settings.ARTIFACTS_DIR / "registry.json"
@@ -44,7 +53,9 @@ def factcheck_system() -> bool:
             reg = json.load(f)
         if "champion" not in reg:
             errors.append("registry.json missing 'champion' designation")
-        print(f"[PASS] registry.json validated: Champion={reg.get('champion', {}).get('model_name')}")
+        print(
+            f"[PASS] registry.json validated: Champion={reg.get('champion', {}).get('model_name')}"
+        )
 
     # 3. Check database connectivity and event counts
     try:
@@ -52,7 +63,9 @@ def factcheck_system() -> bool:
         counts = db.table_counts()
         if counts.get("station_events", 0) == 0:
             errors.append("Database has 0 station_events recorded.")
-        print(f"[PASS] SQLite verified with {counts.get('station_events', 0):,} events across {counts.get('trains', 0):,} trains.")
+        print(
+            f"[PASS] SQLite verified with {counts.get('station_events', 0):,} events across {counts.get('trains', 0):,} trains."
+        )
     except Exception as e:
         errors.append(f"Database connectivity failed: {e}")
 
@@ -74,7 +87,9 @@ def factcheck_system() -> bool:
             print(f"  - [FAIL] {err}")
         return False
 
-    print("\n[SUCCESS] All documentation numbers, models, and database artifacts fact-checked cleanly!")
+    print(
+        "\n[SUCCESS] All documentation numbers, models, and database artifacts fact-checked cleanly!"
+    )
     return True
 
 

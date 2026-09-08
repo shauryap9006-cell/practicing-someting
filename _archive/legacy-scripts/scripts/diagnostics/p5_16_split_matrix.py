@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Journey-granularity overlap matrix + fog-allocation options for v3 splits."""
 import sqlite3, gzip, shutil, json, sys, datetime
 from pathlib import Path

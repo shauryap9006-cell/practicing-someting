@@ -16,20 +16,21 @@ from __future__ import annotations
 
 import datetime
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 import numpy as np
 import pandas as pd
 
 from config import settings
 from data.db import get_db
-
+from engine.clocks import now_iso
 
 # ---------------------------------------------------------------------------
 # PSI calculation
 # ---------------------------------------------------------------------------
+
 
 def _psi_score(expected: np.ndarray, actual: np.ndarray, n_bins: int = 10) -> float:
     """Computes Population Stability Index between two 1-D arrays.
@@ -69,6 +70,7 @@ def _psi_score(expected: np.ndarray, actual: np.ndarray, n_bins: int = 10) -> fl
 # ---------------------------------------------------------------------------
 # CUSUM & ADWIN Change-Point Detectors (F28, F29)
 # ---------------------------------------------------------------------------
+
 
 class CUSUMDetector:
     """Two-sided Cumulative Sum (CUSUM) change-point detector for shift in mean delay."""
@@ -141,7 +143,7 @@ class ADWINDetector:
 class FeatureDriftResult:
     feature: str
     psi: float
-    status: str       # "GREEN" | "AMBER" | "RED"
+    status: str  # "GREEN" | "AMBER" | "RED"
     expected_mean: float
     actual_mean: float
     expected_std: float
@@ -176,11 +178,12 @@ class DriftReport:
 # PSI Drift Monitor
 # ---------------------------------------------------------------------------
 
+
 class PSIDriftMonitor:
     """Computes per-feature PSI drift between training reference and recent live window."""
 
     PSI_AMBER = 0.10
-    PSI_RED   = 0.25
+    PSI_RED = 0.25
 
     def __init__(
         self,
@@ -227,19 +230,24 @@ class PSIDriftMonitor:
         today = datetime.date.today()
 
         # Reference window: training split
-        ref_end   = today - datetime.timedelta(days=self.live_days)
+        ref_end = today - datetime.timedelta(days=self.live_days)
         ref_start = ref_end - datetime.timedelta(days=self.reference_days)
 
         # Live window: last N days
         live_start = today - datetime.timedelta(days=self.live_days)
-        live_end   = today
+        live_end = today
 
-        ref_df  = self._load_snapshots(ref_start.isoformat(), ref_end.isoformat())
+        ref_df = self._load_snapshots(ref_start.isoformat(), ref_end.isoformat())
         live_df = self._load_snapshots(live_start.isoformat(), live_end.isoformat())
 
         features_to_monitor = [
-            "current_delay", "hops_remaining", "km_remaining",
-            "hour_of_day", "train_priority", "fog_flag_target", "rain_mm_target",
+            "current_delay",
+            "hops_remaining",
+            "km_remaining",
+            "hour_of_day",
+            "train_priority",
+            "fog_flag_target",
+            "rain_mm_target",
         ]
 
         results: List[FeatureDriftResult] = []
@@ -272,13 +280,13 @@ class PSIDriftMonitor:
                 )
             )
 
-        red_count   = sum(1 for r in results if r.status == "RED")
+        red_count = sum(1 for r in results if r.status == "RED")
         amber_count = sum(1 for r in results if r.status == "AMBER")
 
         overall = "RED" if red_count > 0 else ("AMBER" if amber_count > 0 else "GREEN")
 
         report = DriftReport(
-            generated_at=datetime.datetime.now().isoformat(),
+            generated_at=now_iso(),
             reference_window_days=self.reference_days,
             live_window_days=self.live_days,
             total_features=len(results),
@@ -311,9 +319,14 @@ class PSIDriftMonitor:
                         "critical" if report.overall_status == "RED" else "warning",
                         "ML Feature Distribution Drift Detected",
                         f"CRITICAL DRIFT BREACH: {report.red_features} features exceeded PSI threshold 0.25 (Status: {report.overall_status})",
-                        json.dumps({"red_features": report.red_features, "overall_status": report.overall_status}),
+                        json.dumps(
+                            {
+                                "red_features": report.red_features,
+                                "overall_status": report.overall_status,
+                            }
+                        ),
                         "queued",
-                        datetime.datetime.now().isoformat(),
+                        now_iso(),
                     ),
                 )
         except Exception as e:
@@ -331,7 +344,9 @@ if __name__ == "__main__":
     saved = report.save()
     print(f"Overall status: {report.overall_status}")
     print(f"Features monitored: {report.total_features}")
-    print(f"  GREEN: {report.green_features}  AMBER: {report.amber_features}  RED: {report.red_features}")
+    print(
+        f"  GREEN: {report.green_features}  AMBER: {report.amber_features}  RED: {report.red_features}"
+    )
     for r in report.features:
         flag = "⚠️  " if r.status != "GREEN" else "   "
         print(f"  {flag}{r.feature:35s}  PSI={r.psi:.4f}  [{r.status}]")

@@ -7,17 +7,16 @@ Implements:
 4. Acceptance rate tracking and logging.
 5. Incumbent cost guarantee (strictly non-inferior to baseline schedule).
 """
+
 from __future__ import annotations
 
 import copy
 import datetime
 import time
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
-
-from engine.ops import PlatformBlock, PlatformConflict
 
 S_SELECT = 256
 S_CERT = 600
@@ -61,7 +60,9 @@ class RiskPlatformBlock:
             return weight * overlap_min
         return 0.0
 
-    def sample_occupancies(self, n_scenarios: int, rng: np.random.RandomState) -> Tuple[np.ndarray, np.ndarray]:
+    def sample_occupancies(
+        self, n_scenarios: int, rng: np.random.RandomState
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """Samples n_scenarios of arrival and departure minutes via asymmetric triangular distribution."""
         lo = min(self.delay_q10, self.delay_q50 - 0.1)
         mode = self.delay_q50
@@ -166,7 +167,7 @@ class RiskAwareReOptimizer:
     ) -> Tuple[float, int]:
         if len(pair_i) == 0:
             return 0.0, 0
-        same_p = (platforms[pair_i] == platforms[pair_j])
+        same_p = platforms[pair_i] == platforms[pair_j]
         if np.any(same_p):
             scen_loss = pair_overlaps[same_p].sum(axis=0)
             tail_cutoff = int(np.ceil(0.95 * n_scenarios))
@@ -199,8 +200,12 @@ class RiskAwareReOptimizer:
         starts_sel, ends_sel = self._simulate_scenarios(blocks, S_SELECT, self.rng_select)
         starts_cert, ends_cert = self._simulate_scenarios(blocks, S_CERT, self.rng_cert)
 
-        p_i_sel, p_j_sel, overlaps_sel = self._precompute_pair_overlaps(starts_sel, ends_sel, priorities)
-        p_i_cert, p_j_cert, overlaps_cert = self._precompute_pair_overlaps(starts_cert, ends_cert, priorities)
+        p_i_sel, p_j_sel, overlaps_sel = self._precompute_pair_overlaps(
+            starts_sel, ends_sel, priorities
+        )
+        p_i_cert, p_j_cert, overlaps_cert = self._precompute_pair_overlaps(
+            starts_cert, ends_cert, priorities
+        )
 
         curr_platforms = orig_platforms_arr.copy()
         incumbent_cost, conflicts_before = self._evaluate_fast(
@@ -233,7 +238,12 @@ class RiskAwareReOptimizer:
                     if cand_cost < best_cost:
                         # Independent Certification on pre-drawn scenarios (S_cert=600, Hoeffding bound)
                         cand_cert_cost, _ = self._evaluate_fast(
-                            curr_platforms, orig_platforms_arr, p_i_cert, p_j_cert, overlaps_cert, S_CERT
+                            curr_platforms,
+                            orig_platforms_arr,
+                            p_i_cert,
+                            p_j_cert,
+                            overlaps_cert,
+                            S_CERT,
                         )
 
                         if cand_cert_cost < incumb_cert_cost and cand_cert_cost < best_cost:
@@ -263,11 +273,13 @@ class RiskAwareReOptimizer:
             b.platform = int(final_platforms[i])
             old_p = orig_platforms[b.train_no]
             if b.platform != old_p:
-                swaps.append({
-                    "train_no": b.train_no,
-                    "from_platform": old_p,
-                    "to_platform": b.platform,
-                })
+                swaps.append(
+                    {
+                        "train_no": b.train_no,
+                        "from_platform": old_p,
+                        "to_platform": b.platform,
+                    }
+                )
 
         dt_ms = (time.perf_counter() - t0) * 1000.0
         acc_rate = float(n_accepted) / float(max(1, n_evaluated))

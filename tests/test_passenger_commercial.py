@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 
 from api.auth import create_access_token
 from api.main import app
+from config import settings
 
 client = TestClient(app)
 
@@ -48,6 +49,8 @@ def test_delay_certificate_lifecycle(auth_headers):
     assert "IR-DC-NDLS-" in cert_no
     assert data["issued_to_name"] == "Rohan Sharma"
     assert data["delay_min"] >= 0
+    assert data["verification_url"].startswith(settings.PUBLIC_URL.rstrip("/"))
+    assert f"/api/commercial/delay-certificate/verify/{qr_token}" in data["verification_url"]
 
     # 2. Get Certificate by cert_no
     get_resp = client.get(f"/api/commercial/delay-certificate/{cert_no}", headers=auth_headers)
@@ -116,7 +119,9 @@ def test_lost_and_found_workflow(auth_headers):
     assert resp.json()["status"] == "UNCLAIMED"
 
     # 2. Query Unclaimed Items
-    list_resp = client.get("/api/commercial/lost-found?station_code=NDLS&status=UNCLAIMED", headers=auth_headers)
+    list_resp = client.get(
+        "/api/commercial/lost-found?station_code=NDLS&status=UNCLAIMED", headers=auth_headers
+    )
     assert list_resp.status_code == 200
     items = list_resp.json()
     assert any(i["id"] == item_id for i in items)
@@ -127,7 +132,65 @@ def test_lost_and_found_workflow(auth_headers):
         "claimant_id_proof": "Aadhaar XXXX-XXXX-1234",
         "claimant_phone": "+919811223344",
     }
-    claim_resp = client.put(f"/api/commercial/lost-found/{item_id}/claim", json=claim_req, headers=auth_headers)
+    claim_resp = client.put(
+        f"/api/commercial/lost-found/{item_id}/claim", json=claim_req, headers=auth_headers
+    )
     assert claim_resp.status_code == 200
     assert claim_resp.json()["status"] == "CLAIMED"
     assert claim_resp.json()["claimant_name"] == "Amit Kumar"
+
+
+def test_delay_certificate_verification_url_honors_public_url(monkeypatch, auth_headers):
+    """Verifies that verification_url adapts dynamically to configured PUBLIC_URL."""
+    custom_public_url = "https://railtwin-ir.gov.in"
+    monkeypatch.setattr(settings, "PUBLIC_URL", custom_public_url)
+
+    cert_req = {
+        "train_no": "12004",
+        "station_code": "NDLS",
+        "pnr_no": "2489102931",
+        "issued_to_name": "Test Passenger",
+        "reason": "Signal failure test",
+    }
+    resp = client.post("/api/commercial/delay-certificate", json=cert_req, headers=auth_headers)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["verification_url"].startswith(
+        "https://railtwin-ir.gov.in/api/commercial/delay-certificate/verify/"
+    )
+
+
+def test_production_public_url_validation():
+    """Confirms production mode rejects localhost/127.0.0.1 or malformed PUBLIC_URL."""
+    from config import Settings
+
+    valid_prod_kwargs = {
+        "ENV": "production",
+        "JWT_SECRET_KEY": "a" * 32,
+        "DEFAULT_CLOCK_MODE": "live",
+        "DEMO_ALLOW_CLOCK_CONTROL": False,
+        "ALLOW_SYNTHETIC_FALLBACK": False,
+        "CORS_ORIGINS": ["https://railtwin.indianrail.gov.in"],
+        "NOTIFY_DEMO_MODE": False,
+        "OPENWA_WEBHOOK_SECRET": "testsecret12345",
+    }
+
+    # Should succeed with valid public url
+    s = Settings(**valid_prod_kwargs, PUBLIC_URL="https://railtwin.indianrail.gov.in")
+    assert s.PUBLIC_URL == "https://railtwin.indianrail.gov.in"
+
+    # Should fail if localhost
+    with pytest.raises(
+        ValueError, match="RAILTWIN_PUBLIC_URL must not contain localhost or 127.0.0.1"
+    ):
+        Settings(**valid_prod_kwargs, PUBLIC_URL="http://localhost:8000")
+
+    # Should fail if 127.0.0.1
+    with pytest.raises(
+        ValueError, match="RAILTWIN_PUBLIC_URL must not contain localhost or 127.0.0.1"
+    ):
+        Settings(**valid_prod_kwargs, PUBLIC_URL="http://127.0.0.1:8000")
+
+    # Should fail if invalid url scheme
+    with pytest.raises(ValueError, match="RAILTWIN_PUBLIC_URL must be a valid http"):
+        Settings(**valid_prod_kwargs, PUBLIC_URL="not-a-url")

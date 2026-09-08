@@ -9,7 +9,6 @@ from __future__ import annotations
 import json
 from typing import Optional
 
-from config import settings
 from data.db import Database, get_db
 from engine.clocks import get_clock
 from notifications.types import AlertEvent, StaffRecipient

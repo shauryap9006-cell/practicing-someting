@@ -3,9 +3,9 @@
 Stores the computed distances in the `route_cum_km` table for O(1) distance lookups
 and linear position interpolation.
 """
+
 from __future__ import annotations
 
-import sqlite3
 import sys
 from pathlib import Path
 from typing import Optional
@@ -30,8 +30,12 @@ def precompute_cumulative_km(db: Optional[Database] = None) -> int:
             );
             """
         )
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_route_cum_km_lookup ON route_cum_km(train_no, station_code);")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_route_cum_km_seq ON route_cum_km(train_no, seq);")
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_route_cum_km_lookup ON route_cum_km(train_no, station_code);"
+        )
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_route_cum_km_seq ON route_cum_km(train_no, seq);"
+        )
 
         # Populate from route_stations
         cur.execute("DELETE FROM route_cum_km;")

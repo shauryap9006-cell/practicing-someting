@@ -8,18 +8,36 @@ from __future__ import annotations
 
 import hashlib
 import secrets
+from datetime import timedelta
+from typing import Any, Dict, Optional, Sequence, Union
 from uuid import uuid4
-from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Sequence, Union
 
 import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
-from fastapi import Depends, HTTPException, Security, status
+from fastapi import Depends, HTTPException, Request, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from data.db import Database, get_db
 from config import settings
+from data.db import Database, get_db
+from engine.clocks import RealClock
+
+# Insecure known/demo passwords disallowed during password change (SEC-004)
+KNOWN_PASSWORD_BLACKLIST = {
+    "RailTwinAdmin2026!",
+    "StationMaster2026!",
+    "DyStationMaster2026!",
+    "CrewController2026!",
+    "SectionController2026!",
+    "TrackEngineer2026!",
+    "TTEOfficer2026!",
+    "CommercialInsp2026!",
+    "ViewerGuest2026!",
+    "StationMasterCNB2026!",
+    "password1234",
+    "admin123456",
+    "password123",
+}
 
 if settings.ENV.strip().lower() == "production" and len(settings.JWT_SECRET_KEY.strip()) < 32:
     raise RuntimeError("RAILTWIN_JWT_SECRET_KEY must be configured before starting in production")
@@ -46,17 +64,29 @@ STANDARD_ROLES = {
         "name": "Station Master (SM)",
         "description": "Supreme operational command over station, Gantt re-optimization, shift handover, and safety interlocks.",
         "permissions": [
-            "ops:read", "ops:write", "ops:reoptimize", "ops:handover",
-            "safety:read", "safety:write", "crew:read", "assets:read",
-            "kpi:read", "notifications:ack"
+            "ops:read",
+            "ops:write",
+            "ops:reoptimize",
+            "ops:handover",
+            "safety:read",
+            "safety:write",
+            "crew:read",
+            "assets:read",
+            "kpi:read",
+            "notifications:ack",
         ],
     },
     "dy_sm": {
         "name": "Deputy Station Master (Dy.SM)",
         "description": "Operational shift supervisor, platform allocations, set-in/out logging, and incident recording.",
         "permissions": [
-            "ops:read", "ops:write", "ops:handover",
-            "safety:read", "safety:write", "crew:read", "notifications:ack"
+            "ops:read",
+            "ops:write",
+            "ops:handover",
+            "safety:read",
+            "safety:write",
+            "crew:read",
+            "notifications:ack",
         ],
     },
     "crew_controller": {
@@ -67,12 +97,24 @@ STANDARD_ROLES = {
     "section_controller": {
         "name": "Section Controller",
         "description": "Corridor block line clearance, speed restrictions (TSRs), and inter-station scheduling.",
-        "permissions": ["ops:read", "ops:reoptimize", "safety:read", "safety:write", "notifications:ack"],
+        "permissions": [
+            "ops:read",
+            "ops:reoptimize",
+            "safety:read",
+            "safety:write",
+            "notifications:ack",
+        ],
     },
     "engineer": {
         "name": "Station / Track Engineer",
         "description": "Asset registry maintenance, possession (PTW) workflows, work orders, and failure logging.",
-        "permissions": ["assets:read", "assets:write", "safety:read", "safety:write", "notifications:ack"],
+        "permissions": [
+            "assets:read",
+            "assets:write",
+            "safety:read",
+            "safety:write",
+            "notifications:ack",
+        ],
     },
     "tte": {
         "name": "Train Ticket Examiner (TTE)",
@@ -141,26 +183,31 @@ def needs_rehash(hashed_password: str) -> bool:
 def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
     """Encodes a JWT access token with expiration."""
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    to_encode.update({
-        "exp": expire,
-        "iat": datetime.now(timezone.utc),
-        "jti": to_encode.get("jti", str(uuid4())),
-        "typ": "access",
-    })
+    now = RealClock().now()
+    expire = now + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    to_encode.update(
+        {
+            "exp": expire,
+            "iat": now,
+            "jti": to_encode.get("jti", str(uuid4())),
+            "typ": "access",
+        }
+    )
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
 def create_refresh_token(data: Dict[str, Any]) -> str:
     """Creates a rotating, server-revocable refresh token."""
-    now = datetime.now(timezone.utc)
+    now = RealClock().now()
     to_encode = data.copy()
-    to_encode.update({
-        "exp": now + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
-        "iat": now,
-        "jti": str(uuid4()),
-        "typ": "refresh",
-    })
+    to_encode.update(
+        {
+            "exp": now + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
+            "iat": now,
+            "jti": str(uuid4()),
+            "typ": "refresh",
+        }
+    )
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -209,6 +256,7 @@ def decode_refresh_token(token: str) -> Dict[str, Any]:
 def get_current_user(
     auth: Optional[HTTPAuthorizationCredentials] = Security(security_bearer),
     db: Database = Depends(get_db),
+    request: Request = None,  # type: ignore[assignment]
 ) -> Dict[str, Any]:
     """FastAPI dependency to extract and validate the authenticated user from the Authorization header."""
     if not auth or not auth.credentials:
@@ -225,6 +273,7 @@ def get_current_user(
         cur.execute(
             """
             SELECT u.id, u.username, u.email, u.role_id, u.station_code, u.full_name, u.is_active,
+                   u.must_change_password,
                    r.name as role_name, r.permissions_json
             FROM users u
             JOIN roles r ON u.role_id = r.id
@@ -242,6 +291,15 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    token_must_change = bool(payload.get("must_change_password", False))
+    if token_must_change:
+        path = request.url.path if request is not None else ""
+        if not path.startswith("/api/auth/"):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Password change required. You must change your temporary password at /api/auth/change-password before accessing system resources.",
+            )
+
     return {
         "id": row["id"],
         "username": row["username"],
@@ -251,6 +309,9 @@ def get_current_user(
         "station_code": row["station_code"],
         "full_name": row["full_name"],
         "permissions_json": row["permissions_json"],
+        "must_change_password": bool(row["must_change_password"])
+        if "must_change_password" in row.keys()
+        else False,
     }
 
 
@@ -294,7 +355,9 @@ def assert_station_scope(current_user: Dict[str, Any], station_code: str) -> Non
         )
 
 
-def effective_station_scope(current_user: Dict[str, Any], requested_station: Optional[str] = None) -> Optional[str]:
+def effective_station_scope(
+    current_user: Dict[str, Any], requested_station: Optional[str] = None
+) -> Optional[str]:
     """Returns the permitted station filter, or ``None`` for global roles."""
     requested = str(requested_station or "").strip().upper() or None
     if current_user.get("role_id") in {"admin", "section_controller"}:

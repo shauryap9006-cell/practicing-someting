@@ -20,16 +20,19 @@ class JunctionIMM:
     MODES = ("MAIN_STRAIGHT", "DIVERGE_LOOP", "BRAKE_PLATFORM")
 
     # Mode Transition Matrix: PI[i, j] = P(mode_j at t | mode_i at t-1)
-    PI_DEFAULT = np.array([
-        [0.90, 0.07, 0.03],  # From Straight
-        [0.10, 0.85, 0.05],  # From Diverging Curve
-        [0.10, 0.05, 0.85],  # From Braking
-    ], dtype=float)
+    PI_DEFAULT = np.array(
+        [
+            [0.90, 0.07, 0.03],  # From Straight
+            [0.10, 0.85, 0.05],  # From Diverging Curve
+            [0.10, 0.05, 0.85],  # From Braking
+        ],
+        dtype=float,
+    )
 
     def __init__(
         self,
         kappa_turnout: float = 1.0 / 300.0,  # 1:12 IR turnout geometry (~300m curve radius)
-        a_brake: float = 0.35,               # Service braking deceleration (m/s^2)
+        a_brake: float = 0.35,  # Service braking deceleration (m/s^2)
         dt: float = 1.0,
         pi_matrix: np.ndarray | None = None,
     ):
@@ -45,12 +48,10 @@ class JunctionIMM:
         self.X = [np.zeros(2, dtype=float) for _ in range(3)]
 
         # Mode covariances P
-        self.P = [
-            np.diag([5.0, np.deg2rad(5.0) ** 2]).astype(float) for _ in range(3)
-        ]
+        self.P = [np.diag([5.0, np.deg2rad(5.0) ** 2]).astype(float) for _ in range(3)]
 
         # Measurement noise covariance R: [v_noise, heading_noise]
-        self.R = np.diag([0.5 ** 2, np.deg2rad(1.0) ** 2]).astype(float)
+        self.R = np.diag([0.5**2, np.deg2rad(1.0) ** 2]).astype(float)
         # Process noise covariance Q
         self.Q = np.diag([0.5, np.deg2rad(0.5) ** 2]).astype(float)
 
@@ -84,12 +85,13 @@ class JunctionIMM:
             # Mixing weights w_ij = PI[i, j] * mu[i] / c[j]
             w_ij = (self.PI[:, j] * self.mu) / c[j]
             mixed_x = sum(w_ij[i] * self.X[i] for i in range(3))
-            mixed_p = sum(
-                w_ij[i] * (
-                    self.P[i] + np.outer(self.X[i] - mixed_x, self.X[i] - mixed_x)
+            mixed_p = (
+                sum(
+                    w_ij[i] * (self.P[i] + np.outer(self.X[i] - mixed_x, self.X[i] - mixed_x))
+                    for i in range(3)
                 )
-                for i in range(3)
-            ) + self.Q * self.dt
+                + self.Q * self.dt
+            )
             X0.append(mixed_x)
             P0.append(mixed_p)
 
@@ -130,10 +132,7 @@ class JunctionIMM:
     @property
     def mode_probs(self) -> dict[str, float]:
         """Returns dictionary mapping mode names to probabilities."""
-        return {
-            mode: float(self.mu[i])
-            for i, mode in enumerate(self.MODES)
-        }
+        return {mode: float(self.mu[i]) for i, mode in enumerate(self.MODES)}
 
     @property
     def dominant_mode(self) -> str:

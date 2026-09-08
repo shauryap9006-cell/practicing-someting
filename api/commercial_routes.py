@@ -10,17 +10,17 @@ Provides:
 from __future__ import annotations
 
 import hashlib
-import json
 import secrets
-from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from api.auth import assert_station_scope, effective_station_scope, get_current_user, require_role
+from config import settings
 from data.audit import record_audit
 from data.db import Database, get_db
+from engine.clocks import get_clock, ist_now, now_iso
 
 router = APIRouter(prefix="/api/commercial", tags=["Passenger & Commercial Experience (Phase 3)"])
 
@@ -44,8 +44,8 @@ def issue_delay_certificate(
 ):
     """Issues a cryptographically verifiable Delay Certificate for airline missed connection, insurance, or refund."""
     assert_station_scope(current_user, req.station_code)
-    now_iso = datetime.now(timezone.utc).isoformat()
-    now_date = datetime.now(timezone.utc).strftime("%Y%m%d")
+    now_iso = get_clock().now_iso()
+    now_date = ist_now().strftime("%Y%m%d")
 
     with db.transaction() as cur:
         # Fetch train details
@@ -108,7 +108,11 @@ def issue_delay_certificate(
             action="DELAY_CERTIFICATE_ISSUED",
             table_name="delay_certificates",
             record_id=cert_no,
-            after_state={"cert_no": cert_no, "delay_min": delay_min, "passenger": req.issued_to_name},
+            after_state={
+                "cert_no": cert_no,
+                "delay_min": delay_min,
+                "passenger": req.issued_to_name,
+            },
         )
 
     return {
@@ -125,7 +129,7 @@ def issue_delay_certificate(
         "issued_by": current_user["id"],
         "issued_at": now_iso,
         "qr_token": qr_token,
-        "verification_url": f"http://localhost:8000/api/commercial/delay-certificate/verify/{qr_token}",
+        "verification_url": f"{settings.PUBLIC_URL.rstrip('/')}/api/commercial/delay-certificate/verify/{qr_token}",
     }
 
 
@@ -215,10 +219,16 @@ def generate_platform_announcement(
     sched_arr = tt_row["sched_arr"] if tt_row and tt_row["sched_arr"] else "06:00"
 
     # Standard Indian Railways 3-Language Script
-    hindi_text = f"कृपया ध्यान दीजिए। गाड़ी संख्या {train_no} {train_name}, प्लेटफ़ॉर्म संख्या {platform} पर आ रही है।"
+    hindi_text = (
+        f"कृपया ध्यान दीजिए। गाड़ी संख्या {train_no} {train_name}, प्लेटफ़ॉर्म संख्या {platform} पर आ रही है।"
+    )
     english_text = f"May I have your attention please. Train number {train_no} {train_name} is arriving on platform number {platform}."
     regional_lang, _ = REGIONAL_LANG_MAP.get(station_code.upper(), ("Hindi", "Regional"))
-    regional_text = f"ਯਾਤਰੀਆਂ ਦੀ ਜਾਣਕਾਰੀ ਲਈ, ਗੱਡੀ ਨੰਬਰ {train_no} {train_name} ਪਲੇਟਫਾਰਮ ਨੰਬਰ {platform} 'ਤੇ ਆ ਰਹੀ ਹੈ।" if regional_lang == "Punjabi" else hindi_text
+    regional_text = (
+        f"ਯਾਤਰੀਆਂ ਦੀ ਜਾਣਕਾਰੀ ਲਈ, ਗੱਡੀ ਨੰਬਰ {train_no} {train_name} ਪਲੇਟਫਾਰਮ ਨੰਬਰ {platform} 'ਤੇ ਆ ਰਹੀ ਹੈ।"
+        if regional_lang == "Punjabi"
+        else hindi_text
+    )
 
     return {
         "train_no": train_no,
@@ -241,7 +251,7 @@ def generate_platform_announcement(
                 "text": regional_text,
             },
         },
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": now_iso(),
     }
 
 
@@ -252,7 +262,9 @@ class CommercialStallCreate(BaseModel):
     stall_code: str = Field(..., description="e.g. STALL-NDLS-PF1-01")
     station_code: str = "NDLS"
     platform_number: int = 1
-    stall_type: str = Field("CATERING", description="CATERING, TEA_STALL, BOOKSTALL, ATM, PHARMACY, CLOAK_ROOM")
+    stall_type: str = Field(
+        "CATERING", description="CATERING, TEA_STALL, BOOKSTALL, ATM, PHARMACY, CLOAK_ROOM"
+    )
     vendor_name: str
     contact_phone: Optional[str] = None
     monthly_rent_inr: float = 25000.0
@@ -264,7 +276,9 @@ class CommercialStallCreate(BaseModel):
 @router.post("/stalls", response_model=Dict[str, Any])
 def register_commercial_stall(
     req: CommercialStallCreate,
-    current_user: Dict[str, Any] = Depends(require_role(["commercial_inspector", "station_master", "admin"])),
+    current_user: Dict[str, Any] = Depends(
+        require_role(["commercial_inspector", "station_master", "admin"])
+    ),
     db: Database = Depends(get_db),
 ):
     """Registers a commercial stall and vendor lease agreement."""
@@ -328,10 +342,50 @@ def list_commercial_stalls(
         c = cur.fetchone()["count"]
         if c == 0:
             sample_stalls = [
-                ("STALL-NDLS-PF1-01", "NDLS", 1, "CATERING", "IRCTC Food Track", "+919811223344", 45000.0, "2025-01-01", "2028-01-01"),
-                ("STALL-NDLS-PF1-02", "NDLS", 1, "BOOKSTALL", "A.H. Wheeler & Co.", "+919811223345", 20000.0, "2024-01-01", "2027-01-01"),
-                ("STALL-NDLS-PF2-01", "NDLS", 2, "ATM", "State Bank of India", "+919811223346", 35000.0, "2023-01-01", "2026-12-31"),
-                ("STALL-NDLS-PF3-01", "NDLS", 3, "PHARMACY", "Jan Aushadhi Kendra", "+919811223347", 15000.0, "2025-06-01", "2028-06-01"),
+                (
+                    "STALL-NDLS-PF1-01",
+                    "NDLS",
+                    1,
+                    "CATERING",
+                    "IRCTC Food Track",
+                    "+919811223344",
+                    45000.0,
+                    "2025-01-01",
+                    "2028-01-01",
+                ),
+                (
+                    "STALL-NDLS-PF1-02",
+                    "NDLS",
+                    1,
+                    "BOOKSTALL",
+                    "A.H. Wheeler & Co.",
+                    "+919811223345",
+                    20000.0,
+                    "2024-01-01",
+                    "2027-01-01",
+                ),
+                (
+                    "STALL-NDLS-PF2-01",
+                    "NDLS",
+                    2,
+                    "ATM",
+                    "State Bank of India",
+                    "+919811223346",
+                    35000.0,
+                    "2023-01-01",
+                    "2026-12-31",
+                ),
+                (
+                    "STALL-NDLS-PF3-01",
+                    "NDLS",
+                    3,
+                    "PHARMACY",
+                    "Jan Aushadhi Kendra",
+                    "+919811223347",
+                    15000.0,
+                    "2025-06-01",
+                    "2028-06-01",
+                ),
             ]
             for s in sample_stalls:
                 cur.execute(
@@ -365,7 +419,10 @@ def list_commercial_stalls(
 # E4. PASSENGER LOST & FOUND REGISTER
 # ----------------------------------------------------
 class LostItemCreate(BaseModel):
-    item_type: str = Field("BAG_LUGGAGE", description="BAG_LUGGAGE, ELECTRONICS, WALLET_CASH, DOCUMENT_ID, CLOTHING, OTHER")
+    item_type: str = Field(
+        "BAG_LUGGAGE",
+        description="BAG_LUGGAGE, ELECTRONICS, WALLET_CASH, DOCUMENT_ID, CLOTHING, OTHER",
+    )
     description: str = Field(..., description="Item details, color, brand")
     found_location: str = Field(..., description="e.g. Platform 1 Waiting Hall, Coach B3 Seat 42")
     station_code: str = "NDLS"
@@ -387,7 +444,7 @@ def register_lost_item(
 ):
     """Registers a passenger lost item deposited into station custody."""
     assert_station_scope(current_user, req.station_code)
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute(
             """
@@ -417,7 +474,11 @@ def register_lost_item(
             action="LOST_ITEM_REGISTERED",
             table_name="lost_and_found",
             record_id=str(item_id),
-            after_state={"type": req.item_type, "desc": req.description, "location": req.found_location},
+            after_state={
+                "type": req.item_type,
+                "desc": req.description,
+                "location": req.found_location,
+            },
         )
 
     return {"id": item_id, "status": "UNCLAIMED", "found_at": now_iso}
@@ -454,11 +515,13 @@ def list_lost_items(
 def claim_lost_item(
     item_id: int,
     req: ClaimItemRequest,
-    current_user: Dict[str, Any] = Depends(require_role(["station_master", "dy_sm", "tte", "commercial_inspector", "admin"])),
+    current_user: Dict[str, Any] = Depends(
+        require_role(["station_master", "dy_sm", "tte", "commercial_inspector", "admin"])
+    ),
     db: Database = Depends(get_db),
 ):
     """Discharges a lost article to verified passenger claimant with ID proof."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute("SELECT * FROM lost_and_found WHERE id = ?;", (item_id,))
         row = cur.fetchone()
@@ -492,4 +555,9 @@ def claim_lost_item(
             after_state={"claimant": req.claimant_name, "id_proof": req.claimant_id_proof},
         )
 
-    return {"id": item_id, "status": "CLAIMED", "claimant_name": req.claimant_name, "claimed_at": now_iso}
+    return {
+        "id": item_id,
+        "status": "CLAIMED",
+        "claimant_name": req.claimant_name,
+        "claimed_at": now_iso,
+    }

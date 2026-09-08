@@ -31,7 +31,7 @@ Indian Railways operates 13,000+ trains daily. A delay at one station cascades a
 ```
 Tier 1 (Historical Lookup) ─┐
 Tier 2 (LightGBM CQR)      ─┼─► BrainOrchestrator ─► Safety Interlock ─► ConflictScanner ─► Controller Advisory
-Tier 3 (PyTorch GRU Attn)  ─┘       (5 deterministic rules, no ML)         (3 rule types)
+Tier 3 (PyTorch GRU Chall) ─┘       (5 deterministic rules, no ML)         (3 rule types)
 ```
 
 - **Overall Benchmark:** Test MAE **10.72 min** · Overall 80% Coverage **80.64%** · Winkler **57.94** · CRPS **7.44**

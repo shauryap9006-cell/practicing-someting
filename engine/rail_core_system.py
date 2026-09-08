@@ -30,62 +30,63 @@ Core Algorithmic Subsystems:
 
 from __future__ import annotations
 
-import datetime
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
-
+from typing import Any, Dict, List, Optional
 
 # ============================================================================
 # 1. ENUMS & DATA STRUCTURES
 # ============================================================================
 
+
 class SignalAspect(str, Enum):
-    GREEN = "GREEN"                  # Clear: proceed at maximum authorized line speed
+    GREEN = "GREEN"  # Clear: proceed at maximum authorized line speed
     DOUBLE_YELLOW = "DOUBLE_YELLOW"  # Attention: prepare to pass next signal at caution (60 km/h)
-    YELLOW = "YELLOW"                # Caution: prepare to stop at next signal (30 km/h)
-    RED = "RED"                      # Stop: block ahead is occupied (0 km/h)
+    YELLOW = "YELLOW"  # Caution: prepare to stop at next signal (30 km/h)
+    RED = "RED"  # Stop: block ahead is occupied (0 km/h)
 
 
 class TrainPhase(str, Enum):
-    READY = "READY"                  # At origin, waiting for departure time
-    DEPARTING = "DEPARTING"          # Accelerating out of station
-    CRUISING = "CRUISING"            # Running at steady line speed under GREEN
-    APPROACHING = "APPROACHING"      # Decelerating towards a scheduled stop or restrictive signal
-    DWELLING = "DWELLING"            # Station halt (passenger exchange)
-    HELD_SIGNAL = "HELD_SIGNAL"      # Stopped at a RED automatic block signal
-    HELD_LOOP = "HELD_LOOP"          # Diverted to a station loop line to allow an overtake
-    TERMINATED = "TERMINATED"        # Arrived at final destination
+    READY = "READY"  # At origin, waiting for departure time
+    DEPARTING = "DEPARTING"  # Accelerating out of station
+    CRUISING = "CRUISING"  # Running at steady line speed under GREEN
+    APPROACHING = "APPROACHING"  # Decelerating towards a scheduled stop or restrictive signal
+    DWELLING = "DWELLING"  # Station halt (passenger exchange)
+    HELD_SIGNAL = "HELD_SIGNAL"  # Stopped at a RED automatic block signal
+    HELD_LOOP = "HELD_LOOP"  # Diverted to a station loop line to allow an overtake
+    TERMINATED = "TERMINATED"  # Arrived at final destination
 
 
 class TrainPriority(int, Enum):
-    VANDE_BHARAT = 1                 # Priority 1: Semi-high speed premium
-    RAJDHANI = 1                     # Priority 1: Premium express
-    SHATABDI = 1                     # Priority 1: Premium intercity
-    SUPERFAST = 2                    # Priority 2: Mail/Superfast express
-    EXPRESS = 3                      # Priority 3: Standard express
-    PASSENGER = 4                    # Priority 4: Slow local / stopping passenger
-    FREIGHT = 5                      # Priority 5: Goods / container / coal
+    VANDE_BHARAT = 1  # Priority 1: Semi-high speed premium
+    RAJDHANI = 1  # Priority 1: Premium express
+    SHATABDI = 1  # Priority 1: Premium intercity
+    SUPERFAST = 2  # Priority 2: Mail/Superfast express
+    EXPRESS = 3  # Priority 3: Standard express
+    PASSENGER = 4  # Priority 4: Slow local / stopping passenger
+    FREIGHT = 5  # Priority 5: Goods / container / coal
 
 
 @dataclass
 class ScheduleStop:
     """A scheduled stop on a train's timetable."""
+
     station_code: str
     seq: int
     km: float
-    sched_arr_min: float             # Minutes from midnight (e.g. 06:00 = 360)
-    sched_dep_min: float             # Minutes from midnight
-    min_halt_sec: float = 120.0      # Minimum passenger exchange time in seconds
+    sched_arr_min: float  # Minutes from midnight (e.g. 06:00 = 360)
+    sched_dep_min: float  # Minutes from midnight
+    min_halt_sec: float = 120.0  # Minimum passenger exchange time in seconds
 
 
 @dataclass
 class BlockSection:
     """An Automatic Block Signaling (ABS) track block."""
+
     block_id: str
     from_km: float
     to_km: float
-    direction: str                   # "UP" (0 -> 440) or "DOWN" (440 -> 0)
+    direction: str  # "UP" (0 -> 440) or "DOWN" (440 -> 0)
     max_speed_kmh: float = 130.0
     active_tsr_kmh: Optional[float] = None
     occupied_by: Optional[str] = None  # Train number occupying this block
@@ -103,6 +104,7 @@ class BlockSection:
 @dataclass
 class Station:
     """A railway station with mainline berths and loop sidings."""
+
     code: str
     name: str
     km: float
@@ -116,17 +118,19 @@ class Station:
 # 2. TRAIN STATE & KINEMATICS MODEL
 # ============================================================================
 
+
 @dataclass
 class Train:
     """Autonomous physical train entity controlled by the system."""
+
     train_no: str
     name: str
     priority: TrainPriority
-    direction: str                   # "UP" (increasing km) or "DOWN" (decreasing km)
+    direction: str  # "UP" (increasing km) or "DOWN" (decreasing km)
     stops: List[ScheduleStop]
     max_speed_kmh: float = 130.0
-    accel_mps2: float = 0.45         # Standard passenger electric loco acceleration (m/s²)
-    brake_mps2: float = 0.65         # Service deceleration rate (m/s²)
+    accel_mps2: float = 0.45  # Standard passenger electric loco acceleration (m/s²)
+    brake_mps2: float = 0.65  # Service deceleration rate (m/s²)
 
     # Kinematic state
     km: float = 0.0
@@ -165,13 +169,14 @@ class Train:
         if self.speed_kmh <= 0.0:
             return 0.0
         v_mps = self.speed_kmh / 3.6
-        d_meters = (v_mps ** 2) / (2.0 * self.brake_mps2)
+        d_meters = (v_mps**2) / (2.0 * self.brake_mps2)
         return d_meters / 1000.0
 
 
 # ============================================================================
 # 3. RAILWAY OPERATING SYSTEM ENGINE
 # ============================================================================
+
 
 class RailwaySystem:
     """The central algorithmic railway operating system.
@@ -215,23 +220,27 @@ class RailwaySystem:
         for i in range(num_blocks):
             f_km = i * self.block_length_km
             t_km = min(self.corridor_length_km, (i + 1) * self.block_length_km)
-            self.blocks_up.append(BlockSection(
-                block_id=f"BLK_UP_{i:03d}",
-                from_km=f_km,
-                to_km=t_km,
-                direction="UP",
-            ))
+            self.blocks_up.append(
+                BlockSection(
+                    block_id=f"BLK_UP_{i:03d}",
+                    from_km=f_km,
+                    to_km=t_km,
+                    direction="UP",
+                )
+            )
 
         # Build DOWN blocks (440 km -> 0 km)
         for i in range(num_blocks):
             f_km = self.corridor_length_km - (i * self.block_length_km)
             t_km = max(0.0, self.corridor_length_km - ((i + 1) * self.block_length_km))
-            self.blocks_dn.append(BlockSection(
-                block_id=f"BLK_DN_{i:03d}",
-                from_km=f_km,
-                to_km=t_km,
-                direction="DOWN",
-            ))
+            self.blocks_dn.append(
+                BlockSection(
+                    block_id=f"BLK_DN_{i:03d}",
+                    from_km=f_km,
+                    to_km=t_km,
+                    direction="DOWN",
+                )
+            )
 
     def add_train(self, train: Train) -> None:
         """Registers a train into the railway operating system."""
@@ -239,12 +248,20 @@ class RailwaySystem:
         if train.stops:
             train.km = train.stops[0].km
 
-    def apply_temporary_speed_restriction(self, from_km: float, to_km: float, speed_kmh: float) -> None:
+    def apply_temporary_speed_restriction(
+        self, from_km: float, to_km: float, speed_kmh: float
+    ) -> None:
         """Imposes an active engineering speed restriction (TSR) across block sections."""
         for blk in self.blocks_up + self.blocks_dn:
-            if max(from_km, to_km) >= min(blk.from_km, blk.to_km) and min(from_km, to_km) <= max(blk.from_km, blk.to_km):
+            if max(from_km, to_km) >= min(blk.from_km, blk.to_km) and min(from_km, to_km) <= max(
+                blk.from_km, blk.to_km
+            ):
                 blk.active_tsr_kmh = speed_kmh
-                self._log_event("TSR_IMPOSED", None, f"TSR {speed_kmh} km/h active on block {blk.block_id} [{from_km}-{to_km} km]")
+                self._log_event(
+                    "TSR_IMPOSED",
+                    None,
+                    f"TSR {speed_kmh} km/h active on block {blk.block_id} [{from_km}-{to_km} km]",
+                )
 
     def inject_disturbance(self, train_no: str, delay_minutes: float, cause: str) -> None:
         """Injects a primary disturbance (e.g. loco snag, crowd dwell overshoot) into a train."""
@@ -254,7 +271,9 @@ class RailwaySystem:
             t.delay_cause = cause
             if t.phase == TrainPhase.DWELLING:
                 t.dwell_remaining_sec += delay_minutes * 60.0
-            self._log_event("PRIMARY_DISTURBANCE", train_no, f"Injected +{delay_minutes}m delay due to: {cause}")
+            self._log_event(
+                "PRIMARY_DISTURBANCE", train_no, f"Injected +{delay_minutes}m delay due to: {cause}"
+            )
 
     # ========================================================================
     # 4. ALGORITHMIC SUB-STEPS (EXECUTED EVERY TICK)
@@ -355,7 +374,11 @@ class RailwaySystem:
         and slower preceding trains. Coordinates loop-siding diversion so the
         high-priority train suffers zero deceleration.
         """
-        active_trains = [t for t in self.trains.values() if t.phase not in (TrainPhase.READY, TrainPhase.TERMINATED)]
+        active_trains = [
+            t
+            for t in self.trains.values()
+            if t.phase not in (TrainPhase.READY, TrainPhase.TERMINATED)
+        ]
 
         for t_fast in active_trains:
             for t_slow in active_trains:
@@ -367,13 +390,21 @@ class RailwaySystem:
                 # Check if t_fast has higher priority than t_slow
                 if t_fast.priority.value < t_slow.priority.value:
                     # Check spatial relationship (t_fast trailing behind t_slow)
-                    is_behind = (t_fast.km < t_slow.km) if t_fast.direction == "UP" else (t_fast.km > t_slow.km)
+                    is_behind = (
+                        (t_fast.km < t_slow.km)
+                        if t_fast.direction == "UP"
+                        else (t_fast.km > t_slow.km)
+                    )
                     dist = abs(t_slow.km - t_fast.km)
 
                     if is_behind and dist <= 16.0:  # Closing window: within 16 km
                         # Locate upcoming station for t_slow to take the loop
                         upcoming_stn = self._find_upcoming_station(t_slow)
-                        if upcoming_stn and upcoming_stn.has_loop_siding and not t_slow.is_diverted_to_loop:
+                        if (
+                            upcoming_stn
+                            and upcoming_stn.has_loop_siding
+                            and not t_slow.is_diverted_to_loop
+                        ):
                             # Command loop diversion
                             t_slow.is_diverted_to_loop = True
                             t_slow.waiting_for_overtake_by = t_fast.train_no
@@ -381,7 +412,7 @@ class RailwaySystem:
                                 "DISPATCH_OVERTAKE_ORDER",
                                 t_slow.train_no,
                                 f"Autonomous Dispatch: Route #{t_slow.train_no} (Pri {t_slow.priority.value}) to loop at {upcoming_stn.code} "
-                                f"to allow #{t_fast.train_no} ({t_fast.name}, Pri {t_fast.priority.value}) to overtake."
+                                f"to allow #{t_fast.train_no} ({t_fast.name}, Pri {t_fast.priority.value}) to overtake.",
                             )
 
     def _find_upcoming_station(self, train: Train) -> Optional[Station]:
@@ -403,7 +434,9 @@ class RailwaySystem:
             first_stop = train.current_stop
             if first_stop and self.sim_time_minutes >= first_stop.sched_dep_min:
                 train.phase = TrainPhase.DEPARTING
-                self._log_event("DEPARTURE", train.train_no, f"Departed origin {first_stop.station_code}")
+                self._log_event(
+                    "DEPARTURE", train.train_no, f"Departed origin {first_stop.station_code}"
+                )
             return
 
         # 2. State: DWELLING at Station
@@ -414,7 +447,11 @@ class RailwaySystem:
                 # Check if ready to depart or held for overtake
                 if train.is_diverted_to_loop and train.waiting_for_overtake_by:
                     train.phase = TrainPhase.HELD_LOOP
-                    self._log_event("LOOP_HOLD", train.train_no, f"Held on loop siding waiting for overtake by #{train.waiting_for_overtake_by}")
+                    self._log_event(
+                        "LOOP_HOLD",
+                        train.train_no,
+                        f"Held on loop siding waiting for overtake by #{train.waiting_for_overtake_by}",
+                    )
                     return
 
                 # Normal departure
@@ -436,12 +473,20 @@ class RailwaySystem:
             # Check if overtaking train has completed the pass
             if train.waiting_for_overtake_by and train.waiting_for_overtake_by in self.trains:
                 overtaking_train = self.trains[train.waiting_for_overtake_by]
-                has_passed = (overtaking_train.km > train.km + 5.0) if train.direction == "UP" else (overtaking_train.km < train.km - 5.0)
+                has_passed = (
+                    (overtaking_train.km > train.km + 5.0)
+                    if train.direction == "UP"
+                    else (overtaking_train.km < train.km - 5.0)
+                )
                 if has_passed:
                     train.is_diverted_to_loop = False
                     train.waiting_for_overtake_by = None
                     train.phase = TrainPhase.DEPARTING
-                    self._log_event("OVERTAKE_COMPLETE", train.train_no, f"Overtake complete. Clearing #{train.train_no} to re-enter mainline.")
+                    self._log_event(
+                        "OVERTAKE_COMPLETE",
+                        train.train_no,
+                        f"Overtake complete. Clearing #{train.train_no} to re-enter mainline.",
+                    )
                     if train.current_stop_idx < len(train.stops) - 1:
                         train.current_stop_idx += 1
             return
@@ -491,11 +536,19 @@ class RailwaySystem:
                 arr_delay = max(0.0, self.sim_time_minutes - sched_arr)
                 train.delay_minutes = arr_delay
 
-                self._log_event("ARRIVAL", train.train_no, f"Arrived at {nxt_stop.station_code} (Delay: +{arr_delay:.1f}m)")
+                self._log_event(
+                    "ARRIVAL",
+                    train.train_no,
+                    f"Arrived at {nxt_stop.station_code} (Delay: +{arr_delay:.1f}m)",
+                )
 
                 if train.current_stop_idx >= len(train.stops) - 1:
                     train.phase = TrainPhase.TERMINATED
-                    self._log_event("TERMINATION", train.train_no, f"Completed entire route at terminus {nxt_stop.station_code}")
+                    self._log_event(
+                        "TERMINATION",
+                        train.train_no,
+                        f"Completed entire route at terminus {nxt_stop.station_code}",
+                    )
                 return
 
             if dist_to_station <= stop_dist * 1.2:
@@ -512,7 +565,11 @@ class RailwaySystem:
 
         if train.speed_kmh < target_speed:
             train.speed_kmh = min(target_speed, train.speed_kmh + accel_delta)
-            train.phase = TrainPhase.CRUISING if train.speed_kmh >= target_speed * 0.9 else TrainPhase.DEPARTING
+            train.phase = (
+                TrainPhase.CRUISING
+                if train.speed_kmh >= target_speed * 0.9
+                else TrainPhase.DEPARTING
+            )
         elif train.speed_kmh > target_speed:
             train.speed_kmh = max(target_speed, train.speed_kmh - brake_delta)
 
@@ -539,17 +596,20 @@ class RailwaySystem:
         mins = int(self.sim_time_minutes % 60)
         secs = int((self.sim_time_minutes * 60) % 60)
         ts = f"{hours:02d}:{mins:02d}:{secs:02d}"
-        self.event_log.append({
-            "time": ts,
-            "event_type": event_type,
-            "train_no": train_no,
-            "detail": detail,
-        })
+        self.event_log.append(
+            {
+                "time": ts,
+                "event_type": event_type,
+                "train_no": train_no,
+                "detail": detail,
+            }
+        )
 
 
 # ============================================================================
 # 5. EXECUTABLE DEMONSTRATION & BENCHMARK
 # ============================================================================
+
 
 def run_system_demo() -> None:
     """Demonstrates Scenario A: Priority Preemption & Station Loop Siding Overtake."""
@@ -567,11 +627,39 @@ def run_system_demo() -> None:
         direction="UP",
         max_speed_kmh=85.0,
         stops=[
-            ScheduleStop(station_code="NDLS", seq=1, km=0.0, sched_arr_min=360, sched_dep_min=360, min_halt_sec=60),
-            ScheduleStop(station_code="GZB", seq=2, km=65.0, sched_arr_min=415, sched_dep_min=418, min_halt_sec=120),
-            ScheduleStop(station_code="ALJN", seq=3, km=130.0, sched_arr_min=475, sched_dep_min=478, min_halt_sec=120),
-            ScheduleStop(station_code="CNB", seq=4, km=325.0, sched_arr_min=650, sched_dep_min=660, min_halt_sec=300),
-        ]
+            ScheduleStop(
+                station_code="NDLS",
+                seq=1,
+                km=0.0,
+                sched_arr_min=360,
+                sched_dep_min=360,
+                min_halt_sec=60,
+            ),
+            ScheduleStop(
+                station_code="GZB",
+                seq=2,
+                km=65.0,
+                sched_arr_min=415,
+                sched_dep_min=418,
+                min_halt_sec=120,
+            ),
+            ScheduleStop(
+                station_code="ALJN",
+                seq=3,
+                km=130.0,
+                sched_arr_min=475,
+                sched_dep_min=478,
+                min_halt_sec=120,
+            ),
+            ScheduleStop(
+                station_code="CNB",
+                seq=4,
+                km=325.0,
+                sched_arr_min=650,
+                sched_dep_min=660,
+                min_halt_sec=300,
+            ),
+        ],
     )
 
     # 2. Create Vande Bharat Express (Priority 1, 130 km/h)
@@ -582,9 +670,23 @@ def run_system_demo() -> None:
         direction="UP",
         max_speed_kmh=130.0,
         stops=[
-            ScheduleStop(station_code="NDLS", seq=1, km=0.0, sched_arr_min=375, sched_dep_min=375, min_halt_sec=60),
-            ScheduleStop(station_code="CNB", seq=2, km=325.0, sched_arr_min=540, sched_dep_min=545, min_halt_sec=180),
-        ]
+            ScheduleStop(
+                station_code="NDLS",
+                seq=1,
+                km=0.0,
+                sched_arr_min=375,
+                sched_dep_min=375,
+                min_halt_sec=60,
+            ),
+            ScheduleStop(
+                station_code="CNB",
+                seq=2,
+                km=325.0,
+                sched_arr_min=540,
+                sched_dep_min=545,
+                min_halt_sec=180,
+            ),
+        ],
     )
 
     sys.add_train(slow_train)
@@ -592,8 +694,12 @@ def run_system_demo() -> None:
     sys.sim_time_minutes = 360.0
 
     print("\n[INIT] Fleet loaded:")
-    print(f"  • #{slow_train.train_no} {slow_train.name} (Priority {slow_train.priority.value}, Max {slow_train.max_speed_kmh} km/h)")
-    print(f"  • #{fast_train.train_no} {fast_train.name} (Priority {fast_train.priority.value}, Max {fast_train.max_speed_kmh} km/h)")
+    print(
+        f"  • #{slow_train.train_no} {slow_train.name} (Priority {slow_train.priority.value}, Max {slow_train.max_speed_kmh} km/h)"
+    )
+    print(
+        f"  • #{fast_train.train_no} {fast_train.name} (Priority {fast_train.priority.value}, Max {fast_train.max_speed_kmh} km/h)"
+    )
     print("\nExecuting discrete physics & signaling ticks...")
 
     step = 0
@@ -605,7 +711,9 @@ def run_system_demo() -> None:
             m = int(sys.sim_time_minutes % 60)
             print(f"\n--- TIME: {h:02d}:{m:02d} ---")
             for t in [slow_train, fast_train]:
-                print(f"  Train #{t.train_no} ({t.name[:16]}): Km {t.km:5.1f} | Speed {t.speed_kmh:5.1f} km/h | Phase {t.phase.value:12s} | Aspect {t.signal_aspect_ahead.value:12s} | Delay +{t.delay_minutes:.1f}m")
+                print(
+                    f"  Train #{t.train_no} ({t.name[:16]}): Km {t.km:5.1f} | Speed {t.speed_kmh:5.1f} km/h | Phase {t.phase.value:12s} | Aspect {t.signal_aspect_ahead.value:12s} | Delay +{t.delay_minutes:.1f}m"
+                )
 
     print("\n" + "=" * 78)
     print("DISPATCH EVENT LOG (Autonomous Decision Ledger):")
@@ -616,8 +724,12 @@ def run_system_demo() -> None:
 
     print("\n" + "=" * 78)
     print("RESULT:")
-    print(f"• Vande Bharat #{fast_train.train_no}: Maintained 130 km/h green wave, Delay: +{fast_train.delay_minutes:.1f}m")
-    print(f"• Passenger #{slow_train.train_no}: Preempted onto loop siding, zero safety conflict, Delay: +{slow_train.delay_minutes:.1f}m")
+    print(
+        f"• Vande Bharat #{fast_train.train_no}: Maintained 130 km/h green wave, Delay: +{fast_train.delay_minutes:.1f}m"
+    )
+    print(
+        f"• Passenger #{slow_train.train_no}: Preempted onto loop siding, zero safety conflict, Delay: +{slow_train.delay_minutes:.1f}m"
+    )
     print("=" * 78 + "\n")
 
 
@@ -638,9 +750,11 @@ def run_disturbance_and_signaling_demo() -> None:
         max_speed_kmh=120.0,
         stops=[
             ScheduleStop(station_code="NDLS", seq=1, km=0.0, sched_arr_min=360, sched_dep_min=360),
-            ScheduleStop(station_code="ALJN", seq=2, km=130.0, sched_arr_min=430, sched_dep_min=435),
+            ScheduleStop(
+                station_code="ALJN", seq=2, km=130.0, sched_arr_min=430, sched_dep_min=435
+            ),
             ScheduleStop(station_code="CNB", seq=3, km=325.0, sched_arr_min=560, sched_dep_min=565),
-        ]
+        ],
     )
 
     # Train 2: Trailing Express (departs 06:10, 10 min behind on same track)
@@ -653,7 +767,7 @@ def run_disturbance_and_signaling_demo() -> None:
         stops=[
             ScheduleStop(station_code="NDLS", seq=1, km=0.0, sched_arr_min=370, sched_dep_min=370),
             ScheduleStop(station_code="CNB", seq=2, km=325.0, sched_arr_min=540, sched_dep_min=545),
-        ]
+        ],
     )
 
     sys.add_train(t1)
@@ -669,13 +783,17 @@ def run_disturbance_and_signaling_demo() -> None:
     while sys.sim_time_minutes <= 480.0:
         # At 06:45 (minute 405), inject technical breakdown on T1
         if not shock_injected and sys.sim_time_minutes >= 405.0:
-            sys.inject_disturbance("12004", delay_minutes=20.0, cause="LOCOMOTIVE_TRACTION_MOTOR_SNAG")
+            sys.inject_disturbance(
+                "12004", delay_minutes=20.0, cause="LOCOMOTIVE_TRACTION_MOTOR_SNAG"
+            )
             # Force speed to 0 for the duration of the breakdown
             t1.speed_kmh = 0.0
             t1.phase = TrainPhase.DWELLING
             t1.dwell_remaining_sec = 20.0 * 60.0
             shock_injected = True
-            print(">>> [06:45:00] SHOCK EVENT: Train #12004 halts at Km 80.0 due to traction motor snag! <<<")
+            print(
+                ">>> [06:45:00] SHOCK EVENT: Train #12004 halts at Km 80.0 due to traction motor snag! <<<"
+            )
 
         sys.tick(dt_seconds=15.0)
         step += 1
@@ -683,7 +801,9 @@ def run_disturbance_and_signaling_demo() -> None:
         if step % 40 == 0:
             h = int(sys.sim_time_minutes // 60)
             m = int(sys.sim_time_minutes % 60)
-            print(f"[{h:02d}:{m:02d}] T1(#12004): Km {t1.km:5.1f} ({t1.speed_kmh:5.1f}k, {t1.phase.value:11s}) | T2(#12424): Km {t2.km:5.1f} ({t2.speed_kmh:5.1f}k, {t2.phase.value:11s}, Sig: {t2.signal_aspect_ahead.value:13s}) | Gap: {abs(t1.km-t2.km):4.1f} km")
+            print(
+                f"[{h:02d}:{m:02d}] T1(#12004): Km {t1.km:5.1f} ({t1.speed_kmh:5.1f}k, {t1.phase.value:11s}) | T2(#12424): Km {t2.km:5.1f} ({t2.speed_kmh:5.1f}k, {t2.phase.value:11s}, Sig: {t2.signal_aspect_ahead.value:13s}) | Gap: {abs(t1.km - t2.km):4.1f} km"
+            )
 
     print("\n" + "=" * 78)
     print("DISPATCH EVENT LOG (Safety & Signal Intervention Audit):")
@@ -695,14 +815,21 @@ def run_disturbance_and_signaling_demo() -> None:
     print("\n" + "=" * 78)
     print("EXACT CAUSAL DELAY ACCOUNTING:")
     print("=" * 78)
-    print(f"• Primary Delay (Train #12004): +{t1.delay_minutes:.1f}m [Cause: LOCOMOTIVE_TRACTION_MOTOR_SNAG]")
-    print(f"• Secondary Knock-on Delay (Train #12424): +{t2.delay_minutes:.1f}m [Cause: SIGNAL_RED_HOLD Headway Cascade]")
-    print(f"• Zero Collisions: Trailing train maintained safe braking distance and halted at red aspect.")
+    print(
+        f"• Primary Delay (Train #12004): +{t1.delay_minutes:.1f}m [Cause: LOCOMOTIVE_TRACTION_MOTOR_SNAG]"
+    )
+    print(
+        f"• Secondary Knock-on Delay (Train #12424): +{t2.delay_minutes:.1f}m [Cause: SIGNAL_RED_HOLD Headway Cascade]"
+    )
+    print(
+        f"• Zero Collisions: Trailing train maintained safe braking distance and halted at red aspect."
+    )
     print("=" * 78 + "\n")
 
 
 if __name__ == "__main__":
     import sys
+
     mode = sys.argv[1].lower() if len(sys.argv) > 1 else "all"
     if mode == "overtake":
         run_system_demo()
@@ -711,4 +838,3 @@ if __name__ == "__main__":
     else:
         run_system_demo()
         run_disturbance_and_signaling_demo()
-

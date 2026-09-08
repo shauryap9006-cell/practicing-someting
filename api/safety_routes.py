@@ -11,16 +11,16 @@ Provides:
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field, model_validator
 
 from api.auth import assert_station_scope, effective_station_scope, get_current_user, require_role
 from data.audit import record_audit
 from data.db import Database, get_db
 from data.seed_safety import bootstrap_level_crossings_if_empty
+from engine.clocks import get_clock
 from notifications.dispatcher import notify
 
 router = APIRouter(prefix="/api/safety", tags=["Safety & Compliance (Phase 2)"])
@@ -57,12 +57,14 @@ class SpeedRestrictionCreate(BaseModel):
 @router.post("/tsr", response_model=Dict[str, Any])
 def create_speed_restriction(
     req: SpeedRestrictionCreate,
-    current_user: Dict[str, Any] = Depends(require_role(["station_master", "section_controller", "admin"])),
+    current_user: Dict[str, Any] = Depends(
+        require_role(["station_master", "section_controller", "admin"])
+    ),
     db: Database = Depends(get_db),
 ):
     """Issues a new Caution Order / Speed Restriction on a block section."""
     assert_station_scope(current_user, req.from_code)
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute(
             """
@@ -99,7 +101,13 @@ def create_speed_restriction(
                 state = CASE WHEN block_status.state != 'OCCUPIED' THEN 'CAUTION' ELSE block_status.state END,
                 notes = excluded.notes;
             """,
-            (block_id, req.from_code.upper(), req.to_code.upper(), now_iso, f"TSR {req.speed_limit_kmph} km/h: {req.cause}"),
+            (
+                block_id,
+                req.from_code.upper(),
+                req.to_code.upper(),
+                now_iso,
+                f"TSR {req.speed_limit_kmph} km/h: {req.cause}",
+            ),
         )
 
         record_audit(
@@ -109,7 +117,11 @@ def create_speed_restriction(
             action="TSR_ISSUED",
             table_name="speed_restrictions",
             record_id=str(tsr_id),
-            after_state={"speed_limit": req.speed_limit_kmph, "section": f"{req.from_code}-{req.to_code}", "cause": req.cause},
+            after_state={
+                "speed_limit": req.speed_limit_kmph,
+                "section": f"{req.from_code}-{req.to_code}",
+                "cause": req.cause,
+            },
         )
 
     # Notify section staff at the issuing station
@@ -124,7 +136,12 @@ def create_speed_restriction(
         db=db,
     )
 
-    return {"id": tsr_id, "status": "ACTIVE", "speed_limit_kmph": req.speed_limit_kmph, "created_at": now_iso}
+    return {
+        "id": tsr_id,
+        "status": "ACTIVE",
+        "speed_limit_kmph": req.speed_limit_kmph,
+        "created_at": now_iso,
+    }
 
 
 @router.get("/tsr", response_model=List[Dict[str, Any]])
@@ -157,11 +174,13 @@ def list_speed_restrictions(
 @router.delete("/tsr/{tsr_id}", response_model=Dict[str, Any])
 def cancel_speed_restriction(
     tsr_id: int,
-    current_user: Dict[str, Any] = Depends(require_role(["station_master", "section_controller", "admin"])),
+    current_user: Dict[str, Any] = Depends(
+        require_role(["station_master", "section_controller", "admin"])
+    ),
     db: Database = Depends(get_db),
 ):
     """Cancels/lifts an active Speed Restriction."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute("SELECT * FROM speed_restrictions WHERE id = ?;", (tsr_id,))
         row = cur.fetchone()
@@ -212,7 +231,9 @@ class PossessionRequest(BaseModel):
     station_code: str
     start_time: str
     end_time: str
-    work_type: str = Field("P_WAY", description="P_WAY, OHE_TRACTION, S_AND_T, BRIDGE_WORK, GENERAL")
+    work_type: str = Field(
+        "P_WAY", description="P_WAY, OHE_TRACTION, S_AND_T, BRIDGE_WORK, GENERAL"
+    )
     requesting_dept: str
     notes: Optional[str] = None
 
@@ -225,7 +246,7 @@ def request_possession(
 ):
     """Submits a Permit-to-Work / Track Possession request."""
     assert_station_scope(current_user, req.station_code)
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute(
             """
@@ -257,7 +278,10 @@ def request_possession(
             action="POSSESSION_REQUESTED",
             table_name="possessions",
             record_id=str(p_id),
-            after_state={"element_id": req.element_id, "window": f"{req.start_time}-{req.end_time}"},
+            after_state={
+                "element_id": req.element_id,
+                "window": f"{req.start_time}-{req.end_time}",
+            },
         )
 
     return {"id": p_id, "status": "REQUESTED", "element_id": req.element_id, "created_at": now_iso}
@@ -266,11 +290,13 @@ def request_possession(
 @router.post("/possession/{possession_id}/grant", response_model=Dict[str, Any])
 def grant_possession(
     possession_id: int,
-    current_user: Dict[str, Any] = Depends(require_role(["station_master", "section_controller", "admin"])),
+    current_user: Dict[str, Any] = Depends(
+        require_role(["station_master", "section_controller", "admin"])
+    ),
     db: Database = Depends(get_db),
 ):
     """Station Master / Controller authorizes and activates a Track Possession."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute("SELECT * FROM possessions WHERE id = ?;", (possession_id,))
         row = cur.fetchone()
@@ -278,7 +304,9 @@ def grant_possession(
             raise HTTPException(status_code=404, detail="Possession not found.")
         assert_station_scope(current_user, row["station_code"])
         if row["status"] not in ("REQUESTED", "GRANTED"):
-            raise HTTPException(status_code=400, detail=f"Cannot grant possession with status {row['status']}.")
+            raise HTTPException(
+                status_code=400, detail=f"Cannot grant possession with status {row['status']}."
+            )
 
         cur.execute(
             """
@@ -342,17 +370,24 @@ def grant_possession(
         db=db,
     )
 
-    return {"id": possession_id, "status": "ACTIVE", "granted_by": current_user["id"], "granted_at": now_iso}
+    return {
+        "id": possession_id,
+        "status": "ACTIVE",
+        "granted_by": current_user["id"],
+        "granted_at": now_iso,
+    }
 
 
 @router.post("/possession/{possession_id}/restore", response_model=Dict[str, Any])
 def restore_possession(
     possession_id: int,
-    current_user: Dict[str, Any] = Depends(require_role(["station_master", "section_controller", "admin"])),
+    current_user: Dict[str, Any] = Depends(
+        require_role(["station_master", "section_controller", "admin"])
+    ),
     db: Database = Depends(get_db),
 ):
     """Completes work and restores track/platform to normal revenue operations."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute("SELECT * FROM possessions WHERE id = ?;", (possession_id,))
         row = cur.fetchone()
@@ -441,7 +476,10 @@ def list_possessions(
 # D4. INCIDENT & NEAR-MISS REGISTER
 # ----------------------------------------------------
 class IncidentReportCreate(BaseModel):
-    incident_type: str = Field(..., description="SPAD, DERAILMENT, EQUIPMENT_FAIL, NEAR_MISS, GATE_BURST, OHE_BREAKDOWN, TRESPASSING")
+    incident_type: str = Field(
+        ...,
+        description="SPAD, DERAILMENT, EQUIPMENT_FAIL, NEAR_MISS, GATE_BURST, OHE_BREAKDOWN, TRESPASSING",
+    )
     severity: str = Field(..., description="MINOR, MAJOR, CRITICAL")
     station_code: str
     location_km: Optional[float] = None
@@ -458,7 +496,7 @@ def report_incident(
 ):
     """Logs a safety incident or near-miss event with immediate multi-role escalation."""
     assert_station_scope(current_user, req.station_code)
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute(
             """
@@ -490,7 +528,11 @@ def report_incident(
             action="INCIDENT_REPORTED",
             table_name="incidents",
             record_id=str(inc_id),
-            after_state={"type": req.incident_type, "severity": req.severity, "summary": req.summary},
+            after_state={
+                "type": req.incident_type,
+                "severity": req.severity,
+                "summary": req.summary,
+            },
         )
 
     # Trigger emergency notification at the incident station
@@ -591,7 +633,9 @@ class StartSOPRequest(BaseModel):
 @router.post("/sop/start", response_model=Dict[str, Any])
 def start_sop_run(
     req: StartSOPRequest,
-    current_user: Dict[str, Any] = Depends(require_role(["station_master", "dy_sm", "section_controller", "admin"])),
+    current_user: Dict[str, Any] = Depends(
+        require_role(["station_master", "dy_sm", "section_controller", "admin"])
+    ),
     db: Database = Depends(get_db),
 ):
     """Initiates an active emergency checklist run and alerts on-duty staff."""
@@ -600,7 +644,7 @@ def start_sop_run(
     if not template:
         raise HTTPException(status_code=404, detail="SOP template not found.")
 
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute(
             """
@@ -610,7 +654,14 @@ def start_sop_run(
             )
             VALUES (?, ?, ?, ?, 'IN_PROGRESS', '[]', ?, ?);
             """,
-            (template["template_id"], template["title"], req.station_code.upper(), template["severity"], current_user["id"], now_iso),
+            (
+                template["template_id"],
+                template["title"],
+                req.station_code.upper(),
+                template["severity"],
+                current_user["id"],
+                now_iso,
+            ),
         )
         run_id = cur.lastrowid
 
@@ -627,7 +678,14 @@ def start_sop_run(
     # Multi-role emergency alert at the SOP station
     notify(
         event_type="SOP_TRIGGERED",
-        target_roles=["station_master", "dy_sm", "section_controller", "loco_pilot", "guard", "admin"],
+        target_roles=[
+            "station_master",
+            "dy_sm",
+            "section_controller",
+            "loco_pilot",
+            "guard",
+            "admin",
+        ],
         severity="critical" if template["severity"] == "CRITICAL" else "warning",
         title=f"⚡ EMERGENCY SOP RUNNING: {template['title']}",
         message=f"Emergency SOP #{run_id} initiated at {req.station_code} by {current_user['full_name']}. Follow checklist immediately.",
@@ -658,7 +716,7 @@ def complete_sop_step(
     db: Database = Depends(get_db),
 ):
     """Marks a checklist step as completed with actor ID and ISO timestamp."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute("SELECT * FROM sop_runs WHERE id = ?;", (run_id,))
         row = cur.fetchone()
@@ -666,23 +724,34 @@ def complete_sop_step(
             raise HTTPException(status_code=404, detail="SOP run not found.")
         assert_station_scope(current_user, row["station_code"])
         if row["status"] != "IN_PROGRESS":
-            raise HTTPException(status_code=409, detail=f"SOP run is {row['status']}; steps can no longer be recorded.")
+            raise HTTPException(
+                status_code=409,
+                detail=f"SOP run is {row['status']}; steps can no longer be recorded.",
+            )
 
         template = next((t for t in SOP_TEMPLATES if t["template_id"] == row["template_id"]), None)
         if not template:
-            raise HTTPException(status_code=409, detail="SOP template for this run is no longer available.")
+            raise HTTPException(
+                status_code=409, detail="SOP template for this run is no longer available."
+            )
         total_steps = len(template["steps"])
         if req.step_index >= total_steps:
-            raise HTTPException(status_code=422, detail=f"step_index must be between 0 and {total_steps - 1}.")
+            raise HTTPException(
+                status_code=422, detail=f"step_index must be between 0 and {total_steps - 1}."
+            )
 
         completed_steps = json.loads(row["steps_completed_json"] or "[]")
         if any(int(s.get("step_index", -1)) == req.step_index for s in completed_steps):
-            raise HTTPException(status_code=409, detail=f"Step {req.step_index} is already completed.")
-        completed_steps.append({
-            "step_index": req.step_index,
-            "completed_by": current_user["id"],
-            "completed_at": now_iso,
-        })
+            raise HTTPException(
+                status_code=409, detail=f"Step {req.step_index} is already completed."
+            )
+        completed_steps.append(
+            {
+                "step_index": req.step_index,
+                "completed_by": current_user["id"],
+                "completed_at": now_iso,
+            }
+        )
 
         # Completion requires every distinct step, not merely N submissions.
         completed_indices = {int(s["step_index"]) for s in completed_steps}
@@ -748,7 +817,9 @@ def list_active_sop_runs(
 # D6. LEVEL CROSSING (LC) STATUS BOARD
 # ----------------------------------------------------
 class LCStatusUpdate(BaseModel):
-    status: str = Field(..., description="NORMAL, DEFECTIVE, BOOM_DAMAGED, INTERLOCK_FAIL, MAINTENANCE")
+    status: str = Field(
+        ..., description="NORMAL, DEFECTIVE, BOOM_DAMAGED, INTERLOCK_FAIL, MAINTENANCE"
+    )
     notes: Optional[str] = None
 
 
@@ -782,11 +853,13 @@ def list_level_crossings(
 def update_lc_status(
     lc_id: int,
     req: LCStatusUpdate,
-    current_user: Dict[str, Any] = Depends(require_role(["station_master", "dy_sm", "section_controller", "admin"])),
+    current_user: Dict[str, Any] = Depends(
+        require_role(["station_master", "dy_sm", "section_controller", "admin"])
+    ),
     db: Database = Depends(get_db),
 ):
     """Updates level crossing operational state."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute("SELECT * FROM level_crossings WHERE id = ?;", (lc_id,))
         row = cur.fetchone()

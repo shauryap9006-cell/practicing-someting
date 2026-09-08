@@ -79,7 +79,7 @@ In addition, the two preexisting baseline test defects were resolved:
 > [!WARNING]
 > **Action Required Immediately**:
 > 1. **Rotate Firebase Service Account Key:** `firebase-admin.json` in the root repository contains active private key credentials. Reissue and revoke this key in the Google Cloud / Firebase Console.
-> 2. **Rotate Web Firebase API Keys:** `AIzaSyDFAojTqSzmcVL4Op151mQ8simCRqbczBo` found in archived `web/src/lib/firebase.ts` should be regenerated and stored solely in restricted environment variables.
+> 2. **Rotate Web Firebase API Keys:** `AIzaSy...[REDACTED]` found in archived `web/src/lib/firebase.ts` should be regenerated and stored solely in restricted environment variables.
 > 3. **Verify `.env`:** Ensure no production credentials or database passwords are committed to public source control.
 
 ---

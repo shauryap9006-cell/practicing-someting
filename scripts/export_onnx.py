@@ -1,7 +1,7 @@
 """ONNX Export and Numerical Parity Verification for RailTwinGRUv2 (Task T10)."""
+
 from __future__ import annotations
 
-import os
 import sys
 from pathlib import Path
 
@@ -11,8 +11,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from ml.model_v2 import RailTwinGRUv2, ALPHAS_V2
-from ml.vocab import StationVocab
+from ml.model_v2 import RailTwinGRUv2
 
 
 class RailTwinGRUv2ExportWrapper(nn.Module):
@@ -79,7 +78,9 @@ def export_model_to_onnx(
     dummy_nbr_mask = torch.ones((B, K), dtype=torch.bool)
 
     with torch.no_grad():
-        pt_out = wrapper(dummy_seq, dummy_station_ids, dummy_seq_mask, dummy_ctx, dummy_nbr, dummy_nbr_mask)
+        pt_out = wrapper(
+            dummy_seq, dummy_station_ids, dummy_seq_mask, dummy_ctx, dummy_nbr, dummy_nbr_mask
+        )
 
     print(f"[INFO] Exporting TorchScript model to {output_onnx_path.with_suffix('.pt')}...")
     try:
@@ -87,7 +88,7 @@ def export_model_to_onnx(
             wrapper,
             (dummy_seq, dummy_station_ids, dummy_seq_mask, dummy_ctx, dummy_nbr, dummy_nbr_mask),
         )
-        torch.jit.save(traced_model, str(output_onnx_path.with_suffix('.pt')))
+        torch.jit.save(traced_model, str(output_onnx_path.with_suffix(".pt")))
         print(f"[SUCCESS] Exported TorchScript model -> {output_onnx_path.with_suffix('.pt')}")
     except Exception as e:
         print(f"[WARN] TorchScript export failed: {e}")
@@ -114,11 +115,14 @@ def export_model_to_onnx(
         )
         print(f"[SUCCESS] Exported ONNX model successfully.")
     except Exception as e:
-        print(f"[INFO] Torch.onnx.export encountered {e.__class__.__name__}: {e}. TorchScript artifact available.")
+        print(
+            f"[INFO] Torch.onnx.export encountered {e.__class__.__name__}: {e}. TorchScript artifact available."
+        )
 
     # Numerical Parity Check
     try:
         import onnxruntime as ort
+
         session = ort.InferenceSession(str(output_onnx_path))
         ort_inputs = {
             "seq": dummy_seq.numpy(),

@@ -10,8 +10,10 @@
   "overall_crps": 7.436122808393791,
   "rolling_origin_cv": {
     "num_folds": 6,
-    "cv_mean_mae": 10.63,
-    "cv_std_mae": 0.33,
+    "num_valid_folds": 5,
+    "cv_mean_mae": 10.66,
+    "cv_std_mae": 0.35,
+    "min_test_samples": 1000,
     "folds": [
       {
         "fold": 1,
@@ -26,7 +28,8 @@
         "mae": 10.59,
         "coverage_80": 79.6,
         "winkler_score": 57.74,
-        "crps": 7.38
+        "crps": 7.38,
+        "excluded": false
       },
       {
         "fold": 2,
@@ -41,7 +44,8 @@
         "mae": 10.72,
         "coverage_80": 79.9,
         "winkler_score": 58.23,
-        "crps": 7.46
+        "crps": 7.46,
+        "excluded": false
       },
       {
         "fold": 3,
@@ -56,7 +60,8 @@
         "mae": 11.03,
         "coverage_80": 80.3,
         "winkler_score": 57.79,
-        "crps": 7.53
+        "crps": 7.53,
+        "excluded": false
       },
       {
         "fold": 4,
@@ -71,7 +76,8 @@
         "mae": 10.03,
         "coverage_80": 83.2,
         "winkler_score": 56.25,
-        "crps": 7.09
+        "crps": 7.09,
+        "excluded": false
       },
       {
         "fold": 5,
@@ -86,7 +92,8 @@
         "mae": 10.95,
         "coverage_80": 79.5,
         "winkler_score": 58.62,
-        "crps": 7.56
+        "crps": 7.56,
+        "excluded": false
       },
       {
         "fold": 6,
@@ -101,7 +108,10 @@
         "mae": 10.45,
         "coverage_80": 82.2,
         "winkler_score": 56.97,
-        "crps": 7.28
+        "crps": 7.28,
+        "excluded": true,
+        "excluded_truncated_tail": true,
+        "exclusion_reason": "truncated_tail_window"
       }
     ]
   },

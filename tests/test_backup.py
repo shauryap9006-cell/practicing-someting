@@ -7,7 +7,6 @@ and automated restore into scratch SQLite databases.
 import tempfile
 from pathlib import Path
 
-import pytest
 from fastapi.testclient import TestClient
 
 from api.auth import create_access_token
@@ -55,7 +54,7 @@ def test_backup_retention_policy():
         tmp_path = Path(tmp_dir)
         # Create 10 dummy daily backups
         for i in range(10):
-            p = tmp_path / f"railtwin_backup_daily_202608{i+10:02d}_120000.db"
+            p = tmp_path / f"railtwin_backup_daily_202608{i + 10:02d}_120000.db"
             p.write_text("dummy")
 
         removed = enforce_retention_policy(tmp_path, max_daily=7)
@@ -67,7 +66,7 @@ def test_backup_retention_policy():
 def test_api_backup_list_and_create():
     """Verifies admin backup API endpoints."""
     admin_token = create_access_token({"sub": "admin", "role_id": "admin"})
-    
+
     # Create backup via API
     create_resp = client.post(
         "/api/admin/backups/create",

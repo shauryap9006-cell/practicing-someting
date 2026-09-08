@@ -8,9 +8,9 @@ Provides:
 5. Real-time channel health monitoring.
 """
 
-from notifications.types import AlertEvent, NotificationSeverity, StaffRecipient
 from notifications.dispatcher import NotificationDispatcher, get_dispatcher
 from notifications.health import get_health_tracker
+from notifications.types import AlertEvent, NotificationSeverity, StaffRecipient
 
 __all__ = [
     "AlertEvent",

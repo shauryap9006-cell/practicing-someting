@@ -6,6 +6,7 @@ Captures all public and operational control room views at 1920x1080.
 import asyncio
 import shutil
 from pathlib import Path
+
 from playwright.async_api import async_playwright
 
 SCREENSHOTS_DIR = Path("docs/screenshots")
@@ -97,7 +98,9 @@ async def main():
 
             # Try to dismiss cookie banner
             try:
-                cookie_btn = await page.query_selector("button:has-text('Accept'), button:has-text('Dismiss'), button:has-text('Got it')")
+                cookie_btn = await page.query_selector(
+                    "button:has-text('Accept'), button:has-text('Dismiss'), button:has-text('Got it')"
+                )
                 if cookie_btn:
                     await cookie_btn.click()
                     await page.wait_for_timeout(200)
@@ -110,7 +113,9 @@ async def main():
             print(f"  ✓ Saved: {filename} ({size_kb:.1f} KB)", flush=True)
 
         await browser.close()
-        print(f"\n[SUCCESS] Captured all {len(PAGES)} screenshots into {SCREENSHOTS_DIR}!", flush=True)
+        print(
+            f"\n[SUCCESS] Captured all {len(PAGES)} screenshots into {SCREENSHOTS_DIR}!", flush=True
+        )
 
 
 if __name__ == "__main__":

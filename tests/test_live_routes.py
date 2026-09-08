@@ -1,14 +1,12 @@
 """Unit and Integration tests for Pipeline 07 Live Routes & SSE (Phase A6, A8)."""
 
-import asyncio
 import json
+
 import pytest
 from fastapi.testclient import TestClient
 
 from api.main import app
 from config import settings
-from data.db import Database, get_db
-from engine.clocks import RealClock, ReplayClock, set_global_clock
 
 
 @pytest.fixture
@@ -27,7 +25,9 @@ def test_meta_config_endpoint(client):
     assert "budgets" in data
     assert "delay_colors" in data
     assert "attribution_colors" in data
-    assert data["intervals"]["live_tracker_interval_seconds"] == settings.LIVE_TRACKER_INTERVAL_SECONDS
+    assert (
+        data["intervals"]["live_tracker_interval_seconds"] == settings.LIVE_TRACKER_INTERVAL_SECONDS
+    )
     assert data["thresholds"]["attribution_delta_min"] == settings.ATTRIBUTION_DELTA_MIN
     assert "RAKE_INHERIT" in data["attribution_colors"]
     assert "UNEXPLAINED" in data["attribution_colors"]

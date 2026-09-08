@@ -1,5 +1,5 @@
 import React from 'react';
-import type { NetworkState } from '../lib/types';
+import type { NetworkState } from '@railtwin/shared-types';
 import { getDelayStatusBadge } from '../lib/motion';
 
 interface TrainChipsProps {

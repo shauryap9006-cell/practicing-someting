@@ -131,7 +131,7 @@ flowchart TD
 - **PyTorch GPU / CUDA Acceleration Unavailable**: PyTorch GRU trainer and predictor detect device capability and automatically fallback to CPU (`torch.device("cpu")` with `torch.set_num_threads(1)` to eliminate multi-threaded thrashing).
 - **Challenger Promotion Gate Failure**: If candidate model (GRU or deep ensemble) has higher MAE or fails the paired Wilcoxon test ($p \ge 0.05$), the previous champion remains pinned in `registry.json`.
 - **Missing or Corrupted PyTorch GRU Binary (`model_gru_challenger.pt`)**: `EnsemblePredictor` falls back to 5-candidate stacking using LightGBM quantile trees and Linear Regression benchmark without raising runtime exceptions.
-- **Full Model Artifact Corruption (Zero-Fail Serving Fallback)**: `api/predictor.py` implements a 3-tier degradation cascade: Tier 2 (Neural GRU / LightGBM CQR Ensemble) $\to$ Tier 1 (`hist_baselines` SQL lookup) $\to$ Tier 0 (Timetable scheduled arrival + current delay).
+- **Full Model Artifact Corruption (Zero-Fail Serving Fallback)**: `api/predictor.py` implements a 3-tier degradation cascade: Tier 2 (Served LightGBM CQR / NNLS Convex Ensemble) $\to$ Tier 1 (`hist_baselines` SQL lookup) $\to$ Tier 0 (Timetable scheduled arrival + current delay).
 - **Parquet Cache Invalidation**: If cached parquet files in `data/cache/` fail validation or are missing, `SnapshotGenerator.build_dataset()` automatically rebuilds the dataset from raw database events.
 - **PSI Feature Drift Alarm**: When PSI exceeds 0.25 on critical features (e.g. `current_delay` or `fog_flag_target`), `PSIDriftMonitor` creates an automated high-severity alert in `notifications` to trigger scheduled retraining.
 

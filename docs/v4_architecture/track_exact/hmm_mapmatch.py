@@ -6,8 +6,8 @@ Topology is a HARD constraint: trains cannot teleport across parallel tracks (4.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import math
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence, Tuple
 
 
@@ -115,9 +115,7 @@ class RailHMMMapMatcher:
         delta = abs(d_odo - arc)
         return -0.5 * (delta / self.so) ** 2 - self._log_norm_odo
 
-    def match(
-        self, observations: Sequence[Tuple[Tuple[float, float], float]]
-    ) -> List[str]:
+    def match(self, observations: Sequence[Tuple[Tuple[float, float], float]]) -> List[str]:
         """Viterbi decoding over sequence of observations [(z_xy, d_odo_since_prev), ...].
 
         Returns:
@@ -130,9 +128,7 @@ class RailHMMMapMatcher:
         first_z, _ = observations[0]
 
         # Initialize Viterbi trellis with emission probabilities
-        v_curr: Dict[str, float] = {
-            s: self._emission(first_z, self.segs[s]) for s in states
-        }
+        v_curr: Dict[str, float] = {s: self._emission(first_z, self.segs[s]) for s in states}
         backpointers: List[Dict[str, Optional[str]]] = [{s: None for s in states}]
 
         for t in range(1, len(observations)):
@@ -180,9 +176,7 @@ class RailHMMMapMatcher:
 
         return path[::-1]
 
-    def get_spatial_likelihoods(
-        self, z: Tuple[float, float] | Sequence[float]
-    ) -> Dict[str, float]:
+    def get_spatial_likelihoods(self, z: Tuple[float, float] | Sequence[float]) -> Dict[str, float]:
         """Calculates normalized spatial probabilities P(track | z) for all segments."""
         if not self.segs:
             return {}

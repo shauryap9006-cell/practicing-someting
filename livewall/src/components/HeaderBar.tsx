@@ -1,5 +1,5 @@
 import React from 'react';
-import type { ClockData, NetworkState, ConnectionStatus, LivePosition, StationMeta } from '../lib/types';
+import type { ClockData, NetworkState, ConnectionStatus, LivePosition, StationMeta } from '@railtwin/shared-types';
 import { getDelayColor } from '../lib/motion';
 import { SearchBar } from './SearchBar';
 

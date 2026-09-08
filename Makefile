@@ -2,7 +2,7 @@
 # SIH 2026 PS 26028 · Delay Intelligence Engine
 # Usage: make <target>
 
-.PHONY: help install seed seed-mixed train eval test nightly api drift clean docker-build docker-up docker-down
+.PHONY: help install seed seed-mixed train eval test nightly api drift clean docker-build docker-up docker-down purge-pii purge-pii-dry
 
 PYTHON := python
 PYTEST := python -m pytest
@@ -40,13 +40,19 @@ install:
 	@echo "[OK] Dependencies installed."
 
 ##──────────────────────────────────────────────────────────────
-## Data
+## Data & Privacy (DPDP Act 2023)
 ##──────────────────────────────────────────────────────────────
 seed:
 	$(PYTHON) -m data.seed --network=passenger
 
 seed-mixed:
 	$(PYTHON) -m data.seed --network=mixed
+
+purge-pii:
+	$(PYTHON) -m scripts.purge_expired_pii --apply
+
+purge-pii-dry:
+	$(PYTHON) -m scripts.purge_expired_pii
 
 ##──────────────────────────────────────────────────────────────
 ## ML Pipeline
@@ -99,8 +105,10 @@ test-e2e:
 api:
 	$(PYTHON) -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
 
+# Single worker is a hard constraint: rate limiter, idempotency cache, SSE counters,
+# simulated clock, kinematic tracker, and SQLite writer are process-local.
 api-prod:
-	$(PYTHON) -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --workers 2
+	$(PYTHON) -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --workers 1
 
 ##──────────────────────────────────────────────────────────────
 ## Docker

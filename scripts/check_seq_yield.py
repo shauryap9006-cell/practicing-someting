@@ -1,10 +1,12 @@
 """Check sequence yield per date range to find where sequences drop to zero."""
-import sys, datetime
+
+import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from data.db import get_db
-from ml.vocab import StationVocab
 from ml.train_v2 import build_v2_dataset
+from ml.vocab import StationVocab
 
 db = get_db()
 vocab = StationVocab.from_db()

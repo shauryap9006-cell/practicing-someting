@@ -5,7 +5,7 @@ data provenance labels (rapidapi | synthetic | manual).
 """
 
 from collector.snapshot_cron import SnapshotCollector
-from data.db import Database, get_db
+from data.db import get_db
 
 
 def test_snapshot_collector_records_data():

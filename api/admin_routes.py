@@ -7,7 +7,6 @@ All administrative actions are gated by role 'admin' and strictly audited.
 from __future__ import annotations
 
 import re
-from datetime import datetime, timezone
 from typing import Any, Dict, List, Literal, Optional
 from uuid import uuid4
 
@@ -18,6 +17,7 @@ from api.auth import hash_password, require_role
 from config import settings
 from data.audit import record_audit
 from data.db import Database, get_db
+from engine.clocks import get_clock, now_iso
 from scripts.backup_db import BACKUPS_DIR, create_database_backup, verify_backup_file
 
 router = APIRouter(prefix="/api/admin", tags=["Administration & Governance"])
@@ -41,7 +41,9 @@ def _normalize_email(value: Optional[str]) -> Optional[str]:
 def _normalize_username(value: str) -> str:
     username = value.strip().lower()
     if not _USERNAME_PATTERN.fullmatch(username):
-        raise ValueError("username must be 3-64 chars of lowercase letters, digits, '.', '_' or '-'")
+        raise ValueError(
+            "username must be 3-64 chars of lowercase letters, digits, '.', '_' or '-'"
+        )
     return username
 
 
@@ -65,7 +67,9 @@ class CreateUserRequest(BaseModel):
     email: Optional[str] = Field(None, description="Contact email")
     password: str = Field(..., description="Plaintext password")
     role_id: str = Field(..., description="Role ID (e.g. station_master, dy_sm, engineer)")
-    station_code: str = Field(default_factory=lambda: settings.DEFAULT_STATION_CODE, description="Station code assignment")
+    station_code: str = Field(
+        default_factory=lambda: settings.DEFAULT_STATION_CODE, description="Station code assignment"
+    )
     full_name: str = Field(..., min_length=2, max_length=120, description="Full display name")
 
     @field_validator("username")
@@ -180,12 +184,14 @@ def review_access_request(
     db: Database = Depends(get_db),
 ):
     """Approves or rejects an access request without silently provisioning an account."""
-    reviewed_at = datetime.now(timezone.utc).isoformat()
+    reviewed_at = now_iso()
     with db.transaction() as cur:
         cur.execute("SELECT * FROM access_requests WHERE request_id = ?", (request_id,))
         existing = cur.fetchone()
         if not existing:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Access request not found.")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Access request not found."
+            )
         cur.execute(
             """
             UPDATE access_requests
@@ -225,8 +231,8 @@ def list_users(
             JOIN roles r ON u.role_id = r.id
             ORDER BY u.created_at DESC
             LIMIT ? OFFSET ?;
-            """
-            , (limit, offset)
+            """,
+            (limit, offset),
         )
         rows = cur.fetchall()
 
@@ -254,7 +260,7 @@ def create_user(
 ):
     """Creates a new user account and writes an audited record."""
     user_id = f"usr-{req.username}-{uuid4().hex[:8]}"
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     pwd_hash = hash_password(req.password)
     email = req.email
 
@@ -278,7 +284,9 @@ def create_user(
         if email:
             cur.execute("SELECT id FROM users WHERE lower(email) = ?;", (email,))
             if cur.fetchone():
-                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email is already registered.")
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT, detail="Email is already registered."
+                )
 
         cur.execute(
             """
@@ -368,19 +376,32 @@ def update_user(
         if req.role_id is not None:
             cur.execute("SELECT id FROM roles WHERE id = ?;", (req.role_id,))
             if not cur.fetchone():
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid role_id '{req.role_id}'.")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid role_id '{req.role_id}'.",
+                )
 
         if req.email is not None and new_email != existing["email"]:
-            cur.execute("SELECT id FROM users WHERE lower(email) = ? AND id != ?;", (new_email, user_id))
+            cur.execute(
+                "SELECT id FROM users WHERE lower(email) = ? AND id != ?;", (new_email, user_id)
+            )
             if cur.fetchone():
-                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email is already registered.")
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT, detail="Email is already registered."
+                )
 
         # Guard against an administrator locking themselves (and possibly everyone) out.
         if user_id == admin_user["id"]:
             if not new_active:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot deactivate your own account.")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="You cannot deactivate your own account.",
+                )
             if new_role != "admin":
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot remove your own admin role.")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="You cannot remove your own admin role.",
+                )
 
         if req.new_password:
             new_pwd_hash = hash_password(req.new_password)
@@ -454,8 +475,8 @@ def list_backups(
             FROM backups
             ORDER BY id DESC
             LIMIT ? OFFSET ?;
-            """
-            , (limit, offset)
+            """,
+            (limit, offset),
         )
         rows = cur.fetchall()
 
@@ -503,7 +524,9 @@ def verify_latest_backup(
         row = cur.fetchone()
 
     if not row:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No backup records found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No backup records found."
+        )
 
     backup_path = BACKUPS_DIR / row["filename"]
     if not backup_path.exists():

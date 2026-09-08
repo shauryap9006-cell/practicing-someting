@@ -27,15 +27,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
 from fastapi.testclient import TestClient
+
 from api.main import app
+from config import settings
 from data.db import get_db
 from notifications import AlertEvent, get_dispatcher
 from notifications.health import get_health_tracker
 from notifications.webhook_verify import generate_hmac_signature
-from config import settings
 
 client = TestClient(app)
-
 
 
 def run_demo_rehearsal():
@@ -89,18 +89,22 @@ def run_demo_rehearsal():
     # Step 3: Simulate Field Staff Inbound Reply-to-ACK
     # ----------------------------------------------------
     print("\n[STEP 3] Staff replies on WhatsApp: 'ACK CONF-12301-CNB'...")
-    webhook_body = json.dumps({
-        "event": "message.received",
-        "body": f"ACK {conflict_id}",
-        "from": "919415011001@c.us",
-        "timestamp": int(time.time()),
-    }).encode("utf-8")
+    webhook_body = json.dumps(
+        {
+            "event": "message.received",
+            "body": f"ACK {conflict_id}",
+            "from": "919415011001@c.us",
+            "timestamp": int(time.time()),
+        }
+    ).encode("utf-8")
 
     headers = {
         "Content-Type": "application/json",
     }
     if settings.OPENWA_WEBHOOK_SECRET:
-        headers["X-OpenWA-Signature"] = generate_hmac_signature(webhook_body, settings.OPENWA_WEBHOOK_SECRET)
+        headers["X-OpenWA-Signature"] = generate_hmac_signature(
+            webhook_body, settings.OPENWA_WEBHOOK_SECRET
+        )
 
     hook_resp = client.post("/v1/hooks/whatsapp", content=webhook_body, headers=headers)
     print(f"  ✓ Inbound Webhook HTTP Response: {hook_resp.status_code}")
@@ -123,11 +127,15 @@ def run_demo_rehearsal():
         notif_row = cur.fetchone()
 
     if ack_row:
-        print(f"  ✓ Closed Loop Confirmed! Advisory {ack_row['adv_id']} marked as '{ack_row['decision'].upper()}' by {ack_row['dispatcher_id']}")
+        print(
+            f"  ✓ Closed Loop Confirmed! Advisory {ack_row['adv_id']} marked as '{ack_row['decision'].upper()}' by {ack_row['dispatcher_id']}"
+        )
         print(f"    Recorded Timestamp: {ack_row['recorded_at']}")
         print(f"    Comment: {ack_row['comment']}")
     if notif_row:
-        print(f"  ✓ Notification Log Updated: Channel={notif_row['channel']}, Status={notif_row['status']}, AckAt={notif_row['ack_at']}")
+        print(
+            f"  ✓ Notification Log Updated: Channel={notif_row['channel']}, Status={notif_row['status']}, AckAt={notif_row['ack_at']}"
+        )
 
     # ----------------------------------------------------
     # Step 5: Fault Drill — WhatsApp Down -> SMS Failover
@@ -154,7 +162,9 @@ def run_demo_rehearsal():
     dispatcher.openwa.send = original_send
 
     print(f"  ✓ WhatsApp failed -> Channels used: {failover_result['channels_used']}")
-    print(f"  ✓ Delivery status: {failover_result['deliveries'][0]['status']} via {failover_result['deliveries'][0]['channel'].upper()}")
+    print(
+        f"  ✓ Delivery status: {failover_result['deliveries'][0]['status']} via {failover_result['deliveries'][0]['channel'].upper()}"
+    )
 
     # Check health reflects status
     h_resp2 = client.get("/v1/health")

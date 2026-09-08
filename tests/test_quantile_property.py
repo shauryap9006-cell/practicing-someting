@@ -7,8 +7,9 @@ invariant 0 <= p10 <= p50 <= p90 <= cap across arbitrary and adversarial inputs.
 from __future__ import annotations
 
 import math
-from hypothesis import given, strategies as st
-import pytest
+
+from hypothesis import given
+from hypothesis import strategies as st
 
 from api.predictor import enforce_quantile_order
 

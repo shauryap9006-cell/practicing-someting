@@ -7,15 +7,18 @@ validates quality gates, and idempotently upserts running status into SQLite.
 from __future__ import annotations
 
 import datetime
+import logging
 from typing import List, Optional
 
-from config import settings
+logger = logging.getLogger(__name__)
+
 from collector.adapters.base import LiveSource, StationEvent
+from collector.adapters.mock_replay import MockReplaySource
 from collector.adapters.rapidapi import RapidAPISource
 from collector.adapters.scrape import ScrapeSource
-from collector.adapters.mock_replay import MockReplaySource
 from collector.quality import QualityGate
 from collector.weather import WeatherEngine
+from config import settings
 from data.db import Database, get_db
 from engine.clocks import get_clock
 
@@ -29,11 +32,15 @@ class DataCollector:
         self.weather_engine = WeatherEngine(self.db)
 
         # 3-Tier Adapter Chain
-        self.adapters: List[LiveSource] = adapters if adapters is not None else [
-            RapidAPISource(),
-            ScrapeSource(),
-            MockReplaySource(self.db),
-        ]
+        self.adapters: List[LiveSource] = (
+            adapters
+            if adapters is not None
+            else [
+                RapidAPISource(),
+                ScrapeSource(),
+                MockReplaySource(self.db),
+            ]
+        )
 
     def fetch_with_failover(
         self, train_no: str, run_date: datetime.date
@@ -63,11 +70,13 @@ class DataCollector:
         run_date = target_date or clock.now().date()
         date_str = run_date.strftime("%Y-%m-%d")
 
-        print(f"[INFO] Starting collection cycle for {date_str} (Mode: {clock.mode})...")
+        logger.info("Starting collection cycle for %s (Mode: %s)...", date_str, clock.mode)
 
         # 1. Sync corridor weather first
-        weather_synced = self.weather_engine.sync_corridor_weather(run_date, limit=train_limit or 10)
-        print(f"[INFO] Synced weather for {weather_synced} stations.")
+        weather_synced = self.weather_engine.sync_corridor_weather(
+            run_date, limit=train_limit or 10
+        )
+        logger.info("Synced weather for %s stations.", weather_synced)
 
         # 2. Get trains to poll
         with self.db.transaction() as cur:
@@ -78,7 +87,7 @@ class DataCollector:
             train_rows = cur.fetchall()
 
         train_nos = [r["train_no"] for r in train_rows]
-        print(f"[INFO] Polling running status for {len(train_nos)} trains...")
+        logger.info("Polling running status for %d trains...", len(train_nos))
 
         total_upserted = 0
         total_quarantined = 0
@@ -108,7 +117,11 @@ class DataCollector:
             )
             total_upserted = len(all_valid_events)
 
-        print(f"[SUCCESS] Collection cycle complete: {total_upserted} events upserted, {total_quarantined} quarantined.")
+        logger.info(
+            "Collection cycle complete: %d events upserted, %d quarantined.",
+            total_upserted,
+            total_quarantined,
+        )
         return {
             "date": date_str,
             "trains_polled": len(train_nos),
@@ -122,9 +135,9 @@ def run_cron():
     """Entrypoint for scheduled GitHub Actions / cron worker."""
     collector = DataCollector()
     summary = collector.run_collection_cycle()
-    print("=== Collector Summary ===")
+    logger.info("=== Collector Summary ===")
     for k, v in summary.items():
-        print(f"  {k}: {v}")
+        logger.info("  %s: %s", k, v)
 
 
 if __name__ == "__main__":

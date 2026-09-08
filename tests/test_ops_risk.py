@@ -1,10 +1,10 @@
 """Unit and benchmark tests for Risk-Aware Re-Optimizer (Task T8)."""
+
 from __future__ import annotations
 
 import datetime
-import pytest
 
-from engine.ops_risk import RiskPlatformBlock, RiskAwareReOptimizer
+from engine.ops_risk import RiskAwareReOptimizer, RiskPlatformBlock
 
 
 def test_cvar_overlap_computation():

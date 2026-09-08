@@ -13,20 +13,20 @@ from __future__ import annotations
 
 import json
 import time
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 
 from api.main import app
 from config import settings
 from data.db import get_db
-from notifications.types import AlertEvent, StaffRecipient
-from notifications.health import get_health_tracker
 from notifications.channels.openwa import OpenWAChannel
 from notifications.channels.sms import SMSChannel
-from notifications.channels.inapp import InAppChannel
 from notifications.dispatcher import NotificationDispatcher
-from notifications.webhook_verify import verify_hmac, generate_hmac_signature
+from notifications.health import get_health_tracker
+from notifications.types import AlertEvent
+from notifications.webhook_verify import generate_hmac_signature, verify_hmac
 
 client = TestClient(app)
 WEBHOOK_TEST_SECRET = "webhook-test-secret-with-sufficient-entropy"
@@ -128,7 +128,9 @@ def test_hmac_missing_header_when_secret_set():
 def test_dispatcher_recipient_resolution():
     db = get_db()
     dispatcher = NotificationDispatcher(db)
-    recipients = dispatcher.resolve_recipients(station_code="CNB", roles=["controller", "pointsman"])
+    recipients = dispatcher.resolve_recipients(
+        station_code="CNB", roles=["controller", "pointsman"]
+    )
     assert len(recipients) >= 2
     roles = {r.role for r in recipients}
     assert "controller" in roles or "pointsman" in roles
@@ -240,7 +242,10 @@ def test_webhook_reply_ack_accepted():
     # Verify recorded in DB
     db = get_db()
     with db.transaction() as cur:
-        cur.execute("SELECT decision, dispatcher_id FROM advisory_ack_log WHERE adv_id = ? ORDER BY id DESC LIMIT 1", (adv_id,))
+        cur.execute(
+            "SELECT decision, dispatcher_id FROM advisory_ack_log WHERE adv_id = ? ORDER BY id DESC LIMIT 1",
+            (adv_id,),
+        )
         row = cur.fetchone()
         assert row is not None
         assert row["decision"] == "accepted"

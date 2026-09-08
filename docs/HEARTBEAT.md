@@ -59,7 +59,9 @@ with `source = "simulated"`.
 ## 5. Machine Learning Brain & Serving Integrity
 
 ### 5.1 Champion Serving Architecture
-- **Champion Model**: 5-Model Non-Negative Least Squares Convex Ensemble (`Tier2_Convex_Ensemble_NNLS`).
+- **Served Champion Model**: 5-Model Non-Negative Least Squares Convex Ensemble (`Tier2_Convex_Ensemble_NNLS`).
+  - **Served champion**: LightGBM Quantile + NNLS convex ensemble, Mondrian conformal calibration.
+  - **PyTorch Non-Crossing GRU**: experimental challenger — NOT served (sequence input wiring pending).
   - Outperformed single LightGBM models on holdout test set (Holdout MAE: 10.55 min vs 11.02 min).
 - **Quantile Monotonicity Guarantee**: Invariant function `enforce_quantile_order(p10, p50, p90)` enforces $0 \le p_{10} \le p_{50} \le p_{90} \le 720\text{ min}$ at all times.
 - **Additive Kinematic Penalties**: Active TSR kinematic delay impacts are applied additively to won model outputs rather than clobbering model predictions.
@@ -88,6 +90,6 @@ with `source = "simulated"`.
 
 | Milestone | Target | Description |
 |---|---|---|
-| **M1: GRU Sequence History** | Q4 2026 | Wire multi-station rolling time-series window inputs into PyTorch `NonCrossingGRUQuantileModel` challenger. |
+| **M1: GRU Sequence History** | Q4 2026 | Wire multi-station rolling time-series window inputs into PyTorch `NonCrossingGRUQuantileModel` challenger (experimental, not served). |
 | **M2: Network Expansion** | Q1 2027 | Expand topological track graph from NDLS–CNB–LKO to full Northern Railway inter-divisional boundaries. |
 | **M3: Autonomous Dispatch** | Q2 2027 | Implement multi-agent conflict resolution with automated signal clearance recommendations. |

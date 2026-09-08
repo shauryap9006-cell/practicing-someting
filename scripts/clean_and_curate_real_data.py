@@ -1,4 +1,4 @@
-﻿"""RailTwin-X Real Data Cleaning, Deduplication & Quality-Gating Engine.
+"""RailTwin-X Real Data Cleaning, Deduplication & Quality-Gating Engine.
 
 Applies the 3 Core Data Rules to 38M+ raw Kaggle railway observations:
   1. Right Data > More Data: Real empirical arrival/departure patterns & cascade delays.
@@ -14,14 +14,10 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import datetime
-import gc
-import json
-import os
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
-import numpy as np
+
 import pandas as pd
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -29,7 +25,7 @@ if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
 from config import settings
-from data.db import Database, get_db
+from data.db import get_db
 
 
 def map_train_class_and_priority(train_name: str, type_code: str) -> Tuple[str, int]:
@@ -39,7 +35,13 @@ def map_train_class_and_priority(train_name: str, type_code: str) -> Tuple[str, 
 
     if "RAJDHANI" in name or "VANDE BHARAT" in name or "SHATABDI" in name:
         return ("rajdhani", 1)
-    elif "DURONTO" in name or "GARIB RATH" in name or "SF" in name or "SUPERFAST" in name or "SF-TRAINS" in t_code:
+    elif (
+        "DURONTO" in name
+        or "GARIB RATH" in name
+        or "SF" in name
+        or "SUPERFAST" in name
+        or "SF-TRAINS" in t_code
+    ):
         return ("superfast", 2)
     elif "MAIL" in name or "EXP" in name or "EXPRESS" in name or "EXP-TRAINS" in t_code:
         return ("mail", 3)
@@ -92,7 +94,9 @@ def clean_and_curate_dataset(
     print("=" * 70)
 
     raw_dir = settings.DATA_DIR / "kaggle_downloads" / "railway_delay_dataset"
-    stn_file = settings.DATA_DIR / "kaggle_downloads" / "stations_routing" / "india_railway_stations.csv"
+    stn_file = (
+        settings.DATA_DIR / "kaggle_downloads" / "stations_routing" / "india_railway_stations.csv"
+    )
 
     if not (raw_dir / "combined_delay.csv").exists():
         raise FileNotFoundError(f"Raw delay dataset missing at {raw_dir / 'combined_delay.csv'}")
@@ -106,10 +110,14 @@ def clean_and_curate_dataset(
             code = str(r.station_code).strip().upper()
             stations_map[code] = {
                 "code": code,
-                "name": str(r.station_name).strip().title() if pd.notna(r.station_name) else f"Station {code}",
+                "name": str(r.station_name).strip().title()
+                if pd.notna(r.station_name)
+                else f"Station {code}",
                 "lat": float(r.latitude) if pd.notna(r.latitude) else 26.8,
                 "lon": float(r.longitude) if pd.notna(r.longitude) else 80.3,
-                "zone": str(r.railway_zone_code).strip().upper() if pd.notna(r.railway_zone_code) else "NR",
+                "zone": str(r.railway_zone_code).strip().upper()
+                if pd.notna(r.railway_zone_code)
+                else "NR",
                 "is_junction": int(r.is_junction) if pd.notna(r.is_junction) else 0,
                 "platforms": 4 if getattr(r, "is_junction", 0) else 2,
             }
@@ -123,7 +131,9 @@ def clean_and_curate_dataset(
         df_tr = pd.read_csv(tr_file)
         for r in df_tr.itertuples(index=False):
             t_no = str(r.train_no).strip().replace(".0", "")
-            t_class, priority = map_train_class_and_priority(r.train_name, getattr(r, "type_code", ""))
+            t_class, priority = map_train_class_and_priority(
+                r.train_name, getattr(r, "type_code", "")
+            )
             trains_map[t_no] = {
                 "train_no": t_no,
                 "name": str(r.train_name).strip().title(),
@@ -140,9 +150,13 @@ def clean_and_curate_dataset(
 
     if sch_file.exists():
         df_sch = pd.read_csv(sch_file)
-        df_sch["train_no"] = df_sch["train_no"].astype(str).str.strip().str.replace(".0", "", regex=False)
+        df_sch["train_no"] = (
+            df_sch["train_no"].astype(str).str.strip().str.replace(".0", "", regex=False)
+        )
         df_sch["station_name"] = df_sch["station_name"].astype(str).str.strip().str.upper()
-        df_sch["station_no"] = pd.to_numeric(df_sch["station_no"], errors="coerce").fillna(1).astype(int)
+        df_sch["station_no"] = (
+            pd.to_numeric(df_sch["station_no"], errors="coerce").fillna(1).astype(int)
+        )
 
         # Sort by train and sequence
         df_sch = df_sch.sort_values(by=["train_no", "station_no"])
@@ -152,7 +166,11 @@ def clean_and_curate_dataset(
             stn = str(r.station_name)
             s_arr = clean_time_str(getattr(r, "arrival_time", None))
             s_dep = clean_time_str(getattr(r, "departure_time", None))
-            dist = float(r.distance_from_origin) if pd.notna(getattr(r, "distance_from_origin", None)) else 0.0
+            dist = (
+                float(r.distance_from_origin)
+                if pd.notna(getattr(r, "distance_from_origin", None))
+                else 0.0
+            )
 
             stop_data = {
                 "train_no": t_no,
@@ -167,10 +185,14 @@ def clean_and_curate_dataset(
                 train_routes_ordered[t_no] = []
             train_routes_ordered[t_no].append(stop_data)
 
-    print(f"  -> Indexed {len(schedule_lookup):,} scheduled station stops across {len(train_routes_ordered):,} train routes.")
+    print(
+        f"  -> Indexed {len(schedule_lookup):,} scheduled station stops across {len(train_routes_ordered):,} train routes."
+    )
 
     # 4. Stream & Clean combined_delay.csv
-    print(f"[4/6] Streaming and quality-gating raw delay records (Target: ~{target_rows:,} clean rows)...")
+    print(
+        f"[4/6] Streaming and quality-gating raw delay records (Target: ~{target_rows:,} clean rows)..."
+    )
     delay_file = raw_dir / "combined_delay.csv"
 
     curated_records: List[dict] = []
@@ -192,7 +214,9 @@ def clean_and_curate_dataset(
         stats["raw_chunks_processed"] += 1
         stats["raw_rows_scanned"] += len(chunk)
 
-        chunk["train_no"] = chunk["train_no"].astype(str).str.strip().str.replace(".0", "", regex=False)
+        chunk["train_no"] = (
+            chunk["train_no"].astype(str).str.strip().str.replace(".0", "", regex=False)
+        )
         chunk["station_name"] = chunk["station_name"].astype(str).str.strip().str.upper()
         chunk["date"] = pd.to_datetime(chunk["date"], errors="coerce").dt.strftime("%Y-%m-%d")
 
@@ -230,7 +254,10 @@ def clean_and_curate_dataset(
             if t_no not in runs_per_train_count:
                 runs_per_train_count[t_no] = set()
 
-            if len(runs_per_train_count[t_no]) >= max_runs_per_train and r_date not in runs_per_train_count[t_no]:
+            if (
+                len(runs_per_train_count[t_no]) >= max_runs_per_train
+                and r_date not in runs_per_train_count[t_no]
+            ):
                 stats["quarantined_train_run_cap"] += 1
                 continue
 
@@ -244,19 +271,21 @@ def clean_and_curate_dataset(
 
             collected_at = f"{r_date}T12:00:00+05:30"
 
-            curated_records.append({
-                "train_no": t_no,
-                "run_date": r_date,
-                "seq": seq,
-                "station_code": stn,
-                "sched_arr": sched_arr,
-                "actual_arr": actual_arr,
-                "sched_dep": sched_dep,
-                "actual_dep": actual_dep,
-                "delay_arr_min": d_min,
-                "delay_dep_min": d_min,
-                "collected_at": collected_at,
-            })
+            curated_records.append(
+                {
+                    "train_no": t_no,
+                    "run_date": r_date,
+                    "seq": seq,
+                    "station_code": stn,
+                    "sched_arr": sched_arr,
+                    "actual_arr": actual_arr,
+                    "sched_dep": sched_dep,
+                    "actual_dep": actual_dep,
+                    "delay_arr_min": d_min,
+                    "delay_dep_min": d_min,
+                    "collected_at": collected_at,
+                }
+            )
 
             if len(curated_records) >= target_rows:
                 break
@@ -266,7 +295,9 @@ def clean_and_curate_dataset(
             break
 
         if stats["raw_chunks_processed"] % 10 == 0:
-            print(f"  [Chunk {stats['raw_chunks_processed']}] Scanned {stats['raw_rows_scanned']:,} raw rows -> Curated {len(curated_records):,} clean rows...")
+            print(
+                f"  [Chunk {stats['raw_chunks_processed']}] Scanned {stats['raw_rows_scanned']:,} raw rows -> Curated {len(curated_records):,} clean rows..."
+            )
 
     stats["retained_clean_rows"] = len(curated_records)
     print(f"[SUCCESS] Cleaning & quality gate completed:")
@@ -286,8 +317,10 @@ def clean_and_curate_dataset(
 
     curated_df.to_csv(output_csv, index=False)
     curated_df.to_parquet(output_parquet, index=False)
-    print(f"  -> Saved CSV: {output_csv} ({output_csv.stat().st_size / (1024*1024):.2f} MB)")
-    print(f"  -> Saved Parquet: {output_parquet} ({output_parquet.stat().st_size / (1024*1024):.2f} MB)")
+    print(f"  -> Saved CSV: {output_csv} ({output_csv.stat().st_size / (1024 * 1024):.2f} MB)")
+    print(
+        f"  -> Saved Parquet: {output_parquet} ({output_parquet.stat().st_size / (1024 * 1024):.2f} MB)"
+    )
 
     # 6. Ingest into SQLite Database
     if ingest_to_db:
@@ -298,23 +331,38 @@ def clean_and_curate_dataset(
         unique_stations = set(curated_df["station_code"].unique())
         station_rows = []
         for stn in unique_stations:
-            meta = stations_map.get(stn, {
-                "code": stn, "name": f"Station {stn}", "lat": 26.8, "lon": 80.3,
-                "zone": "NR", "is_junction": 0, "platforms": 2
-            })
-            station_rows.append((
-                meta["code"], meta["name"], meta["lat"], meta["lon"],
-                meta.get("zone", "NR"), meta.get("category", "NSG-2"),
-                meta.get("is_junction", 0), meta.get("platforms", 2)
-            ))
+            meta = stations_map.get(
+                stn,
+                {
+                    "code": stn,
+                    "name": f"Station {stn}",
+                    "lat": 26.8,
+                    "lon": 80.3,
+                    "zone": "NR",
+                    "is_junction": 0,
+                    "platforms": 2,
+                },
+            )
+            station_rows.append(
+                (
+                    meta["code"],
+                    meta["name"],
+                    meta["lat"],
+                    meta["lon"],
+                    meta.get("zone", "NR"),
+                    meta.get("category", "NSG-2"),
+                    meta.get("is_junction", 0),
+                    meta.get("platforms", 2),
+                )
+            )
 
         # Ingest master trains
         unique_trains = set(curated_df["train_no"].unique())
         train_rows = []
         for tr in unique_trains:
-            meta = trains_map.get(tr, {
-                "train_no": tr, "name": f"Express {tr}", "class": "superfast", "priority": 2
-            })
+            meta = trains_map.get(
+                tr, {"train_no": tr, "name": f"Express {tr}", "class": "superfast", "priority": 2}
+            )
             train_rows.append((meta["train_no"], meta["name"], meta["class"], meta["priority"]))
 
         # Ingest route stations
@@ -323,17 +371,32 @@ def clean_and_curate_dataset(
             stops = train_routes_ordered.get(tr, [])
             for st in stops:
                 if st["station_code"] in unique_stations:
-                    route_rows.append((
-                        tr, st["seq"], st["station_code"],
-                        st["sched_arr"], st["sched_dep"], 2, st["distance_km"]
-                    ))
+                    route_rows.append(
+                        (
+                            tr,
+                            st["seq"],
+                            st["station_code"],
+                            st["sched_arr"],
+                            st["sched_dep"],
+                            2,
+                            st["distance_km"],
+                        )
+                    )
 
         # Ingest station events
         event_tuples = [
             (
-                r.train_no, r.run_date, int(r.seq), r.station_code,
-                r.sched_arr, r.actual_arr, r.sched_dep, r.actual_dep,
-                int(r.delay_arr_min), int(r.delay_dep_min), r.collected_at
+                r.train_no,
+                r.run_date,
+                int(r.seq),
+                r.station_code,
+                r.sched_arr,
+                r.actual_arr,
+                r.sched_dep,
+                r.actual_dep,
+                int(r.delay_arr_min),
+                int(r.delay_dep_min),
+                r.collected_at,
             )
             for r in curated_df.itertuples(index=False)
         ]
@@ -342,17 +405,17 @@ def clean_and_curate_dataset(
             # Upsert stations using INSERT OR IGNORE
             cur.executemany(
                 "INSERT OR IGNORE INTO stations (code, name, lat, lon, zone, category, is_junction, platforms) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                station_rows
+                station_rows,
             )
             # Upsert trains using INSERT OR IGNORE
             cur.executemany(
                 "INSERT OR IGNORE INTO trains (train_no, name, class, priority) VALUES (?, ?, ?, ?)",
-                train_rows
+                train_rows,
             )
             # Upsert route stations
             cur.executemany(
                 "INSERT OR IGNORE INTO route_stations (train_no, seq, station_code, sched_arr, sched_dep, halt_min, distance_km) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                route_rows
+                route_rows,
             )
             # Upsert station events in chunks
             for i in range(0, len(event_tuples), 50000):
@@ -363,10 +426,12 @@ def clean_and_curate_dataset(
                         delay_arr_min, delay_dep_min, collected_at
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
-                    event_tuples[i:i + 50000]
+                    event_tuples[i : i + 50000],
                 )
 
-        print(f"[SUCCESS] Ingested {len(event_tuples):,} pristine real-world events into SQLite DB.")
+        print(
+            f"[SUCCESS] Ingested {len(event_tuples):,} pristine real-world events into SQLite DB."
+        )
         print(f"  - Active Trains in DB: {len(unique_trains):,}")
         print(f"  - Active Stations in DB: {len(unique_stations):,}")
         print(f"  - Route Stops in DB: {len(route_rows):,}")
@@ -382,9 +447,18 @@ def clean_and_curate_dataset(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Clean and curate real Kaggle railway delay dataset.")
-    parser.add_argument("--max-runs-per-train", type=int, default=50, help="Max runs to sample per train for balance")
-    parser.add_argument("--target-rows", type=int, default=250000, help="Target number of clean curated rows")
+    parser = argparse.ArgumentParser(
+        description="Clean and curate real Kaggle railway delay dataset."
+    )
+    parser.add_argument(
+        "--max-runs-per-train",
+        type=int,
+        default=50,
+        help="Max runs to sample per train for balance",
+    )
+    parser.add_argument(
+        "--target-rows", type=int, default=250000, help="Target number of clean curated rows"
+    )
     parser.add_argument("--no-ingest", action="store_true", help="Skip database ingestion")
     args = parser.parse_args()
 

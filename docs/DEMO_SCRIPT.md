@@ -87,7 +87,7 @@
 ### Act 5: Model Artifact Inspection & MLOps Shield (2:20 – 3:00)
 * **Screen:** `/dashboard/model` (Neural Architecture & Proof Table)
 * **What to Say:**
-  > "Judges, all metrics you see are backed by verifiable code and frozen artifacts in `ml/artifacts/metrics.json`. We don't train black boxes — our Champion PyTorch GRU is bound by Mondrian Conformal Quantile Regression, guaranteeing an empirical 80.64% coverage target at a median latency of 0.77ms."
+  > "Judges, all metrics you see are backed by verifiable code and frozen artifacts in `ml/artifacts/metrics.json`. We don't train black boxes — our Served Champion (LightGBM Quantile + NNLS convex ensemble, with experimental PyTorch GRU challenger evaluated in shadow mode) is bound by Mondrian Conformal Quantile Regression, guaranteeing an empirical 80.64% coverage target at a median latency of 0.77ms."
 * **What to Do:**
   1. Navigate to `/dashboard/model`.
   2. Point at the 80% coverage gauge, MAE proof table across horizons, and Champion Model SHA256 pin.

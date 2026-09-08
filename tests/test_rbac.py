@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from api.auth import create_access_token
 from api.main import app
-from data.db import Database, get_db
+from data.db import get_db
 from data.seed_users import seed_roles_and_users
 
 client = TestClient(app)

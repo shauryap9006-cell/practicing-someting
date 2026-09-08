@@ -9,7 +9,8 @@ Provides a public, read-only stream of recent railway operational events:
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
+
 from fastapi import APIRouter, Depends, Query
 
 from data.db import Database, get_db
@@ -67,15 +68,17 @@ def get_recent_live_events(
             action = "departed" if is_dep else "arrived at"
             detail = f"{t_no} {t_name or ''} {action} {stn}, +{delay}m".strip()
 
-            events.append({
-                "ts": str(ts),
-                "type": ev_type,
-                "train_no": t_no,
-                "train_name": t_name,
-                "station_code": stn,
-                "delay_min": delay,
-                "detail": detail,
-            })
+            events.append(
+                {
+                    "ts": str(ts),
+                    "type": ev_type,
+                    "train_no": t_no,
+                    "train_name": t_name,
+                    "station_code": stn,
+                    "delay_min": delay,
+                    "detail": detail,
+                }
+            )
 
         # 2. Recent delay shift events from live_delay_ledger
         cur.execute(
@@ -103,15 +106,17 @@ def get_recent_live_events(
             t_name = row["train_name"]
             detail = f"{t_no} {t_name or ''} delay shift: {cause} ({sign}{delta}m, now +{cur_delay}m)".strip()
 
-            events.append({
-                "ts": str(row["timestamp"] or now_iso),
-                "type": "delay_shift",
-                "train_no": t_no,
-                "train_name": t_name,
-                "station_code": None,
-                "delay_min": cur_delay,
-                "detail": detail,
-            })
+            events.append(
+                {
+                    "ts": str(row["timestamp"] or now_iso),
+                    "type": "delay_shift",
+                    "train_no": t_no,
+                    "train_name": t_name,
+                    "station_code": None,
+                    "delay_min": cur_delay,
+                    "detail": detail,
+                }
+            )
 
         # 3. Active TSRs from speed_restrictions
         try:
@@ -126,31 +131,37 @@ def get_recent_live_events(
             )
             for row in cur.fetchall():
                 tsr_detail = f"TSR {row['from_code']}–{row['to_code']} ({int(row['speed_limit_kmph'])} km/h): {row['cause']}"
-                events.append({
-                    "ts": str(row["created_at"] or now_iso),
-                    "type": "tsr",
-                    "train_no": None,
-                    "train_name": None,
-                    "station_code": row["from_code"],
-                    "delay_min": None,
-                    "detail": tsr_detail,
-                })
+                events.append(
+                    {
+                        "ts": str(row["created_at"] or now_iso),
+                        "type": "tsr",
+                        "train_no": None,
+                        "train_name": None,
+                        "station_code": row["from_code"],
+                        "delay_min": None,
+                        "detail": tsr_detail,
+                    }
+                )
         except Exception:
             pass
 
     # 4. Active Injected Demo Shocks (prominently shown on wall)
     try:
         from api.demo_routes import _ACTIVE_SHOCKS
+
         for shock in _ACTIVE_SHOCKS:
-            events.append({
-                "ts": str(shock.get("injected_at") or now_iso),
-                "type": "shock",
-                "train_no": None,
-                "train_name": None,
-                "station_code": shock.get("station"),
-                "delay_min": shock.get("severity_min"),
-                "detail": shock.get("description") or f"Injected shock: {shock.get('event_type')} (+{shock.get('severity_min')}m)",
-            })
+            events.append(
+                {
+                    "ts": str(shock.get("injected_at") or now_iso),
+                    "type": "shock",
+                    "train_no": None,
+                    "train_name": None,
+                    "station_code": shock.get("station"),
+                    "delay_min": shock.get("severity_min"),
+                    "detail": shock.get("description")
+                    or f"Injected shock: {shock.get('event_type')} (+{shock.get('severity_min')}m)",
+                }
+            )
     except Exception:
         pass
 

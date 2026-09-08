@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { LivePosition, CorridorStation, NetworkState } from '../lib/types';
+import type { LivePosition, CorridorStation, NetworkState } from '@railtwin/shared-types';
 import { useCorridorMotionEngine, getDelayColor, AnimatedTrain } from '../lib/motion';
 
 interface CorridorMapProps {

@@ -1,7 +1,5 @@
-import urllib.request
 import json
-import os
-import math
+import urllib.request
 
 # Corridor segments bounding boxes
 SECTIONS = [
@@ -15,6 +13,7 @@ SECTIONS = [
     {"name": "CNB_LKO", "bbox": "26.40,80.30,26.90,80.98"},
 ]
 
+
 def fetch_section_tracks(bbox):
     query = f"""
     [out:json][timeout:25];
@@ -24,7 +23,7 @@ def fetch_section_tracks(bbox):
     req = urllib.request.Request(
         "https://overpass-api.de/api/interpreter",
         data=query.encode("utf-8"),
-        headers={"User-Agent": "RailTwinX-TrackBuilder/1.0"}
+        headers={"User-Agent": "RailTwinX-TrackBuilder/1.0"},
     )
     try:
         with urllib.request.urlopen(req, timeout=30) as res:
@@ -33,6 +32,7 @@ def fetch_section_tracks(bbox):
     except Exception as e:
         print(f"Error fetching bbox {bbox}:", e)
         return []
+
 
 print("Fetching tracks for corridor...")
 all_ways = []

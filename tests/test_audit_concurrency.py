@@ -1,4 +1,5 @@
 import concurrent.futures
+
 from data.audit import append_audit_entry, verify_audit_log
 from data.db import get_db
 

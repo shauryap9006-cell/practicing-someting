@@ -76,7 +76,6 @@ def seed_master_data(db: Database, network: str = "passenger") -> None:
                 ),
             )
 
-
         # 2. Speed Restrictions (TSRs)
         for tsr in speed_restrictions:
             cur.execute(
@@ -84,7 +83,13 @@ def seed_master_data(db: Database, network: str = "passenger") -> None:
                 INSERT OR REPLACE INTO speed_restrictions (from_code, to_code, speed_limit_kmph, cause, is_active)
                 VALUES (?, ?, ?, ?, ?)
                 """,
-                (tsr["from_code"], tsr["to_code"], tsr["speed_limit_kmph"], tsr["cause"], tsr.get("is_active", 1)),
+                (
+                    tsr["from_code"],
+                    tsr["to_code"],
+                    tsr["speed_limit_kmph"],
+                    tsr["cause"],
+                    tsr.get("is_active", 1),
+                ),
             )
 
         # 3. Sections (Bidirectional)
@@ -94,7 +99,13 @@ def seed_master_data(db: Database, network: str = "passenger") -> None:
                 INSERT OR REPLACE INTO sections (from_code, to_code, distance_km, single_line, max_speed_kmph)
                 VALUES (?, ?, ?, ?, ?)
                 """,
-                (sec["from_code"], sec["to_code"], sec["distance_km"], sec["single_line"], sec["max_speed_kmph"]),
+                (
+                    sec["from_code"],
+                    sec["to_code"],
+                    sec["distance_km"],
+                    sec["single_line"],
+                    sec["max_speed_kmph"],
+                ),
             )
             # Reverse edge
             cur.execute(
@@ -102,7 +113,13 @@ def seed_master_data(db: Database, network: str = "passenger") -> None:
                 INSERT OR REPLACE INTO sections (from_code, to_code, distance_km, single_line, max_speed_kmph)
                 VALUES (?, ?, ?, ?, ?)
                 """,
-                (sec["to_code"], sec["from_code"], sec["distance_km"], sec["single_line"], sec["max_speed_kmph"]),
+                (
+                    sec["to_code"],
+                    sec["from_code"],
+                    sec["distance_km"],
+                    sec["single_line"],
+                    sec["max_speed_kmph"],
+                ),
             )
 
         # 4. Trains
@@ -125,7 +142,6 @@ def seed_master_data(db: Database, network: str = "passenger") -> None:
                 (t["train_no"], t["name"], t["class"], t["priority"], is_freight, trailing_tonnage),
             )
 
-
         # 3b. DFC sections (mixed / dfc modes)
         if network in ("dfc", "mixed"):
             try:
@@ -136,9 +152,15 @@ def seed_master_data(db: Database, network: str = "passenger") -> None:
                         INSERT OR REPLACE INTO sections (from_code, to_code, distance_km, single_line, max_speed_kmph, is_dfc, loop_length_m)
                         VALUES (?, ?, ?, ?, ?, ?, ?)
                         """,
-                        (sec["from_code"], sec["to_code"], sec["distance_km"],
-                         sec.get("single_line", 0), sec["max_speed_kmph"],
-                         sec.get("is_dfc", 1), sec.get("loop_length_m", 1500)),
+                        (
+                            sec["from_code"],
+                            sec["to_code"],
+                            sec["distance_km"],
+                            sec.get("single_line", 0),
+                            sec["max_speed_kmph"],
+                            sec.get("is_dfc", 1),
+                            sec.get("loop_length_m", 1500),
+                        ),
                     )
                     # Reverse edge
                     cur.execute(
@@ -146,9 +168,15 @@ def seed_master_data(db: Database, network: str = "passenger") -> None:
                         INSERT OR REPLACE INTO sections (from_code, to_code, distance_km, single_line, max_speed_kmph, is_dfc, loop_length_m)
                         VALUES (?, ?, ?, ?, ?, ?, ?)
                         """,
-                        (sec["to_code"], sec["from_code"], sec["distance_km"],
-                         sec.get("single_line", 0), sec["max_speed_kmph"],
-                         sec.get("is_dfc", 1), sec.get("loop_length_m", 1500)),
+                        (
+                            sec["to_code"],
+                            sec["from_code"],
+                            sec["distance_km"],
+                            sec.get("single_line", 0),
+                            sec["max_speed_kmph"],
+                            sec.get("is_dfc", 1),
+                            sec.get("loop_length_m", 1500),
+                        ),
                     )
                 print(f"[INFO] Seeded {len(dfc_sections)} DFC sections (bidirectional).")
             except Exception as e:
@@ -163,16 +191,16 @@ def seed_master_data(db: Database, network: str = "passenger") -> None:
         # DFC corridors: WDFC (Dadri → JNPT) and EDFC (DDU → DKAE)
         wdfc_down = ["DADRI", "REWARI", "FL", "ABR", "PNU", "MSH", "JNPT"]
         edfc_down = ["DDU", "SEB", "GMO", "DKAE"]
-        wdfc_up   = list(reversed(wdfc_down))
-        edfc_up   = list(reversed(edfc_down))
+        wdfc_up = list(reversed(wdfc_down))
+        edfc_up = list(reversed(edfc_down))
 
         # Freight train class → DFC corridor assignment
         DFC_ROUTE_MAP = {
-            "container":     (wdfc_down, wdfc_up),    # containers → WDFC
-            "coal_rake":     (edfc_down, edfc_up),    # coal → EDFC
-            "auto_rake":     (wdfc_down, wdfc_up),    # autos → WDFC
-            "steel_rake":    (edfc_down, edfc_up),    # steel → EDFC
-            "empty_freight": (wdfc_up,   wdfc_down),  # empties return on WDFC reversed
+            "container": (wdfc_down, wdfc_up),  # containers → WDFC
+            "coal_rake": (edfc_down, edfc_up),  # coal → EDFC
+            "auto_rake": (wdfc_down, wdfc_up),  # autos → WDFC
+            "steel_rake": (edfc_down, edfc_up),  # steel → EDFC
+            "empty_freight": (wdfc_up, wdfc_down),  # empties return on WDFC reversed
         }
 
         for idx, t in enumerate(trains):
@@ -185,13 +213,13 @@ def seed_master_data(db: Database, network: str = "passenger") -> None:
                 # Filter to stations that are actually seeded
                 route_a = [s for s in route_a if any(st["code"] == s for st in stations)]
                 route_b = [s for s in route_b if any(st["code"] == s for st in stations)]
-                is_down = (idx % 2 == 0)
+                is_down = idx % 2 == 0
                 route = route_a if is_down else route_b
                 # Freight runs slower: 60 km/h average
                 transit_speed_kmh = 60.0
                 halt_factor = 15  # freight halts: 15 min for loading/unloading
             else:
-                is_down = (idx % 2 == 0)
+                is_down = idx % 2 == 0
                 route = stn_codes_down if is_down else stn_codes_up
                 transit_speed_kmh = 96.0  # passenger express average
                 halt_factor = 2 if t["priority"] == 1 else (5 if t["priority"] == 2 else 10)
@@ -238,7 +266,10 @@ def seed_master_data(db: Database, network: str = "passenger") -> None:
 
         # 6. Rake links
         for rl in rake_links:
-            cur.execute("SELECT train_no FROM trains WHERE train_no IN (?, ?)", (rl["incoming_train"], rl["outgoing_train"]))
+            cur.execute(
+                "SELECT train_no FROM trains WHERE train_no IN (?, ?)",
+                (rl["incoming_train"], rl["outgoing_train"]),
+            )
             rows = cur.fetchall()
             if len(rows) == 2:
                 cur.execute(
@@ -246,7 +277,12 @@ def seed_master_data(db: Database, network: str = "passenger") -> None:
                     INSERT OR REPLACE INTO rake_links (incoming_train, outgoing_train, station_code, turnaround_min)
                     VALUES (?, ?, ?, ?)
                     """,
-                    (rl["incoming_train"], rl["outgoing_train"], rl["station_code"], rl["turnaround_min"]),
+                    (
+                        rl["incoming_train"],
+                        rl["outgoing_train"],
+                        rl["station_code"],
+                        rl["turnaround_min"],
+                    ),
                 )
 
         # 7. Staff Registry
@@ -264,7 +300,10 @@ def seed_master_data(db: Database, network: str = "passenger") -> None:
                         sm["role"],
                         sm["phone"],
                         sm["station_code"],
-                        sm.get("pin_hash", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"),
+                        sm.get(
+                            "pin_hash",
+                            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                        ),
                         sm.get("on_duty", 1),
                     ),
                 )
@@ -275,14 +314,15 @@ def seed_master_data(db: Database, network: str = "passenger") -> None:
     print("[SUCCESS] Master infrastructure seeded successfully.")
 
 
-
 from engine.clocks import get_clock
 
 
 def seed_weather_and_events(db: Database, num_days: Optional[int] = None) -> None:
     """Seeds weather observations and historical station events for ML train/test."""
     total_days = num_days or (settings.ML_TRAIN_DAYS + settings.ML_TEST_DAYS)
-    print(f"[INFO] Generating {total_days} days of weather and station events ({settings.ML_TRAIN_DAYS}d train / {settings.ML_TEST_DAYS}d test)...")
+    print(
+        f"[INFO] Generating {total_days} days of weather and station events ({settings.ML_TRAIN_DAYS}d train / {settings.ML_TEST_DAYS}d test)..."
+    )
     random.seed(42)
 
     stations = load_json_seed("stations.json")
@@ -300,7 +340,14 @@ def seed_weather_and_events(db: Database, num_days: Optional[int] = None) -> Non
                 temp = round(random.uniform(14.0, 34.0), 1)
                 humidity = round(random.uniform(45.0, 95.0), 1)
                 precip = round(random.expovariate(0.5) if random.random() < 0.2 else 0.0, 1)
-                fog_flag = 1 if (temp < settings.FOG_MAX_TEMP_CELSIUS and humidity > settings.FOG_MIN_HUMIDITY_PERCENT) else 0
+                fog_flag = (
+                    1
+                    if (
+                        temp < settings.FOG_MAX_TEMP_CELSIUS
+                        and humidity > settings.FOG_MIN_HUMIDITY_PERCENT
+                    )
+                    else 0
+                )
 
                 cur.execute(
                     """
@@ -315,7 +362,9 @@ def seed_weather_and_events(db: Database, num_days: Optional[int] = None) -> Non
         cur.execute("SELECT train_no, priority FROM trains")
         trains = cur.fetchall()
 
-        cur.execute("SELECT train_no, seq, station_code, sched_arr, sched_dep, halt_min, distance_km FROM route_stations ORDER BY train_no, seq")
+        cur.execute(
+            "SELECT train_no, seq, station_code, sched_arr, sched_dep, halt_min, distance_km FROM route_stations ORDER BY train_no, seq"
+        )
         all_routes = cur.fetchall()
         routes_by_train = {}
         for r in all_routes:
@@ -345,13 +394,19 @@ def seed_weather_and_events(db: Database, num_days: Optional[int] = None) -> Non
                     sched_arr = r["sched_arr"]
                     sched_dep = r["sched_dep"]
 
-                    section_delta = random.choice([-5, -2, 0, 0, 2, 5, 12, 25]) if priority > 1 else random.choice([-4, -2, 0, 0, 1, 3, 8])
+                    section_delta = (
+                        random.choice([-5, -2, 0, 0, 2, 5, 12, 25])
+                        if priority > 1
+                        else random.choice([-4, -2, 0, 0, 1, 3, 8])
+                    )
                     current_delay = max(0, current_delay + section_delta)
 
                     actual_arr = None
                     if sched_arr:
                         sh, sm = [int(x) for x in sched_arr.split(":")]
-                        act_dt = datetime.datetime(curr_date.year, curr_date.month, curr_date.day, sh, sm) + datetime.timedelta(minutes=current_delay)
+                        act_dt = datetime.datetime(
+                            curr_date.year, curr_date.month, curr_date.day, sh, sm
+                        ) + datetime.timedelta(minutes=current_delay)
                         actual_arr = act_dt.strftime("%H:%M")
 
                     delay_arr = current_delay
@@ -361,15 +416,29 @@ def seed_weather_and_events(db: Database, num_days: Optional[int] = None) -> Non
                     actual_dep = None
                     if sched_dep:
                         sh, sm = [int(x) for x in sched_dep.split(":")]
-                        act_dep_dt = datetime.datetime(curr_date.year, curr_date.month, curr_date.day, sh, sm) + datetime.timedelta(minutes=current_delay)
+                        act_dep_dt = datetime.datetime(
+                            curr_date.year, curr_date.month, curr_date.day, sh, sm
+                        ) + datetime.timedelta(minutes=current_delay)
                         actual_dep = act_dep_dt.strftime("%H:%M")
 
                     delay_dep = current_delay
                     collected_at = f"{date_str}T12:00:00+05:30"
 
-                    event_rows.append((
-                        t_no, date_str, seq, stn, sched_arr, actual_arr, sched_dep, actual_dep, delay_arr, delay_dep, collected_at
-                    ))
+                    event_rows.append(
+                        (
+                            t_no,
+                            date_str,
+                            seq,
+                            stn,
+                            sched_arr,
+                            actual_arr,
+                            sched_dep,
+                            actual_dep,
+                            delay_arr,
+                            delay_dep,
+                            collected_at,
+                        )
+                    )
 
             curr_date += datetime.timedelta(days=1)
 
@@ -382,7 +451,9 @@ def seed_weather_and_events(db: Database, num_days: Optional[int] = None) -> Non
             event_rows,
         )
 
-    print(f"[SUCCESS] Generated and committed {len(event_rows)} historical station events across {total_days} days.")
+    print(
+        f"[SUCCESS] Generated and committed {len(event_rows)} historical station events across {total_days} days."
+    )
 
 
 def run_full_seed(db_path: Optional[Path | str] = None, network: str = "passenger") -> None:
@@ -399,8 +470,16 @@ def run_full_seed(db_path: Optional[Path | str] = None, network: str = "passenge
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="RailTwin-X Dynamic Master Data & Historical Seed Generator")
-    parser.add_argument("--network", choices=["passenger", "dfc", "mixed"], default="passenger", help="Network type (default: passenger)")
+
+    parser = argparse.ArgumentParser(
+        description="RailTwin-X Dynamic Master Data & Historical Seed Generator"
+    )
+    parser.add_argument(
+        "--network",
+        choices=["passenger", "dfc", "mixed"],
+        default="passenger",
+        help="Network type (default: passenger)",
+    )
     parser.add_argument("--db-path", type=str, default=None, help="Custom database file path")
     args = parser.parse_args()
     run_full_seed(db_path=args.db_path, network=args.network)

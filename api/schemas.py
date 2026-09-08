@@ -6,8 +6,9 @@ All responses carry updated_at and clock_mode ('live' | 'replay').
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Any, Union
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Any, Dict, List, Optional, Union
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class BaseResponse(BaseModel):
@@ -46,7 +47,9 @@ class PositionMeta(BaseModel):
     mode_seq: int = Field(description="Bayesian posterior mode sequence position")
     station_code: str = Field(description="Estimated current station/block code")
     confidence: float = Field(description="Posterior probability confidence score [0.0 - 1.0]")
-    basis: str = Field(description="'last_event', 'dead_reckoning', 'human_confirmed', or 'explicit_query'")
+    basis: str = Field(
+        description="'last_event', 'dead_reckoning', 'human_confirmed', or 'explicit_query'"
+    )
     source: str = Field(description="'station_events', 'ad_events', or 'manual'")
     age_seconds: float = Field(description="Seconds elapsed since last confirmed telemetry event")
     posterior_probs: Optional[Dict[Union[int, str], float]] = None
@@ -54,7 +57,9 @@ class PositionMeta(BaseModel):
 
 class PredictionDriver(BaseModel):
     feature: str = Field(description="Feature name attributing delay delta")
-    contribution_min: float = Field(description="Impact in minutes (positive increases delay, negative decreases)")
+    contribution_min: float = Field(
+        description="Impact in minutes (positive increases delay, negative decreases)"
+    )
     direction: str = Field(description="'increases_delay', 'decreases_delay', or 'neutral'")
 
 
@@ -66,13 +71,21 @@ class TrainEtaResponse(BaseResponse):
     predicted_arr: str
     predicted_delay_min: int
     confidence_band: ConfidenceBand
-    tier_used: str = Field(description="'Tier2_LightGBM_CQR', 'Tier2_PyTorch_GRU_Champion', or 'Tier1_HistLookup'")
+    tier_used: str = Field(
+        description="'Tier2_LightGBM_CQR', 'Tier2_PyTorch_GRU_Champion', or 'Tier1_HistLookup'"
+    )
     model: Optional[ModelMeta] = None
     position: Optional[PositionMeta] = None
-    feature_version: str = Field(default="v3.0_25feat", description="Corridor feature store version")
+    feature_version: str = Field(
+        default="v3.0_25feat", description="Corridor feature store version"
+    )
     as_of_ts: str = Field(description="Point-in-time ISO timestamp when features were sampled")
-    data_freshness_seconds: float = Field(default=0.0, description="Freshness of underlying event feed")
-    drivers: List[PredictionDriver] = Field(default_factory=list, description="Top-3 feature attribution delay drivers")
+    data_freshness_seconds: float = Field(
+        default=0.0, description="Freshness of underlying event feed"
+    )
+    drivers: List[PredictionDriver] = Field(
+        default_factory=list, description="Top-3 feature attribution delay drivers"
+    )
     model_provenance: Optional[Dict[str, Any]] = None
 
 
@@ -101,7 +114,7 @@ class TrainJourneyResponse(BaseResponse):
 
 class DelayCauseItem(BaseModel):
     event_type: str
-    minutes: int
+    minutes: Union[int, float]
     cause: str
     station_code: Optional[str] = None
     evidence: Optional[Dict[str, Any]] = None
@@ -115,7 +128,9 @@ class DelayAutopsyResponse(BaseResponse):
     is_exact_accounting: bool = True
     causes: List[DelayCauseItem]
     narrative: Optional[str] = None
-    integrity_status: Optional[str] = Field(default="VERIFIED", description="'VERIFIED' or 'WARNING'")
+    integrity_status: Optional[str] = Field(
+        default="VERIFIED", description="'VERIFIED' or 'WARNING'"
+    )
     integrity_checks: Optional[Dict[str, bool]] = None
     as_of_ts: Optional[str] = None
 
@@ -260,6 +275,7 @@ class HealthResponse(BaseModel):
 # Phase 5: Dispatcher ACK schemas
 class DispatcherAckRequest(BaseModel):
     """Dispatcher acknowledgement payload."""
+
     model_config = ConfigDict(extra="forbid")
     decision: str  # "accepted" | "rejected"
     dispatcher_id: Optional[str] = None
@@ -281,4 +297,3 @@ class WhatsAppWebhookResponse(BaseModel):
     action: Optional[str] = None
     adv_id: Optional[str] = None
     sender: Optional[str] = None
-

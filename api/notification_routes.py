@@ -6,7 +6,6 @@ and escalation ladder triggers for station operations.
 
 from __future__ import annotations
 
-import json
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -26,13 +25,21 @@ router = APIRouter(prefix="/api/notifications", tags=["Notification Center (I4)"
 
 
 class EmitNotificationRequest(BaseModel):
-    event_type: str = Field(..., description="Event type code (e.g. PLATFORM_CHANGE, TSR_ACTIVE, CREW_BREACH)")
-    target_roles: List[str] = Field(default_factory=lambda: ["station_master"], description="Target roles to receive alert")
+    event_type: str = Field(
+        ..., description="Event type code (e.g. PLATFORM_CHANGE, TSR_ACTIVE, CREW_BREACH)"
+    )
+    target_roles: List[str] = Field(
+        default_factory=lambda: ["station_master"], description="Target roles to receive alert"
+    )
     severity: str = Field("info", description="Severity: info, warning, critical")
     title: str = Field(..., description="Brief alert title")
     message: str = Field(..., description="Detailed alert body")
-    payload: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Structured event payload")
-    station_code: str = Field(default_factory=lambda: settings.DEFAULT_STATION_CODE, description="Station code")
+    payload: Optional[Dict[str, Any]] = Field(
+        default_factory=dict, description="Structured event payload"
+    )
+    station_code: str = Field(
+        default_factory=lambda: settings.DEFAULT_STATION_CODE, description="Station code"
+    )
 
 
 class AckNotificationRequest(BaseModel):
@@ -58,14 +65,16 @@ class NotificationItem(BaseModel):
 
 @router.get("/active", response_model=List[NotificationItem])
 def get_active_notifications(
-    severity: Optional[str] = Query(None, description="Filter by severity (info, warning, critical)"),
+    severity: Optional[str] = Query(
+        None, description="Filter by severity (info, warning, critical)"
+    ),
     limit: int = Query(50, ge=1, le=200),
     current_user: Dict[str, Any] = Depends(get_current_user),
     db: Database = Depends(get_db),
 ):
     """Retrieves all active unacknowledged notifications relevant to the current user's role."""
     user_role = current_user.get("role_id", "viewer")
-    
+
     query = """
         SELECT id, event_type, target_role, severity, title, message, payload_json, station_code, state,
                created_at, escalated_at, acked_at, acked_by
@@ -129,7 +138,9 @@ def ack_notification_endpoint(
             cur.execute("SELECT station_code FROM notifications WHERE id = ?", (notification_id,))
             notification = cur.fetchone()
         if not notification:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Notification not found.")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Notification not found."
+            )
         if current_user.get("role_id") not in {"admin", "section_controller"}:
             assert_station_scope(current_user, notification["station_code"] or "")
         res = acknowledge_notification(
@@ -159,7 +170,16 @@ def ack_notification_endpoint(
 def emit_notification_endpoint(
     req: EmitNotificationRequest,
     current_user: Dict[str, Any] = Depends(
-        require_role(["admin", "station_master", "dy_sm", "crew_controller", "section_controller", "engineer"])
+        require_role(
+            [
+                "admin",
+                "station_master",
+                "dy_sm",
+                "crew_controller",
+                "section_controller",
+                "engineer",
+            ]
+        )
     ),
     db: Database = Depends(get_db),
 ):

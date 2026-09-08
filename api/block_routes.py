@@ -6,15 +6,15 @@ and Speed Restriction (TSR) caution overlays.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from api.auth import assert_station_scope, effective_station_scope, get_current_user, require_role
 from data.audit import record_audit
 from data.db import Database, get_db
+from engine.clocks import get_clock, now_iso
 from notifications.dispatcher import notify
 
 router = APIRouter(prefix="/api/blocks", tags=["Block Sections & Line Status (A5)"])
@@ -41,7 +41,9 @@ def get_block_statuses(
     station_code = effective_station_scope(current_user, station_code)
     with db.transaction() as cur:
         # Fetch sections (distance_km, max_speed_kmph, single_line)
-        cur.execute("SELECT from_code, to_code, distance_km, max_speed_kmph, single_line FROM sections;")
+        cur.execute(
+            "SELECT from_code, to_code, distance_km, max_speed_kmph, single_line FROM sections;"
+        )
         sec_rows = cur.fetchall()
 
         # Fetch block statuses
@@ -81,22 +83,24 @@ def get_block_statuses(
         state = bs.get("state", default_state)
         tracks_count = 1 if sec["single_line"] else 2
 
-        blocks.append({
-            "block_id": b_id,
-            "from_code": f_code,
-            "to_code": t_code,
-            "length_km": sec["distance_km"],
-            "max_speed_kmph": sec["max_speed_kmph"],
-            "tracks": tracks_count,
-            "state": state,
-            "occupied_by_train": bs.get("occupied_by_train"),
-            "line_clear_granted_to": bs.get("line_clear_granted_to"),
-            "granted_by": bs.get("granted_by"),
-            "since": bs.get("since", datetime.now(timezone.utc).isoformat()),
-            "notes": bs.get("notes"),
-            "caution_speed_limit": active_sr["speed_limit_kmph"] if active_sr else None,
-            "caution_cause": active_sr["cause"] if active_sr else None,
-        })
+        blocks.append(
+            {
+                "block_id": b_id,
+                "from_code": f_code,
+                "to_code": t_code,
+                "length_km": sec["distance_km"],
+                "max_speed_kmph": sec["max_speed_kmph"],
+                "tracks": tracks_count,
+                "state": state,
+                "occupied_by_train": bs.get("occupied_by_train"),
+                "line_clear_granted_to": bs.get("line_clear_granted_to"),
+                "granted_by": bs.get("granted_by"),
+                "since": bs.get("since", now_iso()),
+                "notes": bs.get("notes"),
+                "caution_speed_limit": active_sr["speed_limit_kmph"] if active_sr else None,
+                "caution_cause": active_sr["cause"] if active_sr else None,
+            }
+        )
 
     return blocks
 
@@ -105,11 +109,13 @@ def get_block_statuses(
 def update_block_state(
     block_id: str,
     req: BlockStateUpdate,
-    current_user: Dict[str, Any] = Depends(require_role(["station_master", "dy_sm", "section_controller", "admin"])),
+    current_user: Dict[str, Any] = Depends(
+        require_role(["station_master", "dy_sm", "section_controller", "admin"])
+    ),
     db: Database = Depends(get_db),
 ):
     """Updates block section state (CLEAR, OCCUPIED, BLOCKED, CAUTION)."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     parts = block_id.replace("BLK-", "").split("-")
     f_code = parts[0] if len(parts) > 0 else "NDLS"
     t_code = parts[1] if len(parts) > 1 else "GZB"
@@ -126,7 +132,15 @@ def update_block_state(
                 since = excluded.since,
                 notes = excluded.notes;
             """,
-            (block_id, f_code, t_code, req.state.upper(), req.occupied_by_train, now_iso, req.notes),
+            (
+                block_id,
+                f_code,
+                t_code,
+                req.state.upper(),
+                req.occupied_by_train,
+                now_iso,
+                req.notes,
+            ),
         )
 
         record_audit(
@@ -146,11 +160,13 @@ def update_block_state(
 def grant_line_clear(
     block_id: str,
     req: LineClearGrantRequest,
-    current_user: Dict[str, Any] = Depends(require_role(["station_master", "section_controller", "admin"])),
+    current_user: Dict[str, Any] = Depends(
+        require_role(["station_master", "section_controller", "admin"])
+    ),
     db: Database = Depends(get_db),
 ):
     """Grants Line Clear authority for a train into the block section."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     parts = block_id.replace("BLK-", "").split("-")
     f_code = parts[0] if len(parts) > 0 else "NDLS"
     t_code = parts[1] if len(parts) > 1 else "GZB"
@@ -160,7 +176,9 @@ def grant_line_clear(
         cur.execute("SELECT state FROM block_status WHERE block_id = ?;", (block_id,))
         b_row = cur.fetchone()
         if b_row and b_row["state"] == "BLOCKED":
-            raise HTTPException(status_code=400, detail=f"Cannot grant Line Clear: Block {block_id} is BLOCKED.")
+            raise HTTPException(
+                status_code=400, detail=f"Cannot grant Line Clear: Block {block_id} is BLOCKED."
+            )
 
         cur.execute(
             """

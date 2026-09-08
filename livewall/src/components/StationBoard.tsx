@@ -1,5 +1,5 @@
 import React from 'react';
-import type { StationBoardPayload, CorridorStation } from '../lib/types';
+import type { StationBoardPayload, CorridorStation } from '@railtwin/shared-types';
 import { getDelayStatusBadge } from '../lib/motion';
 
 interface StationBoardProps {
