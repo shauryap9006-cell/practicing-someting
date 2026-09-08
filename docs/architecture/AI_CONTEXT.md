@@ -7,7 +7,7 @@ RailTwin-X is an enterprise-grade cyber-physical operational twin and neural dec
 ### The 7 Core Pipelines
 1. **Pipeline 01: Live Ingestion & Snapshot Telemetry** — 3-tier adapter failover (RapidAPI $\to$ Web Scraping $\to$ MockReplaySource), 4-rule QualityGate validation, UTC-to-IST normalization, and point-in-time snapshot archiving.
 2. **Pipeline 02: Nightly MLOps & Champion Promotion** — Paired Wilcoxon signed-rank non-inferiority champion gate, Mondrian Conformal Quantile Calibration, PSI drift detection, and `metrics.json` F14 proof materialization.
-3. **Pipeline 03: Real-Time Inference & Dynamic ETA** — Sub-2ms PyTorch GRU quantile inference ($p_{10}, p_{50}, p_{90}$), 5-rule safety interlock clamp, and marginalization over top-3 Bayesian spatial positions.
+3. **Pipeline 03: Real-Time Inference & Dynamic ETA** — Served champion: LightGBM Quantile + NNLS convex ensemble ($p_{10}, p_{50}, p_{90}$) with Mondrian conformal calibration (PyTorch Non-Crossing GRU experimental challenger in shadow mode), 5-rule safety interlock clamp, and marginalization over top-3 Bayesian spatial positions.
 4. **Pipeline 04: Neural Brain & Multi-Channel Advisories** — Headway conflict perception, kinematic priority preemption formulation, WhatsApp alert dispatch, and cryptographic HMAC webhook ACK verification.
 5. **Pipeline 05: Platform Gantt & Sub-50ms Self-Healing Re-Optimizer** — 24-hour platform occupancy timeline, pairwise interval collision detection, sub-50ms greedy local-search swap solver, and rollback management.
 6. **Pipeline 06: Mechanistic Cascade What-If & Delay Autopsy** — Discrete-event corridor SimPy simulation, single-line priority preemption, active TSR delay impact, and 100% mathematically balanced causal delay ledger.

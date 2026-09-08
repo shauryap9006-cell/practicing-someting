@@ -44,8 +44,8 @@ flowchart TD
     subgraph MultiTierInference["Stage 3: Multi-Tier Quantile Inference"]
         FeatVec --> CheckTier{"Champion Check<br/>(registry.json)"}
         
-        CheckTier -- "PyTorch GRU Champion & hops <= 3" --> GRUInference["Tier 2: NonCrossingGRUQuantileModel<br/>(ml/model_seq.py:28)<br/>x=[1, 8, 8], context=[1, 25]"]
-        CheckTier -- "LightGBM Champion | hops > 3" --> LGBMInference["Tier 2: LightGBM CQR Booster<br/>(api/predictor.py:271)<br/>Direct (hops<=3) | Delta (hops>3)"]
+        CheckTier -- "PyTorch GRU Challenger (Experimental) & hops <= 3" --> GRUInference["Tier 2 Challenger: NonCrossingGRUQuantileModel<br/>(ml/model_seq.py:28)<br/>x=[1, 8, 8], context=[1, 25]"]
+        CheckTier -- "Served Champion (LightGBM/NNLS) | hops > 3" --> LGBMInference["Tier 2 Served Champion: LightGBM / NNLS CQR<br/>(api/predictor.py:271)<br/>Direct (hops<=3) | Delta (hops>3)"]
         CheckTier -- "Model Failure / Exception" --> HistInference["Tier 1 Fallback: hist_baselines SQL Lookup<br/>(api/predictor.py:284)"]
         HistInference -- "DB Missing" --> SchedInference["Tier 0 Fallback: Scheduled Timetable + Delay<br/>(api/predictor.py:240)"]
 
@@ -99,7 +99,7 @@ flowchart TD
 |---|---|---|---|
 | **1. Soft Bayesian Position Resolution** | `engine/position_resolver.py` | `PositionResolver.resolve_train_position(train_no, route_stops, as_of_time)` | `train_no: str, route_stops: List[dict], as_of_time: datetime` -> `PositionRecord` with posterior probabilities $P(seq=k)$, mode location, uncertainty age, and top-3 candidates. |
 | **2. Snapshot Feature Hydration** | `ml/snapshots.py` | `SnapshotGenerator.extract_features_at_snapshot(...)` | `train_no, seq_k, target_seq, run_date, current_delay, query_time` -> Hydrated 25/34-feature vector `TrainFeatureVector` (downstream headway, fog, rain, TSRs, rake links). |
-| **3. Multi-Tier Model Inference** | `api/predictor.py` | `PredictorService._predict_single_position(...)` | Feature DataFrame `df_feat`, `seq_k`, `target_seq` -> Raw quantile outputs $(q_{10}, q_{50}, q_{90})$ and `tier_used` (`Tier2_PyTorch_GRU_Champion`, `Tier2_LightGBM_CQR`, `Tier1_HistLookup`, `Fallback_Schedule`). |
+| **3. Multi-Tier Model Inference** | `api/predictor.py` | `PredictorService._predict_single_position(...)` | Feature DataFrame `df_feat`, `seq_k`, `target_seq` -> Raw quantile outputs $(q_{10}, q_{50}, q_{90})$ and `tier_used` (`Tier2_Convex_Ensemble_NNLS`, `Tier2_LightGBM_CQR`, `Tier1_HistLookup`, `Fallback_Schedule`). Experimental PyTorch GRU challenger evaluated in shadow mode. |
 | **4. Conformal Calibration (CQR)** | `ml/conformal.py` | `ConformalCalibrator.calibrate()` / `PredictorService` | Raw model quantiles -> Calibrated confidence intervals adjusted by empirical non-conformity factor $\hat{q}$ ($q_{10} - \hat{q}, q_{50}, q_{90} + \hat{q}$) to guarantee $\ge 80\%$ empirical coverage. |
 | **5. Position Marginalization** | `api/predictor.py` | `PredictorService.predict_train_eta(...)` | Top-3 candidate predictions $\{(p_k, q_{10,k}, q_{50,k}, q_{90,k})\}$ -> Weighted marginalized quantiles $\bar{q} = \sum_k p_k q_k$. |
 | **6. Mathematical Quantile Invariant** | `api/predictor.py` | `enforce_quantile_order(p10, p50, p90, cap=720.0)` | Marginalized quantiles -> Sanitized quantiles guaranteeing $0.0 \le p_{10} \le p_{50} \le p_{90} \le 720.0\text{ min}$ with NaN/Inf elimination. |
@@ -142,7 +142,7 @@ flowchart TD
 | `shadow_log` | Write (Insert) | Records shadow evaluation comparison: `INSERT INTO shadow_log (train_no, target_station, champion_model, challenger_model, champion_p50, challenger_p50, abs_delta, latency_ms, created_at)`. |
 
 ## 8. Failure & Fallback
-1. **Tier 2 Champion Neural Model Failure**: If `model_gru_challenger.pt` is missing, corrupted, or encounters CUDA memory pressure, `PredictorService._try_load_models()` falls back to PyTorch CPU (`torch.device("cpu")`). If tensor inference fails, execution seamlessly yields to the LightGBM Quantile Booster ensemble (`_direct_models` / `_delta_models`).
+1. **Tier 2 Served Champion Model**: Served champion is LightGBM Quantile + NNLS convex ensemble (`Tier2_Convex_Ensemble_NNLS`). PyTorch Non-Crossing GRU is an experimental challenger evaluated in shadow mode (sequence input wiring pending). If the ensemble fails, execution seamlessly yields to LightGBM direct boosters or Tier 1.
 2. **Tier 2 LightGBM Booster Failure**: If LightGBM model text files (`model_direct_q*.txt`) fail to load or feature extraction raises an exception, the pipeline catches the error and degrades to **Tier 1 Historical Baseline Lookup** (`hist_baselines` table materialized during startup).
 3. **Tier 1 Historical Lookup Missing**: If the train or station has no historical records in `hist_baselines`, the engine executes **Tier 0 Nominal Fallback** (scheduled timetable arrival + current frozen delay with default confidence band $[d-5, d, d+15]$).
 4. **Intermittent / Missing GPS Telemetry**: If no live station event has arrived within 15 minutes ($>900\text{s}$), `PositionResolver` applies dead-reckoning recency decay ($\tau = 1800\text{s}$ / 30 min) and blends a Gaussian transit prior around expected timetable arrival. If position confidence drops below $0.80$, `PredictorService` automatically widens the prediction interval by $(1.0 - \text{confidence}) \times 15.0\text{ min}$.

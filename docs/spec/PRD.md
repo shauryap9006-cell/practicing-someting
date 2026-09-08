@@ -63,7 +63,7 @@ mobile app · OR-Tools · any 15th feature. New ideas → roadmap slide, not cod
 
 ## 4. Machine Learning & Safety Architecture
 
-- **Champion Model**: PyTorch **2-Layer GRU (Gated Recurrent Unit)** neural network capturing sequential spatial-temporal propagation across route stops.
+- **Served Champion Model**: **LightGBM Quantile + NNLS Convex Ensemble** with Mondrian Conformal Quantile Regression (CQR) calibration. (Experimental Challenger: PyTorch **2-Layer GRU** neural network for sequential spatial-temporal propagation across route stops, currently evaluated in shadow mode; full sequence input wiring pending).
 - **Quantile Estimators**: **LightGBM Quantile Gradient Boosted Trees** ($p_{10}, p_{50}, p_{90}$) trained under pinball loss with conformalized quantile regression (CQR) calibration.
 - **23 Leakage-Safe Features**: Static train/route traits, temporal schedule embeddings, dynamic delay velocity/acceleration, weather parameters (fog/rain/temp), and network spatial track graph topology features (`trains_ahead_30k`, `trains_behind_30k`, `opposing_trains_30k`, `min_predicted_headway_next_station`, `sum_delay_trains_ahead_30k`, `section_occupancy_pct`).
 - **Deterministic Safety Interlock Layer**: 5 pure deterministic kinematic rules (Input Sanity, Quantile Monotonicity, Priority Recovery Limits, Absolute Operational Bounds, Monotonic Horizon Drift).

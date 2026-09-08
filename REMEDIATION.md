@@ -34,7 +34,7 @@
 | 1.2 | PERF-001 | GET requests write to SQLite | 🟠 P1 | 90m | ☑ |
 | 1.3 | SEC-003 | Login brute-force/DoS | 🟠 P1 | 60m | ☑ |
 | 1.4 | TIME-001 | Timezone fragmentation | 🟠 P1 | 90m | ☑ |
-| 1.5 | ML-001 | GRU docs vs runtime drift | 🟠 P1 | 20m | ☐ |
+| 1.5 | ML-001 | GRU docs vs runtime drift | 🟠 P1 | 20m | ☑ |
 | 1.6 | GIT-001 | 1.06 GiB history rewrite | 🟠 P1 | 60m | ☐ |
 | 2.1 | DEV-001 | Makefile --workers 2 | 🟡 P2 | 5m | ☐ |
 | 2.2 | VULN-001 | npm vulnerabilities | 🟡 P2 | 30m | ☐ |

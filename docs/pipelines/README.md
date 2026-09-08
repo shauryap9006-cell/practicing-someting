@@ -28,7 +28,7 @@
 ```
 
 ### Core Architectural Tenets
-1. **Multi-Tier Degradation & Zero-Fail Resilience**: Every pipeline incorporates automatic fallback cascades (e.g., RapidAPI $\to$ Web Scraper $\to$ Deterministic Mock Replay in Pipeline 01; PyTorch GRU Champion $\to$ LightGBM CQR $\to$ Historical Baseline SQL $\to$ Timetable Dead-Reckoning in Pipeline 03; WhatsApp Gateway $\to$ SMS Gateway $\to$ In-App Inbox in Pipeline 04).
+1. **Multi-Tier Degradation & Zero-Fail Resilience**: Every pipeline incorporates automatic fallback cascades (e.g., RapidAPI $\to$ Web Scraper $\to$ Deterministic Mock Replay in Pipeline 01; Served LightGBM/NNLS Ensemble $\to$ LightGBM CQR $\to$ Historical Baseline SQL $\to$ Timetable Dead-Reckoning in Pipeline 03; WhatsApp Gateway $\to$ SMS Gateway $\to$ In-App Inbox in Pipeline 04).
 2. **100% Deterministic Safety Interlocks**: Machine learning predictions and AI re-allocations are strictly bounded by mathematical kinematic checks (`safety/interlock.py`), single-line block clearances, and platform maintenance state locks before execution or display.
 3. **Calibrated Statistical Uncertainty**: Dynamic ETA predictions provide non-crossing quantiles ($p_{10}, p_{50}, p_{90}$) calibrated via Mondrian Conformalized Quantile Regression (CQR), providing a mathematically verified $\ge 80.0\%$ empirical coverage guarantee across all horizons.
 4. **Human-in-the-Loop Operational Authority**: High-consequence dispatch advisories require explicit human sign-off with single-key dashboard hotkeys, backed by an automated 5-minute supervisor escalation ladder and cryptographic HMAC-SHA256 audit chaining.

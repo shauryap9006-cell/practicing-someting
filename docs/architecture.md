@@ -26,12 +26,12 @@ flowchart TB
     end
 
     subgraph MLSuite["3. Multi-Tier Machine Learning & Uncertainty"]
-        subgraph Champion["Champion Tier (LightGBM)"]
+        subgraph Champion["Served Champion Tier (LightGBM Quantile + NNLS Ensemble)"]
             LGBDirect["Direct Quantile Boosters (q10, q50, q90)<br/>Hops <= 3 (Early Stopping 50)"]
             LGBDelta["Delta Quantile Boosters (q10, q50, q90)<br/>Autoregressive Section Rollout (>3 Hops)"]
         end
         
-        subgraph Challenger["Challenger Tier (PyTorch GRU)"]
+        subgraph Challenger["Challenger Tier (PyTorch GRU - Experimental Challenger)"]
             GRU["2-Layer Non-Crossing GRU<br/>Pinball Loss + Gradient Clip (1.0)"]
         end
         

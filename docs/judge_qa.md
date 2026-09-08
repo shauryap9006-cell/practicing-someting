@@ -7,7 +7,7 @@
 ## ML & Model Questions
 
 **Q: Why LightGBM + GRU? Why not just one model?**  
-A: LightGBM is the 1–6 hour ensemble backbone with CQR calibration. The GRU adds temporal sequence memory across the station trajectory — a train's delay pattern evolves over time, not just at one snapshot. Our full calibrated ensemble achieves canonical Test MAE of 10.72 min across 25,203 held-out test samples (down to 5.9 min at 1h, and beating the official NTES baseline by 51.7% at 6h). The 3-tier design gives graceful degradation: if GRU is offline, LGB fires; if LGB fails, historical lookup serves.
+A: LightGBM is the 1–6 hour ensemble backbone with CQR calibration. The GRU challenger adds temporal sequence memory across the station trajectory — a train's delay pattern evolves over time, not just at one snapshot. In production, our served champion is the LightGBM Quantile + NNLS convex ensemble with Mondrian conformal calibration, while the PyTorch Non-Crossing GRU operates as an experimental challenger evaluated in shadow mode (sequence history wiring roadmap detailed in docs/ROADMAP.md). Our full calibrated ensemble achieves canonical Test MAE of 10.72 min across 25,203 held-out test samples (down to 5.9 min at 1h, and beating the official NTES baseline by 51.7% at 6h). The 3-tier design gives graceful degradation: if ensemble components degrade, LGB direct models fire; if LGB fails, historical lookup serves.
 
 **Q: How do you avoid quantile crossing? (p10 > p50 is invalid)**  
 A: We use a CQR Crossing Guard in `ml/ensemble.py` that enforces `p10 ≤ p50 ≤ p90` by clamping at predict time. Result: **0 crossing violations** in the test set.
@@ -19,7 +19,7 @@ A: Conformal Quantile Regression — a post-hoc calibration technique. We comput
 A: Strict time-series train/test split (21-day train, 7-day test) with no future leakage. The Wilcoxon promotion gate (p=0.0000) confirms the champion is statistically significantly better on the test week before promotion.
 
 **Q: What's the Wilcoxon gate?**  
-A: Before promoting any new model, we run a Wilcoxon signed-rank test comparing per-train MAE errors between old champion and new challenger on the held-out test set. p < 0.05 required for promotion. Our GRU passes at p=0.0000.
+A: Before promoting any new model, we run a Wilcoxon signed-rank test comparing per-train MAE errors between old champion and new challenger on the held-out test set. p < 0.05 required for promotion. Our GRU challenger passes at p=0.0000 in shadow evaluation.
 
 **Q: Why √hops in the CQR rollout?**  
 A: Uncertainty compounds over hops. Empirically, uncertainty grows sub-linearly — closer to √hops than linearly. Using √hops scaling prevents the 6-hour band from being unrealistically wide while keeping 1-hour predictions tight.

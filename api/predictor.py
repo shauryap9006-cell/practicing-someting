@@ -202,6 +202,8 @@ class PredictorService:
             served = "Tier2_Convex_Ensemble_NNLS" if hasattr(self, "_ensemble") and self._ensemble is not None else "LightGBM_Quantile_Direct"
         return {
             "served_model": served,
+            "served_champion": "LightGBM Quantile + NNLS convex ensemble, Mondrian conformal calibration",
+            "experimental_challenger": "PyTorch Non-Crossing GRU: experimental challenger — NOT served (sequence input wiring pending)",
             "version": self.served_model_version,
             "sha": self.champion_sha,
             "loaded_at": self.loaded_at,
