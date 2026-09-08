@@ -47,7 +47,7 @@
 | 2.9 | ARCH-001 | 1,337-line God router | 🟡 P2 | 180m | ☑ |
 | 2.10 | ARCH-002 | Duplicate frontends | 🟡 P2 | 120m | ☑ |
 | 3.1 | — | Pin deps + split dev deps | 🔵 P3 | 30m | ☑ |
-| 3.2 | — | CI: ruff + mypy | 🔵 P3 | 45m | ☐ |
+| 3.2 | — | CI: ruff + mypy | 🔵 P3 | 45m | ☑ |
 | 3.3 | — | Async scraper | 🔵 P3 | 45m | ☐ |
 | 3.4 | — | Three.js bundle split | 🔵 P3 | 45m | ☐ |
 | 3.5 | — | .env.local / Next.js leftover | 🔵 P3 | 15m | ☐ |
