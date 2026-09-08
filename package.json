@@ -4,9 +4,25 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "dev": "npm --prefix web run dev",
-    "build": "npm --prefix web run build",
-    "start": "npm --prefix web run start",
-    "lint": "npm --prefix web run lint"
+    "dev": "npm run dev --workspace web",
+    "dev:livewall": "npm run dev --workspace livewall",
+    "build": "npm run build --workspace web",
+    "build:livewall": "npm run build --workspace livewall",
+    "build:all": "npm run build --workspaces --if-present",
+    "start": "npm run start --workspace web",
+    "lint": "npm run lint --workspace web",
+    "lint:all": "npm run lint --workspaces --if-present"
+  },
+  "workspaces": [
+    "packages/*",
+    "web",
+    "livewall"
+  ],
+  "devDependencies": {
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3"
   }
 }

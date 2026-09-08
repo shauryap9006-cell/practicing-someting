@@ -1,5 +1,5 @@
 import React from 'react';
-import type { LivePosition, NetworkState, StationMeta } from '../lib/types';
+import type { LivePosition, NetworkState, StationMeta } from '@railtwin/shared-types';
 import { getDelayColor } from '../lib/motion';
 
 interface TrainInspectorProps {

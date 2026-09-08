@@ -1,5 +1,5 @@
 import React from 'react';
-import type { CongestionRadarData } from '../lib/types';
+import type { CongestionRadarData } from '@railtwin/shared-types';
 
 interface CongestionBarProps {
   congestion: CongestionRadarData | null;

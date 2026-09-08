@@ -6,7 +6,7 @@ import type {
   PlatformState,
   NetworkState,
   CorridorStation,
-} from '../lib/types';
+} from '@railtwin/shared-types';
 import { getDelayStatusBadge } from '../lib/motion';
 
 interface StationMasterViewProps {

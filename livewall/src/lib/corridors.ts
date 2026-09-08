@@ -1,4 +1,4 @@
-import type { CorridorStation } from './types';
+import type { CorridorStation } from '@railtwin/shared-types';
 
 export interface NationalCorridor {
   id: string;

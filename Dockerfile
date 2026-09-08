@@ -2,11 +2,14 @@
 FROM node:20-alpine AS frontend-build
 WORKDIR /build
 
-COPY web/package.json web/package-lock.json ./
+COPY package.json package-lock.json ./
+COPY packages/ ./packages/
+COPY web/package.json ./web/
+COPY livewall/package.json ./livewall/
 RUN npm ci
 
-COPY web/ ./
-RUN npm run build
+COPY web/ ./web/
+RUN npm run build --workspace web
 
 # Stage 2: Python Backend Runtime
 FROM python:3.11-slim AS backend
@@ -48,7 +51,7 @@ COPY scripts/ ./scripts/
 COPY config.py .
 
 # Copy built frontend assets from Stage 1
-COPY --from=frontend-build /build/dist ./web/dist
+COPY --from=frontend-build /build/web/dist ./web/dist
 
 # Create necessary runtime directories
 RUN mkdir -p data/cache data/backups

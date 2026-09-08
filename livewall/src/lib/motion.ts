@@ -10,7 +10,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import type { LivePosition, CorridorStation } from './types';
+import type { LivePosition, CorridorStation } from '@railtwin/shared-types';
 
 export interface AnimatedTrain {
   train_no: string;

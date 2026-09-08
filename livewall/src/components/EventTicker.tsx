@@ -1,5 +1,5 @@
 import React from 'react';
-import type { LiveOperationalEvent } from '../lib/types';
+import type { LiveOperationalEvent } from '@railtwin/shared-types';
 
 interface EventTickerProps {
   events: LiveOperationalEvent[];

@@ -51,7 +51,7 @@ import type {
   CorridorStation,
   StationMeta,
   PlatformState,
-} from './types';
+} from '@railtwin/shared-types';
 
 // Standard 8 Mainline Corridor Stations (NDLS -> LKO 440km)
 export const DEFAULT_CORRIDOR_STATIONS: CorridorStation[] = [

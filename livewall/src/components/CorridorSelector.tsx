@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { NATIONAL_CORRIDORS, NationalCorridor } from '../lib/corridors';
-import type { LivePosition } from '../lib/types';
+import type { LivePosition } from '@railtwin/shared-types';
 
 interface CorridorSelectorProps {
   activeCorridorId: string;
