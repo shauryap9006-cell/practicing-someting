@@ -95,16 +95,6 @@ def _apply_shock_to_physics(shock: Dict[str, Any], db: Database) -> None:
             )
 
 
-def _revert_shock_from_physics(db: Database) -> None:
-    """Clears all demo-injected speed_restrictions rows and fog flags on reset."""
-    with db.transaction() as cur:
-        cur.execute("UPDATE speed_restrictions SET is_active = 0, status = 'CLEARED' WHERE issued_by = 'demo_shock'")
-        cur.execute(
-            "UPDATE weather SET fog_flag = 0 WHERE station_code IN "
-            "(SELECT DISTINCT station FROM (SELECT station_code AS station FROM weather))"
-        ) if False else None
-
-
 @router.post("/v1/demo/inject-event", response_model=None)
 @router.post("/api/v1/demo/inject-event", response_model=None)
 def inject_shock_event(payload: InjectEventRequest, db: Database = Depends(get_db)) -> Dict[str, Any]:
