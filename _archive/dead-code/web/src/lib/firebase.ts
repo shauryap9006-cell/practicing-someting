@@ -8,7 +8,7 @@ import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 
 export const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyDFAojTqSzmcVL4Op151mQ8simCRqbczBo',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'REDACTED_PLACEHOLDER',
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'farmer-4b216.firebaseapp.com',
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'farmer-4b216',
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'farmer-4b216.firebasestorage.app',
