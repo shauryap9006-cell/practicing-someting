@@ -151,3 +151,77 @@ def test_collector_idempotent_upsert(seeded_db: Database):
     res2 = collector.run_collection_cycle(target_date=target_date, train_limit=2)
     count2 = seeded_db.table_counts()["station_events"]
     assert count2 == count1, "Repolling must produce zero duplicate rows in station_events"
+
+
+def test_interruptible_sleep():
+    """Verifies that _interruptible_sleep runs in small increments without hanging."""
+    from collector.adapters.scrape import _interruptible_sleep
+
+    start = datetime.datetime.now()
+    _interruptible_sleep(0.05, step=0.01)
+    elapsed = (datetime.datetime.now() - start).total_seconds()
+    assert elapsed >= 0.04
+
+
+def test_scrape_source_configuration():
+    """Verifies ScrapeSource defaults to (5.0, 15.0) timeouts and 3 max retries."""
+    from collector.adapters.scrape import ScrapeSource
+
+    src = ScrapeSource()
+    assert src.timeout == (5.0, 15.0)
+    assert src.max_retries == 3
+    assert src.source_name == "WebScrape"
+
+
+def test_scrape_source_network_failure_no_raise(monkeypatch):
+    """Verifies that network failures across targets log warnings and return empty list."""
+    import requests
+
+    from collector.adapters.scrape import ScrapeSource
+
+    src = ScrapeSource(max_retries=1, polite_delay=0.0)
+
+    def mock_get(*args, **kwargs):
+        raise requests.ConnectionError("Network unreachable")
+
+    monkeypatch.setattr(src.session, "get", mock_get)
+    events = src.fetch_running_status("12034", datetime.date(2026, 8, 27))
+    assert events == []
+
+
+def test_scrape_source_malformed_html_no_raise(monkeypatch):
+    """Verifies that malformed/invalid external responses do not raise into callers."""
+    from collector.adapters.scrape import ScrapeSource
+
+    src = ScrapeSource(max_retries=1, polite_delay=0.0)
+
+    class MockResponse:
+        status_code = 200
+        text = "<html><body>502 Bad Gateway - INVALID TRAIN ERROR</body></html>"
+
+    monkeypatch.setattr(src.session, "get", lambda *args, **kwargs: MockResponse())
+    events = src.fetch_running_status("12034", datetime.date(2026, 8, 27))
+    assert events == []
+
+
+def test_scrape_source_valid_erail_parsing(monkeypatch):
+    """Verifies valid eRail data is parsed into StationEvent objects."""
+    from collector.adapters.scrape import ScrapeSource
+
+    src = ScrapeSource(max_retries=1, polite_delay=0.0)
+
+    class MockResponse:
+        status_code = 200
+        text = (
+            "CNB^06:00^06:00^06:05^06:05^0^1~"
+            "ALJN^08:30^08:35^08:35^08:40^5^2~"
+            "NDLS^10:30^10:45^10:30^10:45^15^3~"
+        )
+
+    monkeypatch.setattr(src.session, "get", lambda *args, **kwargs: MockResponse())
+    events = src.fetch_running_status("12034", datetime.date(2026, 8, 27))
+    assert len(events) == 3
+    assert events[0].station_code == "CNB"
+    assert events[1].station_code == "ALJN"
+    assert events[2].station_code == "NDLS"
+    assert events[1].delay_arr_min == 5
