@@ -1,8 +1,10 @@
 """RailTwin-X API Middleware — Phase 5 (API Hardening).
 
 Provides:
-1. ResponseCacheMiddleware  — 5-second in-memory TTL cache for GET /v1/advise
-2. TokenBucketRateLimiter  — 60 req/min per IP (configurable) using token-bucket algorithm
+1. ResponseCacheMiddleware  - 5-second in-memory TTL cache for GET /v1/advise
+2. TokenBucketRateLimiter  - configurable req/min per IP via settings.RATE_LIMIT_RPM
+   (default 1200 req/min, 300 burst; override with RAILTWIN_RATE_LIMIT_RPM /
+   RAILTWIN_RATE_LIMIT_BURST) using a token-bucket algorithm.
 """
 
 from __future__ import annotations
@@ -16,6 +18,8 @@ from typing import Dict, Optional, Tuple
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
+
+from config import settings
 
 
 # ---------------------------------------------------------------------------
