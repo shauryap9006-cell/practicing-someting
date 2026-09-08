@@ -171,150 +171,16 @@ router.include_router(trains_router)
 
 
 # ----------------------------------------------------
-# 4. Network State Corridor View (F1, F10)
+# 3. Operations & Simulation Domain (Extracted to api/routers/ops.py)
 # ----------------------------------------------------
-@router.get("/network/state", response_model=NetworkStateResponse)
-def get_network_state():
-    """Returns network-wide active trains, positions, color codes, and platform conflicts."""
-    db = get_db()
-    clock = get_clock()
-    today_str = clock.today_str()
+from api.routers.ops import (
+    router as ops_router,
+    get_network_state,
+    simulate_what_if,
+    get_crew_alerts,
+)
 
-    with db.transaction() as cur:
-        cur.execute(
-            """
-            SELECT train_no, name, class, priority
-            FROM trains
-            ORDER BY priority ASC, train_no ASC
-            """
-        )
-        train_rows = cur.fetchall()
-
-        cur.execute(
-            """
-            SELECT train_no, seq, station_code, sched_arr, sched_dep
-            FROM route_stations
-            ORDER BY train_no, seq
-            """
-        )
-        all_routes = cur.fetchall()
-
-        cur.execute(
-            """
-            SELECT se.train_no, se.seq, se.station_code, se.delay_arr_min, se.delay_dep_min
-            FROM station_events se
-            INNER JOIN (
-                SELECT train_no, MAX(seq) as max_seq, MAX(run_date) as max_date
-                FROM station_events
-                GROUP BY train_no
-            ) latest ON se.train_no = latest.train_no AND se.seq = latest.max_seq AND se.run_date = latest.max_date
-            """
-        )
-        events_rows = cur.fetchall()
-
-        cur.execute(
-            """
-            SELECT from_code, to_code, speed_limit_kmph, cause
-            FROM speed_restrictions
-            WHERE is_active = 1
-            """
-        )
-        tsr_rows = cur.fetchall()
-
-    routes_by_train = {}
-    for r in all_routes:
-        t = r["train_no"]
-        if t not in routes_by_train:
-            routes_by_train[t] = []
-        routes_by_train[t].append(r)
-
-    events_by_train = {r["train_no"]: r for r in events_rows}
-
-    train_states = []
-    delayed_count = 0
-
-    for tr in train_rows:
-        t_no = tr["train_no"]
-        route = routes_by_train.get(t_no, [])
-        ev = events_by_train.get(t_no)
-
-        if route:
-            destination = route[-1]["station_code"]
-            if ev:
-                cur_seq = int(ev["seq"])
-                last_stn = ev["station_code"]
-                d_min = int(ev["delay_arr_min"] if ev["delay_arr_min"] is not None else (ev["delay_dep_min"] or 0))
-                if cur_seq < len(route):
-                    next_stn = route[cur_seq]["station_code"]
-                else:
-                    next_stn = destination
-                hops_rem = max(0, len(route) - cur_seq)
-            else:
-                last_stn = route[0]["station_code"]
-                next_stn = route[1]["station_code"] if len(route) > 1 else last_stn
-                d_min = 0
-                hops_rem = len(route) - 1
-        else:
-            destination = "DEST"
-            last_stn = "ORIG"
-            next_stn = "DEST"
-            d_min = 0
-            hops_rem = 0
-
-        if d_min > settings.DELAY_ON_TIME_MAX_MIN:
-            delayed_count += 1
-
-        color = _delay_color(d_min)
-
-        train_states.append(
-            NetworkTrainState(
-                train_no=t_no,
-                train_name=tr["name"],
-                train_class=tr["class"],
-                priority=int(tr["priority"]),
-                last_passed_station=last_stn,
-                next_station=next_stn,
-                current_delay_min=d_min,
-                status_color=color,
-                hops_remaining=hops_rem,
-                destination=destination,
-                predicted_dest_delay_min=d_min,
-            )
-        )
-
-    # Check active conflicts dynamically
-    pm = PlatformManager(db)
-    total_conflicts = 0
-    with db.transaction() as cur:
-        cur.execute("SELECT DISTINCT station_code FROM route_stations")
-        active_stns = [r["station_code"] for r in cur.fetchall()]
-
-    for stn_code in active_stns:
-        try:
-            _, conflicts = pm.get_station_gantt(stn_code)
-            total_conflicts += len(conflicts)
-        except Exception:
-            pass
-
-    active_tsrs = [
-        {
-            "from_code": r["from_code"],
-            "to_code": r["to_code"],
-            "speed_limit_kmph": int(r["speed_limit_kmph"]),
-            "cause": r["cause"],
-        }
-        for r in tsr_rows
-    ]
-
-    return NetworkStateResponse(
-        active_trains_count=len(train_states),
-        delayed_trains_count=delayed_count,
-        active_conflicts_count=total_conflicts,
-        trains=train_states,
-        active_tsrs=active_tsrs,
-        updated_at=clock.now_iso(),
-        clock_mode=clock.mode,
-    )
+router.include_router(ops_router)
 
 
 # ----------------------------------------------------
@@ -331,80 +197,6 @@ from api.routers.stations import (
 router.include_router(stations_router)
 
 
-# ----------------------------------------------------
-# 7. What-If Cascade Simulation (F6)
-# ----------------------------------------------------
-@router.post("/simulate/what-if", response_model=WhatIfResponse)
-def simulate_what_if(
-    req: WhatIfRequest,
-    current_user: dict = Depends(require_role(["station_master", "dy_sm", "section_controller", "admin"])),
-):
-    """Simulates injection of operational shock and computes network cascade ripple."""
-    db = get_db()
-    clock = get_clock()
-    assert_station_scope(current_user, req.station_code)
-    simulator = CascadeSimulator(db)
-
-    # Convert active TSRs
-    tsrs = {}
-    if req.active_tsrs:
-        for k, v in req.active_tsrs.items():
-            if "_" in k:
-                u, w = k.split("_", 1)
-                tsrs[(u, w)] = float(v)
-
-    run_id, events, total_delays = simulator.run_simulation(
-        injected_delays={req.train_no: {req.station_code.upper(): req.injected_delay_min}},
-        active_tsrs=tsrs,
-        simulation_hours=8.0,
-    )
-
-    affected_list = [
-        {"train_no": t, "total_delay_min": d, "is_primary_target": (t == req.train_no)}
-        for t, d in total_delays.items() if d > 0
-    ]
-
-    return WhatIfResponse(
-        run_id=run_id,
-        scenario={
-            "train_no": req.train_no,
-            "station": req.station_code.upper(),
-            "injected_delay_min": req.injected_delay_min,
-        },
-        affected_trains_count=len(affected_list),
-        affected_trains=affected_list,
-        ledger_events=[
-            {
-                "train_no": ev.train_no,
-                "event_type": ev.event_type,
-                "minutes": ev.minutes,
-                "cause": ev.cause,
-                "station_code": ev.station_code,
-            }
-            for ev in events[:20]
-        ],
-        updated_at=clock.now_iso(),
-        clock_mode=clock.mode,
-    )
-
-
-# ----------------------------------------------------
-# 8. Crew Duty Breach Alerts (F13)
-# ----------------------------------------------------
-@router.get("/crew/alerts", response_model=CrewAlertsResponse)
-def get_crew_alerts():
-    """Returns active crew duty-breach warnings with relief recommendations."""
-    db = get_db()
-    clock = get_clock()
-    engine = CrewDutyEngine(db)
-    alerts = engine.evaluate_crew_alerts()
-
-    return CrewAlertsResponse(
-        total_alerts=len(alerts),
-        alerts=[CrewAlertItem(**a.to_dict()) for a in alerts],
-        updated_at=clock.now_iso(),
-        clock_mode=clock.mode,
-    )
 
 
 
