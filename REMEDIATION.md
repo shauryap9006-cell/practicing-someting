@@ -49,7 +49,7 @@
 | 3.1 | — | Pin deps + split dev deps | 🔵 P3 | 30m | ☑ |
 | 3.2 | — | CI: ruff + mypy | 🔵 P3 | 45m | ☑ |
 | 3.3 | — | Async scraper | 🔵 P3 | 45m | ☑ |
-| 3.4 | — | Three.js bundle split | 🔵 P3 | 45m | ☐ |
+| 3.4 | — | Three.js bundle split | 🔵 P3 | 45m | ☑ |
 | 3.5 | — | .env.local / Next.js leftover | 🔵 P3 | 15m | ☐ |
 | 4.1 | — | NumPy 2.x warnings | ⚪ P4 | 15m | ☐ |
 | 4.2 | — | Stale comments | ⚪ P4 | 10m | ☐ |
