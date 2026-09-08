@@ -7,6 +7,8 @@ Provides:
 
 from __future__ import annotations
 
+from engine.clocks import get_clock, now_iso
+
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -135,7 +137,7 @@ def grant_cross_station_handoff(
     db: Database = Depends(get_db),
 ):
     """Grants inter-station Line Clear and locks downstream platform reception path."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute("SELECT * FROM cross_station_locks WHERE id = ?;", (lock_id,))
         row = cur.fetchone()
@@ -173,7 +175,7 @@ def release_cross_station_handoff(
     db: Database = Depends(get_db),
 ):
     """Releases cross-station block lock upon train clearing boundary track circuit."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute("SELECT * FROM cross_station_locks WHERE id = ?;", (lock_id,))
         row = cur.fetchone()
@@ -244,7 +246,7 @@ def generate_precedence_advisories(
     db: Database = Depends(get_db),
 ):
     """Calculates optimal train precedence (Express overtakes over Freight/Passenger rakes) using speed differentials."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     advisories = [
         {
             "id": 1,
@@ -287,7 +289,7 @@ def execute_precedence_advisory(
     db: Database = Depends(get_db),
 ):
     """Applies a precedence decision, alerting the relevant Station Master and Section Controller."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         record_audit(
             db_or_cursor=cur,

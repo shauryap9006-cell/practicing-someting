@@ -8,6 +8,8 @@ Provides:
 
 from __future__ import annotations
 
+from engine.clocks import get_clock, now_iso
+
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -264,7 +266,7 @@ def create_work_order(
 ):
     """Logs a maintenance work order against a defective asset."""
     assert_station_scope(current_user, req.station_code)
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute(
             """
@@ -355,7 +357,7 @@ def resolve_work_order(
     db: Database = Depends(get_db),
 ):
     """Marks a work order as RESOLVED and restores asset to OPERATIONAL status."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute("SELECT * FROM work_orders WHERE id = ?;", (wo_id,))
         row = cur.fetchone()
@@ -412,7 +414,7 @@ def record_cleaning_log(
 ):
     """Records a cleanliness inspection score for a station zone."""
     assert_station_scope(current_user, req.station_code)
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute(
             """
@@ -454,7 +456,7 @@ def list_cleaning_logs(
         cur.execute("SELECT COUNT(*) as count FROM cleaning_logs;")
         c = cur.fetchone()["count"]
         if c == 0:
-            now_iso = datetime.now(timezone.utc).isoformat()
+            now_iso = get_clock().now_iso()
             sample_logs = [
                 ("NDLS", "PLATFORM", 1, now_iso, "usr-sm-ndls-01", 5, "Swachh Rail Agency", "Thoroughly washed with scrubber machine"),
                 ("NDLS", "TOILET", 2, now_iso, "usr-sm-ndls-01", 4, "Swachh Rail Agency", "Disinfected and soap refilled"),

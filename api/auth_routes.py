@@ -5,6 +5,8 @@ Provides login, token refresh, and profile inspection endpoints.
 
 from __future__ import annotations
 
+from engine.clocks import get_clock, now_iso, ist_now, IST_TIMEZONE
+
 import hashlib
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
@@ -86,7 +88,7 @@ def login(request: LoginRequest, http_request: Request, db: Database = Depends(g
         verify_dummy_password(request.password)
 
     if not row or not is_valid:
-        now_iso = datetime.now(timezone.utc).isoformat()
+        now_iso = get_clock().now_iso()
         record_login_failure(client_ip=client_ip, username=username, timestamp_iso=now_iso)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -118,8 +120,8 @@ def login(request: LoginRequest, http_request: Request, db: Database = Depends(g
     access_token = create_access_token(data=token_data)
     refresh_token = create_refresh_token(data=token_data)
     refresh_payload = decode_refresh_token(refresh_token)
-    now_iso = datetime.now(timezone.utc).isoformat()
-    expires_iso = datetime.fromtimestamp(refresh_payload["exp"], timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
+    expires_iso = datetime.fromtimestamp(refresh_payload["exp"], tz=IST_TIMEZONE).isoformat()
     with db.transaction() as cur:
         cur.execute(
             """
@@ -186,7 +188,7 @@ def refresh_token(
 
     payload = decode_refresh_token(auth.credentials)
     token_hash = hashlib.sha256(auth.credentials.encode("utf-8")).hexdigest()
-    now = datetime.now(timezone.utc)
+    now = ist_now()
     now_iso = now.isoformat()
     with db.transaction() as cur:
         cur.execute(
@@ -215,7 +217,7 @@ def refresh_token(
         new_access_token = create_access_token(data=token_data)
         new_refresh_token = create_refresh_token(data=token_data)
         new_payload = decode_refresh_token(new_refresh_token)
-        new_expires_iso = datetime.fromtimestamp(new_payload["exp"], timezone.utc).isoformat()
+        new_expires_iso = datetime.fromtimestamp(new_payload["exp"], tz=IST_TIMEZONE).isoformat()
         cur.execute(
             "UPDATE auth_sessions SET revoked_at = ?, replaced_by = ?, last_used_at = ? WHERE token_id = ?",
             (now_iso, new_payload["jti"], now_iso, payload["jti"]),
@@ -256,7 +258,7 @@ def logout(auth=Security(security_bearer), db: Database = Depends(get_db)):
             with db.transaction() as cur:
                 cur.execute(
                     "UPDATE auth_sessions SET revoked_at = COALESCE(revoked_at, ?) WHERE token_id = ?",
-                    (datetime.now(timezone.utc).isoformat(), payload["jti"]),
+                    (now_iso(), payload["jti"]),
                 )
         except HTTPException:
             pass

@@ -25,6 +25,7 @@ import pandas as pd
 
 from config import settings
 from data.db import get_db
+from engine.clocks import now_iso
 
 
 # ---------------------------------------------------------------------------
@@ -278,7 +279,7 @@ class PSIDriftMonitor:
         overall = "RED" if red_count > 0 else ("AMBER" if amber_count > 0 else "GREEN")
 
         report = DriftReport(
-            generated_at=datetime.datetime.now().isoformat(),
+            generated_at=now_iso(),
             reference_window_days=self.reference_days,
             live_window_days=self.live_days,
             total_features=len(results),
@@ -313,7 +314,7 @@ class PSIDriftMonitor:
                         f"CRITICAL DRIFT BREACH: {report.red_features} features exceeded PSI threshold 0.25 (Status: {report.overall_status})",
                         json.dumps({"red_features": report.red_features, "overall_status": report.overall_status}),
                         "queued",
-                        datetime.datetime.now().isoformat(),
+                        now_iso(),
                     ),
                 )
         except Exception as e:

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from engine.clocks import now_iso
+
 from datetime import datetime, timezone
 from uuid import uuid4
 
@@ -33,7 +35,7 @@ def create_access_request(
     db: Database = Depends(get_db),
 ):
     request_id = uuid4().hex
-    requested_at = datetime.now(timezone.utc).isoformat()
+    requested_at = now_iso()
     email = payload.email.strip().lower()
     with db.transaction() as cur:
         # Idempotent intake: a pending request for the same email is returned

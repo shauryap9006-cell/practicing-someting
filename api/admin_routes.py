@@ -6,6 +6,8 @@ All administrative actions are gated by role 'admin' and strictly audited.
 
 from __future__ import annotations
 
+from engine.clocks import get_clock, now_iso
+
 import re
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Literal, Optional
@@ -180,7 +182,7 @@ def review_access_request(
     db: Database = Depends(get_db),
 ):
     """Approves or rejects an access request without silently provisioning an account."""
-    reviewed_at = datetime.now(timezone.utc).isoformat()
+    reviewed_at = now_iso()
     with db.transaction() as cur:
         cur.execute("SELECT * FROM access_requests WHERE request_id = ?", (request_id,))
         existing = cur.fetchone()
@@ -254,7 +256,7 @@ def create_user(
 ):
     """Creates a new user account and writes an audited record."""
     user_id = f"usr-{req.username}-{uuid4().hex[:8]}"
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     pwd_hash = hash_password(req.password)
     email = req.email
 

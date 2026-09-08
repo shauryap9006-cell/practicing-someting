@@ -16,10 +16,28 @@ from pydantic import BaseModel, Field
 from api.auth import assert_station_scope, effective_station_scope, get_current_user, require_role
 from data.audit import record_audit
 from data.db import Database, get_db
-from engine.clocks import get_clock
+from engine.clocks import get_clock, IST_TIMEZONE
 from notifications.dispatcher import notify
 
 router = APIRouter(prefix="/api/ops", tags=["Station Operations & Actuals (A4 & A6)"])
+
+
+def _normalize_iso_ist(ts: Optional[str]) -> Optional[str]:
+    if not ts:
+        return ts
+    s = ts.strip()
+    if "+05:30" in s:
+        return s
+    if "Z" in s or "+00:00" in s:
+        dt = datetime.fromisoformat(s.replace("Z", "+00:00"))
+        return dt.astimezone(IST_TIMEZONE).isoformat()
+    try:
+        dt = datetime.fromisoformat(s)
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=IST_TIMEZONE).isoformat()
+        return dt.astimezone(IST_TIMEZONE).isoformat()
+    except Exception:
+        return s
 
 
 class SetInRequest(BaseModel):
@@ -83,6 +101,8 @@ def record_set_in(
 
     with db.transaction() as cur:
         # 1. Record to ad_events (The Golden Ground Truth Table)
+        norm_actual = _normalize_iso_ist(actual_time)
+        norm_predicted = _normalize_iso_ist(req.predicted_ts) if req.predicted_ts else None
         cur.execute(
             """
             INSERT INTO ad_events (
@@ -95,9 +115,9 @@ def record_set_in(
                 run_id,
                 train_no,
                 stn,
-                actual_time,
+                norm_actual,
                 req.platform,
-                req.predicted_ts,
+                norm_predicted,
                 discrepancy_min,
                 discrepancy_flag,
                 current_user["id"],
@@ -173,6 +193,7 @@ def record_set_out(
 
     with db.transaction() as cur:
         # 1. Record to ad_events
+        norm_actual = _normalize_iso_ist(actual_time)
         cur.execute(
             """
             INSERT INTO ad_events (
@@ -184,7 +205,7 @@ def record_set_out(
                 run_id,
                 train_no,
                 stn,
-                actual_time,
+                norm_actual,
                 req.platform,
                 current_user["id"],
                 now_iso,

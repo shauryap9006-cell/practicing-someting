@@ -1,10 +1,6 @@
-"""RailTwin-X Notification Health State Manager.
-
-Maintains live gateway connection statuses (connected, disconnected, down)
-and integrates directly into the `/v1/health` diagnostic endpoint.
-"""
-
 from __future__ import annotations
+
+from engine.clocks import now_iso
 
 import datetime
 from typing import Dict, Optional
@@ -15,7 +11,7 @@ class WhatsAppHealthTracker:
 
     def __init__(self):
         self._status: str = "connected"
-        self._last_updated: str = datetime.datetime.now().isoformat()
+        self._last_updated: str = now_iso()
         self._last_event: Optional[str] = None
         self._session_info: Dict[str, str] = {}
 
@@ -37,7 +33,7 @@ class WhatsAppHealthTracker:
         else:
             self._status = status
 
-        self._last_updated = datetime.datetime.now().isoformat()
+        self._last_updated = now_iso()
         self._last_event = event_type
 
     def get_health_dict(self) -> Dict[str, str]:

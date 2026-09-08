@@ -10,6 +10,8 @@ Implements zero-fail fallback hierarchy:
 
 from __future__ import annotations
 
+from engine.clocks import now_iso
+
 import datetime
 import hashlib
 import json
@@ -69,7 +71,7 @@ class PredictorService:
         self.champion_name: str = "PyTorch_GRU_Quantile"
         self.champion_sha: str = "unknown"
         self.served_model_version: str = "v3.0"
-        self.loaded_at: str = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        self.loaded_at: str = now_iso()
 
         self._gru_sequence_ready: bool = False
         print("[NOTICE] GRU challenger not served: sequence inputs not wired to real history (see docs/HEARTBEAT.md roadmap).")

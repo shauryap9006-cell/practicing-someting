@@ -6,6 +6,8 @@ Safety Interlock verification, and versioned batch changeset application.
 
 from __future__ import annotations
 
+from engine.clocks import get_clock, now_iso
+
 import json
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -106,7 +108,7 @@ def apply_day_changeset(
     """Validates batch mutations against Safety Interlock and commits versioned changeset."""
     stn = req.station_code.upper()
     assert_station_scope(current_user, stn)
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     safety = SafetyInterlockEngine(db)
 
     # 1. Safety Interlock checks

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import datetime
 import threading
+import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -434,7 +435,7 @@ class ContextEngine:
         return w_res
 
     def _get_active_tsrs_cached(self) -> List[dict]:
-        now_ts = datetime.datetime.now().timestamp()
+        now_ts = time.time()
         with self._lock:
             cached_tsrs, cached_at = self._tsrs_cache
             if cached_tsrs and (now_ts - cached_at) < 30.0:

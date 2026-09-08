@@ -13,6 +13,8 @@ for the operator to securely distribute and force a reset on first login.
 
 from __future__ import annotations
 
+from engine.clocks import get_clock, now_iso
+
 import json
 import secrets
 from datetime import datetime, timezone
@@ -127,7 +129,7 @@ def seed_roles_and_users(db: Optional[Database] = None) -> dict[str, int]:
     """
     database = db or get_db()
     database.init_schema()
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     is_production = settings.ENV.strip().lower() == "production"
 
     roles_count = 0

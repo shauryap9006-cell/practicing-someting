@@ -9,6 +9,8 @@ Provides:
 
 from __future__ import annotations
 
+from engine.clocks import get_clock, now_iso, ist_now, today_str
+
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -43,7 +45,7 @@ def record_breathalyzer_test(
     db: Database = Depends(get_db),
 ):
     """Logs a Digital Breathalyzer test. Zero tolerance: Any reading > 0.00 triggers immediate duty lock and emergency alert."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     passed = 1 if req.reading_mg_100ml <= 0.00 else 0
 
     with db.transaction() as cur:
@@ -147,7 +149,7 @@ def crew_sign_on(
 ):
     """Signs on train running crew (Loco Pilot, ALP, Guard) and starts duty hours tracking."""
     assert_station_scope(current_user, req.station_code)
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         # Check latest breathalyzer pass
         cur.execute(
@@ -207,8 +209,8 @@ def crew_sign_off(
     db: Database = Depends(get_db),
 ):
     """Signs off running crew, calculates exact duty duration, and sets required rest period."""
-    now_iso = datetime.now(timezone.utc).isoformat()
-    now_dt = datetime.now(timezone.utc)
+    now_iso = get_clock().now_iso()
+    now_dt = ist_now()
 
     with db.transaction() as cur:
         cur.execute("SELECT * FROM crew_rosters WHERE id = ?;", (roster_id,))
@@ -262,7 +264,7 @@ def list_crew_roster(
 ):
     """Lists current crew roster with elapsed duty hours."""
     station_code = effective_station_scope(current_user, station_code)
-    now_dt = datetime.now(timezone.utc)
+    now_dt = ist_now()
     with db.transaction() as cur:
         # Seed default sample crew if empty
         cur.execute("SELECT COUNT(*) as count FROM crew_rosters;")
@@ -349,7 +351,7 @@ def assign_staff_shift(
 ):
     """Assigns station staff to an operational shift."""
     assert_station_scope(current_user, req.station_code)
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute(
             """
@@ -400,8 +402,8 @@ def list_staff_shifts(
         cur.execute("SELECT COUNT(*) as count FROM staff_shifts;")
         c = cur.fetchone()["count"]
         if c == 0:
-            today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-            now_iso = datetime.now(timezone.utc).isoformat()
+            today_str = today_str()
+            now_iso = get_clock().now_iso()
             sample_shifts = [
                 ("usr-sm-ndls-01", "Station Master Day", "station_master", "NDLS", today_str, "morning", "PRESENT", now_iso),
                 ("usr-dysm-01", "Dy. Station Master Morning", "dy_sm", "NDLS", today_str, "morning", "PRESENT", now_iso),
@@ -454,7 +456,7 @@ def list_sahayak_roster(
         cur.execute("SELECT COUNT(*) as count FROM sahayak_roster;")
         c = cur.fetchone()["count"]
         if c == 0:
-            now_iso = datetime.now(timezone.utc).isoformat()
+            now_iso = get_clock().now_iso()
             sample_sahayaks = [
                 ("COOLIE-101", "Ram Charan", "+919876543201", "NDLS", 1, "morning", 1, 150.0, now_iso),
                 ("COOLIE-102", "Mohan Lal", "+919876543202", "NDLS", 1, "morning", 1, 150.0, now_iso),
@@ -495,7 +497,7 @@ def toggle_sahayak_duty(
     db: Database = Depends(get_db),
 ):
     """Toggles Sahayak on-duty / off-duty status."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute("SELECT * FROM sahayak_roster WHERE id = ?;", (sahayak_id,))
         row = cur.fetchone()

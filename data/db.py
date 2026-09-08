@@ -6,6 +6,8 @@ and table inspection against the single-file SQLite database.
 
 from __future__ import annotations
 
+from engine.clocks import get_clock, now_iso
+
 import os
 import re
 import sqlite3
@@ -90,7 +92,7 @@ class Database:
 
     def materialize_historical_baselines(self) -> int:
         """Materializes historical delay averages into hist_baselines table for O(1) journey lookups (F31)."""
-        now_iso = datetime.now(timezone.utc).isoformat()
+        now_iso = get_clock().now_iso()
         with self.transaction() as cur:
             cur.execute(
                 """
@@ -151,7 +153,7 @@ class Database:
                             pass
                         else:
                             raise
-                    now_iso = datetime.now(timezone.utc).isoformat()
+                    now_iso = get_clock().now_iso()
                     cursor.execute(
                         "INSERT OR IGNORE INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?);",
                         (version, mfile.name, now_iso),
@@ -243,7 +245,7 @@ class Database:
     ) -> None:
         """Upserts a single train's real-time live position."""
         if updated_at is None:
-            updated_at = datetime.now(timezone.utc).isoformat()
+            updated_at = get_clock().now_iso()
         with self.transaction() as cur:
             cur.execute(
                 """
@@ -279,7 +281,7 @@ class Database:
         """Upserts multiple live position records in a single transaction."""
         if not records:
             return 0
-        now_iso = datetime.now(timezone.utc).isoformat()
+        now_iso = get_clock().now_iso()
         with self.transaction() as cur:
             for r in records:
                 cur.execute(
@@ -360,7 +362,7 @@ class Database:
     ) -> int:
         """Appends an immutable causal delay attribution event to the live delay ledger."""
         if created_at is None:
-            created_at = datetime.now(timezone.utc).isoformat()
+            created_at = get_clock().now_iso()
         with self.transaction() as cur:
             cur.execute(
                 """

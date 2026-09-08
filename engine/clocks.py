@@ -23,6 +23,16 @@ def ist_now() -> datetime.datetime:
     return get_clock().now()
 
 
+def now_iso() -> str:
+    """Centralized helper returning current time formatted as ISO 8601 string in IST (+05:30)."""
+    return get_clock().now_iso()
+
+
+def today_str() -> str:
+    """Centralized helper returning current date formatted as YYYY-MM-DD in IST."""
+    return get_clock().today_str()
+
+
 class TimeProvider(ABC):
     """Abstract interface for system time provider."""
 
@@ -129,11 +139,7 @@ def get_clock() -> TimeProvider:
     """Returns the active global clock instance."""
     global GLOBAL_CLOCK
     if GLOBAL_CLOCK is None:
-        try:
-            from engine.sim_clock import get_sim_clock
-            GLOBAL_CLOCK = get_sim_clock()
-        except Exception:
-            GLOBAL_CLOCK = RealClock()
+        GLOBAL_CLOCK = RealClock()
     return GLOBAL_CLOCK
 
 

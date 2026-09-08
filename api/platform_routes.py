@@ -6,6 +6,8 @@ dynamic platform assignments, assignment locking, and safety interlock conflict 
 
 from __future__ import annotations
 
+from engine.clocks import get_clock, now_iso
+
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -79,7 +81,7 @@ def get_platform_states(
                 "platform": pf,
                 "state": "FREE",
                 "occupied_by_train": None,
-                "since": datetime.now(timezone.utc).isoformat(),
+                "since": now_iso(),
                 "reason": None,
                 "updated_by": "system",
             })
@@ -96,7 +98,7 @@ def set_platform_block(
     """Sets a platform state to BLOCKED_MAINT or OUT_OF_SERVICE or releases back to FREE."""
     stn = req.station_code.upper()
     assert_station_scope(current_user, stn)
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
 
     with db.transaction() as cur:
         cur.execute(
@@ -154,7 +156,7 @@ def assign_platform(
     """Manually assigns or reallocates a train to a platform with conflict interlock validation."""
     stn = req.station_code.upper()
     assert_station_scope(current_user, stn)
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
 
     # 1. Conflict Check: verify platform is not blocked
     with db.transaction() as cur:

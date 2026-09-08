@@ -7,6 +7,8 @@ contact numbers, and use the current clock for inspection timestamps.
 
 from __future__ import annotations
 
+from engine.clocks import now_iso
+
 import sqlite3
 from datetime import datetime, timezone
 from typing import List, Tuple
@@ -31,7 +33,7 @@ def bootstrap_level_crossings_if_empty(cur: sqlite3.Cursor) -> int:
     cur.execute("SELECT COUNT(*) AS count FROM level_crossings;")
     if int(cur.fetchone()["count"]) > 0:
         return 0
-    rows = _sample_level_crossings(datetime.now(timezone.utc).isoformat())
+    rows = _sample_level_crossings(now_iso())
     cur.executemany(
         """
         INSERT INTO level_crossings (

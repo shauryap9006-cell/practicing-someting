@@ -7,6 +7,8 @@ backed by dual digital signature validation and audit tracking.
 
 from __future__ import annotations
 
+from engine.clocks import get_clock, now_iso, ist_now
+
 import json
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -144,7 +146,7 @@ def get_current_handover_summary(
     """Auto-aggregates operational data to prepare the current shift handover log."""
     assert_station_scope(current_user, station_code)
     summary = auto_aggregate_station_state(station_code, db)
-    now = datetime.now(timezone.utc)
+    now = ist_now()
     hour = now.hour
     shift_type = "morning" if 6 <= hour < 14 else ("afternoon" if 14 <= hour < 22 else "night")
 
@@ -262,7 +264,7 @@ def sign_out_shift(
     db: Database = Depends(get_db),
 ):
     """Outgoing Station Master digitally signs the shift handover."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute("SELECT * FROM handover_log WHERE id = ?;", (handover_id,))
         row = cur.fetchone()
@@ -315,7 +317,7 @@ def acknowledge_incoming_shift(
     db: Database = Depends(get_db),
 ):
     """Incoming Station Master reviews and formally acknowledges taking over the shift."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute("SELECT * FROM handover_log WHERE id = ?;", (handover_id,))
         row = cur.fetchone()

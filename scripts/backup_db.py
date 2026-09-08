@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from data.db import Database, get_db
+from engine.clocks import ist_now, now_iso
 
 BACKUPS_DIR = Path(__file__).parent.parent / "data" / "backups"
 
@@ -41,7 +42,7 @@ def create_database_backup(
     out_dir = Path(backup_dir) if backup_dir else BACKUPS_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    now = datetime.now(timezone.utc)
+    now = ist_now()
     timestamp_str = now.strftime("%Y%m%d_%H%M%S")
     backup_filename = f"railtwin_backup_{tag}_{timestamp_str}.db"
     backup_path = out_dir / backup_filename
@@ -147,7 +148,7 @@ def verify_backup_file(backup_path: Path | str) -> Dict[str, Any]:
         "integrity_check": integrity_result,
         "checksum_sha256": checksum,
         "row_counts": row_counts,
-        "verified_at": datetime.now(timezone.utc).isoformat(),
+        "verified_at": now_iso(),
     }
 
 

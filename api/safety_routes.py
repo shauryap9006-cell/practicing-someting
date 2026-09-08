@@ -10,6 +10,8 @@ Provides:
 
 from __future__ import annotations
 
+from engine.clocks import get_clock, now_iso
+
 import json
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -62,7 +64,7 @@ def create_speed_restriction(
 ):
     """Issues a new Caution Order / Speed Restriction on a block section."""
     assert_station_scope(current_user, req.from_code)
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute(
             """
@@ -161,7 +163,7 @@ def cancel_speed_restriction(
     db: Database = Depends(get_db),
 ):
     """Cancels/lifts an active Speed Restriction."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute("SELECT * FROM speed_restrictions WHERE id = ?;", (tsr_id,))
         row = cur.fetchone()
@@ -225,7 +227,7 @@ def request_possession(
 ):
     """Submits a Permit-to-Work / Track Possession request."""
     assert_station_scope(current_user, req.station_code)
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute(
             """
@@ -270,7 +272,7 @@ def grant_possession(
     db: Database = Depends(get_db),
 ):
     """Station Master / Controller authorizes and activates a Track Possession."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute("SELECT * FROM possessions WHERE id = ?;", (possession_id,))
         row = cur.fetchone()
@@ -352,7 +354,7 @@ def restore_possession(
     db: Database = Depends(get_db),
 ):
     """Completes work and restores track/platform to normal revenue operations."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute("SELECT * FROM possessions WHERE id = ?;", (possession_id,))
         row = cur.fetchone()
@@ -458,7 +460,7 @@ def report_incident(
 ):
     """Logs a safety incident or near-miss event with immediate multi-role escalation."""
     assert_station_scope(current_user, req.station_code)
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute(
             """
@@ -600,7 +602,7 @@ def start_sop_run(
     if not template:
         raise HTTPException(status_code=404, detail="SOP template not found.")
 
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute(
             """
@@ -658,7 +660,7 @@ def complete_sop_step(
     db: Database = Depends(get_db),
 ):
     """Marks a checklist step as completed with actor ID and ISO timestamp."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute("SELECT * FROM sop_runs WHERE id = ?;", (run_id,))
         row = cur.fetchone()
@@ -786,7 +788,7 @@ def update_lc_status(
     db: Database = Depends(get_db),
 ):
     """Updates level crossing operational state."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute("SELECT * FROM level_crossings WHERE id = ?;", (lc_id,))
         row = cur.fetchone()

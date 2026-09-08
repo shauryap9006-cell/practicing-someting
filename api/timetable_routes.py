@@ -6,6 +6,8 @@ train schedule CRUD, validation engine, bulk seed/RapidAPI import, and version d
 
 from __future__ import annotations
 
+from engine.clocks import get_clock, now_iso, ist_now
+
 import json
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -103,8 +105,8 @@ def create_timetable_version(
     db: Database = Depends(get_db),
 ):
     """Creates a new working timetable version in DRAFT state."""
-    version_id = f"WTT-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-    now_iso = datetime.now(timezone.utc).isoformat()
+    version_id = f"WTT-{ist_now().strftime('%Y%m%d%H%M%S')}"
+    now_iso = get_clock().now_iso()
 
     with db.transaction() as cur:
         cur.execute(
@@ -461,7 +463,7 @@ def publish_timetable_version(
             detail={"message": "Timetable validation failed before publishing.", "issues": val["issues"]},
         )
 
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         # Archive older published versions
         cur.execute("UPDATE timetable_versions SET status = 'archived' WHERE status = 'published';")

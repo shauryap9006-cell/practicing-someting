@@ -17,11 +17,29 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from data.db import Database, get_db
-from engine.clocks import get_clock
+from engine.clocks import get_clock, IST_TIMEZONE
 
 logger = logging.getLogger(__name__)
 
 GENESIS_HASH = "0000000000000000000000000000000000000000000000000000000000000000"
+
+
+def _normalize_iso_ist(ts: Optional[str]) -> str:
+    if not ts:
+        return get_clock().now_iso()
+    s = ts.strip()
+    if "+05:30" in s:
+        return s
+    if "Z" in s or "+00:00" in s:
+        dt = datetime.fromisoformat(s.replace("Z", "+00:00"))
+        return dt.astimezone(IST_TIMEZONE).isoformat()
+    try:
+        dt = datetime.fromisoformat(s)
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=IST_TIMEZONE).isoformat()
+        return dt.astimezone(IST_TIMEZONE).isoformat()
+    except Exception:
+        return s
 
 MAX_QUEUE_SIZE = 10000
 FLUSH_BATCH_THRESHOLD = 100
@@ -175,7 +193,7 @@ class PredictionLedger:
     ) -> str:
         """Appends a newly served ETA prediction to the hash-chained ledger and returns receipt hash (non-blocking)."""
         clock = get_clock()
-        q_ts = query_timestamp or clock.now_iso()
+        q_ts = _normalize_iso_ist(query_timestamp)
         now_iso = clock.now_iso()
         stn_code = target_station.upper().strip()
 
@@ -246,8 +264,7 @@ class PredictionLedger:
     ) -> int:
         """Auto-grades pending prediction receipts for a train upon actual arrival."""
         self.flush_now()
-        clock = get_clock()
-        act_ts = actual_timestamp or clock.now_iso()
+        act_ts = _normalize_iso_ist(actual_timestamp)
         graded_count = 0
         graded_tuples: List[Tuple[float, float, float]] = []
 

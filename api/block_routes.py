@@ -6,6 +6,8 @@ and Speed Restriction (TSR) caution overlays.
 
 from __future__ import annotations
 
+from engine.clocks import get_clock, now_iso
+
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -92,7 +94,7 @@ def get_block_statuses(
             "occupied_by_train": bs.get("occupied_by_train"),
             "line_clear_granted_to": bs.get("line_clear_granted_to"),
             "granted_by": bs.get("granted_by"),
-            "since": bs.get("since", datetime.now(timezone.utc).isoformat()),
+            "since": bs.get("since", now_iso()),
             "notes": bs.get("notes"),
             "caution_speed_limit": active_sr["speed_limit_kmph"] if active_sr else None,
             "caution_cause": active_sr["cause"] if active_sr else None,
@@ -109,7 +111,7 @@ def update_block_state(
     db: Database = Depends(get_db),
 ):
     """Updates block section state (CLEAR, OCCUPIED, BLOCKED, CAUTION)."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     parts = block_id.replace("BLK-", "").split("-")
     f_code = parts[0] if len(parts) > 0 else "NDLS"
     t_code = parts[1] if len(parts) > 1 else "GZB"
@@ -150,7 +152,7 @@ def grant_line_clear(
     db: Database = Depends(get_db),
 ):
     """Grants Line Clear authority for a train into the block section."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     parts = block_id.replace("BLK-", "").split("-")
     f_code = parts[0] if len(parts) > 0 else "NDLS"
     t_code = parts[1] if len(parts) > 1 else "GZB"

@@ -9,6 +9,8 @@ Provides:
 
 from __future__ import annotations
 
+from engine.clocks import get_clock, now_iso, ist_now
+
 import hashlib
 import json
 import secrets
@@ -45,8 +47,8 @@ def issue_delay_certificate(
 ):
     """Issues a cryptographically verifiable Delay Certificate for airline missed connection, insurance, or refund."""
     assert_station_scope(current_user, req.station_code)
-    now_iso = datetime.now(timezone.utc).isoformat()
-    now_date = datetime.now(timezone.utc).strftime("%Y%m%d")
+    now_iso = get_clock().now_iso()
+    now_date = ist_now().strftime("%Y%m%d")
 
     with db.transaction() as cur:
         # Fetch train details
@@ -242,7 +244,7 @@ def generate_platform_announcement(
                 "text": regional_text,
             },
         },
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": now_iso(),
     }
 
 
@@ -388,7 +390,7 @@ def register_lost_item(
 ):
     """Registers a passenger lost item deposited into station custody."""
     assert_station_scope(current_user, req.station_code)
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute(
             """
@@ -459,7 +461,7 @@ def claim_lost_item(
     db: Database = Depends(get_db),
 ):
     """Discharges a lost article to verified passenger claimant with ID proof."""
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     with db.transaction() as cur:
         cur.execute("SELECT * FROM lost_and_found WHERE id = ?;", (item_id,))
         row = cur.fetchone()

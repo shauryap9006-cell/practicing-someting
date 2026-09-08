@@ -1,10 +1,6 @@
-"""RailTwin-X System Diagnostics & Degraded Mode Engine (Module I6).
-
-Provides system health checks, telemetry feed freshness monitoring,
-external gateway statuses, and degraded mode indicators for the Station OS.
-"""
-
 from __future__ import annotations
+
+from engine.clocks import ist_now, IST_TIMEZONE
 
 import logging
 from datetime import datetime, timezone
@@ -24,7 +20,7 @@ REQUIRED_ML_ARTIFACTS = ("manifest.json", "model_direct_q50.txt", "model_gru_cha
 @router.get("/status", response_model=Dict[str, Any])
 def get_system_status(db: Database = Depends(get_db)):
     """Returns comprehensive Station OS health metrics, telemetry freshness, and degraded mode state."""
-    now_utc = datetime.now(timezone.utc)
+    now_ist = ist_now()
     degraded_reasons: List[str] = []
     stale_after = int(settings.TELEMETRY_STALE_SECONDS)
 
@@ -51,8 +47,8 @@ def get_system_status(db: Database = Depends(get_db)):
                 try:
                     snap_dt = datetime.fromisoformat(str(last_snapshot_ts).replace("Z", "+00:00"))
                     if snap_dt.tzinfo is None:
-                        snap_dt = snap_dt.replace(tzinfo=timezone.utc)
-                    telemetry_age_sec = max(0, int((now_utc - snap_dt).total_seconds()))
+                        snap_dt = snap_dt.replace(tzinfo=IST_TIMEZONE)
+                    telemetry_age_sec = max(0, int((now_ist - snap_dt).total_seconds()))
                 except ValueError:
                     telemetry_age_sec = 0
         except Exception:
@@ -83,7 +79,7 @@ def get_system_status(db: Database = Depends(get_db)):
         "telemetry_age_seconds": telemetry_age_sec,
         "telemetry_stale_after_seconds": stale_after,
         "is_telemetry_stale": is_stale,
-        "local_timestamp": now_utc.isoformat(),
+        "local_timestamp": now_ist.isoformat(),
         "tables_summary": {
             "stations": table_counts.get("stations", 0),
             "trains": table_counts.get("trains", 0),

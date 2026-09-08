@@ -370,7 +370,8 @@ class ConformalPIDController:
         if self.db is None:
             return
         import datetime
-        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        from engine.clocks import get_clock, now_iso
+        now_iso = get_clock().now_iso()
         try:
             with self.db.transaction() as cur:
                 cur.execute(

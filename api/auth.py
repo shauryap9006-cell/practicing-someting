@@ -6,6 +6,8 @@ FastAPI dependency role guards (default-deny policy).
 
 from __future__ import annotations
 
+from engine.clocks import RealClock
+
 import hashlib
 import secrets
 from uuid import uuid4
@@ -141,10 +143,11 @@ def needs_rehash(hashed_password: str) -> bool:
 def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
     """Encodes a JWT access token with expiration."""
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    now = RealClock().now()
+    expire = now + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({
         "exp": expire,
-        "iat": datetime.now(timezone.utc),
+        "iat": now,
         "jti": to_encode.get("jti", str(uuid4())),
         "typ": "access",
     })
@@ -153,7 +156,7 @@ def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta]
 
 def create_refresh_token(data: Dict[str, Any]) -> str:
     """Creates a rotating, server-revocable refresh token."""
-    now = datetime.now(timezone.utc)
+    now = RealClock().now()
     to_encode = data.copy()
     to_encode.update({
         "exp": now + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),

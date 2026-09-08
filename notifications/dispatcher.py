@@ -7,6 +7,8 @@ critical alerts, and provides the global `notify()` event bus helper.
 
 from __future__ import annotations
 
+from engine.clocks import RealClock, get_clock, now_iso, ist_now, IST_TIMEZONE
+
 import json
 import time
 from datetime import datetime, timezone
@@ -42,7 +44,7 @@ def _parse_iso(value: str) -> Optional[datetime]:
         parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
     except (TypeError, ValueError):
         return None
-    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=IST_TIMEZONE)
 
 
 class NotificationDispatcher:
@@ -288,7 +290,7 @@ def notify(
     roles_list = [target_roles] if isinstance(target_roles, str) else list(target_roles)
     target_role_str = ",".join(roles_list)
     payload_json = json.dumps(payload or {}, default=str)
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
     sev_normalized = normalize_severity(severity)
     station_code = (station_code or settings.DEFAULT_STATION_CODE).strip().upper()
 
@@ -350,7 +352,7 @@ def acknowledge_notification(
 ) -> Dict[str, Any]:
     """Marks a notification as acknowledged and records an entry in notification_ack."""
     database = db or get_db()
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now_iso = get_clock().now_iso()
 
     with database.transaction() as cur:
         cur.execute("SELECT * FROM notifications WHERE id = ?;", (notif_id,))
@@ -389,7 +391,7 @@ def escalate_unacked_notifications(
 ) -> List[Dict[str, Any]]:
     """Escalates unacknowledged critical and warning notifications older than max_age_minutes to supervisors."""
     database = db or get_db()
-    now = datetime.now(timezone.utc)
+    now = RealClock().now()
     now_iso = now.isoformat()
     escalated_items = []
 
