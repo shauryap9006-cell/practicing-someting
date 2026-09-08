@@ -1,7 +1,7 @@
 argon2-cffi==25.1.0
 fastapi==0.139.2
 httpx==0.28.1
-joblib==1.5.3
+joblib==1.6.0
 lightgbm==4.7.0
 networkx==3.6.1
 numpy==2.5.1
