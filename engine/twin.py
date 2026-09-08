@@ -243,6 +243,13 @@ class TwinEngine:
         target_speed = self.default_max_speed_kmh
         current_phase = "CRUISE"
 
+        # Permanent section speed limit (Bug #2 fix): cruise speed must never
+        # exceed the block section's own permanent max_speed_kmph, independent
+        # of any temporary TSR applied below.
+        section_max_speed_kmh = ctx.get("section_max_speed_kmh")
+        if section_max_speed_kmh is not None and float(section_max_speed_kmh) < target_speed:
+            target_speed = float(section_max_speed_kmh)
+
         if fog_active:
             target_speed *= (1.0 - self.fog_reduction_pct)
             current_phase = "FOG"

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime
+import logging
 import math
 import threading
 import time
@@ -23,6 +24,8 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 from config import settings
+
+logger = logging.getLogger(__name__)
 from collector.adapters.base import LiveSource, StationEvent
 from collector.adapters.rapidapi import RapidAPISource
 from collector.adapters.scrape import ScrapeSource
@@ -248,7 +251,7 @@ class LivePositionTracker:
             except asyncio.CancelledError:
                 break
             except Exception:
-                pass
+                logger.exception("Live tracker background tick failed")
 
             await asyncio.sleep(self.tick_interval)
 
@@ -372,6 +375,18 @@ class LivePositionTracker:
                 active_tsrs[(f_c, t_c)] = spd
                 active_tsrs[(t_c, f_c)] = spd
 
+        # 3b. Pre-fetch permanent section speed limits (Bug #2 fix): trains must
+        # never cruise faster than the section's own permanent max_speed_kmph.
+        section_limits: Dict[Tuple[str, str], float] = {}
+        with self.db.transaction() as cur:
+            cur.execute("SELECT from_code, to_code, max_speed_kmph FROM sections")
+            for r in cur.fetchall():
+                f_c = str(r["from_code"]).upper()
+                t_c = str(r["to_code"]).upper()
+                spd = float(r["max_speed_kmph"])
+                section_limits[(f_c, t_c)] = spd
+                section_limits[(t_c, f_c)] = spd
+
         # 4. Pre-fetch fog stations from weather table
         fog_stations: Set[str] = set()
         with self.db.transaction() as cur:
@@ -434,6 +449,7 @@ class LivePositionTracker:
                     "block_occupied": block_occupied,
                     "signal_aspect": signal_aspect,
                     "platform_occupied": platform_occupied,
+                    "section_max_speed_kmh": section_limits.get(sec_pair),
                 }
 
                 # Pure-Math Kinematic Step
@@ -496,7 +512,9 @@ class LivePositionTracker:
                                 actual_timestamp=now_iso,
                             )
                         except Exception:
-                            pass
+                            logger.exception(
+                                "Prediction ledger touchdown grading failed for train %s at %s", t_no, stn_code
+                            )
 
                     elif ev_type == "DEPARTURE":
                         with self.db.transaction() as cur:
@@ -637,6 +655,7 @@ class LivePositionTracker:
                 self._previous_delays[t_no] = curr_delay
 
             except Exception:
+                logger.exception("Live tracker physics step failed for train %s", t_no)
                 continue
 
         # 6. Batch Persist into SQLite live_positions table
@@ -849,12 +868,10 @@ _GLOBAL_LIVE_TRACKER: Optional[LivePositionTracker] = None
 
 
 def get_live_tracker(db: Optional[Database] = None) -> LivePositionTracker:
-    """Returns the shared LivePositionTracker instance."""
+    """Returns the shared LivePositionTracker singleton, creating it on first call."""
     global _GLOBAL_LIVE_TRACKER
-    if db is not None:
-        return LivePositionTracker(db)
     if _GLOBAL_LIVE_TRACKER is None:
-        _GLOBAL_LIVE_TRACKER = LivePositionTracker()
+        _GLOBAL_LIVE_TRACKER = LivePositionTracker(db)
     return _GLOBAL_LIVE_TRACKER
 
 
