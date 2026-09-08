@@ -9,8 +9,11 @@ from __future__ import annotations
 
 import datetime
 import json
+import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+logger = logging.getLogger(__name__)
 
 from collector.adapters.base import LiveSource, StationEvent
 from collector.adapters.mock_replay import MockReplaySource
@@ -145,9 +148,9 @@ def run_snapshot_cron():
     """CLI / Cron entrypoint for Bucket C snapshot capture."""
     collector = SnapshotCollector()
     summary = collector.record_snapshot_cycle()
-    print("=== Bucket C Snapshot Cycle Summary ===")
+    logger.info("=== Bucket C Snapshot Cycle Summary ===")
     for k, v in summary.items():
-        print(f"  {k}: {v}")
+        logger.info("  %s: %s", k, v)
 
 
 if __name__ == "__main__":

@@ -7,6 +7,7 @@ and store ts_ist (preventing Round-4 timezone hazard).
 from __future__ import annotations
 
 import datetime as dt
+import logging
 import sqlite3
 import sys
 import time
@@ -15,6 +16,8 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import requests
+
+logger = logging.getLogger(__name__)
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -178,10 +181,9 @@ def fetch_station(code: str, lat: float, lon: float, start: str = "2025-01-01", 
                 chunk_out = _generate_synthetic_physical_chunk(code, lat, lon, cursor, chunk_end)
                 out.extend(chunk_out)
             else:
-                print(
-                    f"[WARN] No authoritative weather for {code} {cursor}..{chunk_end}; "
-                    "leaving the interval absent instead of fabricating observations.",
-                    flush=True,
+                logger.warning(
+                    "No authoritative weather for %s %s..%s; leaving the interval absent instead of fabricating observations.",
+                    code, cursor, chunk_end,
                 )
 
         cursor = (dt.date.fromisoformat(chunk_end) + dt.timedelta(days=1)).isoformat()
@@ -195,11 +197,11 @@ def backfill_all_weather(db: Optional[Database] = None, start: str = "2025-01-01
     db_inst = db or get_db()
     init_weather_tables(db_inst)
 
-    print(f"[INFO] Starting weather backfill from {start} to {end} for 12 corridor stations...")
+    logger.info("Starting weather backfill from %s to %s for 12 corridor stations...", start, end)
     all_rows = []
 
     for code, (lat, lon) in STATIONS.items():
-        print(f"  Fetching {code} ({lat:.4f}, {lon:.4f})...", flush=True)
+        logger.info("  Fetching %s (%.4f, %.4f)...", code, lat, lon)
         station_rows = fetch_station(code, lat, lon, start=start, end=end)
         all_rows.extend(station_rows)
 
@@ -249,7 +251,7 @@ def backfill_all_weather(db: Optional[Database] = None, start: str = "2025-01-01
         expected_days = (dt.date.fromisoformat(end) - dt.date.fromisoformat(start)).days + 1
         coverage_pct = (n_days / expected_days) * 100.0
         assert coverage_pct >= 95.0, f"WEATHER COVERAGE GATE FAILED: {coverage_pct:.1f}% < 95%"
-        print(f"[GATE PASS] Weather coverage = {coverage_pct:.1f}% ({n_days}/{expected_days} days, {total_pts:,} hourly records).")
+        logger.info("[GATE PASS] Weather coverage = %.1f%% (%d/%d days, %s hourly records).", coverage_pct, n_days, expected_days, f"{total_pts:,}")
 
         # 2. Low-visibility hour histogram peaks at 05-09 IST (radiative fog signature)
         cur.execute(
@@ -264,7 +266,7 @@ def backfill_all_weather(db: Optional[Database] = None, start: str = "2025-01-01
         hour_counts = cur.fetchall()
         assert len(hour_counts) > 0, "No fog/low-vis hours recorded!"
         peak_hour = int(hour_counts[0][0])
-        print(f"[GATE PASS] Low-visibility peak hour: {peak_hour:02d}:00 IST (Signature check: peak in 05-09 IST window).")
+        logger.info("[GATE PASS] Low-visibility peak hour: %02d:00 IST (Signature check: peak in 05-09 IST window).", peak_hour)
         assert 4 <= peak_hour <= 10, f"IST CONVERSION WRONG: Low-vis peak at {peak_hour:02d}:00 IST outside radiative fog dawn window!"
 
 

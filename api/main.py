@@ -7,10 +7,78 @@ live train boards, platform consoles, block sections, and Gantt day planner.
 
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
+import json
+import logging
 import re
 import sys
+from contextlib import asynccontextmanager
+from contextvars import ContextVar
+from pathlib import Path
 from uuid import uuid4
+
+from prometheus_fastapi_instrumentator import Instrumentator
+from engine.clocks import ist_now
+
+_current_request_id: ContextVar[str] = ContextVar("current_request_id", default="")
+
+
+class RequestIdLogFilter(logging.Filter):
+    """Injects correlation request_id from contextvar into each log record."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        req_id = _current_request_id.get("")
+        if req_id and not hasattr(record, "request_id"):
+            record.request_id = req_id
+        return True
+
+
+class JSONFormatter(logging.Formatter):
+    """Outputs structured JSON log entries conforming to enterprise observability standards."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        msg = record.getMessage()
+        # Redact sensitive credentials/passwords/tokens/PNRs if present in logs
+        msg = re.sub(r"(?i)(bearer\s+)[a-zA-Z0-9_\-\.]+", r"\1[REDACTED]", msg)
+        msg = re.sub(r"(?i)(password[\"']?\s*[:=]\s*[\"']?)[^\"',\s]+", r"\1[REDACTED]", msg)
+        msg = re.sub(r"(?i)(secret[\"']?\s*[:=]\s*[\"']?)[^\"',\s]+", r"\1[REDACTED]", msg)
+        msg = re.sub(r"(?i)(api[_-]?key[\"']?\s*[:=]\s*[\"']?)[^\"',\s]+", r"\1[REDACTED]", msg)
+        msg = re.sub(r"(?i)(pnr[\"']?\s*[:=]\s*[\"']?)\d{10}", r"\1[REDACTED]", msg)
+
+        log_data = {
+            "timestamp": ist_now().isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": msg,
+        }
+        req_id = getattr(record, "request_id", None) or _current_request_id.get("")
+        if req_id:
+            log_data["request_id"] = req_id
+        if record.exc_info:
+            log_data["exception"] = self.formatException(record.exc_info)
+        return json.dumps(log_data, ensure_ascii=False)
+
+
+def setup_structured_logging():
+    """Configures root logger and uvicorn loggers to use structured JSON output."""
+    json_formatter = JSONFormatter()
+    req_filter = RequestIdLogFilter()
+
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(json_formatter)
+    handler.addFilter(req_filter)
+
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+    root.handlers = [handler]
+
+    for uvicorn_log in ("uvicorn", "uvicorn.error", "uvicorn.access"):
+        u = logging.getLogger(uvicorn_log)
+        u.handlers = [handler]
+        u.propagate = False
+
+
+setup_structured_logging()
+logger = logging.getLogger(__name__)
 
 try:
     if hasattr(sys.stdout, "reconfigure"):
@@ -26,12 +94,8 @@ from fastapi.responses import JSONResponse
 from starlette.staticfiles import StaticFiles
 from starlette.types import Scope
 from starlette.responses import Response
-import logging
-from pathlib import Path
 import torch
 import uvicorn
-
-logger = logging.getLogger(__name__)
 
 from config import settings
 from data.db import get_db
@@ -64,7 +128,7 @@ from api.middleware import IdempotencyMiddleware, ResponseCacheMiddleware, Token
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application startup and shutdown lifecycle management."""
-    print("[INFO] Starting RailTwin-X API Server...")
+    logger.info("Starting RailTwin-X API Server...")
     # Cap torch threads to 1 to eliminate thread thrashing under concurrent uvicorn workers (F11, F33)
     try:
         torch.set_num_threads(1)
@@ -75,7 +139,7 @@ async def lifespan(app: FastAPI):
     db.init_schema()
     db.materialize_historical_baselines()
     counts = db.table_counts()
-    print(f"[INFO] SQLite Database initialized with {counts.get('station_events', 0):,} station events.")
+    logger.info("SQLite Database initialized with %s station events.", f"{counts.get('station_events', 0):,}")
 
     # Initialize SimulatedClock as global clock (F02, F28)
     from engine.sim_clock import get_sim_clock
@@ -89,7 +153,7 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    print("[INFO] Shutting down RailTwin-X API Server...")
+    logger.info("Shutting down RailTwin-X API Server...")
     await tracker.stop()
     from engine.prediction_ledger import stop_flusher
     stop_flusher()
@@ -108,14 +172,18 @@ class RequestContextMiddleware:
         request_id = supplied if re.fullmatch(r"[A-Za-z0-9._-]{1,128}", supplied) else str(uuid4())
         scope.setdefault("state", {})["request_id"] = request_id
 
-        async def send_with_request_id(message):
-            if message["type"] == "http.response.start":
-                headers = list(message.get("headers", []))
-                headers.append((b"x-request-id", request_id.encode("ascii")))
-                message["headers"] = headers
-            await send(message)
+        token = _current_request_id.set(request_id)
+        try:
+            async def send_with_request_id(message):
+                if message["type"] == "http.response.start":
+                    headers = list(message.get("headers", []))
+                    headers.append((b"x-request-id", request_id.encode("ascii")))
+                    message["headers"] = headers
+                await send(message)
 
-        await self.app(scope, receive, send_with_request_id)
+            await self.app(scope, receive, send_with_request_id)
+        finally:
+            _current_request_id.reset(token)
 
     def __init__(self, app):
         self.app = app
@@ -306,9 +374,18 @@ class SPAStaticFiles(StaticFiles):
                     or norm_path == "redoc"
                     or norm_path == "readyz"
                     or norm_path == "healthz"
+                    or norm_path == "metrics"
                 ):
                     return await super().get_response("index.html", scope)
             raise
+
+
+# Prometheus metrics instrumentation (OBS-001)
+Instrumentator(
+    should_group_status_codes=False,
+    should_ignore_untemplated=True,
+    excluded_handlers=["/metrics", "/healthz", "/readyz"],
+).instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
 
 
 web_dist_path = Path(__file__).resolve().parent.parent / "web" / "dist"
@@ -338,6 +415,7 @@ def start_server():
         host=settings.API_HOST,
         port=settings.API_PORT,
         reload=settings.ENV.strip().lower() != "production",
+        log_config=None,
     )
 
 

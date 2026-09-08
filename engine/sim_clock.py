@@ -1,4 +1,4 @@
-﻿"""engine/sim_clock.py — Virtual IST Clock for RailTwin-X Digital Twin (F02, F28).
+"""engine/sim_clock.py — Virtual IST Clock for RailTwin-X Digital Twin (F02, F28).
 
 Implements TimeProvider interface with virtual time, acceleration factor (1x to 60x),
 and dynamic "auto" start time detection (hour of maximum concurrent active corridor trains).

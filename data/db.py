@@ -8,15 +8,19 @@ from __future__ import annotations
 
 from engine.clocks import get_clock, now_iso
 
+import logging
 import os
 import re
 import sqlite3
+import time
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Generator, List, Optional
 
 from config import settings
+
+logger = logging.getLogger(__name__)
 
 # Resolved from Settings so RAILTWIN_DB_PATH / RAILTWIN_SCHEMA_PATH are honoured
 # (docker-compose sets RAILTWIN_DB_PATH; it was previously ignored).
@@ -36,11 +40,11 @@ class Database:
             if gz_path.exists():
                 import gzip
                 import shutil
-                print(f"[DB] Extracting compressed dataset {gz_path.name} -> {self.db_path.name}...", flush=True)
+                logger.info("Extracting compressed dataset %s -> %s...", gz_path.name, self.db_path.name)
                 with gzip.open(gz_path, "rb") as f_in:
                     with open(self.db_path, "wb") as f_out:
                         shutil.copyfileobj(f_in, f_out)
-                print("[DB] Dataset extracted successfully.", flush=True)
+                logger.info("Dataset extracted successfully.")
 
     def get_connection(self) -> sqlite3.Connection:
         """Returns a new sqlite3 connection configured with foreign keys and row factory."""
@@ -63,9 +67,19 @@ class Database:
         """Context manager providing a transactional cursor with automatic commit/rollback and thread-safe write protection."""
         conn = self.get_connection()
         cursor = conn.cursor()
+        t0 = time.monotonic()
         try:
             yield cursor
             conn.commit()
+            duration = time.monotonic() - t0
+            if duration > 1.0:
+                logger.warning("SQLite transaction completed with significant lock wait: %.2fs", duration)
+        except sqlite3.OperationalError as op_err:
+            duration = time.monotonic() - t0
+            if "locked" in str(op_err).lower() or "busy" in str(op_err).lower():
+                logger.warning("SQLite lock wait/contention encountered after %.2fs: %s", duration, op_err)
+            conn.rollback()
+            raise
         except Exception:
             conn.rollback()
             raise

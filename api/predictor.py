@@ -15,8 +15,11 @@ from engine.clocks import now_iso
 import datetime
 import hashlib
 import json
+import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
+
+logger = logging.getLogger(__name__)
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
@@ -74,7 +77,7 @@ class PredictorService:
         self.loaded_at: str = now_iso()
 
         self._gru_sequence_ready: bool = False
-        print("[NOTICE] GRU challenger not served: sequence inputs not wired to real history (see docs/HEARTBEAT.md roadmap).")
+        logger.warning("[NOTICE] GRU challenger not served: sequence inputs not wired to real history (see docs/HEARTBEAT.md roadmap).")
 
         self._direct_models: Optional[dict] = None
         self._delta_models: Optional[dict] = None
@@ -126,7 +129,7 @@ class PredictorService:
                 message = "; ".join(integrity_failures)
                 if settings.ENV.strip().lower() == "production":
                     raise RuntimeError(f"Model artifact integrity check failed: {message}")
-                print(f"[WARN] Model artifact integrity check failed: {message}")
+                logger.warning("Model artifact integrity check failed: %s", message)
 
             # 1. Read Model Registry
             registry_path = self.artifacts_dir / "registry.json"
@@ -163,7 +166,7 @@ class PredictorService:
                     gru.eval()
                     self._gru_model = gru
                 except Exception as e:
-                    print(f"[WARN] Failed to load PyTorch GRU model: {e}")
+                    logger.warning("Failed to load PyTorch GRU model: %s", e)
 
             manifest_path = self.artifacts_dir / "manifest.json"
             if manifest_path.exists():
@@ -176,7 +179,7 @@ class PredictorService:
                 from ml.ensemble import EnsemblePredictor
                 self._ensemble = EnsemblePredictor(db=self.db, artifacts_dir=self.artifacts_dir)
             except Exception as e_err:
-                print(f"[WARN] Could not initialize EnsemblePredictor: {e_err}")
+                logger.warning("Could not initialize EnsemblePredictor: %s", e_err)
                 self._ensemble = None
 
             # Determine Champion SHA
@@ -192,7 +195,7 @@ class PredictorService:
 
             return True
         except Exception as err:
-            print(f"[WARN] Model loading error: {err}")
+            logger.warning("Model loading error: %s", err)
             return False
 
     def get_model_info(self) -> Dict[str, Any]:

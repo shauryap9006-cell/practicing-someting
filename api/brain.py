@@ -13,9 +13,12 @@ from __future__ import annotations
 
 import datetime
 import json
+import logging
 import time
 from typing import Any, Dict, List, Optional
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 from config import settings
 from data.db import Database, get_db
@@ -215,7 +218,7 @@ class BrainOrchestrator:
                     ),
                 )
         except Exception as log_err:
-            print(f"[WARN] Failed to write brain audit log: {log_err}")
+            logger.warning("Failed to write brain audit log: %s", log_err)
 
         # 8. Outbound Alert Dispatch for Safety-Critical Advisories
         if high_severity_confs or any(r.get("is_safety_critical") for r in recommendations):
@@ -238,7 +241,7 @@ class BrainOrchestrator:
                     )
                 )
             except Exception as disp_err:
-                print(f"[WARN] Failed to dispatch advisory alert: {disp_err}")
+                logger.warning("Failed to dispatch advisory alert: %s", disp_err)
 
         return result_payload
 

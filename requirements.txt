@@ -18,3 +18,4 @@ PyJWT>=2.8.0
 argon2-cffi>=23.1.0
 joblib>=1.3.0
 hypothesis>=6.100.0
+prometheus-fastapi-instrumentator>=7.0.0
