@@ -60,3 +60,47 @@ def test_ledger_high_concurrency_race_condition():
     assert is_valid_post is True, f"Hash chain broken at ID {broken_id} after concurrent writes!"
     assert post_count == init_count + expected_new_blocks
     assert broken_id is None
+
+
+def test_eta_endpoint_concurrency_no_db_locks():
+    """Hits ETA endpoint ~50 times concurrently; asserts zero database lock errors, flushes, verifies chain."""
+    from fastapi.testclient import TestClient
+    from api.main import app
+    from engine.prediction_ledger import flush_now
+
+    client = TestClient(app)
+    num_requests = 50
+    errors = []
+    responses = []
+
+    def request_eta(i: int):
+        try:
+            resp = client.get("/v1/trains/12034/eta?station=NDLS")
+            return resp
+        except Exception as e:
+            errors.append(e)
+            return None
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [executor.submit(request_eta, i) for i in range(num_requests)]
+        for f in concurrent.futures.as_completed(futures):
+            r = f.result()
+            if r is not None:
+                responses.append(r)
+
+    assert len(errors) == 0, f"Encountered unexpected exceptions: {errors}"
+    assert len(responses) == num_requests
+    for r in responses:
+        assert r.status_code == 200, f"ETA request failed with {r.status_code}: {r.text}"
+        assert "database is locked" not in r.text.lower()
+
+    # Flush buffered receipts to SQLite
+    flush_now()
+
+    # Assert hash chain integrity is valid
+    db = get_db()
+    ledger = PredictionLedger(db)
+    is_valid, count, broken_id = ledger.verify_chain_integrity()
+    assert is_valid is True, f"Hash chain broken at ID {broken_id}"
+    assert broken_id is None
+

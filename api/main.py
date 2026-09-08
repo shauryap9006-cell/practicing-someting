@@ -91,6 +91,8 @@ async def lifespan(app: FastAPI):
 
     print("[INFO] Shutting down RailTwin-X API Server...")
     await tracker.stop()
+    from engine.prediction_ledger import stop_flusher
+    stop_flusher()
 
 
 class RequestContextMiddleware:
