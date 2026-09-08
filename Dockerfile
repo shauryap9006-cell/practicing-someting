@@ -1,10 +1,18 @@
-# RailTwin-X v4 — Production Dockerfile
-# SIH 2026 PS 26028 · Delay Intelligence Engine
+# Stage 1: Build React Frontend
+FROM node:20-alpine AS frontend-build
+WORKDIR /build
 
-FROM python:3.11-slim
+COPY web/package.json web/package-lock.json ./
+RUN npm ci
+
+COPY web/ ./
+RUN npm run build
+
+# Stage 2: Python Backend Runtime
+FROM python:3.11-slim AS backend
 
 LABEL maintainer="RailTwin-X SIH Team" \
-      description="RailTwin-X Delay Intelligence API Server" \
+      description="RailTwin-X Full-Stack Delay Intelligence & Digital Twin System" \
       version="4.0.0"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -13,7 +21,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     RAILTWIN_API_PORT=8000 \
     RAILTWIN_UVICORN_WORKERS=1
 
-# System dependencies
+# System dependencies (curl for healthcheck, compilers for native packages)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
@@ -23,34 +31,37 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Install Python dependencies first (layer caching)
+# Install Python dependencies (layer caching)
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy application source
-COPY . .
+# Copy backend application source directories
+COPY api/ ./api/
+COPY engine/ ./engine/
+COPY ml/ ./ml/
+COPY safety/ ./safety/
+COPY notifications/ ./notifications/
+COPY collector/ ./collector/
+COPY data/ ./data/
+COPY scripts/ ./scripts/
+COPY config.py .
 
-# Create necessary directories
-RUN mkdir -p artifacts data/cache data/backups
+# Copy built frontend assets from Stage 1
+COPY --from=frontend-build /build/dist ./web/dist
 
-# Seed database on build (passenger mode) — for demo/CI only.
-# Runtime deployments should mount an external database path and run migrations.
-RUN python -m data.seed --network=passenger
+# Create necessary runtime directories
+RUN mkdir -p data/cache data/backups
 
-# Run as an unprivileged user; the data volume must be writable by this uid.
+# Create unprivileged application user
 RUN useradd --system --uid 10001 --create-home railtwin \
     && chown -R railtwin:railtwin /app
 USER railtwin
 
-# Expose API port
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f "http://localhost:${RAILTWIN_API_PORT}/readyz" || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f "http://localhost:8000/readyz" || exit 1
 
-# Single worker by default: rate limiting, idempotency, SSE slots, the simulated
-# clock and the live tracker loop are process-local and SQLite is single-writer.
-# Scale horizontally with separate containers + shared cache if needed.
-CMD ["sh", "-c", "python -m uvicorn api.main:app --host \"$RAILTWIN_API_HOST\" --port \"$RAILTWIN_API_PORT\" --workers \"$RAILTWIN_UVICORN_WORKERS\" --proxy-headers"]
+# Single worker: process-local state architecture (clock, tracker, SQLite single-writer)
+CMD ["python", "-m", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--proxy-headers"]

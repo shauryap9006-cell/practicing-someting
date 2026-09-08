@@ -23,8 +23,15 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
+from starlette.staticfiles import StaticFiles
+from starlette.types import Scope
+from starlette.responses import Response
+import logging
+from pathlib import Path
 import torch
 import uvicorn
+
+logger = logging.getLogger(__name__)
 
 from config import settings
 from data.db import get_db
@@ -277,17 +284,49 @@ def readiness_probe():
 
 
 
-@app.get("/")
-def root_redirect():
-    """Root redirect to interactive OpenAPI Swagger documentation."""
-    docs_url = None if settings.ENV.strip().lower() == "production" else "/docs"
-    return {
-        "app": settings.APP_NAME,
-        "version": "3.0.0",
-        "description": "RailTwin-X Station Operating System & Delay Intelligence Engine",
-        "docs_url": docs_url,
-        "health_url": "/v1/health",
-    }
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+
+class SPAStaticFiles(StaticFiles):
+    """StaticFiles handler with client-side SPA fallback (excluding API, docs, and health routes)."""
+
+    async def get_response(self, path: str, scope: Scope) -> Response:
+        try:
+            return await super().get_response(path, scope)
+        except (HTTPException, StarletteHTTPException) as exc:
+            if exc.status_code == 404:
+                norm_path = path.strip("/").lower()
+                if not (
+                    norm_path.startswith("api")
+                    or norm_path.startswith("v1")
+                    or norm_path.startswith("docs")
+                    or norm_path == "openapi.json"
+                    or norm_path == "redoc"
+                    or norm_path == "readyz"
+                    or norm_path == "healthz"
+                ):
+                    return await super().get_response("index.html", scope)
+            raise
+
+
+web_dist_path = Path(__file__).resolve().parent.parent / "web" / "dist"
+if web_dist_path.exists() and (web_dist_path / "index.html").exists():
+    logger.info("Mounting frontend SPA from %s", web_dist_path)
+    app.mount("/", SPAStaticFiles(directory=str(web_dist_path), html=True), name="frontend")
+else:
+    logger.info("web/dist not found; serving fallback root API info.")
+
+    @app.get("/")
+    def root_redirect():
+        """Root redirect to interactive OpenAPI Swagger documentation."""
+        docs_url = None if settings.ENV.strip().lower() == "production" else "/docs"
+        return {
+            "app": settings.APP_NAME,
+            "version": "3.0.0",
+            "description": "RailTwin-X Station Operating System & Delay Intelligence Engine",
+            "docs_url": docs_url,
+            "health_url": "/v1/health",
+        }
 
 
 def start_server():
