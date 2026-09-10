@@ -255,14 +255,15 @@ class PredictorService:
         query_iso: str,
         current_delay: Optional[float] = None,
         prev_delay: Optional[float] = None,
-    ) -> Tuple[float, float, float, str]:
-        """Predicts (q10, q50, q90, tier_used) conditioned on train being at sequence seq_k."""
+    ) -> Tuple[float, float, float, str, Optional[Any]]:
+        """Predicts (q10, q50, q90, tier_used, vec) conditioned on train being at sequence seq_k."""
         hops = target_seq - seq_k
         c_delay = current_delay if current_delay is not None else 0.0
         p_delay = prev_delay if prev_delay is not None else c_delay
 
         tier_used = "Fallback_Schedule"
         raw_p10, raw_p50, raw_p90 = c_delay, c_delay, c_delay + 10.0
+        vec = None
 
         if self._direct_models is not None and self._delta_models is not None:
             try:
@@ -345,7 +346,7 @@ class PredictorService:
             except Exception:
                 tier_used = "Tier1_HistLookup"
 
-        return raw_p10, raw_p50, raw_p90, tier_used
+        return raw_p10, raw_p50, raw_p90, tier_used, vec
 
     def predict_train_eta(
         self,
@@ -461,6 +462,7 @@ class PredictorService:
         # Marginalization over top-K candidate positions (F19)
         top = pos_record.top_k(3)  # [(seq_k, p_k), ...]
         preds: List[Tuple[float, float, float, float, str]] = []
+        mode_vec: Optional[Any] = None
 
         for seq_k, p_k in top:
             if seq_k >= target_seq:
@@ -469,7 +471,7 @@ class PredictorService:
             k_delay = current_delay if current_delay is not None else events_by_seq.get(seq_k, 0.0)
             k_prev_delay = events_by_seq.get(seq_k - 1, k_delay)
 
-            q10, q50, q90, tier = self._predict_single_position(
+            q10, q50, q90, tier, vec = self._predict_single_position(
                 train_no=train_no,
                 seq_k=seq_k,
                 target_seq=target_seq,
@@ -479,12 +481,14 @@ class PredictorService:
                 current_delay=k_delay,
                 prev_delay=k_prev_delay,
             )
+            if mode_vec is None or seq_k == pos_record.mode_seq:
+                mode_vec = vec
             preds.append((p_k, q10, q50, q90, tier))
 
         if not preds:
             default_delay = current_delay or 0.0
             fallback_seq = max(1, min(pos_record.mode_seq, target_seq - 1))
-            q10, q50, q90, tier = self._predict_single_position(
+            q10, q50, q90, tier, vec = self._predict_single_position(
                 train_no=train_no,
                 seq_k=fallback_seq,
                 target_seq=target_seq,
@@ -494,6 +498,7 @@ class PredictorService:
                 current_delay=default_delay,
                 prev_delay=default_delay,
             )
+            mode_vec = vec
             preds = [(1.0, q10, q50, q90, tier)]
 
         # Normalize weights over valid candidate stops
@@ -515,7 +520,32 @@ class PredictorService:
             safe_p10 = max(0.0, safe_p10 - uncertainty_w * 0.5)
             safe_p90 = safe_p90 + uncertainty_w
 
-        drivers = self._extract_top_drivers(df_feat=None, predicted_delay=safe_p50)
+        # Extract features for modal position to drive real explainable attribution
+        df_feat = None
+        if mode_vec is not None:
+            df_feat = pd.DataFrame([mode_vec.to_dict()])
+        elif hasattr(self, "snapshot_gen") and self.snapshot_gen is not None:
+            try:
+                k_delay = (
+                    current_delay
+                    if current_delay is not None
+                    else events_by_seq.get(pos_record.mode_seq, 0.0)
+                )
+                k_prev = events_by_seq.get(pos_record.mode_seq - 1, k_delay)
+                extracted_vec = self.snapshot_gen.extract_features_at_snapshot(
+                    train_no=train_no,
+                    current_seq=pos_record.mode_seq,
+                    target_seq=target_seq,
+                    run_date_str=run_date,
+                    current_delay=k_delay,
+                    prev_delay=k_prev,
+                    query_time_iso=query_iso,
+                )
+                df_feat = pd.DataFrame([extracted_vec.to_dict()])
+            except Exception:
+                df_feat = None
+
+        drivers = self._extract_top_drivers(df_feat=df_feat, predicted_delay=safe_p50)
 
         curr_stop_match = next((r for r in route if int(r["seq"]) == pos_record.mode_seq), route[0])
         curr_km = float(curr_stop_match["distance_km"])

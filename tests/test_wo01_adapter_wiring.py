@@ -34,7 +34,12 @@ class DummyLiveSource(LiveSource):
 def test_db():
     db = get_db()
     db.init_schema()
-    return db
+    today_str = datetime.date.today().isoformat()
+    try:
+        yield db
+    finally:
+        with db.transaction() as cur:
+            cur.execute("DELETE FROM station_events WHERE run_date = ?", (today_str,))
 
 
 @pytest.mark.asyncio
