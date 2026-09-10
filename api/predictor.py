@@ -484,6 +484,18 @@ class PredictorService:
 
         drivers = self._extract_top_drivers(df_feat=None, predicted_delay=safe_p50)
 
+        curr_stop_match = next((r for r in route if int(r["seq"]) == pos_record.mode_seq), route[0])
+        curr_km = float(curr_stop_match["distance_km"])
+        target_km = float(target_stop["distance_km"])
+        calc_km_remaining = max(0.0, target_km - curr_km)
+        calc_hops_remaining = max(0, target_seq - int(pos_record.mode_seq))
+        true_current_delay = float(
+            current_delay
+            if current_delay is not None
+            else events_by_seq.get(pos_record.mode_seq, 0.0)
+        )
+        train_priority = int(train_row["priority"]) if "priority" in train_row else 2
+
         return self._format_prediction_result(
             train_no=train_no,
             train_name=train_row["name"],
@@ -495,6 +507,10 @@ class PredictorService:
             tier_used=tier_used,
             position_record=pos_record,
             drivers=drivers,
+            current_delay=true_current_delay,
+            km_remaining=calc_km_remaining,
+            hops_remaining=calc_hops_remaining,
+            priority=train_priority,
         )
 
     def _extract_top_drivers(
@@ -633,6 +649,10 @@ class PredictorService:
         tier_used: str,
         position_record: PositionRecord,
         drivers: Optional[List[dict]] = None,
+        current_delay: float = 0.0,
+        km_remaining: float = 50.0,
+        hops_remaining: int = 1,
+        priority: int = 2,
     ) -> dict:
         """Formats arrival times and confidence band with audit provenance (F17, F20, F13)."""
         from safety.interlock import validate_prediction_through_interlock
@@ -641,9 +661,10 @@ class PredictorService:
         base_time = clock.now()
 
         feature_dict = {
-            "current_delay": p50_min,
-            "km_remaining": 50.0,
-            "hops_remaining": 1,
+            "current_delay": float(current_delay),
+            "km_remaining": max(0.0, float(km_remaining)),
+            "hops_remaining": max(0, int(hops_remaining)),
+            "priority": int(priority),
         }
         interlock_rep = validate_prediction_through_interlock(
             features=feature_dict,
