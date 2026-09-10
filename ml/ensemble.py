@@ -305,19 +305,28 @@ class EnsemblePredictor:
             except Exception:
                 pass
 
-        # Fallback: 5-candidate blend without GRU
-        raw_p50 = w_gbm * gbm_p50 + w_lr * lr_p50 + w_b1 * b1_p50 + w_b3 * lr_p50
+        # Fallback: 5-candidate blend without GRU (re-normalize active weights to sum to 1.0)
+        active_w_sum = w_gbm + w_lr + w_b1 + w_b3
+        if active_w_sum > 0:
+            w_gbm_f = w_gbm / active_w_sum
+            w_lr_f = w_lr / active_w_sum
+            w_b1_f = w_b1 / active_w_sum
+            w_b3_f = w_b3 / active_w_sum
+        else:
+            w_gbm_f = w_lr_f = w_b1_f = w_b3_f = 0.25
+
+        raw_p50 = w_gbm_f * gbm_p50 + w_lr_f * lr_p50 + w_b1_f * b1_p50 + w_b3_f * lr_p50
         raw_p10 = (
-            w_gbm * gbm_p10
-            + w_lr * max(0.0, lr_p50 - 5.0)
-            + w_b1 * max(0.0, b1_p50 - 5.0)
-            + w_b3 * max(0.0, lr_p50 - 5.0)
+            w_gbm_f * gbm_p10
+            + w_lr_f * max(0.0, lr_p50 - 5.0)
+            + w_b1_f * max(0.0, b1_p50 - 5.0)
+            + w_b3_f * max(0.0, lr_p50 - 5.0)
         )
         raw_p90 = (
-            w_gbm * gbm_p90
-            + w_lr * (lr_p50 + 10.0)
-            + w_b1 * (b1_p50 + 10.0)
-            + w_b3 * (lr_p50 + 10.0)
+            w_gbm_f * gbm_p90
+            + w_lr_f * (lr_p50 + 10.0)
+            + w_b1_f * (b1_p50 + 10.0)
+            + w_b3_f * (lr_p50 + 10.0)
         )
 
         cal_p10, cal_p90, _ = self.mondrian_cqr.adjust_interval(
