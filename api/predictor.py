@@ -17,7 +17,7 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from engine.clocks import now_iso
+from engine.clocks import IST_TIMEZONE, get_clock, now_iso
 
 logger = logging.getLogger(__name__)
 import lightgbm as lgb
@@ -357,8 +357,10 @@ class PredictorService:
     ) -> dict:
         """Calculates calibrated ETA and confidence band marginalized over the Bayesian position posterior (F19, F20)."""
         clock = get_clock()
-        run_date = clock.today_str()
         query_iso = clock.now_iso()
+        t_now = clock.now()
+        if hasattr(t_now, "tzinfo") and t_now.tzinfo is None:
+            t_now = t_now.replace(tzinfo=IST_TIMEZONE)
 
         with self.db.transaction() as cur:
             # Train info
@@ -379,25 +381,58 @@ class PredictorService:
             )
             route = [dict(r) for r in cur.fetchall()]
 
-            # Pre-fetch recent events in single query to eliminate SQLite roundtrips in the loop
+            # Determine active run strictly point-in-time
             cur.execute(
                 """
-                SELECT seq, delay_arr_min, delay_dep_min
+                SELECT seq, station_code, event_time, delay_arr_min, delay_dep_min, sched_arr, sched_dep, run_date
                 FROM station_events
-                WHERE train_no = ? AND (event_time <= ? OR event_time IS NULL)
-                ORDER BY seq ASC
+                WHERE train_no = ? AND event_time <= ?
+                ORDER BY event_time DESC, seq DESC LIMIT 1
                 """,
                 (train_no, query_iso),
             )
-            ev_rows = cur.fetchall()
-            events_by_seq = {
-                int(r["seq"]): (
-                    float(r["delay_arr_min"])
-                    if r["delay_arr_min"] is not None
-                    else float(r["delay_dep_min"] or 0.0)
+            latest_ev = cur.fetchone()
+            ev_dict = dict(latest_ev) if latest_ev else {}
+
+            # If the latest recorded telemetry is older than 24 hours, it belongs to a historical past journey
+            is_fresh_run = False
+            active_run_date = clock.today_str()
+            if ev_dict.get("event_time"):
+                try:
+                    ev_dt = datetime.datetime.fromisoformat(
+                        ev_dict["event_time"].replace("Z", "+00:00")
+                    )
+                    if ev_dt.tzinfo is None:
+                        ev_dt = ev_dt.replace(tzinfo=IST_TIMEZONE)
+                    if (t_now - ev_dt).total_seconds() <= 86400.0:
+                        is_fresh_run = True
+                        active_run_date = ev_dict.get("run_date") or active_run_date
+                except Exception:
+                    pass
+
+            run_date = active_run_date
+
+            # Pre-fetch recent events for current active run in single query
+            events_by_seq = {}
+            if is_fresh_run:
+                cur.execute(
+                    """
+                    SELECT seq, delay_arr_min, delay_dep_min
+                    FROM station_events
+                    WHERE train_no = ? AND run_date = ? AND (event_time <= ? OR event_time IS NULL)
+                    ORDER BY seq ASC
+                    """,
+                    (train_no, run_date, query_iso),
                 )
-                for r in ev_rows
-            }
+                ev_rows = cur.fetchall()
+                events_by_seq = {
+                    int(r["seq"]): (
+                        float(r["delay_arr_min"])
+                        if r["delay_arr_min"] is not None
+                        else float(r["delay_dep_min"] or 0.0)
+                    )
+                    for r in ev_rows
+                }
 
         target_stop = next((r for r in route if r["station_code"] == target_station_code), None)
         if not target_stop:
@@ -447,10 +482,20 @@ class PredictorService:
             )
 
         # Check if train has already reached or passed target station
-        if pos_record.mode_seq >= target_seq:
+        if current_seq is not None:
+            has_arrived = current_seq >= target_seq
             actual_delay = float(
                 current_delay if current_delay is not None else events_by_seq.get(target_seq, 0.0)
             )
+        else:
+            max_ev_seq = max(events_by_seq.keys()) if events_by_seq else 0
+            has_arrived = max_ev_seq >= target_seq and max_ev_seq > 0
+            actual_delay = float(
+                current_delay
+                if current_delay is not None
+                else events_by_seq.get(target_seq, events_by_seq.get(max_ev_seq, 0.0))
+            )
+        if has_arrived:
             train_priority = int(train_row["priority"]) if "priority" in train_row else 2
 
             return self._format_prediction_result(
