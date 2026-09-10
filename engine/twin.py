@@ -16,6 +16,7 @@ Pure mathematical equations of motion with ZERO database dependencies:
 from __future__ import annotations
 
 import datetime
+import hashlib
 import random
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
@@ -49,6 +50,7 @@ class TwinTrainState:
     held_reason: Optional[str] = None
     source: str = "simulated"
     ema_speed_kmh: float = 0.0
+    rng: Optional[random.Random] = None
 
     @property
     def current_stop(self) -> Optional[TwinStop]:
@@ -78,6 +80,7 @@ class TwinEngine:
         default_max_speed_kmh: float = 130.0,
         fog_reduction_pct: float = 0.20,
         chronic_bias_min: float = 0.0,
+        seed: Optional[int] = None,
     ):
         self.accel_mps2 = accel_mps2
         self.brake_mps2 = brake_mps2
@@ -86,6 +89,8 @@ class TwinEngine:
         self.default_max_speed_kmh = default_max_speed_kmh
         self.fog_reduction_pct = fog_reduction_pct
         self.chronic_bias_min = chronic_bias_min
+        self.seed = seed if seed is not None else 42
+        self.rng = random.Random(self.seed)
 
     def compute_stopping_distance_km(self, current_speed_kmh: float) -> float:
         """Calculates stopping distance in km from current speed at brake_mps2."""
@@ -102,6 +107,7 @@ class TwinEngine:
         start_km: Optional[float] = None,
         start_speed_kmh: float = 0.0,
         start_phase: str = "DWELL",
+        seed: Optional[int] = None,
     ) -> TwinTrainState:
         """Initializes a TwinTrainState from route stop specifications."""
         parsed_stops = [
@@ -131,6 +137,12 @@ class TwinEngine:
             else:
                 init_idx = len(parsed_stops) - 1
 
+        effective_seed = seed if seed is not None else self.seed
+        train_seed = int(
+            hashlib.sha256(f"{effective_seed}_{train_no}".encode("utf-8")).hexdigest()[:8], 16
+        )
+        train_rng = random.Random(train_seed)
+
         return TwinTrainState(
             train_no=str(train_no),
             km=init_km,
@@ -143,6 +155,7 @@ class TwinEngine:
             if parsed_stops
             else 120.0,
             source="simulated",
+            rng=train_rng,
         )
 
     def advance(
@@ -280,7 +293,8 @@ class TwinEngine:
             state.phase = "DWELL"
             # Random calibrated dwell duration: sched_halt * (1 ± 15%)
             sched_halt = next_halt.halt_min if next_halt else 2.0
-            noise = random.gauss(0.0, 0.15)
+            dwell_rng = state.rng or self.rng
+            noise = dwell_rng.gauss(0.0, 0.15)
             actual_halt_sec = max(60.0, sched_halt * 60.0 * (1.0 + noise))
             state.dwell_remaining_sec = actual_halt_sec
 

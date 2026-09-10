@@ -8,29 +8,39 @@ are unreachable.
 from __future__ import annotations
 
 import datetime
+import hashlib
 import random
 from typing import Optional
 
 from collector.adapters.base import LiveSource, StationEvent
 from data.db import Database, get_db
-from engine.clocks import get_clock
 
 
 class MockReplaySource(LiveSource):
     """Offline deterministic replay/synthetic data source."""
 
-    def __init__(self, db: Optional[Database] = None):
+    def __init__(self, db: Optional[Database] = None, seed: Optional[int] = None):
         self.db = db or get_db()
+        self.seed = seed if seed is not None else 42
 
     @property
     def source_name(self) -> str:
         return "MockReplay"
 
-    def fetch_running_status(self, train_no: str, run_date: datetime.date) -> list[StationEvent]:
+    def fetch_running_status(
+        self,
+        train_no: str,
+        run_date: datetime.date,
+        seed: Optional[int] = None,
+        collected_at_iso: Optional[str] = None,
+    ) -> list[StationEvent]:
         """Generates consistent StationEvents from timetable route and realistic delays."""
-        clock = get_clock()
-        collected_at = clock.now_iso()
         date_str = run_date.strftime("%Y-%m-%d")
+        collected_at = (
+            collected_at_iso
+            if collected_at_iso is not None
+            else f"{date_str}T12:00:00+05:30"
+        )
 
         with self.db.transaction() as cur:
             cur.execute("SELECT priority FROM trains WHERE train_no = ?", (train_no,))
@@ -51,11 +61,14 @@ class MockReplaySource(LiveSource):
         if not route:
             raise ValueError(f"Train {train_no} route not found in database.")
 
-        # Deterministic lateness based on train and date hash
-        seed_val = hash(f"{train_no}_{date_str}")
-        rng = random.Random(seed_val)
+        effective_seed = seed if seed is not None else self.seed
+        seed_bytes = f"{effective_seed}_{train_no}_{date_str}".encode("utf-8")
+        seed_int = int(hashlib.sha256(seed_bytes).hexdigest()[:8], 16)
+        rng = random.Random(seed_int)
 
-        chronic_bias = (abs(hash(train_no)) % 20) - 5
+        train_bytes = f"{effective_seed}_{train_no}".encode("utf-8")
+        train_hash_int = int(hashlib.sha256(train_bytes).hexdigest()[:8], 16)
+        chronic_bias = (train_hash_int % 20) - 5
         curr_delay = max(0, int(rng.gauss(chronic_bias, 10 if priority > 1 else 5)))
 
         events = []

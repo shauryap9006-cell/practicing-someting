@@ -8,14 +8,14 @@ Logs every delay minute to sim_ledger with exact 100% accounting.
 from __future__ import annotations
 
 import datetime
-import uuid
+import hashlib
+import random
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 import simpy
 
 from data.db import Database, get_db
-from engine.clocks import get_clock
 from engine.graph import CorridorGraph
 from engine.rakes import RakeResolver
 
@@ -49,9 +49,11 @@ class LedgerEvent:
 class CascadeSimulator:
     """Discrete-event simulator modeling corridor dynamics and logging exact causes."""
 
-    def __init__(self, db: Optional[Database] = None):
+    def __init__(self, db: Optional[Database] = None, seed: Optional[int] = None):
         self.db = db or get_db()
         self.rake_resolver = RakeResolver(self.db)
+        self.seed = seed if seed is not None else 42
+        self.rng = random.Random(self.seed)
 
     def run_simulation(
         self,
@@ -62,11 +64,29 @@ class CascadeSimulator:
             Dict[Tuple[str, str], float]
         ] = None,  # {(from, to): speed_factor (e.g. 0.6)}
         simulation_hours: float = 12.0,
+        seed: Optional[int] = None,
+        sim_start_time: Optional[datetime.datetime] = None,
     ) -> Tuple[str, List[LedgerEvent], Dict[str, int]]:
         """Runs corridor discrete-event simulation and returns run_id, ledger events, and total delays."""
-        run_id = f"sim_{uuid.uuid4().hex[:8]}"
-        clock = get_clock()
-        base_time = clock.now()
+        effective_seed = seed if seed is not None else self.seed
+        ist_tz = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
+        if sim_start_time is not None:
+            base_time = (
+                sim_start_time
+                if sim_start_time.tzinfo is not None
+                else sim_start_time.replace(tzinfo=ist_tz)
+            )
+        else:
+            base_time = datetime.datetime(2026, 9, 10, 8, 0, 0, tzinfo=ist_tz)
+        injected = injected_delays or {}
+        tsrs = active_tsrs or {}
+
+        config_repr = (
+            f"{sorted((k, sorted(v.items())) for k, v in injected.items())}|"
+            f"{sorted(tsrs.items())}|{simulation_hours}"
+        )
+        raw_seed_str = f"{effective_seed}|{base_time.isoformat()}|{config_repr}"
+        run_id = f"sim_{hashlib.sha256(raw_seed_str.encode('utf-8')).hexdigest()[:8]}"
 
         env = simpy.Environment()
         corridor = CorridorGraph(env, self.db)
