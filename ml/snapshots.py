@@ -126,6 +126,28 @@ class SnapshotGenerator:
             except Exception:
                 self._cached_rake_links = {}
 
+            # Weather cache
+            try:
+                cur.execute("SELECT station_code, date, fog_flag, precip_mm FROM weather")
+                self._weather_cache = {
+                    (r["station_code"], r["date"]): (int(r["fog_flag"]), float(r["precip_mm"]))
+                    for r in cur.fetchall()
+                }
+                cur.execute(
+                    """
+                    SELECT station_code, fog_flag, precip_mm, MAX(date) as max_date
+                    FROM weather
+                    GROUP BY station_code
+                    """
+                )
+                self._weather_station_latest = {
+                    r["station_code"]: (int(r["fog_flag"]), float(r["precip_mm"]))
+                    for r in cur.fetchall()
+                }
+            except Exception:
+                self._weather_cache = {}
+                self._weather_station_latest = {}
+
         # TSRs from seeds
         data_dir = Path(__file__).resolve().parent.parent / "data"
         tsr_path = data_dir / "seeds" / "speed_restrictions.json"
@@ -169,7 +191,11 @@ class SnapshotGenerator:
         return max_mult
 
     def _get_tsr_features(
-        self, route: List[dict], current_seq: int, target_seq: int
+        self,
+        route: List[dict],
+        current_seq: int,
+        target_seq: int,
+        cached_active_tsrs: Optional[List[dict]] = None,
     ) -> Tuple[int, float]:
         """Calculates active TSR count and maximum slowdown percentage on remaining route."""
         remaining_stns = [
@@ -184,16 +210,18 @@ class SnapshotGenerator:
             remaining_pairs.add((s1, s2))
             remaining_pairs.add((s2, s1))
 
-        # Query live active TSRs from speed_restrictions
-        active_tsrs = []
-        try:
-            with self.db.transaction() as cur:
-                cur.execute(
-                    "SELECT from_code, to_code, speed_limit_kmph, is_active FROM speed_restrictions WHERE is_active = 1"
-                )
-                active_tsrs = [dict(r) for r in cur.fetchall()]
-        except Exception:
-            active_tsrs = [t for t in (self._cached_tsrs or []) if t.get("is_active", 1)]
+        # Query live active TSRs from speed_restrictions (or use pre-fetched/cached context)
+        if cached_active_tsrs is not None:
+            active_tsrs = cached_active_tsrs
+        else:
+            try:
+                with self.db.transaction() as cur:
+                    cur.execute(
+                        "SELECT from_code, to_code, speed_limit_kmph, is_active FROM speed_restrictions WHERE is_active = 1"
+                    )
+                    active_tsrs = [dict(r) for r in cur.fetchall()]
+            except Exception:
+                active_tsrs = [t for t in (self._cached_tsrs or []) if t.get("is_active", 1)]
 
         matched_tsrs = []
         for tsr in active_tsrs:
@@ -303,6 +331,8 @@ class SnapshotGenerator:
         prev_delay: float,
         query_time_iso: str,
         cached_track_context: Optional[Dict[str, float]] = None,
+        recency_latency_min: Optional[float] = None,
+        cached_active_tsrs: Optional[List[dict]] = None,
     ) -> TrainFeatureVector:
         """Constructs a TrainFeatureVector for given train, current position, and target station."""
         self._load_metadata_caches()
@@ -465,7 +495,9 @@ class SnapshotGenerator:
             crew_duty_pressure = 0.0
 
         # v2: TSR Signals (Task T2)
-        tsr_count, tsr_slowdown = self._get_tsr_features(route, current_seq, target_seq)
+        tsr_count, tsr_slowdown = self._get_tsr_features(
+            route, current_seq, target_seq, cached_active_tsrs=cached_active_tsrs
+        )
 
         # v2: Festival Multiplier (Task T2)
         festival_mult = self._get_festival_multiplier(run_date)
@@ -476,29 +508,40 @@ class SnapshotGenerator:
 
         # v2: Recency Latency (Task T2)
         minutes_since_last_obs = 0.0
-        try:
-            with self.db.transaction() as cur:
-                cur.execute(
-                    """
-                    SELECT COALESCE(event_time, collected_at) as ts
-                    FROM station_events
-                    WHERE train_no = ? AND run_date = ? AND seq <= ?
-                      AND (collected_at <= ? OR event_time <= ?)
-                    ORDER BY seq DESC LIMIT 1
-                    """,
-                    (train_no, run_date_str, current_seq, query_time_iso, query_time_iso),
-                )
-                ev = cur.fetchone()
-                if ev and ev["ts"]:
-                    ev_dt = datetime.datetime.fromisoformat(str(ev["ts"]))
-                    if query_dt.tzinfo is not None and ev_dt.tzinfo is None:
-                        ev_dt = ev_dt.replace(tzinfo=query_dt.tzinfo)
-                    elif query_dt.tzinfo is None and ev_dt.tzinfo is not None:
-                        ev_dt = ev_dt.replace(tzinfo=None)
-                    delta_sec = (query_dt - ev_dt).total_seconds()
-                    minutes_since_last_obs = max(0.0, delta_sec / 60.0)
-        except Exception:
-            minutes_since_last_obs = 0.0
+        recency_k = (train_no, run_date_str, current_seq)
+        if recency_latency_min is not None:
+            minutes_since_last_obs = float(recency_latency_min)
+        elif cached_track_context and "minutes_since_last_obs" in cached_track_context:
+            minutes_since_last_obs = float(cached_track_context["minutes_since_last_obs"])
+        elif hasattr(self, "_recency_cache") and recency_k in self._recency_cache:
+            minutes_since_last_obs = self._recency_cache[recency_k]
+        else:
+            try:
+                with self.db.transaction() as cur:
+                    cur.execute(
+                        """
+                        SELECT COALESCE(event_time, collected_at) as ts
+                        FROM station_events
+                        WHERE train_no = ? AND run_date = ? AND seq <= ?
+                          AND (collected_at <= ? OR event_time <= ?)
+                        ORDER BY seq DESC LIMIT 1
+                        """,
+                        (train_no, run_date_str, current_seq, query_time_iso, query_time_iso),
+                    )
+                    ev = cur.fetchone()
+                    if ev and ev["ts"]:
+                        ev_dt = datetime.datetime.fromisoformat(str(ev["ts"]))
+                        if query_dt.tzinfo is not None and ev_dt.tzinfo is None:
+                            ev_dt = ev_dt.replace(tzinfo=query_dt.tzinfo)
+                        elif query_dt.tzinfo is None and ev_dt.tzinfo is not None:
+                            ev_dt = ev_dt.replace(tzinfo=None)
+                        delta_sec = (query_dt - ev_dt).total_seconds()
+                        minutes_since_last_obs = max(0.0, delta_sec / 60.0)
+                if not hasattr(self, "_recency_cache"):
+                    self._recency_cache = {}
+                self._recency_cache[recency_k] = minutes_since_last_obs
+            except Exception:
+                minutes_since_last_obs = 0.0
 
         return TrainFeatureVector(
             current_delay=float(current_delay),

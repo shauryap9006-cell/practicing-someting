@@ -255,6 +255,8 @@ class PredictorService:
         query_iso: str,
         current_delay: Optional[float] = None,
         prev_delay: Optional[float] = None,
+        recency_latency_min: Optional[float] = None,
+        cached_active_tsrs: Optional[List[dict]] = None,
     ) -> Tuple[float, float, float, str, Optional[Any]]:
         """Predicts (q10, q50, q90, tier_used, vec) conditioned on train being at sequence seq_k."""
         hops = target_seq - seq_k
@@ -275,6 +277,8 @@ class PredictorService:
                     current_delay=c_delay,
                     prev_delay=p_delay,
                     query_time_iso=query_iso,
+                    recency_latency_min=recency_latency_min,
+                    cached_active_tsrs=cached_active_tsrs,
                 )
                 arr_feat = vec.to_numpy_v1()
 
@@ -354,6 +358,7 @@ class PredictorService:
         target_station_code: str,
         current_seq: Optional[int] = None,
         current_delay: Optional[float] = None,
+        prefetched_ctx: Optional[Dict[str, Any]] = None,
     ) -> dict:
         """Calculates calibrated ETA and confidence band marginalized over the Bayesian position posterior (F19, F20)."""
         clock = get_clock()
@@ -362,77 +367,108 @@ class PredictorService:
         if hasattr(t_now, "tzinfo") and t_now.tzinfo is None:
             t_now = t_now.replace(tzinfo=IST_TIMEZONE)
 
-        with self.db.transaction() as cur:
-            # Train info
-            cur.execute("SELECT name, class, priority FROM trains WHERE train_no = ?", (train_no,))
-            train_row = cur.fetchone()
-            if not train_row:
-                raise ValueError(f"Train {train_no} not found.")
-
-            # Route stops
-            cur.execute(
-                """
-                SELECT seq, station_code, sched_arr, sched_dep, halt_min, distance_km
-                FROM route_stations
-                WHERE train_no = ?
-                ORDER BY seq
-                """,
-                (train_no,),
-            )
-            route = [dict(r) for r in cur.fetchall()]
-
-            # Determine active run strictly point-in-time
-            cur.execute(
-                """
-                SELECT seq, station_code, event_time, delay_arr_min, delay_dep_min, sched_arr, sched_dep, run_date
-                FROM station_events
-                WHERE train_no = ? AND event_time <= ?
-                ORDER BY event_time DESC, seq DESC LIMIT 1
-                """,
-                (train_no, query_iso),
-            )
-            latest_ev = cur.fetchone()
+        recency_latency_min = None
+        if prefetched_ctx is not None:
+            train_row = prefetched_ctx["train_row"]
+            route = prefetched_ctx["route"]
+            latest_ev = prefetched_ctx.get("latest_ev")
             ev_dict = dict(latest_ev) if latest_ev else {}
+            run_date = prefetched_ctx.get("run_date") or clock.today_str()
+            events_by_seq = prefetched_ctx.get("events_by_seq", {})
+            pos_record = prefetched_ctx.get("pos_record")
+            sched_days = prefetched_ctx.get("sched_days")
+            record_ledger = prefetched_ctx.get("record_ledger", True)
+            recency_latency_min = prefetched_ctx.get("recency_latency_min")
+            cached_active_tsrs = prefetched_ctx.get("cached_active_tsrs")
+            if recency_latency_min is None:
+                if latest_ev and latest_ev.get("event_time"):
+                    try:
+                        ev_dt = datetime.datetime.fromisoformat(
+                            latest_ev["event_time"].replace("Z", "+00:00")
+                        )
+                        if ev_dt.tzinfo is None:
+                            ev_dt = ev_dt.replace(tzinfo=IST_TIMEZONE)
+                        recency_latency_min = max(0.0, (t_now - ev_dt).total_seconds() / 60.0)
+                    except Exception:
+                        recency_latency_min = 0.0
+                else:
+                    recency_latency_min = 0.0
+        else:
+            cached_active_tsrs = None
+            record_ledger = True
+            pos_record = None
+            sched_days = None
+            with self.db.transaction() as cur:
+                # Train info
+                cur.execute("SELECT name, class, priority FROM trains WHERE train_no = ?", (train_no,))
+                train_row = cur.fetchone()
+                if not train_row:
+                    raise ValueError(f"Train {train_no} not found.")
 
-            # If the latest recorded telemetry is older than 24 hours, it belongs to a historical past journey
-            is_fresh_run = False
-            active_run_date = clock.today_str()
-            if ev_dict.get("event_time"):
-                try:
-                    ev_dt = datetime.datetime.fromisoformat(
-                        ev_dict["event_time"].replace("Z", "+00:00")
-                    )
-                    if ev_dt.tzinfo is None:
-                        ev_dt = ev_dt.replace(tzinfo=IST_TIMEZONE)
-                    if (t_now - ev_dt).total_seconds() <= 86400.0:
-                        is_fresh_run = True
-                        active_run_date = ev_dict.get("run_date") or active_run_date
-                except Exception:
-                    pass
-
-            run_date = active_run_date
-
-            # Pre-fetch recent events for current active run in single query
-            events_by_seq = {}
-            if is_fresh_run:
+                # Route stops
                 cur.execute(
                     """
-                    SELECT seq, delay_arr_min, delay_dep_min
-                    FROM station_events
-                    WHERE train_no = ? AND run_date = ? AND (event_time <= ? OR event_time IS NULL)
-                    ORDER BY seq ASC
+                    SELECT seq, station_code, sched_arr, sched_dep, halt_min, distance_km
+                    FROM route_stations
+                    WHERE train_no = ?
+                    ORDER BY seq
                     """,
-                    (train_no, run_date, query_iso),
+                    (train_no,),
                 )
-                ev_rows = cur.fetchall()
-                events_by_seq = {
-                    int(r["seq"]): (
-                        float(r["delay_arr_min"])
-                        if r["delay_arr_min"] is not None
-                        else float(r["delay_dep_min"] or 0.0)
+                route = [dict(r) for r in cur.fetchall()]
+
+                # Determine active run strictly point-in-time
+                cur.execute(
+                    """
+                    SELECT seq, station_code, event_time, delay_arr_min, delay_dep_min, sched_arr, sched_dep, run_date
+                    FROM station_events
+                    WHERE train_no = ? AND event_time <= ?
+                    ORDER BY event_time DESC, seq DESC LIMIT 1
+                    """,
+                    (train_no, query_iso),
+                )
+                latest_ev = cur.fetchone()
+                ev_dict = dict(latest_ev) if latest_ev else {}
+
+                # If the latest recorded telemetry is older than 24 hours, it belongs to a historical past journey
+                is_fresh_run = False
+                active_run_date = clock.today_str()
+                if ev_dict.get("event_time"):
+                    try:
+                        ev_dt = datetime.datetime.fromisoformat(
+                            ev_dict["event_time"].replace("Z", "+00:00")
+                        )
+                        if ev_dt.tzinfo is None:
+                            ev_dt = ev_dt.replace(tzinfo=IST_TIMEZONE)
+                        if (t_now - ev_dt).total_seconds() <= 86400.0:
+                            is_fresh_run = True
+                            active_run_date = ev_dict.get("run_date") or active_run_date
+                    except Exception:
+                        pass
+
+                run_date = active_run_date
+
+                # Pre-fetch recent events for current active run in single query
+                events_by_seq = {}
+                if is_fresh_run:
+                    cur.execute(
+                        """
+                        SELECT seq, delay_arr_min, delay_dep_min
+                        FROM station_events
+                        WHERE train_no = ? AND run_date = ? AND (event_time <= ? OR event_time IS NULL)
+                        ORDER BY seq ASC
+                        """,
+                        (train_no, run_date, query_iso),
                     )
-                    for r in ev_rows
-                }
+                    ev_rows = cur.fetchall()
+                    events_by_seq = {
+                        int(r["seq"]): (
+                            float(r["delay_arr_min"])
+                            if r["delay_arr_min"] is not None
+                            else float(r["delay_dep_min"] or 0.0)
+                        )
+                        for r in ev_rows
+                    }
 
         target_stop = next((r for r in route if r["station_code"] == target_station_code), None)
         if not target_stop:
@@ -443,43 +479,44 @@ class PredictorService:
         target_seq = int(target_stop["seq"])
 
         # Compute schedule day offsets along route to handle multi-day journeys (F17/F20)
-        sched_days = {}
-        cur_day = 0
-        prev_min = -1
-        for r in route:
-            s_time = r.get("sched_arr") or r.get("sched_dep")
-            if s_time and ":" in s_time:
-                try:
-                    h, m = [int(x) for x in s_time.split(":")[:2]]
-                    tot_min = h * 60 + m
-                    if prev_min != -1 and tot_min < prev_min - 120:
-                        cur_day += 1
-                    prev_min = tot_min
-                except Exception:
-                    pass
-            sched_days[int(r["seq"])] = cur_day
+        if sched_days is None:
+            sched_days = {}
+            cur_day = 0
+            prev_min = -1
+            for r in route:
+                s_time = r.get("sched_arr") or r.get("sched_dep")
+                if s_time and ":" in s_time:
+                    try:
+                        h, m = [int(x) for x in s_time.split(":")[:2]]
+                        tot_min = h * 60 + m
+                        if prev_min != -1 and tot_min < prev_min - 120:
+                            cur_day += 1
+                        prev_min = tot_min
+                    except Exception:
+                        pass
+                sched_days[int(r["seq"])] = cur_day
 
         target_sched_day = sched_days.get(target_seq, 0)
 
         # F19 / F20: Resolve Soft Train Position probabilistically instead of falsy default
-        pos_record: PositionRecord
-        if current_seq is not None:
-            curr_stn = next(
-                (r["station_code"] for r in route if int(r["seq"]) == current_seq), "LOC"
-            )
-            pos_record = PositionRecord(
-                mode_seq=current_seq,
-                station_code=curr_stn,
-                confidence=1.0,
-                basis="explicit_query",
-                age_seconds=0.0,
-                source="manual",
-                posterior_probs={current_seq: 1.0},
-            )
-        else:
-            pos_record = self.position_resolver.resolve_train_position(
-                train_no, route, as_of_time=clock.now()
-            )
+        if pos_record is None:
+            if current_seq is not None:
+                curr_stn = next(
+                    (r["station_code"] for r in route if int(r["seq"]) == current_seq), "LOC"
+                )
+                pos_record = PositionRecord(
+                    mode_seq=current_seq,
+                    station_code=curr_stn,
+                    confidence=1.0,
+                    basis="explicit_query",
+                    age_seconds=0.0,
+                    source="manual",
+                    posterior_probs={current_seq: 1.0},
+                )
+            else:
+                pos_record = self.position_resolver.resolve_train_position(
+                    train_no, route, as_of_time=clock.now(), prefetched_event=latest_ev
+                )
 
         # Check if train has already reached or passed target station
         if current_seq is not None:
@@ -523,6 +560,7 @@ class PredictorService:
                 is_arrived=True,
                 run_date=run_date,
                 sched_day_offset=target_sched_day,
+                record_ledger=record_ledger,
             )
 
         # Marginalization over top-K candidate positions (F19)
@@ -546,6 +584,8 @@ class PredictorService:
                 query_iso=query_iso,
                 current_delay=k_delay,
                 prev_delay=k_prev_delay,
+                recency_latency_min=recency_latency_min,
+                cached_active_tsrs=cached_active_tsrs,
             )
             if mode_vec is None or seq_k == pos_record.mode_seq:
                 mode_vec = vec
@@ -563,6 +603,8 @@ class PredictorService:
                 query_iso=query_iso,
                 current_delay=default_delay,
                 prev_delay=default_delay,
+                recency_latency_min=recency_latency_min,
+                cached_active_tsrs=cached_active_tsrs,
             )
             mode_vec = vec
             preds = [(1.0, q10, q50, q90, tier)]
@@ -642,6 +684,7 @@ class PredictorService:
             priority=train_priority,
             run_date=run_date,
             sched_day_offset=target_sched_day,
+            record_ledger=record_ledger,
         )
 
     def _extract_top_drivers(
@@ -788,6 +831,7 @@ class PredictorService:
         is_arrived: bool = False,
         run_date: Optional[str] = None,
         sched_day_offset: int = 0,
+        record_ledger: bool = True,
     ) -> dict:
         """Formats arrival times and confidence band with audit provenance (F17, F20, F13)."""
         from safety.interlock import validate_prediction_through_interlock
@@ -885,20 +929,21 @@ class PredictorService:
 
         # Record cryptographically sealed prediction receipt into ledger (Proposal 2)
         receipt_hash = "unsealed"
-        try:
-            from engine.prediction_ledger import PredictionLedger
+        if record_ledger:
+            try:
+                from engine.prediction_ledger import PredictionLedger
 
-            ledger = PredictionLedger(self.db)
-            receipt_hash = ledger.record_prediction_receipt(
-                train_no=train_no,
-                target_station=target_station,
-                p10=safe_p10,
-                p50=safe_p50,
-                p90=safe_p90,
-                query_timestamp=clock.now_iso(),
-            )
-        except Exception:
-            pass
+                ledger = PredictionLedger(self.db)
+                receipt_hash = ledger.record_prediction_receipt(
+                    train_no=train_no,
+                    target_station=target_station,
+                    p10=safe_p10,
+                    p50=safe_p50,
+                    p90=safe_p90,
+                    query_timestamp=clock.now_iso(),
+                )
+            except Exception:
+                pass
 
         return {
             "train_no": train_no,

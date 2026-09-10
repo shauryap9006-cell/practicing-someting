@@ -47,6 +47,20 @@ from engine.clocks import get_clock
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
+# Pre-warm champion predictor and static metadata caches on module import
+try:
+    _WARMED_PREDICTOR = get_predictor_service()
+    if hasattr(_WARMED_PREDICTOR, "snapshot_gen") and _WARMED_PREDICTOR.snapshot_gen:
+        _WARMED_PREDICTOR.snapshot_gen._load_metadata_caches()
+        _WARMED_PREDICTOR.snapshot_gen.compute_train_period_statistics(get_clock().today_str())
+        with get_db().transaction() as _cur:
+            _cur.execute(
+                "SELECT from_code, to_code, speed_limit_kmph, is_active FROM speed_restrictions WHERE is_active = 1"
+            )
+            _WARMED_PREDICTOR.snapshot_gen._cached_active_tsrs = [dict(r) for r in _cur.fetchall()]
+except Exception as _warm_err:
+    logger.debug("Predictor warmup skipped: %s", _warm_err)
+
 
 @router.get("/trains/{train_no}/eta", response_model=TrainEtaResponse)
 def get_train_eta(
@@ -101,6 +115,7 @@ def get_train_journey(train_no: str):
             SELECT 
                 t.name as train_name,
                 t.class as train_class,
+                COALESCE(t.priority, 2) as train_priority,
                 rs.seq,
                 rs.station_code,
                 rs.sched_arr,
@@ -139,6 +154,11 @@ def get_train_journey(train_no: str):
             },
         )
 
+    query_iso = clock.now_iso()
+    t_now = clock.now()
+    if hasattr(t_now, "tzinfo") and t_now.tzinfo is None:
+        t_now = t_now.replace(tzinfo=IST_TIMEZONE)
+
     # Query 2: All station events for this train in a single batch query
     with db.transaction() as cur:
         cur.execute(
@@ -146,7 +166,7 @@ def get_train_journey(train_no: str):
             SELECT seq, station_code, sched_arr, actual_arr, sched_dep, actual_dep, delay_arr_min, delay_dep_min, event_time, run_date
             FROM station_events
             WHERE train_no = ?
-            ORDER BY run_date DESC, seq DESC
+            ORDER BY event_time DESC, seq DESC
             """,
             (train_no,),
         )
@@ -162,72 +182,130 @@ def get_train_journey(train_no: str):
             },
         )
 
-    latest_ev = events[0]
-    current_seq = int(latest_ev["seq"])
-    curr_stn = latest_ev["station_code"]
-    current_delay = float(
-        latest_ev["delay_arr_min"]
-        if latest_ev["delay_arr_min"] is not None
-        else (latest_ev["delay_dep_min"] or 0.0)
-    )
-    latest_run_date = latest_ev.get("run_date")
-    events_by_seq = {int(e["seq"]): e for e in events if e.get("run_date") == latest_run_date}
+    # Resolve latest fresh event point-in-time
+    fresh_events = []
+    for ev in events:
+        if ev.get("event_time"):
+            try:
+                ev_dt = datetime.datetime.fromisoformat(ev["event_time"].replace("Z", "+00:00"))
+                if ev_dt.tzinfo is None:
+                    ev_dt = ev_dt.replace(tzinfo=IST_TIMEZONE)
+                if (t_now - ev_dt).total_seconds() <= 86400.0 and ev["event_time"] <= query_iso:
+                    fresh_events.append(ev)
+            except Exception:
+                pass
 
-    base_time = clock.now()
+    if fresh_events:
+        latest_ev = fresh_events[0]
+        active_run_date = latest_ev.get("run_date") or clock.today_str()
+        events_by_seq = {int(e["seq"]): e for e in fresh_events if e.get("run_date") == active_run_date}
+        current_delay = float(
+            latest_ev["delay_arr_min"]
+            if latest_ev["delay_arr_min"] is not None
+            else ((latest_ev["delay_dep_min"] or 0.0) or 0.0)
+        )
+    else:
+        latest_ev = events[0] if events else None
+        active_run_date = clock.today_str()
+        events_by_seq = {}
+        current_delay = 0.0
+
+    current_seq = int(latest_ev["seq"]) if (latest_ev and fresh_events) else 1
+    curr_stn = latest_ev["station_code"] if (latest_ev and fresh_events) else stops[0]["station_code"]
+
+    events_by_seq_delays = {
+        seq: float(e["delay_arr_min"] if e["delay_arr_min"] is not None else (e["delay_dep_min"] or 0.0))
+        for seq, e in events_by_seq.items()
+    }
+
+    # Resolve soft train position using pre-fetched telemetry
+    predictor = get_predictor_service()
+    pos_record = predictor.position_resolver.resolve_train_position(
+        train_no=train_no,
+        route_stops=stops,
+        as_of_time=t_now,
+        prefetched_event=latest_ev,
+    )
+
+    # Ensure track_graph event cache for active run is initialized to prevent per-stop queries
+    if (
+        hasattr(predictor, "snapshot_gen")
+        and predictor.snapshot_gen
+        and hasattr(predictor.snapshot_gen, "track_graph")
+    ):
+        tg = predictor.snapshot_gen.track_graph
+        if not hasattr(tg, "_events_cache"):
+            tg._events_cache = {}
+        if active_run_date not in tg._events_cache:
+            tg._events_cache[active_run_date] = []
+
+    # Compute schedule day offsets along route
+    sched_days = {}
+    cur_day = 0
+    prev_min = -1
+    for r in stops:
+        s_time = r.get("sched_arr") or r.get("sched_dep")
+        if s_time and ":" in s_time:
+            try:
+                h, m = [int(x) for x in s_time.split(":")[:2]]
+                tot_min = h * 60 + m
+                if prev_min != -1 and tot_min < prev_min - 120:
+                    cur_day += 1
+                prev_min = tot_min
+            except Exception:
+                pass
+        sched_days[int(r["seq"])] = cur_day
+
+    recency_latency_min = 0.0
+    if latest_ev and latest_ev.get("event_time") and fresh_events:
+        try:
+            ev_dt = datetime.datetime.fromisoformat(latest_ev["event_time"].replace("Z", "+00:00"))
+            if ev_dt.tzinfo is None:
+                ev_dt = ev_dt.replace(tzinfo=IST_TIMEZONE)
+            recency_latency_min = max(0.0, (t_now - ev_dt).total_seconds() / 60.0)
+        except Exception:
+            pass
+
+    cached_active_tsrs = (
+        getattr(predictor.snapshot_gen, "_cached_active_tsrs", None)
+        or [t for t in (getattr(predictor.snapshot_gen, "_cached_tsrs", None) or []) if t.get("is_active", 1)]
+    )
+
+    # Pre-computed context to execute in-memory ensemble inference with zero additional queries
+    prefetched_ctx = {
+        "train_row": {
+            "name": stops[0]["train_name"],
+            "class": stops[0]["train_class"],
+            "priority": int(stops[0].get("train_priority", 2)),
+        },
+        "route": stops,
+        "events_by_seq": events_by_seq_delays,
+        "latest_ev": latest_ev,
+        "run_date": active_run_date,
+        "pos_record": pos_record,
+        "sched_days": sched_days,
+        "record_ledger": False,
+        "recency_latency_min": recency_latency_min,
+        "cached_active_tsrs": cached_active_tsrs,
+    }
+
     timeline = []
     for st in stops:
         code = st["station_code"]
         seq = int(st["seq"])
 
-        if seq <= current_seq:
-            ev = events_by_seq.get(seq)
-            if ev:
-                delay_val = (
-                    ev["delay_arr_min"]
-                    if ev["delay_arr_min"] is not None
-                    else (ev["delay_dep_min"] or current_delay)
-                )
-                d_min = int(round(float(delay_val)))
-                p_arr = ev.get("actual_arr") or _add_min_to_sched(
-                    st["sched_arr"] or st["sched_dep"], d_min, base_time
-                )
-            else:
-                d_min = int(round(current_delay))
-                p_arr = _add_min_to_sched(
-                    st["sched_arr"] or st["sched_dep"], d_min, base_time
-                )
+        # Call in-memory loaded ensemble via predict_train_eta with value parity
+        pred = predictor.predict_train_eta(
+            train_no=train_no,
+            target_station_code=code,
+            prefetched_ctx=prefetched_ctx,
+        )
 
-            fallback_arrival = p_arr or "--:--"
-            band_info = {
-                "best_p10_min": d_min,
-                "likely_p50_min": d_min,
-                "worst_p90_min": d_min,
-                "best_arrival": fallback_arrival,
-                "likely_arrival": fallback_arrival,
-                "worst_arrival": fallback_arrival,
-            }
-        else:
-            d_min = int(round(current_delay))
-            p_arr = _add_min_to_sched(
-                st["sched_arr"] or st["sched_dep"], d_min, base_time
-            )
-            fallback_arrival = p_arr or "--:--"
-            best_p10 = max(0, d_min - 5)
-            worst_p90 = d_min + 15
-            band_info = {
-                "best_p10_min": best_p10,
-                "likely_p50_min": d_min,
-                "worst_p90_min": worst_p90,
-                "best_arrival": _add_min_to_sched(
-                    st["sched_arr"] or st["sched_dep"], best_p10, base_time
-                ),
-                "likely_arrival": fallback_arrival,
-                "worst_arrival": _add_min_to_sched(
-                    st["sched_arr"] or st["sched_dep"], worst_p90, base_time
-                ),
-            }
-
+        d_min = pred["predicted_delay_min"]
+        p_arr = pred["predicted_arr"]
+        band_info = pred["confidence_band"]
         color = delay_color(d_min)
+
         timeline.append(
             JourneyStop(
                 seq=seq,
@@ -248,8 +326,8 @@ def get_train_journey(train_no: str):
         train_no=train_no,
         train_name=stops[0]["train_name"],
         train_class=stops[0]["train_class"],
-        current_station=curr_stn,
-        current_delay_min=int(current_delay),
+        current_station=pos_record.station_code,
+        current_delay_min=int(round(current_delay)),
         timeline=timeline,
         updated_at=clock.now_iso(),
         clock_mode=clock.mode,

@@ -67,6 +67,7 @@ class PositionResolver:
         train_no: str,
         route_stops: List[Dict[str, Any]],
         as_of_time: Optional[datetime.datetime] = None,
+        prefetched_event: Optional[Dict[str, Any]] = None,
     ) -> PositionRecord:
         """Computes posterior P(seq=k) over candidate stops along the train route enforcing point-in-time."""
         clock = get_clock()
@@ -92,56 +93,60 @@ class PositionResolver:
         min_seq = min(seq_to_stop.keys())
         max_seq = max(seq_to_stop.keys())
 
-        # 1. Check for Hard Evidence: Actual station master / controller event (ad_events) <= now
-        with self.db.transaction() as cur:
-            try:
-                cur.execute(
-                    """
-                    SELECT station_code, event_kind, actual_ts
-                    FROM ad_events
-                    WHERE train_no = ? AND actual_ts <= ?
-                    ORDER BY actual_ts DESC LIMIT 1
-                    """,
-                    (train_no, now_iso),
-                )
-                ad_row = cur.fetchone()
-            except Exception:
-                ad_row = None
-
         ad_seq: Optional[int] = None
         ad_fresh = False
         ad_age_s = 9999.0
-        if ad_row and ad_row["station_code"]:
-            ad_stn = ad_row["station_code"]
-            ad_stop = next((r for r in route_stops if r["station_code"] == ad_stn), None)
-            if ad_stop:
-                ad_seq = int(ad_stop["seq"])
+
+        if prefetched_event is not None:
+            ev_dict = dict(prefetched_event) if prefetched_event else {}
+        else:
+            # 1. Check for Hard Evidence: Actual station master / controller event (ad_events) <= now
+            with self.db.transaction() as cur:
                 try:
-                    act_dt = datetime.datetime.fromisoformat(
-                        ad_row["actual_ts"].replace("Z", "+00:00")
+                    cur.execute(
+                        """
+                        SELECT station_code, event_kind, actual_ts
+                        FROM ad_events
+                        WHERE train_no = ? AND actual_ts <= ?
+                        ORDER BY actual_ts DESC LIMIT 1
+                        """,
+                        (train_no, now_iso),
                     )
-                    if act_dt.tzinfo is None:
-                        act_dt = act_dt.replace(tzinfo=IST_TIMEZONE)
-                    ad_age_s = max(0.0, (t_now - act_dt).total_seconds())
+                    ad_row = cur.fetchone()
                 except Exception:
-                    ad_age_s = 0.0
+                    ad_row = None
 
-                if ad_age_s < 900:  # Fresh hard evidence within 15 min
-                    ad_fresh = True
+            if ad_row and ad_row["station_code"]:
+                ad_stn = ad_row["station_code"]
+                ad_stop = next((r for r in route_stops if r["station_code"] == ad_stn), None)
+                if ad_stop:
+                    ad_seq = int(ad_stop["seq"])
+                    try:
+                        act_dt = datetime.datetime.fromisoformat(
+                            ad_row["actual_ts"].replace("Z", "+00:00")
+                        )
+                        if act_dt.tzinfo is None:
+                            act_dt = act_dt.replace(tzinfo=IST_TIMEZONE)
+                        ad_age_s = max(0.0, (t_now - act_dt).total_seconds())
+                    except Exception:
+                        ad_age_s = 0.0
 
-        # 2. Check Telemetry / Station Events Feed strictly point-in-time (event_time <= now)
-        with self.db.transaction() as cur:
-            cur.execute(
-                """
-                SELECT seq, station_code, event_time, delay_arr_min, delay_dep_min, sched_arr, sched_dep, run_date
-                FROM station_events
-                WHERE train_no = ? AND event_time <= ?
-                ORDER BY event_time DESC, seq DESC LIMIT 1
-                """,
-                (train_no, now_iso),
-            )
-            raw_ev = cur.fetchone()
-            ev_dict = dict(raw_ev) if raw_ev else {}
+                    if ad_age_s < 900:  # Fresh hard evidence within 15 min
+                        ad_fresh = True
+
+            # 2. Check Telemetry / Station Events Feed strictly point-in-time (event_time <= now)
+            with self.db.transaction() as cur:
+                cur.execute(
+                    """
+                    SELECT seq, station_code, event_time, delay_arr_min, delay_dep_min, sched_arr, sched_dep, run_date
+                    FROM station_events
+                    WHERE train_no = ? AND event_time <= ?
+                    ORDER BY event_time DESC, seq DESC LIMIT 1
+                    """,
+                    (train_no, now_iso),
+                )
+                raw_ev = cur.fetchone()
+                ev_dict = dict(raw_ev) if raw_ev else {}
 
         # If the latest recorded telemetry is older than 24 hours, it belongs to a historical journey, not the current run
         if ev_dict.get("event_time"):
