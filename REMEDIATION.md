@@ -1,8 +1,10 @@
 # 🔧 RailTwin-X — Remediation Playbook
 ### Claude Code Execution Plan — Fix Flaws First, Then Upgrade
 
-> Generated from the Global Codebase Audit (Dev Readiness: 54/100 · Prod Readiness: 42/100)
+> Generated from the Global Codebase Audit (Initial Dev Readiness: 54/100 · Initial Prod Readiness: 42/100)
 > Target: **0 blockers · 0 criticals · 285/285 tests green · full-stack Docker deployment**
+>
+> **NOTE (WO-22 DOCS INTEGRITY):** Any subsequent internal remediation score estimations (e.g. 85/100, 78/100, 84/100) are internally generated claims. The ONLY authoritative benchmark score for this codebase is the external GRANDMASTER AUDIT PROTOCOL v3.1 re-audit score: **60/100 (CRITICAL / CONDITIONAL PASS)**.
 
 ---
 
@@ -986,9 +988,10 @@ ROLE: Final gate — prove all remediation landed. Run and report EVERY result:
 
 Then produce a REMEDIATION-REPORT.md: every audit ID (SEC-001…P4s) → status
 (FIXED / PARTIAL / DEFERRED with reason), the before/after scores per audit category,
-and the two headline numbers:
-OVERALL DEVELOPMENT READINESS: X/100 (was 54)
-OVERALL PRODUCTION READINESS:  X/100 (was 42)
+and the two headline numbers (note: internal claims only; authoritative external re-audit v3.1 is 60/100):
+OVERALL DEVELOPMENT READINESS: X/100 (was 54, internally claimed 85)
+OVERALL PRODUCTION READINESS:  X/100 (was 42, internally claimed 78)
+AUTHORITATIVE EXTERNAL RE-AUDIT (v3.1): 60/100
 
 Be honest — anything not verified is NOT marked fixed.
 ```

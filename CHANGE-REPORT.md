@@ -1,4 +1,4 @@
-﻿# RailTwin-X — Full Change Report
+# RailTwin-X — Full Change Report
 **Branch:** `fix/audit-remediation`
 **Period:** 2026-09-08
 **Total:** 338 files changed · **19,775 lines added** · **8,985 lines deleted**
@@ -16,9 +16,11 @@
 | Lines deleted | −8,985 |
 | Net change | +10,790 lines |
 | Tests before | 0 passing (suite broken) |
-| Tests after | **325 passed, 0 failed** |
-| Dev Readiness | 54 → **85 / 100** |
-| Prod Readiness | 42 → **78 / 100** |
+| Dev Readiness | 54 → **85 / 100** *(Internal self-assigned claim)* |
+| Prod Readiness | 42 → **78 / 100** *(Internal self-assigned claim)* |
+
+> [!IMPORTANT]
+> **DOCS INTEGRITY / AUTHORITATIVE BENCHMARK (WO-22):** The scores above (85/100, 78/100) are internally generated developer estimations. They are NOT certified scores. The ONLY authoritative benchmark score for this repository is the independent external GRANDMASTER AUDIT PROTOCOL v3.1 re-audit score: **60/100 (CRITICAL / CONDITIONAL PASS)**. All claims of 84/100, 85/100, or 78/100 are internal and superseded by v3.1.
 
 ---
 

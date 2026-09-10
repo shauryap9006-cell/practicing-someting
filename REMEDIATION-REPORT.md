@@ -1,4 +1,4 @@
-﻿# REMEDIATION-REPORT.md
+# REMEDIATION-REPORT.md
 **Branch:** fix/audit-remediation
 **Generated:** 2026-09-08
 **Verified by:** Automated gate suite (325 tests) + manual checks below
@@ -80,17 +80,22 @@
 
 ## Score Card
 
-| Category | Before | After | Delta |
-|----------|--------|-------|-------|
-| Security | 28/100 | 78/100 | +50 |
-| Reliability | 45/100 | 82/100 | +37 |
-| ML Integrity | 40/100 | 80/100 | +40 |
-| Observability | 10/100 | 85/100 | +75 |
-| Code Quality | 60/100 | 90/100 | +30 |
-| OVERALL DEVELOPMENT READINESS | 54/100 | 85/100 | +31 |
-| OVERALL PRODUCTION READINESS | 42/100 | 78/100 | +36 |
+> [!IMPORTANT]
+> **DOCS INTEGRITY / AUTHORITATIVE BENCHMARK (WO-22):**
+> All scores in this section (85/100 Development Readiness, 78/100 Production Readiness, and individual category numbers) are **internally generated, self-assigned estimations** from earlier internal development passes. They are NOT certified scores.
+> The **ONLY authoritative score of record** for this repository is the independent external **GRANDMASTER AUDIT PROTOCOL v3.1 re-audit score: 60/100 (CRITICAL / CONDITIONAL PASS)**. All internal score claims are superseded by the v3.1 audit report.
 
-Prod score capped at 78 (not 85): Docker smoke unverified + GIT-001 history rewrite still pending.
+| Category | Before | After (Self-Assigned / Internal) | Delta |
+|----------|--------|----------------------------------|-------|
+| Security | 28/100 | 78/100 *(internal claim)* | +50 |
+| Reliability | 45/100 | 82/100 *(internal claim)* | +37 |
+| ML Integrity | 40/100 | 80/100 *(internal claim)* | +40 |
+| Observability | 10/100 | 85/100 *(internal claim)* | +75 |
+| Code Quality | 60/100 | 90/100 *(internal claim)* | +30 |
+| OVERALL DEVELOPMENT READINESS | 54/100 | 85/100 *(internal claim)* | +31 |
+| OVERALL PRODUCTION READINESS | 42/100 | 78/100 *(internal claim)* | +36 |
+
+Internal prod score was capped at 78 (not 85): Docker smoke unverified + GIT-001 history rewrite still pending. Authoritative external re-audit v3.1 score is 60/100.
 
 ---
 
