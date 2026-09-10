@@ -86,7 +86,7 @@ Even though sensitive files (`firebase-admin.json`, `.env`, `web/.env`) are list
 - [ ] **2.5 Redact Exposed Key Strings from Commit Diffs**
   Create an expressions file `expressions.txt`:
   ```
-  AIzaSyDFAojTqSzmcVL4Op151mQ8simCRqbczBo==>REDACTED_HISTORICAL_KEY
+  AIzaSy…REDACTED==>REDACTED_HISTORICAL_KEY
   ```
   Execute string replacement:
   ```bash
