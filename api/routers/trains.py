@@ -271,6 +271,17 @@ def get_train_journey(train_no: str):
         or [t for t in (getattr(predictor.snapshot_gen, "_cached_tsrs", None) or []) if t.get("is_active", 1)]
     )
 
+    seq_tensor = (
+        predictor.build_sequence_tensor(
+            route=stops,
+            current_seq=pos_record.mode_seq,
+            events_by_seq=events_by_seq_delays,
+            current_delay=current_delay or 0.0,
+        )
+        if hasattr(predictor, "build_sequence_tensor")
+        else None
+    )
+
     # Pre-computed context to execute in-memory ensemble inference with zero additional queries
     prefetched_ctx = {
         "train_row": {
@@ -287,6 +298,7 @@ def get_train_journey(train_no: str):
         "record_ledger": False,
         "recency_latency_min": recency_latency_min,
         "cached_active_tsrs": cached_active_tsrs,
+        "seq_tensor": seq_tensor,
     }
 
     timeline = []

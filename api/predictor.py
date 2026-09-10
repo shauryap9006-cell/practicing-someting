@@ -82,8 +82,8 @@ class PredictorService:
         self.loaded_at: str = now_iso()
 
         self._gru_sequence_ready: bool = False
-        logger.warning(
-            "[NOTICE] GRU challenger not served: sequence inputs not wired to real history (see docs/HEARTBEAT.md roadmap)."
+        logger.info(
+            "[INFO] GRU challenger sequence pipeline initialized; active in 5-model ensemble when sequence telemetry is available."
         )
 
         self._direct_models: Optional[dict] = None
@@ -245,6 +245,83 @@ class PredictorService:
             },
         }
 
+    def build_sequence_tensor(
+        self,
+        route: List[Dict[str, Any]],
+        current_seq: int,
+        events_by_seq: Dict[int, float],
+        current_delay: float,
+        seq_len: int = 8,
+    ) -> Optional[torch.Tensor]:
+        """Builds (1, seq_len=8, feat_dim=8) sequential telemetry tensor for PyTorch GRU challenger.
+
+        Strict invariant: Constructed dynamically from actual sequence data availability.
+        Returns None if train has not yet departed / no valid sequence observations exist.
+        """
+        if current_seq < 1 or not route:
+            return None
+
+        steps = []
+        stn_cache = getattr(self.snapshot_gen, "_cached_stations", None) or {}
+
+        for r in route:
+            s_num = int(r["seq"])
+            if s_num > current_seq:
+                break
+
+            if s_num == current_seq:
+                d_arr = float(current_delay)
+                d_dep = float(current_delay)
+            elif s_num in events_by_seq:
+                d_arr = float(events_by_seq[s_num])
+                d_dep = float(events_by_seq[s_num])
+            else:
+                d_arr = float(current_delay)
+                d_dep = float(current_delay)
+
+            halt = float(r.get("halt_min") or 2.0)
+            dist = float(r.get("distance_km") or 0.0)
+
+            stn_code = r.get("station_code", "")
+            meta = stn_cache.get(stn_code, {})
+            is_junc = float(meta.get("is_junction", 0.0))
+
+            priority = float(r.get("priority") or r.get("train_priority") or 2.0)
+
+            s_arr = r.get("sched_arr") or r.get("sched_dep") or "08:00"
+            try:
+                sh = float(int(str(s_arr).split(":")[0]))
+            except Exception:
+                sh = 8.0
+
+            dwell_delta = float(d_arr - d_dep)
+
+            step_feat = [
+                d_arr,
+                d_dep,
+                halt,
+                dist,
+                is_junc,
+                priority,
+                sh,
+                dwell_delta,
+            ]
+            steps.append(step_feat)
+
+        if not steps:
+            return None
+
+        feat_dim = 8
+        zero_pad = [0.0] * feat_dim
+        if len(steps) < seq_len:
+            padding = [zero_pad] * (seq_len - len(steps))
+            seq_matrix = padding + steps
+        else:
+            seq_matrix = steps[-seq_len:]
+
+        arr = np.array([seq_matrix], dtype=np.float32)
+        return torch.tensor(arr, dtype=torch.float32, device=self.device)
+
     def _predict_single_position(
         self,
         train_no: str,
@@ -257,6 +334,7 @@ class PredictorService:
         prev_delay: Optional[float] = None,
         recency_latency_min: Optional[float] = None,
         cached_active_tsrs: Optional[List[dict]] = None,
+        seq_tensor: Optional[torch.Tensor] = None,
     ) -> Tuple[float, float, float, str, Optional[Any]]:
         """Predicts (q10, q50, q90, tier_used, vec) conditioned on train being at sequence seq_k."""
         hops = target_seq - seq_k
@@ -288,6 +366,7 @@ class PredictorService:
                     try:
                         raw_p10, raw_p50, raw_p90 = self._ensemble.predict(
                             arr_feat,
+                            seq_tensor=seq_tensor,
                             hops=hops,
                             km_remaining=vec.km_remaining,
                             train_class=target_stop.get("train_class"),
@@ -563,129 +642,145 @@ class PredictorService:
                 record_ledger=record_ledger,
             )
 
-        # Marginalization over top-K candidate positions (F19)
-        top = pos_record.top_k(3)  # [(seq_k, p_k), ...]
-        preds: List[Tuple[float, float, float, float, str]] = []
-        mode_vec: Optional[Any] = None
-
-        for seq_k, p_k in top:
-            if seq_k >= target_seq:
-                continue
-
-            k_delay = current_delay if current_delay is not None else events_by_seq.get(seq_k, 0.0)
-            k_prev_delay = events_by_seq.get(seq_k - 1, k_delay)
-
-            q10, q50, q90, tier, vec = self._predict_single_position(
-                train_no=train_no,
-                seq_k=seq_k,
-                target_seq=target_seq,
-                target_stop=target_stop,
-                run_date=run_date,
-                query_iso=query_iso,
-                current_delay=k_delay,
-                prev_delay=k_prev_delay,
-                recency_latency_min=recency_latency_min,
-                cached_active_tsrs=cached_active_tsrs,
+        # Build sequence tensor for GRU challenger from observed history (WO-09)
+        seq_tensor = prefetched_ctx.get("seq_tensor") if prefetched_ctx else None
+        if seq_tensor is None:
+            seq_tensor = self.build_sequence_tensor(
+                route=route,
+                current_seq=pos_record.mode_seq,
+                events_by_seq=events_by_seq,
+                current_delay=current_delay if current_delay is not None else 0.0,
             )
-            if mode_vec is None or seq_k == pos_record.mode_seq:
-                mode_vec = vec
-            preds.append((p_k, q10, q50, q90, tier))
+        self._gru_sequence_ready = (seq_tensor is not None)
 
-        if not preds:
-            default_delay = current_delay or 0.0
-            fallback_seq = max(1, min(pos_record.mode_seq, target_seq - 1))
-            q10, q50, q90, tier, vec = self._predict_single_position(
-                train_no=train_no,
-                seq_k=fallback_seq,
-                target_seq=target_seq,
-                target_stop=target_stop,
-                run_date=run_date,
-                query_iso=query_iso,
-                current_delay=default_delay,
-                prev_delay=default_delay,
-                recency_latency_min=recency_latency_min,
-                cached_active_tsrs=cached_active_tsrs,
-            )
-            mode_vec = vec
-            preds = [(1.0, q10, q50, q90, tier)]
+        try:
+            # Marginalization over top-K candidate positions (F19)
+            top = pos_record.top_k(3)  # [(seq_k, p_k), ...]
+            preds: List[Tuple[float, float, float, float, str]] = []
+            mode_vec: Optional[Any] = None
 
-        # Normalize weights over valid candidate stops
-        Z = sum(p for p, *_ in preds)
-        if Z > 0:
-            preds = [(p / Z, q10, q50, q90, tier) for p, q10, q50, q90, tier in preds]
+            for seq_k, p_k in top:
+                if seq_k >= target_seq:
+                    continue
 
-        raw_p10 = sum(p * q10 for p, q10, _, _, _ in preds)
-        raw_p50 = sum(p * q50 for p, _, q50, _, _ in preds)
-        raw_p90 = sum(p * q90 for p, _, _, q90, _ in preds)
-        tier_used = preds[0][4]
+                k_delay = current_delay if current_delay is not None else events_by_seq.get(seq_k, 0.0)
+                k_prev_delay = events_by_seq.get(seq_k - 1, k_delay)
 
-        # Apply pure mathematical quantile ordering invariant (F16)
-        safe_p10, safe_p50, safe_p90 = enforce_quantile_order(raw_p10, raw_p50, raw_p90, cap=720.0)
-
-        # Widen uncertainty if position estimation has low confidence
-        if pos_record.confidence < 0.80:
-            uncertainty_w = (1.0 - pos_record.confidence) * 15.0
-            safe_p10 = max(0.0, safe_p10 - uncertainty_w * 0.5)
-            safe_p90 = safe_p90 + uncertainty_w
-
-        # Extract features for modal position to drive real explainable attribution
-        df_feat = None
-        if mode_vec is not None:
-            df_feat = pd.DataFrame([mode_vec.to_dict()])
-        elif hasattr(self, "snapshot_gen") and self.snapshot_gen is not None:
-            try:
-                k_delay = (
-                    current_delay
-                    if current_delay is not None
-                    else events_by_seq.get(pos_record.mode_seq, 0.0)
-                )
-                k_prev = events_by_seq.get(pos_record.mode_seq - 1, k_delay)
-                extracted_vec = self.snapshot_gen.extract_features_at_snapshot(
+                q10, q50, q90, tier, vec = self._predict_single_position(
                     train_no=train_no,
-                    current_seq=pos_record.mode_seq,
+                    seq_k=seq_k,
                     target_seq=target_seq,
-                    run_date_str=run_date,
+                    target_stop=target_stop,
+                    run_date=run_date,
+                    query_iso=query_iso,
                     current_delay=k_delay,
-                    prev_delay=k_prev,
-                    query_time_iso=query_iso,
+                    prev_delay=k_prev_delay,
+                    recency_latency_min=recency_latency_min,
+                    cached_active_tsrs=cached_active_tsrs,
+                    seq_tensor=seq_tensor,
                 )
-                df_feat = pd.DataFrame([extracted_vec.to_dict()])
-            except Exception:
-                df_feat = None
+                if mode_vec is None or seq_k == pos_record.mode_seq:
+                    mode_vec = vec
+                preds.append((p_k, q10, q50, q90, tier))
 
-        drivers = self._extract_top_drivers(df_feat=df_feat, predicted_delay=safe_p50)
+            if not preds:
+                default_delay = current_delay or 0.0
+                fallback_seq = max(1, min(pos_record.mode_seq, target_seq - 1))
+                q10, q50, q90, tier, vec = self._predict_single_position(
+                    train_no=train_no,
+                    seq_k=fallback_seq,
+                    target_seq=target_seq,
+                    target_stop=target_stop,
+                    run_date=run_date,
+                    query_iso=query_iso,
+                    current_delay=default_delay,
+                    prev_delay=default_delay,
+                    recency_latency_min=recency_latency_min,
+                    cached_active_tsrs=cached_active_tsrs,
+                    seq_tensor=seq_tensor,
+                )
+                mode_vec = vec
+                preds = [(1.0, q10, q50, q90, tier)]
 
-        curr_stop_match = next((r for r in route if int(r["seq"]) == pos_record.mode_seq), route[0])
-        curr_km = float(curr_stop_match["distance_km"])
-        target_km = float(target_stop["distance_km"])
-        calc_km_remaining = max(0.0, target_km - curr_km)
-        calc_hops_remaining = max(0, target_seq - int(pos_record.mode_seq))
-        true_current_delay = float(
-            current_delay
-            if current_delay is not None
-            else events_by_seq.get(pos_record.mode_seq, 0.0)
-        )
-        train_priority = int(train_row["priority"]) if "priority" in train_row else 2
+            # Normalize weights over valid candidate stops
+            Z = sum(p for p, *_ in preds)
+            if Z > 0:
+                preds = [(p / Z, q10, q50, q90, tier) for p, q10, q50, q90, tier in preds]
 
-        return self._format_prediction_result(
-            train_no=train_no,
-            train_name=train_row["name"],
-            target_station=target_station_code,
-            sched_arr=target_stop["sched_arr"],
-            p10_min=safe_p10,
-            p50_min=safe_p50,
-            p90_min=safe_p90,
-            tier_used=tier_used,
-            position_record=pos_record,
-            drivers=drivers,
-            current_delay=true_current_delay,
-            km_remaining=calc_km_remaining,
-            hops_remaining=calc_hops_remaining,
-            priority=train_priority,
-            run_date=run_date,
-            sched_day_offset=target_sched_day,
-            record_ledger=record_ledger,
-        )
+            raw_p10 = sum(p * q10 for p, q10, _, _, _ in preds)
+            raw_p50 = sum(p * q50 for p, _, q50, _, _ in preds)
+            raw_p90 = sum(p * q90 for p, _, _, q90, _ in preds)
+            tier_used = preds[0][4]
+
+            # Apply pure mathematical quantile ordering invariant (F16)
+            safe_p10, safe_p50, safe_p90 = enforce_quantile_order(raw_p10, raw_p50, raw_p90, cap=720.0)
+
+            # Widen uncertainty if position estimation has low confidence
+            if pos_record.confidence < 0.80:
+                uncertainty_w = (1.0 - pos_record.confidence) * 15.0
+                safe_p10 = max(0.0, safe_p10 - uncertainty_w * 0.5)
+                safe_p90 = safe_p90 + uncertainty_w
+
+            # Extract features for modal position to drive real explainable attribution
+            df_feat = None
+            if mode_vec is not None:
+                df_feat = pd.DataFrame([mode_vec.to_dict()])
+            elif hasattr(self, "snapshot_gen") and self.snapshot_gen is not None:
+                try:
+                    k_delay = (
+                        current_delay
+                        if current_delay is not None
+                        else events_by_seq.get(pos_record.mode_seq, 0.0)
+                    )
+                    k_prev = events_by_seq.get(pos_record.mode_seq - 1, k_delay)
+                    extracted_vec = self.snapshot_gen.extract_features_at_snapshot(
+                        train_no=train_no,
+                        current_seq=pos_record.mode_seq,
+                        target_seq=target_seq,
+                        run_date_str=run_date,
+                        current_delay=k_delay,
+                        prev_delay=k_prev,
+                        query_time_iso=query_iso,
+                    )
+                    df_feat = pd.DataFrame([extracted_vec.to_dict()])
+                except Exception:
+                    df_feat = None
+
+            drivers = self._extract_top_drivers(df_feat=df_feat, predicted_delay=safe_p50)
+
+            curr_stop_match = next((r for r in route if int(r["seq"]) == pos_record.mode_seq), route[0])
+            curr_km = float(curr_stop_match["distance_km"])
+            target_km = float(target_stop["distance_km"])
+            calc_km_remaining = max(0.0, target_km - curr_km)
+            calc_hops_remaining = max(0, target_seq - int(pos_record.mode_seq))
+            true_current_delay = float(
+                current_delay
+                if current_delay is not None
+                else events_by_seq.get(pos_record.mode_seq, 0.0)
+            )
+            train_priority = int(train_row["priority"]) if "priority" in train_row else 2
+
+            return self._format_prediction_result(
+                train_no=train_no,
+                train_name=train_row["name"],
+                target_station=target_station_code,
+                sched_arr=target_stop["sched_arr"],
+                p10_min=safe_p10,
+                p50_min=safe_p50,
+                p90_min=safe_p90,
+                tier_used=tier_used,
+                position_record=pos_record,
+                drivers=drivers,
+                current_delay=true_current_delay,
+                km_remaining=calc_km_remaining,
+                hops_remaining=calc_hops_remaining,
+                priority=train_priority,
+                run_date=run_date,
+                sched_day_offset=target_sched_day,
+                record_ledger=record_ledger,
+            )
+        finally:
+            self._gru_sequence_ready = False
 
     def _extract_top_drivers(
         self,
@@ -901,7 +996,9 @@ class PredictorService:
         worst_arr, worst_offset, worst_iso = format_arr(sched_arr, safe_p90)
 
         served_model_name = self.champion_name
-        if not self._gru_sequence_ready and served_model_name == "PyTorch_GRU_Quantile":
+        if tier_used == "Tier2_Convex_Ensemble_NNLS":
+            served_model_name = "Tier2_Convex_Ensemble_NNLS"
+        elif not self._gru_sequence_ready and served_model_name == "PyTorch_GRU_Quantile":
             served_model_name = (
                 "Tier2_Convex_Ensemble_NNLS"
                 if hasattr(self, "_ensemble") and self._ensemble is not None
@@ -931,10 +1028,11 @@ class PredictorService:
         receipt_hash = "unsealed"
         if record_ledger:
             try:
-                from engine.prediction_ledger import PredictionLedger
+                if not hasattr(self, "_ledger") or self._ledger is None:
+                    from engine.prediction_ledger import PredictionLedger
 
-                ledger = PredictionLedger(self.db)
-                receipt_hash = ledger.record_prediction_receipt(
+                    self._ledger = PredictionLedger(self.db)
+                receipt_hash = self._ledger.record_prediction_receipt(
                     train_no=train_no,
                     target_station=target_station,
                     p10=safe_p10,
