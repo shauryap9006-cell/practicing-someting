@@ -343,7 +343,13 @@ class TwinEngine:
             state.phase = "DWELL"
             return state, events
 
-        # Phase 1: DWELL handling
+        # Phase 1: DWELL & LOOP_HELD handling
+        if state.phase in ("LOOP_HELD", "HELD_LOOP"):
+            state.speed_kmh = 0.0
+            state.ema_speed_kmh = 0.0
+            state.held_reason = "LOOP_HOLD"
+            return state, events
+
         if state.phase == "DWELL":
             state.speed_kmh = 0.0
             state.ema_speed_kmh = 0.0

@@ -35,6 +35,9 @@ from data.db import Database, get_db
 from engine.attribution import LiveAttributionEngine, get_attribution_engine
 from engine.clocks import IST_TIMEZONE, get_clock
 from engine.context import ContextEngine, get_context_engine
+from engine.controller import AutonomousController
+from engine.infrastructure import InfrastructureCorridor
+from engine.signalling import BlockMap, SignalAspect, SignalSystem
 from engine.twin import TwinEngine, TwinTrainState
 
 
@@ -157,8 +160,11 @@ class LivePositionTracker:
         self.context_engine = context_engine or get_context_engine(self.db)
         self.attribution_engine = attribution_engine or get_attribution_engine(self.db)
 
-        # Pure-Math Kinematic Physics Twin Engine
+        # Pure-Math Kinematic Physics Twin Engine & Infrastructure Layers
         self.twin = TwinEngine()
+        self.corridor = InfrastructureCorridor()
+        self.block_map = BlockMap(self.corridor.get_all_blocks())
+        self.controller = AutonomousController(self.block_map, self.corridor)
         self._twin_states: Dict[str, TwinTrainState] = {}
         self._start_lock = asyncio.Lock()
 
@@ -466,7 +472,9 @@ class LivePositionTracker:
         except Exception:
             target_dt = t_now.date()
 
-        # 5. Physics Twin Advance & Closed-Loop Processing
+        # 5. Autonomous Controller Dispatch Actions & Physics Twin Advance
+        self.controller.tick(self._twin_states, dt_seconds=dt_seconds, sim_time_iso=now_iso)
+
         for t_no in train_nos:
             try:
                 route_stops = self._get_cached_route(t_no)
@@ -611,42 +619,30 @@ class LivePositionTracker:
                 active_tsr = active_tsrs.get(sec_pair)
                 fog_active = (cur_stop.station_code in fog_stations) if cur_stop else False
 
-                # Signal Block Occupancy Scan
-                block_occupied = False
-                dist_to_ahead = 999.0
-                for other_no, other_st in self._twin_states.items():
-                    if other_no == t_no:
-                        continue
-                    if (
-                        other_st.current_stop
-                        and cur_stop
-                        and other_st.current_stop.station_code == cur_stop.station_code
-                    ):
-                        if other_st.km > state.km:
-                            d = other_st.km - state.km
-                            if d < dist_to_ahead:
-                                dist_to_ahead = d
+                # L2/L3 BlockMap & SignalSystem Aspect Determination
+                blk = self.corridor.get_block_at_km(state.km)
+                if blk:
+                    self.block_map.occupy_block(blk.block_id, t_no)
 
-                if dist_to_ahead <= 2.0:
-                    block_occupied = True
-                    signal_aspect = "RED"
-                elif dist_to_ahead <= 5.0:
-                    signal_aspect = "YELLOW"
-                else:
-                    signal_aspect = "GREEN"
+                sig_aspect = self.block_map.get_signal_for_train(t_no, direction="UP")
+                block_occupied = sig_aspect.stop_required
+                signal_aspect = sig_aspect.code
 
                 # Platform Occupancy Scan
                 platform_occupied = False
                 if next_stop and state.phase == "APPROACH":
-                    for other_no, other_st in self._twin_states.items():
-                        if (
-                            other_no != t_no
+                    stn = self.corridor.get_station(next_stop.station_code)
+                    if stn:
+                        occupied_count = sum(
+                            1
+                            for other_no, other_st in self._twin_states.items()
+                            if other_no != t_no
                             and other_st.current_stop
                             and other_st.current_stop.station_code == next_stop.station_code
                             and other_st.phase == "DWELL"
-                        ):
+                        )
+                        if occupied_count >= stn.platforms:
                             platform_occupied = True
-                            break
 
                 ctx = {
                     "active_tsr_kmh": active_tsr,
