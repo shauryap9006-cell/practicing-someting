@@ -426,6 +426,38 @@ class PredictorService:
                 train_no, route, as_of_time=clock.now()
             )
 
+        # Check if train has already reached or passed target station
+        if pos_record.mode_seq >= target_seq:
+            actual_delay = float(
+                current_delay if current_delay is not None else events_by_seq.get(target_seq, 0.0)
+            )
+            train_priority = int(train_row["priority"]) if "priority" in train_row else 2
+
+            return self._format_prediction_result(
+                train_no=train_no,
+                train_name=train_row["name"],
+                target_station=target_station_code,
+                sched_arr=target_stop["sched_arr"],
+                p10_min=actual_delay,
+                p50_min=actual_delay,
+                p90_min=actual_delay,
+                tier_used="Actual_Station_Arrival",
+                position_record=pos_record,
+                drivers=[
+                    {
+                        "feature": "actual_station_arrival",
+                        "contribution_min": actual_delay,
+                        "direction": "neutral" if actual_delay == 0 else "increases_delay",
+                    }
+                ],
+                current_delay=actual_delay,
+                km_remaining=0.0,
+                hops_remaining=0,
+                priority=train_priority,
+                status="ARRIVED",
+                is_arrived=True,
+            )
+
         # Marginalization over top-K candidate positions (F19)
         top = pos_record.top_k(3)  # [(seq_k, p_k), ...]
         preds: List[Tuple[float, float, float, float, str]] = []
@@ -451,9 +483,10 @@ class PredictorService:
 
         if not preds:
             default_delay = current_delay or 0.0
+            fallback_seq = max(1, min(pos_record.mode_seq, target_seq - 1))
             q10, q50, q90, tier = self._predict_single_position(
                 train_no=train_no,
-                seq_k=1,
+                seq_k=fallback_seq,
                 target_seq=target_seq,
                 target_stop=target_stop,
                 run_date=run_date,
@@ -653,6 +686,8 @@ class PredictorService:
         km_remaining: float = 50.0,
         hops_remaining: int = 1,
         priority: int = 2,
+        status: str = "RUNNING",
+        is_arrived: bool = False,
     ) -> dict:
         """Formats arrival times and confidence band with audit provenance (F17, F20, F13)."""
         from safety.interlock import validate_prediction_through_interlock
@@ -673,10 +708,16 @@ class PredictorService:
             raw_p90=p90_min,
             base_tier="HIGH" if "Tier2" in tier_used else "MEDIUM",
         )
-        safe_p10 = interlock_rep.clamped_p10
-        safe_p50 = interlock_rep.clamped_p50
-        safe_p90 = interlock_rep.clamped_p90
-        final_tier = interlock_rep.confidence_tier
+        if is_arrived:
+            safe_p10 = float(p50_min)
+            safe_p50 = float(p50_min)
+            safe_p90 = float(p50_min)
+            final_tier = "HIGH"
+        else:
+            safe_p10 = interlock_rep.clamped_p10
+            safe_p50 = interlock_rep.clamped_p50
+            safe_p90 = interlock_rep.clamped_p90
+            final_tier = interlock_rep.confidence_tier
 
         def add_min_to_sched(s_time: Optional[str], mins: float) -> str:
             if not s_time or ":" not in s_time:
@@ -709,8 +750,10 @@ class PredictorService:
         top_drivers = drivers or self._extract_top_drivers(None, safe_p50)
 
         # TASK-6c: Confidence-driven advisory
-        band_width_min = round(safe_p90 - safe_p10, 1)
-        if band_width_min < 15.0:
+        band_width_min = round(safe_p90 - safe_p10, 1) if not is_arrived else 0.0
+        if is_arrived:
+            uncertainty_level = "high"  # Arrived is 100% certain
+        elif band_width_min < 15.0:
             uncertainty_level = "high"  # tight band -> green in frontend
         elif band_width_min < 40.0:
             uncertainty_level = "medium"  # moderate -> amber
@@ -740,6 +783,8 @@ class PredictorService:
             "target_station": target_station,
             "sched_arr": sched_arr,
             "predicted_arr": likely_arr,
+            "status": status,
+            "is_arrived": is_arrived,
             "pred_delay_p10": safe_p10,
             "pred_delay_p50": safe_p50,
             "pred_delay_p90": safe_p90,
