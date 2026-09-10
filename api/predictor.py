@@ -407,6 +407,25 @@ class PredictorService:
 
         target_seq = int(target_stop["seq"])
 
+        # Compute schedule day offsets along route to handle multi-day journeys (F17/F20)
+        sched_days = {}
+        cur_day = 0
+        prev_min = -1
+        for r in route:
+            s_time = r.get("sched_arr") or r.get("sched_dep")
+            if s_time and ":" in s_time:
+                try:
+                    h, m = [int(x) for x in s_time.split(":")[:2]]
+                    tot_min = h * 60 + m
+                    if prev_min != -1 and tot_min < prev_min - 120:
+                        cur_day += 1
+                    prev_min = tot_min
+                except Exception:
+                    pass
+            sched_days[int(r["seq"])] = cur_day
+
+        target_sched_day = sched_days.get(target_seq, 0)
+
         # F19 / F20: Resolve Soft Train Position probabilistically instead of falsy default
         pos_record: PositionRecord
         if current_seq is not None:
@@ -457,6 +476,8 @@ class PredictorService:
                 priority=train_priority,
                 status="ARRIVED",
                 is_arrived=True,
+                run_date=run_date,
+                sched_day_offset=target_sched_day,
             )
 
         # Marginalization over top-K candidate positions (F19)
@@ -574,6 +595,8 @@ class PredictorService:
             km_remaining=calc_km_remaining,
             hops_remaining=calc_hops_remaining,
             priority=train_priority,
+            run_date=run_date,
+            sched_day_offset=target_sched_day,
         )
 
     def _extract_top_drivers(
@@ -718,12 +741,19 @@ class PredictorService:
         priority: int = 2,
         status: str = "RUNNING",
         is_arrived: bool = False,
+        run_date: Optional[str] = None,
+        sched_day_offset: int = 0,
     ) -> dict:
         """Formats arrival times and confidence band with audit provenance (F17, F20, F13)."""
         from safety.interlock import validate_prediction_through_interlock
 
         clock = get_clock()
         base_time = clock.now()
+        run_d = (
+            datetime.date.fromisoformat(run_date)
+            if run_date
+            else base_time.date()
+        )
 
         feature_dict = {
             "current_delay": float(current_delay),
@@ -749,19 +779,37 @@ class PredictorService:
             safe_p90 = interlock_rep.clamped_p90
             final_tier = interlock_rep.confidence_tier
 
-        def add_min_to_sched(s_time: Optional[str], mins: float) -> str:
+        def format_arr(s_time: Optional[str], mins: float) -> Tuple[str, int, str]:
             if not s_time or ":" not in s_time:
                 dt = base_time + datetime.timedelta(minutes=mins)
-                return dt.strftime("%H:%M")
-            sh, sm = [int(x) for x in s_time.split(":")[:2]]
-            dt = datetime.datetime(
-                base_time.year, base_time.month, base_time.day, sh, sm
-            ) + datetime.timedelta(minutes=mins)
-            return dt.strftime("%H:%M")
+                day_offset = (dt.date() - run_d).days
+            else:
+                try:
+                    sh, sm = [int(x) for x in s_time.split(":")[:2]]
+                    sched_dt = datetime.datetime(
+                        run_d.year, run_d.month, run_d.day, sh, sm
+                    ) + datetime.timedelta(days=sched_day_offset)
+                    dt = sched_dt + datetime.timedelta(minutes=mins)
+                    day_offset = (dt.date() - run_d).days
+                except Exception:
+                    dt = base_time + datetime.timedelta(minutes=mins)
+                    day_offset = (dt.date() - run_d).days
 
-        best_arr = add_min_to_sched(sched_arr, safe_p10)
-        likely_arr = add_min_to_sched(sched_arr, safe_p50)
-        worst_arr = add_min_to_sched(sched_arr, safe_p90)
+            time_str = dt.strftime("%H:%M")
+            if day_offset > 0:
+                day_suffix = f" (+{day_offset} day)" if day_offset == 1 else f" (+{day_offset} days)"
+                formatted = f"{time_str}{day_suffix}"
+            elif day_offset < 0:
+                formatted = f"{time_str} ({day_offset} day)"
+            else:
+                formatted = time_str
+
+            iso_str = f"{dt.strftime('%Y-%m-%dT%H:%M:%S')}+05:30"
+            return formatted, day_offset, iso_str
+
+        best_arr, best_offset, best_iso = format_arr(sched_arr, safe_p10)
+        likely_arr, likely_offset, likely_iso = format_arr(sched_arr, safe_p50)
+        worst_arr, worst_offset, worst_iso = format_arr(sched_arr, safe_p90)
 
         served_model_name = self.champion_name
         if not self._gru_sequence_ready and served_model_name == "PyTorch_GRU_Quantile":
@@ -813,6 +861,8 @@ class PredictorService:
             "target_station": target_station,
             "sched_arr": sched_arr,
             "predicted_arr": likely_arr,
+            "day_offset": likely_offset,
+            "predicted_arr_iso": likely_iso,
             "status": status,
             "is_arrived": is_arrived,
             "pred_delay_p10": safe_p10,
@@ -828,6 +878,10 @@ class PredictorService:
                 "best_arrival": best_arr,
                 "likely_arrival": likely_arr,
                 "worst_arrival": worst_arr,
+                "day_offset": likely_offset,
+                "best_arrival_iso": best_iso,
+                "likely_arrival_iso": likely_iso,
+                "worst_arrival_iso": worst_iso,
                 "band_width_min": band_width_min,
                 "uncertainty_level": uncertainty_level,
             },

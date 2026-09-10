@@ -35,6 +35,10 @@ class ConfidenceBand(BaseModel):
     best_arrival: str
     likely_arrival: str
     worst_arrival: str
+    day_offset: int = Field(default=0, description="Calendar day offset from origin departure date")
+    likely_arrival_iso: Optional[str] = Field(default=None, description="ISO datetime of predicted arrival")
+    best_arrival_iso: Optional[str] = Field(default=None, description="ISO datetime of optimistic arrival")
+    worst_arrival_iso: Optional[str] = Field(default=None, description="ISO datetime of pessimistic arrival")
 
 
 class ModelMeta(BaseModel):
@@ -70,6 +74,8 @@ class TrainEtaResponse(BaseResponse):
     sched_arr: Optional[str]
     predicted_arr: str
     predicted_delay_min: int
+    day_offset: int = Field(default=0, description="Calendar day offset from origin departure date")
+    predicted_arr_iso: Optional[str] = Field(default=None, description="ISO datetime of predicted arrival")
     confidence_band: ConfidenceBand
     tier_used: str = Field(
         description="'Tier2_LightGBM_CQR', 'Tier2_PyTorch_GRU_Champion', or 'Tier1_HistLookup'"
