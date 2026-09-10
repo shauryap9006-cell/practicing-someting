@@ -33,7 +33,9 @@ class Settings(BaseSettings):
     )
     ENV: str = Field(
         default="development",
-        validation_alias=AliasChoices("RAILTWIN_ENV", "ENV"),
+        validation_alias=AliasChoices(
+            "RAILTWIN_ENV", "ENV", "RAILTWIN_ENVIRONMENT", "ENVIRONMENT"
+        ),
         description="'development', 'production', 'test'",
     )
     JWT_SECRET_KEY: str = Field(
@@ -405,9 +407,20 @@ class Settings(BaseSettings):
             if self.ALLOW_SYNTHETIC_FALLBACK:
                 raise ValueError("RAILTWIN_ALLOW_SYNTHETIC_FALLBACK must be false in production")
             secret = self.JWT_SECRET_KEY.strip()
-            if len(secret) < 32 or secret.lower() in {"changeme", "secret", "development"}:
+            insecure_patterns = (
+                "insecure",
+                "development",
+                "changeme",
+                "secret",
+                "default",
+                "placeholder",
+                "dummy",
+                "example",
+                "replace-with",
+            )
+            if len(secret) < 32 or any(p in secret.lower() for p in insecure_patterns):
                 raise ValueError(
-                    "RAILTWIN_JWT_SECRET_KEY must be a unique secret of at least 32 characters in production"
+                    "RAILTWIN_JWT_SECRET_KEY must be a cryptographically secure secret of at least 32 characters, and cannot contain insecure placeholder words in production"
                 )
             if self.DEFAULT_CLOCK_MODE != "live":
                 raise ValueError("RAILTWIN_DEFAULT_CLOCK_MODE must be 'live' in production")
