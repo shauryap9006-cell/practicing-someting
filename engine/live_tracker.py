@@ -26,10 +26,11 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 from config import settings
 
 logger = logging.getLogger(__name__)
-from collector.adapters.base import LiveSource
+from collector.adapters.base import LiveSource, StationEvent
 from collector.adapters.mock_replay import MockReplaySource
 from collector.adapters.rapidapi import RapidAPISource
 from collector.adapters.scrape import ScrapeSource
+from collector.quality import QualityGate
 from data.db import Database, get_db
 from engine.attribution import LiveAttributionEngine, get_attribution_engine
 from engine.clocks import IST_TIMEZONE, get_clock
@@ -167,10 +168,11 @@ class LivePositionTracker:
             if adapters is not None
             else [
                 RapidAPISource(),
-                ScrapeSource(),
+                ScrapeSource(timeout=(0.5, 1.0), max_retries=1, polite_delay=0.0),
                 MockReplaySource(self.db),
             ]
         )
+        self.quality_gate = QualityGate()
 
         # Rate Limiting Token Bucket
         tpm_budget = int(settings.LIVE_POLL_TPM_BUDGET)
@@ -257,6 +259,47 @@ class LivePositionTracker:
                 logger.exception("Live tracker background tick failed")
 
             await asyncio.sleep(self.tick_interval)
+
+    async def _fetch_live_train_events(
+        self, train_no: str, run_date: datetime.date
+    ) -> Tuple[List[StationEvent], str]:
+        """Queries configured adapter chain with strict timeout, validating through QualityGate."""
+        loop = asyncio.get_running_loop()
+        live_mode = getattr(settings, "LIVE_SOURCE_MODE", "auto")
+
+        for adapter in self.adapters:
+            # Skip unconfigured RapidAPISource instance (when api keys not set)
+            if isinstance(adapter, RapidAPISource) and not adapter.keys:
+                continue
+            # ScrapeSource should only run if explicitly enabled
+            if isinstance(adapter, ScrapeSource) and (
+                settings.ENV == "test" or not getattr(settings, "ENABLE_WEB_SCRAPING", False)
+            ):
+                continue
+            # If MockReplaySource, only use if in replay mode or synthetic fallback is enabled
+            if isinstance(adapter, MockReplaySource):
+                if live_mode != "replay" and not getattr(settings, "ALLOW_SYNTHETIC_FALLBACK", False):
+                    continue
+
+            try:
+                # Poll adapter with 2.0s strict timeout in threadpool to avoid event loop stall
+                events = await asyncio.wait_for(
+                    loop.run_in_executor(None, adapter.fetch_running_status, train_no, run_date),
+                    timeout=2.0,
+                )
+                if events:
+                    report = self.quality_gate.validate_events(events)
+                    if report.passed_events:
+                        return report.passed_events, adapter.source_name
+            except Exception as exc:
+                logger.debug(
+                    "Live adapter %s failed for train %s: %s",
+                    getattr(adapter, "source_name", "adapter"),
+                    train_no,
+                    exc,
+                )
+                continue
+        return [], "none"
 
     def _get_cached_route(self, train_no: str) -> List[dict]:
         """Retrieves and caches route stops with station coordinates for a train."""
@@ -413,6 +456,16 @@ class LivePositionTracker:
 
         resolved_positions: List[LiveTrainPosition] = []
 
+        live_mode = getattr(settings, "LIVE_SOURCE_MODE", "auto")
+        try:
+            target_dt = (
+                datetime.date.fromisoformat(target_date)
+                if isinstance(target_date, str)
+                else target_date
+            )
+        except Exception:
+            target_dt = t_now.date()
+
         # 5. Physics Twin Advance & Closed-Loop Processing
         for t_no in train_nos:
             try:
@@ -424,6 +477,128 @@ class LivePositionTracker:
                     self._twin_states[t_no] = self._init_twin_train_state(t_no, route_stops, t_now)
 
                 state = self._twin_states[t_no]
+
+                # 5a. Check configured live data ingestion adapters
+                live_events: List[StationEvent] = []
+                source_used: str = "none"
+                if live_mode in ("auto", "live", "replay") and getattr(clock, "mode", "live") != "simulated":
+                    if self.rate_limiter.consume(1):
+                        live_events, source_used = await self._fetch_live_train_events(t_no, target_dt)
+                    else:
+                        logger.warning("Rate limit reached: skipping live adapter poll for train %s", t_no)
+
+                if live_events:
+                    # Persist validated live events into station_events
+                    with self.db.transaction() as cur:
+                        cur.executemany(
+                            """
+                            INSERT INTO station_events (
+                                train_no, run_date, seq, station_code,
+                                sched_arr, actual_arr, sched_dep, actual_dep,
+                                delay_arr_min, delay_dep_min, collected_at, event_time, source
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ON CONFLICT(train_no, run_date, seq) DO UPDATE SET
+                                actual_arr = coalesce(excluded.actual_arr, station_events.actual_arr),
+                                actual_dep = coalesce(excluded.actual_dep, station_events.actual_dep),
+                                delay_arr_min = coalesce(excluded.delay_arr_min, station_events.delay_arr_min),
+                                delay_dep_min = coalesce(excluded.delay_dep_min, station_events.delay_dep_min),
+                                event_time = excluded.event_time,
+                                collected_at = excluded.collected_at,
+                                source = excluded.source;
+                            """,
+                            [
+                                (
+                                    ev.train_no,
+                                    ev.run_date,
+                                    ev.seq,
+                                    ev.station_code,
+                                    ev.sched_arr,
+                                    ev.actual_arr,
+                                    ev.sched_dep,
+                                    ev.actual_dep,
+                                    ev.delay_arr_min,
+                                    ev.delay_dep_min,
+                                    ev.collected_at or now_iso,
+                                    now_iso,
+                                    "live" if source_used != "MockReplay" else "mock_replay",
+                                )
+                                for ev in live_events
+                            ],
+                        )
+
+                    reported_events = [
+                        ev for ev in live_events if ev.actual_dep is not None or ev.actual_arr is not None
+                    ]
+                    latest_ev = max(reported_events, key=lambda e: e.seq) if reported_events else live_events[-1]
+
+                    matching_idx = 0
+                    for idx, st_stop in enumerate(route_stops):
+                        if st_stop["station_code"] == latest_ev.station_code or int(st_stop.get("seq", -1)) == latest_ev.seq:
+                            matching_idx = idx
+                            break
+
+                    curr_stop_dict = route_stops[matching_idx]
+                    curr_km = float(curr_stop_dict["distance_km"])
+                    is_term = matching_idx >= len(route_stops) - 1
+                    next_stop_dict = route_stops[matching_idx + 1] if not is_term else None
+
+                    if latest_ev.actual_dep and not is_term and next_stop_dict:
+                        next_km = float(next_stop_dict["distance_km"])
+                        curr_km = min(next_km - 0.1, curr_km + 1.0)
+
+                    state.km = curr_km
+                    state.current_stop_idx = matching_idx + (1 if latest_ev.actual_dep and not is_term else 0)
+                    self._twin_states[t_no] = state
+
+                    total_route_dist = max(1.0, float(route_stops[-1]["distance_km"]))
+                    pos_source = "live" if source_used != "MockReplay" else "mock_replay"
+                    delay_m = float(latest_ev.delay_dep_min if latest_ev.actual_dep else latest_ev.delay_arr_min)
+
+                    lat_val = float(curr_stop_dict["lat"])
+                    lng_val = float(curr_stop_dict["lon"])
+                    heading_val = 90.0
+                    sec_id = None
+                    if next_stop_dict and not is_term:
+                        span = max(0.001, float(next_stop_dict["distance_km"]) - float(curr_stop_dict["distance_km"]))
+                        frac = max(0.0, min(1.0, (curr_km - float(curr_stop_dict["distance_km"])) / span))
+                        lat_val += frac * (float(next_stop_dict["lat"]) - lat_val)
+                        lng_val += frac * (float(next_stop_dict["lon"]) - lng_val)
+                        heading_val = _calculate_heading(
+                            float(curr_stop_dict["lat"]),
+                            float(curr_stop_dict["lon"]),
+                            float(next_stop_dict["lat"]),
+                            float(next_stop_dict["lon"]),
+                        )
+                        sec_id = f"{curr_stop_dict['station_code']}_{next_stop_dict['station_code']}"
+
+                    pos = LiveTrainPosition(
+                        train_no=t_no,
+                        run_date=target_date,
+                        lat=lat_val,
+                        lng=lng_val,
+                        km=curr_km,
+                        current_station_code=curr_stop_dict["station_code"],
+                        next_station_code=next_stop_dict["station_code"] if next_stop_dict else None,
+                        prev_station_code=route_stops[matching_idx - 1]["station_code"] if matching_idx > 0 else None,
+                        section_id=sec_id,
+                        speed_kmh=65.0 if (latest_ev.actual_dep and not is_term) else 0.0,
+                        heading=heading_val,
+                        delay_minutes=delay_m,
+                        confidence=0.98,
+                        progress_pct=max(0.0, min(100.0, (curr_km / total_route_dist) * 100.0)),
+                        is_dead_reckoned=bool(latest_ev.actual_dep and not is_term),
+                        basis="station_master_actual" if not (latest_ev.actual_dep and not is_term) else "dead_reckoning",
+                        source=pos_source,
+                        status="TERMINATED" if is_term else "RUNNING",
+                        last_event_time=now_iso,
+                        updated_at=now_iso,
+                    )
+                    resolved_positions.append(pos)
+                    with self._lock:
+                        self._position_cache[f"{t_no}:{target_date}"] = (pos, now_ts)
+                    continue
+
+                # Fallback: advance via pure-math kinematic TwinEngine
                 cur_stop = state.current_stop
                 next_stop = state.next_stop
 
@@ -761,12 +936,16 @@ class LivePositionTracker:
         trunk_stations = ["NDLS", "GZB", "ALJN", "TDL", "ETW", "CNB", "PRYJ", "DDU"]
         with self.db.transaction() as cur:
             cur.execute(
-                """
-                SELECT COUNT(*) as cnt FROM station_events
-                WHERE run_date = ? AND station_code IN (?, ?, ?, ?, ?, ?, ?, ?)
+                f"""
+                SELECT station_code, count(*) as event_count, max(collected_at) as last_seen
+                FROM station_events
+                WHERE run_date = ? AND station_code IN ({','.join(['?'] * len(trunk_stations))})
+                GROUP BY station_code
                 """,
                 (run_date, *trunk_stations),
             )
+            records = cur.fetchall()
+            logger.debug("Station board telemetry synced for %s: %d stations reporting", run_date, len(records))
 
     def get_live_position(
         self, train_no: str, run_date: Optional[str] = None

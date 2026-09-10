@@ -91,6 +91,11 @@ class Settings(BaseSettings):
     OPENMETEO_ARCHIVE_URL: str = "https://archive-api.open-meteo.com/v1/archive"
     REQUEST_TIMEOUT_SECONDS: float = 10.0
     POLITE_SCRAPE_DELAY_SECONDS: float = 2.0
+    ENABLE_WEB_SCRAPING: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("RAILTWIN_ENABLE_WEB_SCRAPING", "ENABLE_WEB_SCRAPING"),
+        description="Whether to attempt live web scraping when RapidAPI keys are absent",
+    )
 
     # 4. Data Quality Gates & Thresholds
     MAX_SANITY_DELAY_MINUTES: int = Field(default=600, description="Delays > 600m are quarantined")
@@ -213,6 +218,11 @@ class Settings(BaseSettings):
     )
 
     # 10. Pipeline 07: Live Position Tracking, Context & Real Delay Attribution
+    LIVE_SOURCE_MODE: str = Field(
+        default="auto",
+        validation_alias=AliasChoices("RAILTWIN_LIVE_SOURCE_MODE", "LIVE_SOURCE_MODE"),
+        description="'auto', 'live', 'replay', or 'simulated'",
+    )
     LIVE_TRACKER_INTERVAL_SECONDS: int = Field(
         default=1,
         validation_alias=AliasChoices(
