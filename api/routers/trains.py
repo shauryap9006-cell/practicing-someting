@@ -2,10 +2,26 @@
 
 from __future__ import annotations
 
+import datetime
 import logging
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
+
+
+def _add_min_to_sched(s_time: Optional[str], mins: float, base_time: datetime.datetime) -> str:
+    if not s_time or ":" not in s_time:
+        dt = base_time + datetime.timedelta(minutes=mins)
+        return dt.strftime("%H:%M")
+    try:
+        sh, sm = [int(x) for x in s_time.split(":")[:2]]
+        dt = datetime.datetime(
+            base_time.year, base_time.month, base_time.day, sh, sm
+        ) + datetime.timedelta(minutes=mins)
+        return dt.strftime("%H:%M")
+    except Exception:
+        dt = base_time + datetime.timedelta(minutes=mins)
+        return dt.strftime("%H:%M")
 
 from api.predictor import get_predictor_service
 from api.schemas import (
@@ -77,21 +93,43 @@ def get_train_journey(train_no: str):
     """Returns chronological journey timeline with sched vs predicted ETAs across all stops."""
     db = get_db()
     clock = get_clock()
-    predictor = get_predictor_service()
 
-    train_row = get_train_info(db, train_no)
-    if not train_row:
-        raise HTTPException(
-            status_code=404,
-            detail={
-                "code": "TRAIN_NOT_FOUND",
-                "message": f"Train {train_no} not found",
-                "retryable": False,
-            },
+    # Query 1: Route stops + station names + train metadata in a single joined query
+    with db.transaction() as cur:
+        cur.execute(
+            """
+            SELECT 
+                t.name as train_name,
+                t.class as train_class,
+                rs.seq,
+                rs.station_code,
+                rs.sched_arr,
+                rs.sched_dep,
+                rs.distance_km,
+                s.name as station_name
+            FROM route_stations rs
+            JOIN trains t ON rs.train_no = t.train_no
+            JOIN stations s ON rs.station_code = s.code
+            WHERE rs.train_no = ?
+            ORDER BY rs.seq ASC
+            """,
+            (train_no,),
         )
+        stops = [dict(r) for r in cur.fetchall()]
 
-    stops = get_train_route_stops(db, train_no)
     if not stops:
+        with db.transaction() as cur:
+            cur.execute("SELECT name FROM trains WHERE train_no = ?", (train_no,))
+            train_exists = cur.fetchone()
+        if not train_exists:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "code": "TRAIN_NOT_FOUND",
+                    "message": f"Train {train_no} not found",
+                    "retryable": False,
+                },
+            )
         raise HTTPException(
             status_code=404,
             detail={
@@ -101,8 +139,20 @@ def get_train_journey(train_no: str):
             },
         )
 
-    latest_ev = get_latest_station_event(db, train_no)
-    if not latest_ev:
+    # Query 2: All station events for this train in a single batch query
+    with db.transaction() as cur:
+        cur.execute(
+            """
+            SELECT seq, station_code, sched_arr, actual_arr, sched_dep, actual_dep, delay_arr_min, delay_dep_min, event_time, run_date
+            FROM station_events
+            WHERE train_no = ?
+            ORDER BY run_date DESC, seq DESC
+            """,
+            (train_no,),
+        )
+        events = [dict(r) for r in cur.fetchall()]
+
+    if not events:
         raise HTTPException(
             status_code=404,
             detail={
@@ -112,37 +162,69 @@ def get_train_journey(train_no: str):
             },
         )
 
+    latest_ev = events[0]
     current_seq = int(latest_ev["seq"])
+    curr_stn = latest_ev["station_code"]
     current_delay = float(
         latest_ev["delay_arr_min"]
         if latest_ev["delay_arr_min"] is not None
         else (latest_ev["delay_dep_min"] or 0.0)
     )
-    curr_stn = latest_ev["station_code"]
+    latest_run_date = latest_ev.get("run_date")
+    events_by_seq = {int(e["seq"]): e for e in events if e.get("run_date") == latest_run_date}
 
+    base_time = clock.now()
     timeline = []
     for st in stops:
         code = st["station_code"]
         seq = int(st["seq"])
 
-        try:
-            pred = predictor.predict_train_eta(
-                train_no, code, current_seq=current_seq, current_delay=current_delay
-            )
-            p_arr = pred["predicted_arr"]
-            band_info = pred["confidence_band"]
-            d_min = pred["predicted_delay_min"]
-        except Exception:
-            p_arr = st["sched_arr"] or st["sched_dep"]
-            d_min = int(current_delay)
+        if seq <= current_seq:
+            ev = events_by_seq.get(seq)
+            if ev:
+                delay_val = (
+                    ev["delay_arr_min"]
+                    if ev["delay_arr_min"] is not None
+                    else (ev["delay_dep_min"] or current_delay)
+                )
+                d_min = int(round(float(delay_val)))
+                p_arr = ev.get("actual_arr") or _add_min_to_sched(
+                    st["sched_arr"] or st["sched_dep"], d_min, base_time
+                )
+            else:
+                d_min = int(round(current_delay))
+                p_arr = _add_min_to_sched(
+                    st["sched_arr"] or st["sched_dep"], d_min, base_time
+                )
+
             fallback_arrival = p_arr or "--:--"
             band_info = {
-                "best_p10_min": max(0, d_min - 5),
+                "best_p10_min": d_min,
                 "likely_p50_min": d_min,
-                "worst_p90_min": d_min + 15,
+                "worst_p90_min": d_min,
                 "best_arrival": fallback_arrival,
                 "likely_arrival": fallback_arrival,
                 "worst_arrival": fallback_arrival,
+            }
+        else:
+            d_min = int(round(current_delay))
+            p_arr = _add_min_to_sched(
+                st["sched_arr"] or st["sched_dep"], d_min, base_time
+            )
+            fallback_arrival = p_arr or "--:--"
+            best_p10 = max(0, d_min - 5)
+            worst_p90 = d_min + 15
+            band_info = {
+                "best_p10_min": best_p10,
+                "likely_p50_min": d_min,
+                "worst_p90_min": worst_p90,
+                "best_arrival": _add_min_to_sched(
+                    st["sched_arr"] or st["sched_dep"], best_p10, base_time
+                ),
+                "likely_arrival": fallback_arrival,
+                "worst_arrival": _add_min_to_sched(
+                    st["sched_arr"] or st["sched_dep"], worst_p90, base_time
+                ),
             }
 
         color = delay_color(d_min)
@@ -164,8 +246,8 @@ def get_train_journey(train_no: str):
 
     return TrainJourneyResponse(
         train_no=train_no,
-        train_name=train_row["name"],
-        train_class=train_row["class"],
+        train_name=stops[0]["train_name"],
+        train_class=stops[0]["train_class"],
         current_station=curr_stn,
         current_delay_min=int(current_delay),
         timeline=timeline,
