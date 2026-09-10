@@ -654,8 +654,9 @@ class PredictorService:
         self._gru_sequence_ready = (seq_tensor is not None)
 
         try:
-            # Marginalization over top-K candidate positions (F19)
-            top = pos_record.top_k(3)  # [(seq_k, p_k), ...]
+            # Marginalization over top-K candidate positions with significant probability (F19)
+            candidates = pos_record.top_k(3)
+            top = [p for p in candidates if p[1] >= 0.05] or candidates[:1]
             preds: List[Tuple[float, float, float, float, str]] = []
             mode_vec: Optional[Any] = None
 

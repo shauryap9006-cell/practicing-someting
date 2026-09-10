@@ -25,18 +25,25 @@ if torch.cuda.is_available():
 
 from config import settings
 from data.db import Database, get_db
-from ml.features import FEATURE_NAMES
+from ml.features import FEATURE_NAMES, get_feature_names
 from ml.snapshots import SnapshotGenerator
 
 
 class ModelTrainer:
     """Orchestrates training of the 6 LightGBM quantile models and conformal calibration."""
 
-    def __init__(self, db: Optional[Database] = None, artifacts_dir: Optional[Path] = None):
+    def __init__(
+        self,
+        db: Optional[Database] = None,
+        artifacts_dir: Optional[Path] = None,
+        feature_version: int = 2,
+    ):
         self.db = db or get_db()
         self.artifacts_dir = artifacts_dir or settings.ARTIFACTS_DIR
         self.artifacts_dir.mkdir(parents=True, exist_ok=True)
         self.snapshot_gen = SnapshotGenerator(self.db)
+        self.feature_version = feature_version
+        self.features = get_feature_names(version=feature_version)
 
     def prepare_datasets(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Loads and splits snapshot data into TRAIN (full archive) and TEST sets.
@@ -139,7 +146,7 @@ class ModelTrainer:
         )
 
         train_data = lgb.Dataset(
-            X_train[FEATURE_NAMES],
+            X_train[self.features],
             label=y_train,
             weight=sample_weights,
         )
@@ -167,7 +174,7 @@ class ModelTrainer:
         valid_sets = [train_data]
         callbacks = []
         if X_val is not None and y_val is not None and len(X_val) > 0:
-            val_data = lgb.Dataset(X_val[FEATURE_NAMES], label=y_val, reference=train_data)
+            val_data = lgb.Dataset(X_val[self.features], label=y_val, reference=train_data)
             valid_sets.append(val_data)
             callbacks.append(lgb.early_stopping(stopping_rounds=50, verbose=False))
 
@@ -203,8 +210,8 @@ class ModelTrainer:
         print(
             f"[INFO] Computing Mondrian Conformal CQR calibration for {model_type} (target coverage: {(1 - alpha_coverage) * 100:.0f}%)..."
         )
-        q_lo_pred = models[0.1].predict(X_calib[FEATURE_NAMES])
-        q_hi_pred = models[0.9].predict(X_calib[FEATURE_NAMES])
+        q_lo_pred = models[0.1].predict(X_calib[self.features])
+        q_hi_pred = models[0.9].predict(X_calib[self.features])
         y_actual = y_calib.values
 
         hops_arr = (
@@ -326,19 +333,19 @@ class ModelTrainer:
         importance_gain = direct_models[0.5].feature_importance(importance_type="gain")
         total_gain = max(1e-6, sum(importance_gain))
         feat_importance_dict = {
-            f: float(g / total_gain * 100.0) for f, g in zip(FEATURE_NAMES, importance_gain)
+            f: float(g / total_gain * 100.0) for f, g in zip(self.features, importance_gain)
         }
 
         # 5. Baseline B3: Scikit-learn Linear Regression on direct training set & Persist benchmark
         from sklearn.linear_model import LinearRegression
 
         lr_model = LinearRegression()
-        lr_model.fit(train_core[FEATURE_NAMES], train_core["target_direct_delay"])
+        lr_model.fit(train_core[self.features], train_core["target_direct_delay"])
         lr_bench_path = self.artifacts_dir / "model_lr_benchmark.pkl"
         joblib.dump(lr_model, lr_bench_path)
         print(f"[SUCCESS] Persisted linear regression benchmark to {lr_bench_path}")
 
-        lr_calib_pred = lr_model.predict(direct_calib[FEATURE_NAMES])
+        lr_calib_pred = lr_model.predict(direct_calib[self.features])
         b3_calib_mae = float(
             np.mean(np.abs(direct_calib["target_direct_delay"].values - lr_calib_pred))
         )
@@ -360,7 +367,8 @@ class ModelTrainer:
             "conformal_q_hat_delta_3h": calib_delta["3h"],
             "conformal_q_hat_delta_6h": calib_delta["6h"],
             "target_coverage": 1.0 - settings.CONFORMAL_MISCOVERAGE_ALPHA,
-            "features": FEATURE_NAMES,
+            "feature_version": self.feature_version,
+            "features": self.features,
             "feature_importance_gain_pct": feat_importance_dict,
             "b3_linear_regression_calib_mae": round(b3_calib_mae, 2),
         }
@@ -369,8 +377,27 @@ class ModelTrainer:
         with open(manifest_path, "w", encoding="utf-8") as f:
             json.dump(manifest, f, indent=2)
 
+        self._update_artifact_integrity()
+
         print(f"[SUCCESS] All 6 models + calibration manifest saved in {self.artifacts_dir}")
         return manifest
+
+    def _update_artifact_integrity(self) -> None:
+        """Updates artifact_integrity.json with actual SHA256 hashes of the trained models."""
+        from ml.artifact_integrity import MODEL_ARTIFACT_NAMES, INTEGRITY_FILE_NAME, sha256_file
+
+        integrity_path = self.artifacts_dir / INTEGRITY_FILE_NAME
+        inventory = {
+            "algorithm": "sha256",
+            "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "files": {},
+        }
+        for name in MODEL_ARTIFACT_NAMES:
+            p = self.artifacts_dir / name
+            if p.exists():
+                inventory["files"][name] = sha256_file(p)
+        with open(integrity_path, "w", encoding="utf-8") as f:
+            json.dump(inventory, f, indent=2)
 
 
 if __name__ == "__main__":

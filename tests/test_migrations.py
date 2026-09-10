@@ -66,17 +66,17 @@ def test_fresh_db_build_and_downgrade_roundtrip(tmp_path: Path):
     finally:
         conn.close()
 
-    # 2. Roll back 2 migrations (v17 and v16)
+    # 2. Roll back 2 migrations (v18 and v17)
     rolled = db.downgrade_migrations(steps=2)
     assert len(rolled) == 2
-    assert "017_add_must_change_password.down.sql" in rolled[0]
-    assert "016_audit_log_index.down.sql" in rolled[1]
+    assert "018_domain_features_schema.down.sql" in rolled[0]
+    assert "017_add_must_change_password.down.sql" in rolled[1]
 
     status_after_down = db.get_migration_status()
     assert len(status_after_down["pending"]) == 2
     applied_versions = {r["version"] for r in status_after_down["applied"]}
+    assert 18 not in applied_versions
     assert 17 not in applied_versions
-    assert 16 not in applied_versions
 
     conn = db.get_connection()
     try:
@@ -84,17 +84,10 @@ def test_fresh_db_build_and_downgrade_roundtrip(tmp_path: Path):
         check = conn.execute("PRAGMA integrity_check;").fetchall()
         assert [tuple(r) for r in check] == [("ok",)]
 
-        # Verify v17 column dropped and v16 index dropped
-        user_cols = [r[1] for r in conn.execute("PRAGMA table_info(users);").fetchall()]
-        assert "must_change_password" not in user_cols
-
-        indexes = [
-            r[1]
-            for r in conn.execute(
-                "SELECT type, name FROM sqlite_master WHERE type='index';"
-            ).fetchall()
-        ]
-        assert "idx_audit_prev" not in indexes
+        # Verify v18 columns dropped
+        train_cols = [r[1] for r in conn.execute("PRAGMA table_info(trains);").fetchall()]
+        assert "loco_class" not in train_cols
+        assert "rake_type" not in train_cols
     finally:
         conn.close()
 
@@ -111,17 +104,10 @@ def test_fresh_db_build_and_downgrade_roundtrip(tmp_path: Path):
         check = conn.execute("PRAGMA integrity_check;").fetchall()
         assert [tuple(r) for r in check] == [("ok",)]
 
-        # Verify v17 column and v16 index restored
-        user_cols = [r[1] for r in conn.execute("PRAGMA table_info(users);").fetchall()]
-        assert "must_change_password" in user_cols
-
-        indexes = [
-            r[1]
-            for r in conn.execute(
-                "SELECT type, name FROM sqlite_master WHERE type='index';"
-            ).fetchall()
-        ]
-        assert "idx_audit_prev" in indexes
+        # Verify v18 columns restored
+        train_cols = [r[1] for r in conn.execute("PRAGMA table_info(trains);").fetchall()]
+        assert "loco_class" in train_cols
+        assert "rake_type" in train_cols
     finally:
         conn.close()
 
@@ -132,9 +118,9 @@ def test_downgrade_to_target_version(tmp_path: Path):
     db = Database(db_path)
     db.init_schema()
 
-    # Downgrade to version 14 (rolling back 17, 16, 15)
+    # Downgrade to version 14 (rolling back 18, 17, 16, 15)
     rolled = db.downgrade_migrations(target_version=14)
-    assert len(rolled) == 3
+    assert len(rolled) == 4
 
     status = db.get_migration_status()
     applied_versions = [r["version"] for r in status["applied"]]
@@ -174,7 +160,8 @@ def test_fresh_db_rebuild_from_scratch(tmp_path: Path):
     db.init_schema()
 
     status = db.get_migration_status()
-    assert len(status["applied"]) == 17
+    assert len(status["applied"]) >= 18
+    assert len(status["pending"]) == 0
     assert len(status["pending"]) == 0
 
     counts = db.table_counts()

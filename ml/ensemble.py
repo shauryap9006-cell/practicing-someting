@@ -11,11 +11,13 @@ from __future__ import annotations
 
 import json
 import time
+import warnings
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 import lightgbm as lgb
 import numpy as np
+import pandas as pd
 import torch
 from scipy.optimize import nnls
 
@@ -143,6 +145,7 @@ class EnsemblePredictor:
             "long": (0.35, 0.15, 0.10, 0.05, 0.35),
         }
 
+        self.feature_names = FEATURE_NAMES
         self._load_models()
         self._load_calibration()
 
@@ -180,12 +183,14 @@ class EnsemblePredictor:
                 print(f"[WARN] Failed to load LR benchmark: {e}")
 
     def _load_calibration(self) -> None:
-        """Loads Mondrian CQR factors and stacking weights from registry/manifest."""
+        """Loads Mondrian CQR factors, stacking weights, and feature names from registry/manifest."""
         manifest_path = self.artifacts_dir / "manifest.json"
         if manifest_path.exists():
             try:
                 with open(manifest_path, "r", encoding="utf-8") as f:
                     mf = json.load(f)
+                if "features" in mf:
+                    self.feature_names = mf["features"]
                 if "cqr_mondrian" in mf:
                     self.mondrian_cqr.group_q_hats = mf["cqr_mondrian"]
                 if "stacking_weights" in mf:
@@ -204,7 +209,7 @@ class EnsemblePredictor:
         """Predicts calibrated blended quantiles (p10, p50, p90) with horizon-dependent NNLS weights and Mondrian CQR."""
         # 1. LightGBM Predictions
         is_np = isinstance(feature_df, np.ndarray)
-        feat_input = feature_df if is_np else feature_df[FEATURE_NAMES]
+        feat_input = feature_df if is_np else feature_df[self.feature_names]
 
         gbm_p10 = (
             float(self._gbm_models[0.1].predict(feat_input)[0]) if 0.1 in self._gbm_models else 5.0
@@ -220,7 +225,16 @@ class EnsemblePredictor:
         lr_p50 = gbm_p50
         if self._lr_model is not None:
             try:
-                lr_p50 = max(0.0, float(self._lr_model.predict(feat_input)[0]))
+                lr_in = feat_input
+                if hasattr(self._lr_model, "feature_names_in_"):
+                    cols = list(self._lr_model.feature_names_in_)
+                    if isinstance(feat_input, pd.DataFrame) and all(c in feat_input.columns for c in cols):
+                        lr_in = feat_input[cols]
+                    elif hasattr(feat_input, "values"):
+                        lr_in = feat_input.values
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    lr_p50 = max(0.0, float(self._lr_model.predict(lr_in)[0]))
             except Exception:
                 lr_p50 = gbm_p50
 
@@ -359,9 +373,9 @@ class EnsemblePredictor:
 
         # 1. Evaluate LightGBM Champion
         t0 = time.perf_counter()
-        gbm_p50 = self._gbm_models[0.5].predict(direct_test[FEATURE_NAMES])
-        gbm_p10 = self._gbm_models[0.1].predict(direct_test[FEATURE_NAMES])
-        gbm_p90 = self._gbm_models[0.9].predict(direct_test[FEATURE_NAMES])
+        gbm_p50 = self._gbm_models[0.5].predict(direct_test[self.feature_names])
+        gbm_p10 = self._gbm_models[0.1].predict(direct_test[self.feature_names])
+        gbm_p90 = self._gbm_models[0.9].predict(direct_test[self.feature_names])
         t_gbm = (time.perf_counter() - t0) / max(1, len(direct_test)) * 1000.0
 
         gbm_errors = np.abs(y_true - gbm_p50)
@@ -411,7 +425,7 @@ class EnsemblePredictor:
         if self._lr_model is not None:
             try:
                 lr_fit = np.maximum(
-                    0.0, self._lr_model.predict(direct_test[FEATURE_NAMES].iloc[:n_fit])
+                    0.0, self._lr_model.predict(direct_test[self.feature_names].iloc[:n_fit])
                 )
             except Exception:
                 lr_fit = gbm_fit_p50
@@ -442,7 +456,7 @@ class EnsemblePredictor:
         if self._lr_model is not None:
             try:
                 lr_eval = np.maximum(
-                    0.0, self._lr_model.predict(direct_test[FEATURE_NAMES].iloc[n_fit:n_align])
+                    0.0, self._lr_model.predict(direct_test[self.feature_names].iloc[n_fit:n_align])
                 )
             except Exception:
                 lr_eval = gbm_eval_p50

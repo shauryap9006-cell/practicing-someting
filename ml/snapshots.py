@@ -169,6 +169,38 @@ class SnapshotGenerator:
         else:
             self._cached_festivals = []
 
+        # Domain metadata caches (WO-10)
+        with self.db.transaction() as cur:
+            try:
+                cur.execute("SELECT train_no, loco_class, rake_type FROM trains")
+                self._cached_train_domain = {
+                    r["train_no"]: {"loco_class": r["loco_class"], "rake_type": r["rake_type"]}
+                    for r in cur.fetchall()
+                }
+            except Exception:
+                self._cached_train_domain = {}
+
+            try:
+                cur.execute("SELECT from_code, to_code, gradient_pct, zone_id FROM sections")
+                self._cached_sections = {
+                    (r["from_code"], r["to_code"]): {
+                        "gradient_pct": float(r["gradient_pct"] or 0.15),
+                        "zone_id": r["zone_id"] or "NCR",
+                    }
+                    for r in cur.fetchall()
+                }
+            except Exception:
+                self._cached_sections = {}
+
+            try:
+                cur.execute("SELECT station_code, is_interlocked FROM level_crossings")
+                self._cached_level_crossings = {
+                    r["station_code"]: (1 if not r["is_interlocked"] else 0)
+                    for r in cur.fetchall()
+                }
+            except Exception:
+                self._cached_level_crossings = {}
+
     def _get_festival_multiplier(self, run_date: datetime.date) -> float:
         """Calculates festival multiplier for a given run date."""
         if not self._cached_festivals:
@@ -196,13 +228,13 @@ class SnapshotGenerator:
         current_seq: int,
         target_seq: int,
         cached_active_tsrs: Optional[List[dict]] = None,
-    ) -> Tuple[int, float]:
-        """Calculates active TSR count and maximum slowdown percentage on remaining route."""
+    ) -> Tuple[int, float, float]:
+        """Calculates active TSR count, maximum slowdown percentage, and physics TSR delay in minutes on remaining route."""
         remaining_stns = [
             r["station_code"] for r in route if current_seq <= int(r["seq"]) <= target_seq
         ]
         if len(remaining_stns) < 2:
-            return 0, 0.0
+            return 0, 0.0, 0.0
 
         remaining_pairs = set()
         for i in range(len(remaining_stns) - 1):
@@ -230,14 +262,23 @@ class SnapshotGenerator:
                 matched_tsrs.append(tsr)
 
         if not matched_tsrs:
-            return 0, 0.0
+            return 0, 0.0, 0.0
 
         count = len(matched_tsrs)
         slowdowns = [
             max(0.0, 100.0 * (1.0 - (float(t.get("speed_limit_kmph", 60.0)) / 110.0)))
             for t in matched_tsrs
         ]
-        return count, float(max(slowdowns))
+        total_tsr_delay_min = 0.0
+        for t in matched_tsrs:
+            limit = float(t.get("speed_limit_kmph", 60.0))
+            norm = 110.0
+            if limit > 0 and norm > limit:
+                d_km = float(t.get("length_km", 2.0))
+                delta_t_h = (d_km / limit) - (d_km / norm)
+                total_tsr_delay_min += max(0.0, delta_t_h * 60.0)
+
+        return count, float(max(slowdowns)), round(total_tsr_delay_min, 2)
 
     def compute_train_period_statistics(self, train_cutoff_date: str) -> None:
         """Computes Features 9, 10, and 17 strictly on TRAIN period dates."""
@@ -495,9 +536,73 @@ class SnapshotGenerator:
             crew_duty_pressure = 0.0
 
         # v2: TSR Signals (Task T2)
-        tsr_count, tsr_slowdown = self._get_tsr_features(
+        tsr_count, tsr_slowdown, tsr_delay_min = self._get_tsr_features(
             route, current_seq, target_seq, cached_active_tsrs=cached_active_tsrs
         )
+
+        # Domain Features (WO-10)
+        from ml.features import (
+            LOCO_CLASS_ENCODING,
+            RAKE_TYPE_ENCODING,
+            ZONE_ID_ENCODING,
+            SIGNAL_ASPECT_ENCODING,
+        )
+
+        t_meta = getattr(self, "_cached_train_domain", {}).get(train_no, {})
+        loco_class_str = t_meta.get("loco_class") or ("WAG-9" if current_stop.get("is_freight") else "WAP-7")
+        rake_type_str = t_meta.get("rake_type") or ("BOXN" if current_stop.get("is_freight") else "LHB")
+        loco_class_enc = LOCO_CLASS_ENCODING.get(loco_class_str, 1)
+        rake_type_enc = RAKE_TYPE_ENCODING.get(rake_type_str, 1)
+
+        # Gradient & Zone from sections
+        curr_stn_code = current_stop["station_code"]
+        next_stn_code = (
+            route[current_seq]["station_code"]
+            if current_seq < len(route)
+            else target_stn_code
+        )
+        sec_info = (
+            getattr(self, "_cached_sections", {}).get((curr_stn_code, next_stn_code))
+            or getattr(self, "_cached_sections", {}).get((next_stn_code, curr_stn_code))
+            or {}
+        )
+        gradient_pct = float(sec_info.get("gradient_pct", 0.15))
+        zone_str = sec_info.get("zone_id") or target_stn_meta.get("zone", "NCR")
+        zone_id_enc = ZONE_ID_ENCODING.get(zone_str, 1)
+
+        # Signal aspect from track context or headway
+        aspect_val = 0
+        if cached_track_context and "signal_aspect" in cached_track_context:
+            aspect_str = str(cached_track_context["signal_aspect"]).upper()
+            aspect_val = SIGNAL_ASPECT_ENCODING.get(aspect_str, 0)
+        elif cached_track_context and "inferred_signal_aspect" in cached_track_context:
+            aspect_str = str(cached_track_context["inferred_signal_aspect"]).upper()
+            aspect_val = SIGNAL_ASPECT_ENCODING.get(aspect_str, 0)
+        else:
+            headway = float(tc_dict.get("min_predicted_headway_next_station", 60.0))
+            if headway < 5.0:
+                aspect_val = 3  # RED
+            elif headway < 10.0:
+                aspect_val = 2  # YELLOW
+            elif headway < 20.0:
+                aspect_val = 1  # DOUBLE_YELLOW
+            else:
+                aspect_val = 0  # GREEN
+
+        # Level crossing gate status ahead
+        lc_cache = getattr(self, "_cached_level_crossings", {})
+        lc_status = 0
+        remaining_stn_codes = [
+            r["station_code"]
+            for r in route
+            if current_seq <= int(r["seq"]) <= target_seq
+        ]
+        for sc in remaining_stn_codes:
+            if lc_cache.get(sc, 0) == 1:
+                lc_status = 1
+                break
+
+        sectional_run_time = round(km_remaining / max(1, hops) / 1.2, 2)
 
         # v2: Festival Multiplier (Task T2)
         festival_mult = self._get_festival_multiplier(run_date)
@@ -579,6 +684,15 @@ class SnapshotGenerator:
             position_belief_entropy=pos_entropy,
             position_p_mode=pos_p_mode,
             minutes_since_last_obs=minutes_since_last_obs,
+            # WO-10 domain features
+            loco_class=loco_class_enc,
+            rake_type=rake_type_enc,
+            gradient_pct=gradient_pct,
+            zone_id=zone_id_enc,
+            tsr_delay_min=tsr_delay_min,
+            signal_aspect=aspect_val,
+            lc_status=lc_status,
+            sectional_run_time=sectional_run_time,
         )
 
     def extract_neighbor_tokens(
@@ -758,6 +872,81 @@ class SnapshotGenerator:
         self._active_trains_cache[key] = res
         return res
 
+    def _hydrate_v2_features(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Vectorized hydration of v2 domain and causal features for existing cached snapshots."""
+        from ml.features import (
+            FEATURE_NAMES_V2,
+            LOCO_CLASS_ENCODING,
+            RAKE_TYPE_ENCODING,
+            ZONE_ID_ENCODING,
+            SIGNAL_ASPECT_ENCODING,
+        )
+
+        missing = [c for c in FEATURE_NAMES_V2 if c not in df.columns]
+        if not missing:
+            return df
+
+        self._load_metadata_caches()
+
+        if "loco_class" in missing or "rake_type" in missing:
+            loco_map = {
+                t: LOCO_CLASS_ENCODING.get(meta.get("loco_class", "WAP-7"), 1)
+                for t, meta in getattr(self, "_cached_train_domain", {}).items()
+            }
+            rake_map = {
+                t: RAKE_TYPE_ENCODING.get(meta.get("rake_type", "LHB"), 1)
+                for t, meta in getattr(self, "_cached_train_domain", {}).items()
+            }
+            if "loco_class" in missing:
+                df["loco_class"] = df["train_no"].map(loco_map).fillna(1).astype(int)
+            if "rake_type" in missing:
+                df["rake_type"] = df["train_no"].map(rake_map).fillna(1).astype(int)
+
+        if "zone_id" in missing:
+            df["zone_id"] = 1  # NCR default
+        if "gradient_pct" in missing:
+            df["gradient_pct"] = 0.15
+        if "tsr_delay_min" in missing:
+            df["tsr_delay_min"] = 0.0
+        if "signal_aspect" in missing:
+            if "min_predicted_headway_next_station" in df.columns:
+                headway = df["min_predicted_headway_next_station"]
+                df["signal_aspect"] = np.where(
+                    headway < 5.0, 3, np.where(headway < 10.0, 2, np.where(headway < 20.0, 1, 0))
+                )
+            else:
+                df["signal_aspect"] = 0
+        if "lc_status" in missing:
+            df["lc_status"] = 0
+        if "sectional_run_time" in missing:
+            hops = np.maximum(1, df["hops_remaining"].to_numpy().astype(int))
+            df["sectional_run_time"] = (
+                df["km_remaining"].to_numpy().astype(float) / hops / 1.2
+            ).astype(float)
+
+        if "upstream_rake_delay_min" in missing:
+            df["upstream_rake_delay_min"] = df.get("rake_incoming_delay", 0.0)
+        if "upstream_rake_buffer_remaining_min" in missing:
+            df["upstream_rake_buffer_remaining_min"] = np.maximum(
+                0.0, 30.0 - df.get("rake_incoming_delay", 0.0)
+            )
+        if "rake_linked" in missing:
+            df["rake_linked"] = (df.get("rake_incoming_delay", 0.0) > 0).astype(int)
+        if "tsr_active_ahead_count" in missing:
+            df["tsr_active_ahead_count"] = 0
+        if "tsr_max_slowdown_pct" in missing:
+            df["tsr_max_slowdown_pct"] = 0.0
+        if "festival_load_multiplier" in missing:
+            df["festival_load_multiplier"] = 1.0
+        if "position_belief_entropy" in missing:
+            df["position_belief_entropy"] = 0.0
+        if "position_p_mode" in missing:
+            df["position_p_mode"] = 1.0
+        if "minutes_since_last_obs" in missing:
+            df["minutes_since_last_obs"] = 0.0
+
+        return df
+
     def build_dataset(self, start_date: str, end_date: str, train_cutoff_date: str) -> pd.DataFrame:
         """Constructs complete training/testing snapshot dataset across specified date range with parquet caching.
 
@@ -780,11 +969,28 @@ class SnapshotGenerator:
             try:
                 print(f"[INFO] Loading cached snapshot dataset from {cache_file}...")
                 df = pd.read_parquet(cache_file)
-                validate_feature_dataframe(df)
+                df = self._hydrate_v2_features(df)
+                validate_feature_dataframe(df, version=2)
                 print(f"[SUCCESS] Loaded {len(df):,} cached snapshot rows in milliseconds.")
                 return df
             except Exception as e:
-                print(f"[WARN] Cache read failed ({e}), rebuilding dataset...")
+                print(f"[WARN] Cache read failed ({e}), checking base caches...")
+
+        # Fallback to base cache with matching date span if available
+        base_pattern = f"snap_{start_date}_{end_date}_{train_cutoff_date}_*.parquet"
+        matching = sorted(cache_dir.glob(base_pattern))
+        if matching:
+            try:
+                source_file = matching[-1]
+                print(f"[INFO] Hydrating v2 domain features from base cache {source_file.name}...")
+                df = pd.read_parquet(source_file)
+                df = self._hydrate_v2_features(df)
+                validate_feature_dataframe(df, version=2)
+                df.to_parquet(cache_file, index=False)
+                print(f"[SUCCESS] Hydrated and cached {len(df):,} rows to {cache_file.name}")
+                return df
+            except Exception as e:
+                print(f"[WARN] Base cache hydration failed ({e}), rebuilding dataset from SQLite...")
 
         self._load_metadata_caches()
         self.compute_train_period_statistics(train_cutoff_date)

@@ -1,18 +1,18 @@
 {
   "schema_version": "2.0",
   "source_label": "metrics_as_code",
-  "canonical_mae": 10.72,
-  "overall_mae": 10.719904724449286,
-  "overall_mae_ci_95": 0.13256949262052903,
+  "canonical_mae": 10.71,
+  "overall_mae": 10.71114106945659,
+  "overall_mae_ci_95": 0.13268307334194673,
   "total_test_samples": 25203,
-  "overall_coverage_80": 80.63722572709598,
-  "overall_winkler_score": 57.942318503660445,
-  "overall_crps": 7.436122808393791,
+  "overall_coverage_80": 80.74435583065508,
+  "overall_winkler_score": 57.92577084908937,
+  "overall_crps": 7.432098413091489,
   "rolling_origin_cv": {
     "num_folds": 6,
     "num_valid_folds": 5,
-    "cv_mean_mae": 10.66,
-    "cv_std_mae": 0.35,
+    "cv_mean_mae": 10.15,
+    "cv_std_mae": 0.83,
     "min_test_samples": 1000,
     "folds": [
       {
@@ -25,10 +25,10 @@
         "test_end": "2026-08-19",
         "embargo_days": 2,
         "samples": 8400,
-        "mae": 10.59,
-        "coverage_80": 79.6,
-        "winkler_score": 57.74,
-        "crps": 7.38,
+        "mae": 9.46,
+        "coverage_80": 82.6,
+        "winkler_score": 52.44,
+        "crps": 6.65,
         "excluded": false
       },
       {
@@ -41,10 +41,10 @@
         "test_end": "2026-08-22",
         "embargo_days": 2,
         "samples": 8400,
-        "mae": 10.72,
-        "coverage_80": 79.9,
-        "winkler_score": 58.23,
-        "crps": 7.46,
+        "mae": 8.88,
+        "coverage_80": 83.7,
+        "winkler_score": 51.74,
+        "crps": 6.41,
         "excluded": false
       },
       {
@@ -57,10 +57,10 @@
         "test_end": "2026-08-25",
         "embargo_days": 2,
         "samples": 8400,
-        "mae": 11.03,
-        "coverage_80": 80.3,
-        "winkler_score": 57.79,
-        "crps": 7.53,
+        "mae": 10.58,
+        "coverage_80": 80.4,
+        "winkler_score": 58.43,
+        "crps": 7.42,
         "excluded": false
       },
       {
@@ -73,10 +73,10 @@
         "test_end": "2026-08-28",
         "embargo_days": 2,
         "samples": 8400,
-        "mae": 10.03,
-        "coverage_80": 83.2,
-        "winkler_score": 56.25,
-        "crps": 7.09,
+        "mae": 10.89,
+        "coverage_80": 80.5,
+        "winkler_score": 58.96,
+        "crps": 7.56,
         "excluded": false
       },
       {
@@ -124,11 +124,11 @@
       "B3 (Linear Reg)": "10.9 min",
       "RailTwin-X MAE": "**5.9 +/- 0.16 min**",
       "HitRate (<=10m)": "83.8%",
-      "80% Band Coverage": "70.3%",
-      "Winkler Score": "27.83",
+      "80% Band Coverage": "70.5%",
+      "Winkler Score": "27.84",
       "CRPS": "3.82",
-      "Improvement vs B2": "**15.1%**",
-      "Improvement vs B3": "**46.1%**"
+      "Improvement vs B2": "**15.2%**",
+      "Improvement vs B3": "**46.2%**"
     },
     {
       "Horizon": "3 h (90-250km)",
@@ -138,8 +138,8 @@
       "B3 (Linear Reg)": "13.2 min",
       "RailTwin-X MAE": "**10.5 +/- 0.17 min**",
       "HitRate (<=10m)": "58.2%",
-      "80% Band Coverage": "73.3%",
-      "Winkler Score": "44.80",
+      "80% Band Coverage": "73.4%",
+      "Winkler Score": "44.81",
       "CRPS": "6.48",
       "Improvement vs B2": "**36.3%**",
       "Improvement vs B3": "**20.4%**"
@@ -151,12 +151,12 @@
       "B2 (Official)": "30.7 min",
       "B3 (Linear Reg)": "15.7 min",
       "RailTwin-X MAE": "**14.8 +/- 0.29 min**",
-      "HitRate (<=10m)": "45.5%",
-      "80% Band Coverage": "98.4%",
-      "Winkler Score": "98.87",
-      "CRPS": "11.52",
-      "Improvement vs B2": "**51.7%**",
-      "Improvement vs B3": "**5.4%**"
+      "HitRate (<=10m)": "45.8%",
+      "80% Band Coverage": "98.6%",
+      "Winkler Score": "98.80",
+      "CRPS": "11.51",
+      "Improvement vs B2": "**51.8%**",
+      "Improvement vs B3": "**5.6%**"
     }
   ],
   "metrics_by_horizon": {
@@ -164,52 +164,52 @@
       "n_samples": 6300,
       "mae_b1": 5.837301587301587,
       "mae_b2": 6.93015873015873,
-      "mae_b3": 10.920094860730675,
-      "mae_railtwin": 5.881179479746888,
-      "mae_ci_95": 0.1601832116216134,
-      "hit_rate_10_percent": 83.77777777777777,
-      "coverage_80_percent": 70.34920634920636,
-      "winkler_score": 27.833358727329234,
-      "crps": 3.8159504084042446,
-      "improvement_vs_b2_percent": 15.136439023349993,
-      "improvement_vs_b3_percent": 46.143512902108874
+      "mae_b3": 10.938038017746333,
+      "mae_railtwin": 5.880137541436749,
+      "mae_ci_95": 0.16018127411277427,
+      "hit_rate_10_percent": 83.84126984126983,
+      "coverage_80_percent": 70.46031746031746,
+      "winkler_score": 27.83844847075892,
+      "crps": 3.815942411862844,
+      "improvement_vs_b2_percent": 15.151473863830695,
+      "improvement_vs_b3_percent": 46.24138687489871
     },
     "3 h (90-250km)": {
       "n_samples": 10801,
       "mae_b1": 12.792889547264142,
       "mae_b2": 16.447828904731043,
-      "mae_b3": 13.159543573915197,
-      "mae_railtwin": 10.48138256547798,
-      "mae_ci_95": 0.17190883819708902,
-      "hit_rate_10_percent": 58.235348578835286,
-      "coverage_80_percent": 73.2895102305342,
-      "winkler_score": 44.80283521847834,
-      "crps": 6.480649869724551,
-      "improvement_vs_b2_percent": 36.2749781373083,
-      "improvement_vs_b3_percent": 20.351473388072957
+      "mae_b3": 13.172317752317463,
+      "mae_railtwin": 10.47954401683197,
+      "mae_ci_95": 0.17182178751418978,
+      "hit_rate_10_percent": 58.21683177483566,
+      "coverage_80_percent": 73.36357744653273,
+      "winkler_score": 44.813153833354654,
+      "crps": 6.4807249278343,
+      "improvement_vs_b2_percent": 36.28615620011927,
+      "improvement_vs_b3_percent": 20.4426721714312
     },
     "6 h (>250km)": {
       "n_samples": 8102,
       "mae_b1": 23.51826709454456,
       "mae_b2": 30.668411091911462,
-      "mae_b3": 15.65233016463786,
-      "mae_railtwin": 14.800409153068658,
-      "mae_ci_95": 0.29233993198707947,
-      "hit_rate_10_percent": 45.531967415452975,
-      "coverage_80_percent": 98.43248580597384,
-      "winkler_score": 98.87122563204092,
-      "crps": 11.524884759825614,
-      "improvement_vs_b2_percent": 51.740541403619886,
-      "improvement_vs_b3_percent": 5.442774351220134
+      "mae_b3": 15.651237587057425,
+      "mae_railtwin": 14.77640915041481,
+      "mae_ci_95": 0.29308045906056035,
+      "hit_rate_10_percent": 45.82819057022957,
+      "coverage_80_percent": 98.58059738336213,
+      "winkler_score": 98.80203687851824,
+      "crps": 11.512272175372818,
+      "improvement_vs_b2_percent": 51.818797830344835,
+      "improvement_vs_b3_percent": 5.589516048021926
     }
   },
-  "coaching_mae_headline": 10.72,
+  "coaching_mae_headline": 10.71,
   "per_class": {
     "coaching": {
       "n": 25203,
-      "mae": 10.72,
-      "coverage_80": 80.64,
-      "winkler": 57.94
+      "mae": 10.71,
+      "coverage_80": 80.74,
+      "winkler": 57.93
     }
   }
 }

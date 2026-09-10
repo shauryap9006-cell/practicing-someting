@@ -46,7 +46,7 @@ FEATURE_NAMES_V1: List[str] = [
     "crew_duty_pressure",
 ]
 
-# v2 Causal Feature Additions (Task T2)
+# v2 Causal Feature Additions (Task T2 & WO-10 Domain Additions)
 FEATURE_NAMES_V2_ADDITIONS: List[str] = [
     "upstream_rake_delay_min",
     "upstream_rake_buffer_remaining_min",
@@ -57,12 +57,73 @@ FEATURE_NAMES_V2_ADDITIONS: List[str] = [
     "position_belief_entropy",
     "position_p_mode",
     "minutes_since_last_obs",
+    # WO-10 Domain Features
+    "loco_class",
+    "rake_type",
+    "gradient_pct",
+    "zone_id",
+    "tsr_delay_min",
+    "signal_aspect",
+    "lc_status",
+    "sectional_run_time",
 ]
 
 FEATURE_NAMES_V2: List[str] = FEATURE_NAMES_V1 + FEATURE_NAMES_V2_ADDITIONS
 
 # FEATURE_NAMES defaults to V1 for 100% backward compatibility with frozen champion boosters and existing test assertions
 FEATURE_NAMES: List[str] = FEATURE_NAMES_V1
+
+
+def get_feature_names(version: int = 2) -> List[str]:
+    """Compatibility helper returning feature names for requested schema version."""
+    return FEATURE_NAMES_V2 if version == 2 else FEATURE_NAMES_V1
+
+
+# Domain Categorical Integer Encodings
+LOCO_CLASS_ENCODING: Dict[str, int] = {
+    "WAP-7": 1,
+    "WAP-5": 2,
+    "WAP-4": 3,
+    "WAG-9": 4,
+    "WAG-7": 5,
+    "WDP-4D": 6,
+    "UNKNOWN": 0,
+}
+
+RAKE_TYPE_ENCODING: Dict[str, int] = {
+    "LHB": 1,
+    "ICF": 2,
+    "VANDE_BHARAT": 3,
+    "BOXN": 4,
+    "BCN": 5,
+    "BLCA": 6,
+    "UNKNOWN": 0,
+}
+
+ZONE_ID_ENCODING: Dict[str, int] = {
+    "NCR": 1,
+    "NR": 2,
+    "NWR": 3,
+    "WR": 4,
+    "WCR": 5,
+    "ER": 6,
+    "ECR": 7,
+    "UNKNOWN": 0,
+}
+
+SIGNAL_ASPECT_ENCODING: Dict[str, int] = {
+    "GREEN": 0,
+    "DOUBLE_YELLOW": 1,
+    "YELLOW": 2,
+    "RED": 3,
+    "UNKNOWN": 0,
+}
+
+LC_STATUS_ENCODING: Dict[str, int] = {
+    "CLOSED": 0,
+    "OPEN": 1,
+    "UNKNOWN": 0,
+}
 
 
 @dataclass
@@ -108,6 +169,26 @@ class TrainFeatureVector:
     position_p_mode: float = 1.0
     minutes_since_last_obs: float = 0.0
 
+    # Domain Features (WO-10)
+    loco_class: int = 1
+    rake_type: int = 1
+    gradient_pct: float = 0.0
+    zone_id: int = 1
+    tsr_delay_min: float = 0.0
+    signal_aspect: int = 0
+    lc_status: int = 0
+    sectional_run_time: float = 0.0
+
+    @property
+    def gradient(self) -> float:
+        """Alias for gradient_pct."""
+        return self.gradient_pct
+
+    @property
+    def tsr_minutes(self) -> float:
+        """Alias for tsr_delay_min."""
+        return self.tsr_delay_min
+
     # Targets (populated during dataset creation, None during live serving)
     target_direct_delay: Optional[float] = None
     target_section_delta: Optional[float] = None
@@ -150,6 +231,15 @@ class TrainFeatureVector:
             "position_belief_entropy": float(self.position_belief_entropy),
             "position_p_mode": float(self.position_p_mode),
             "minutes_since_last_obs": float(self.minutes_since_last_obs),
+            # WO-10 domain fields
+            "loco_class": int(self.loco_class),
+            "rake_type": int(self.rake_type),
+            "gradient_pct": float(self.gradient_pct),
+            "zone_id": int(self.zone_id),
+            "tsr_delay_min": float(self.tsr_delay_min),
+            "signal_aspect": int(self.signal_aspect),
+            "lc_status": int(self.lc_status),
+            "sectional_run_time": float(self.sectional_run_time),
         }
         if self.target_direct_delay is not None:
             d["target_direct_delay"] = float(self.target_direct_delay)

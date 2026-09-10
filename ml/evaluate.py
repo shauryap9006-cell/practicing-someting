@@ -37,6 +37,7 @@ class Evaluator:
         self.artifacts_dir = artifacts_dir or settings.ARTIFACTS_DIR
         self.snapshot_gen = SnapshotGenerator(self.db)
         self.manifest = self._load_manifest()
+        self.features = self.manifest.get("features", FEATURE_NAMES)
         self.direct_models = self._load_models("model_direct")
         self.delta_models = self._load_models("model_delta")
 
@@ -80,7 +81,7 @@ class Evaluator:
 
         # 1. Short-range predictions (<= 3 hops): Direct LightGBM Booster with per-horizon q_hat
         if is_direct.any():
-            X_dir = X[is_direct][FEATURE_NAMES]
+            X_dir = X[is_direct][self.features]
             km_dirs = X[is_direct]["km_remaining"].values
             q_hats_dir = np.array([self._get_q_hat(km, "direct") for km in km_dirs])
             p10[is_direct] = self.direct_models[0.1].predict(X_dir) - q_hats_dir
@@ -110,9 +111,9 @@ class Evaluator:
                 start_d = split_info.get("start_date", "2026-07-31")
                 train_c = split_info.get("train_cutoff", "2026-08-20")
                 train_df_b = self.snapshot_gen.build_dataset(start_d, train_c, train_c)
-                lr_model.fit(train_df_b[FEATURE_NAMES], train_df_b["target_direct_delay"])
+                lr_model.fit(train_df_b[self.features], train_df_b["target_direct_delay"])
 
-            lr_preds = np.maximum(0.0, lr_model.predict(X_non_dir[FEATURE_NAMES]))
+            lr_preds = np.maximum(0.0, lr_model.predict(X_non_dir[self.features]))
 
             # Vectorized multi-step autoregressive rollout
             n_samples = len(X_non_dir)
@@ -137,7 +138,7 @@ class Evaluator:
                 cur_df.loc[mask, "hops_remaining"] = rem_hops
                 cur_df.loc[mask, "km_remaining"] = rem_hops * km_per_hop[mask]
 
-                sub_X = cur_df.loc[mask, FEATURE_NAMES]
+                sub_X = cur_df.loc[mask, self.features]
                 d10 = self.delta_models[0.1].predict(sub_X)
                 d50 = self.delta_models[0.5].predict(sub_X)
                 d90 = self.delta_models[0.9].predict(sub_X)
@@ -429,8 +430,8 @@ class Evaluator:
                 start_date or "2026-07-31", train_cutoff, train_cutoff
             )
             lr_bench = LinearRegression()
-            lr_bench.fit(train_df[FEATURE_NAMES], train_df["target_direct_delay"])
-        b3_pred = np.maximum(0.0, lr_bench.predict(test_df[FEATURE_NAMES]))
+            lr_bench.fit(train_df[self.features], train_df["target_direct_delay"])
+        b3_pred = np.maximum(0.0, lr_bench.predict(test_df[self.features]))
 
         # 4. RailTwin-X Predictions (Autoregressive Rollout)
         p10, p50, p90 = self.predict_interval(test_df)
