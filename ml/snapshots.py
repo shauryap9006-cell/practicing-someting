@@ -245,6 +245,8 @@ class SnapshotGenerator:
         # Query live active TSRs from speed_restrictions (or use pre-fetched/cached context)
         if cached_active_tsrs is not None:
             active_tsrs = cached_active_tsrs
+        elif hasattr(self, "_cached_active_tsrs") and self._cached_active_tsrs is not None:
+            active_tsrs = self._cached_active_tsrs
         else:
             try:
                 with self.db.transaction() as cur:
